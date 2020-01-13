@@ -1,3 +1,5 @@
+# -*- mode: gitignore; -*-
+
 # Binaries for programs and plugins
 *.exe
 *.exe~
@@ -13,3 +15,15 @@
 
 # IDE settings
 .idea/
+
+# Local environments
+.direnv/
+.envrc
+shell.nix
+.nixpkgs-version.json
+
+# Editor's temporary files
+*~
+\#*\#
+.\#*
+
