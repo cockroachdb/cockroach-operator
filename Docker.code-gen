@@ -1,13 +1,12 @@
 FROM golang:1.13.5-alpine3.11
 
-RUN apk add --no-cache gcc libc-dev
-
 ENV CONTROLLER_TOOLS_VERSION v0.2.4
 
+ENV CGO_ENABLED 0
 ENV PATH /go/bin:$PATH
 
 RUN GO111MODULE=on go get sigs.k8s.io/controller-tools/cmd/controller-gen@${CONTROLLER_TOOLS_VERSION}
 
-RUN mkdir -p /go/src/github.com/cockroachlabs/crdb-operator
+RUN mkdir -p /ws
 
-WORKDIR /go/src/github.com/cockroachlabs/crdb-operator
+WORKDIR /ws

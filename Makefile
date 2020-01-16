@@ -1,16 +1,23 @@
 REGISTRY_PREFIX ?= us.gcr.io
-GENERATOR_IMAGE_NAME ?= crdb-opercode-generator
+GENERATOR_IMG ?= crdb-operator/code-generator
+TEST_RUNNER_IMG ?= crdb-operator/test-runner
 VERSION ?= latest
 
-TOOLS_WRAPPER = docker run --rm -v $(CURDIR):/go/src/github.com/cockroachlabs/crdb-operator
-CONTROLLER_GEN = $(TOOLS_WRAPPER) $(REGISTRY_PREFIX)/$(GENERATOR_IMAGE_NAME) controller-gen
+LOCAL_GOPATH := $(shell go env GOPATH)
+
+TOOLS_WRAPPER := docker run --rm -v $(CURDIR):/ws -v $(LOCAL_GOPATH)/pkg:/go/pkg -v $(CURDIR)/.docker-build:/root/.cache/go-build
+
+CONTROLLER_GEN = $(TOOLS_WRAPPER) $(REGISTRY_PREFIX)/$(GENERATOR_IMG) controller-gen
 
 # Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
 CRD_OPTIONS ?= "crd:trivialVersions=true"
 
 # Run tests
-test: generate fmt vet manifests
+native-test: fmt vet
 	go test ./... -coverprofile cover.out
+
+test: generate manifests
+	$(TOOLS_WRAPPER) $(REGISTRY_PREFIX)/$(TEST_RUNNER_IMG) make native-test
 
 run: fmt vet
 	go run ./main.go
@@ -33,6 +40,9 @@ generate:
 	@$(CONTROLLER_GEN) object:headerFile=./hack/boilerplate.go.txt paths=./api/...
 
 docker/build/code-gen:
-	@echo "===========> Building $(IMAGE_NAME) docker image"
-	docker build --pull -t $(REGISTRY_PREFIX)/$(GENERATOR_IMAGE_NAME):$(VERSION) -f Docker.code-gen .
+	@echo "===========> Building $(GENERATOR_IMG) docker image"
+	docker build --pull -t $(REGISTRY_PREFIX)/$(GENERATOR_IMG):$(VERSION) -f Docker.code-gen .
 
+docker/build/test-runner:
+	@echo "===========> Building $(TEST_RUNNER_IMG) docker image"
+	docker build --pull -t $(REGISTRY_PREFIX)/$(TEST_RUNNER_IMG):$(VERSION) -f Docker.test-runner .
