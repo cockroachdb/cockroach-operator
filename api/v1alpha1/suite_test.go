@@ -1,16 +1,12 @@
-package controllers
+package v1alpha1
 
 import (
-	"github.com/onsi/gomega/gexec"
 	"path/filepath"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"testing"
-	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	crdbv1alpha1 "github.com/cockroachlabs/crdb-operator/api/v1alpha1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -30,7 +26,7 @@ func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
 
 	RunSpecsWithDefaultAndCustomReporters(t,
-		"Controller Suite",
+		"v1alpha1 API Suite",
 		[]Reporter{envtest.NewlineReporter{}})
 }
 
@@ -39,7 +35,7 @@ var _ = BeforeSuite(func(done Done) {
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
-		CRDDirectoryPaths: []string{filepath.Join("..", "config", "crd", "bases")},
+		CRDDirectoryPaths: []string{filepath.Join("..", "..", "config", "crd", "bases")},
 	}
 
 	var err error
@@ -47,26 +43,8 @@ var _ = BeforeSuite(func(done Done) {
 	Expect(err).ToNot(HaveOccurred())
 	Expect(cfg).ToNot(BeNil())
 
-	err = crdbv1alpha1.AddToScheme(scheme.Scheme)
+	err = AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
-
-	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
-		Scheme:             scheme.Scheme,
-		MetricsBindAddress: "0", // Disable metrics serving
-	})
-	Expect(err).ToNot(HaveOccurred())
-
-	err = (&ClusterReconciler{
-		Client: k8sManager.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("Cluster"),
-		Scheme: k8sManager.GetScheme(),
-	}).SetupWithManager(k8sManager)
-	Expect(err).ToNot(HaveOccurred())
-
-	go func() {
-		err = k8sManager.Start(ctrl.SetupSignalHandler())
-		Expect(err).ToNot(HaveOccurred())
-	}()
 
 	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
 	Expect(err).ToNot(HaveOccurred())
@@ -77,7 +55,6 @@ var _ = BeforeSuite(func(done Done) {
 
 var _ = AfterSuite(func() {
 	By("tearing down the test environment")
-	gexec.KillAndWait(5 * time.Second)
 	err := testEnv.Stop()
 	Expect(err).ToNot(HaveOccurred())
 })

@@ -27,3 +27,5 @@ shell.nix
 \#*\#
 .\#*
 
+# Build caches for docker build
+.docker-build/
