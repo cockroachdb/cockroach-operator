@@ -1,0 +1,179 @@
+package testutil
+
+import (
+	"context"
+	"github.com/pkg/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
+
+	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+)
+
+func NewFakeClient(scheme *runtime.Scheme, objs ...runtime.Object) *FakeClient {
+	return &FakeClient{
+		client: fake.NewFakeClientWithScheme(scheme, objs...),
+		scheme: scheme,
+	}
+}
+
+var _ client.Client = &FakeClient{}
+
+// FakeClient is inspired and  taken from https://github.com/kubernetes/client-go/
+type FakeClient struct {
+	client client.Client
+	scheme *runtime.Scheme
+
+	// ReactionChain is the list of reactors that will be attempted for every
+	// request in the order they are tried.
+	ReactionChain []Reactor
+}
+
+// Reactor is an interface to allow the composition of reaction functions.
+type Reactor interface {
+	// Handles indicates whether or not this Reactor deals with a given
+	// action.
+	Handles(action Action) bool
+	// React handles the action and returns results.  It may choose to
+	// delegate by indicated handled=false.
+	React(action Action) (handled bool, err error)
+}
+
+// ReactionFunc is a function returning `handled` set to true if no further
+// processing is required and an error if one needs to be raised
+type ReactionFunc func(action Action) (handled bool, err error)
+
+func NewGetAction(key client.ObjectKey, gvr schema.GroupVersionResource) Action {
+	return &GetAction{
+		verb: "get",
+		key:  key,
+		gvr:  gvr,
+	}
+}
+
+type Action interface {
+	Verb() string
+	GVR() schema.GroupVersionResource
+}
+
+var _ Action = &GetAction{}
+
+type GetAction struct {
+	verb string
+	key  client.ObjectKey
+	gvr  schema.GroupVersionResource
+	obj  runtime.Object
+}
+
+var _ Reactor = &simpleReactor{}
+
+type simpleReactor struct {
+	Verb     string
+	Resource string
+	Reaction ReactionFunc
+}
+
+func (r simpleReactor) Handles(action Action) bool {
+	verbCovers := r.Verb == "*" || r.Verb == action.Verb()
+	if !verbCovers {
+		return false
+	}
+
+	resourceCovers := r.Resource == "*" || r.Resource == action.GVR().Resource
+	if !resourceCovers {
+		return false
+	}
+
+	return true
+}
+
+func (r simpleReactor) React(action Action) (handled bool, err error) {
+	return r.Reaction(action)
+}
+
+func (a GetAction) Verb() string {
+	return a.verb
+}
+
+func (a GetAction) Key() client.ObjectKey {
+	return a.key
+}
+
+func (a GetAction) GVR() schema.GroupVersionResource {
+	return a.gvr
+}
+
+func (c *FakeClient) AddReactor(verb string, resource string, reaction ReactionFunc) {
+	c.ReactionChain = append(c.ReactionChain, &simpleReactor{verb, resource, reaction})
+}
+
+func (c *FakeClient) Get(ctx context.Context, key client.ObjectKey, obj runtime.Object) error {
+	gvr, err := getGVRFromObject(c.scheme, obj)
+	if err != nil {
+		return errors.Wrapf(err, "failed to find GVR of object %s", key.String())
+	}
+
+	a := NewGetAction(key, gvr)
+
+	if handled, err := c.invoke(a); handled {
+		return err
+	}
+
+	return c.client.Get(ctx, key, obj)
+}
+
+func (c *FakeClient) List(_ context.Context, list runtime.Object, opts ...client.ListOption) error {
+	panic("implement me")
+}
+
+func (c *FakeClient) Create(_ context.Context, obj runtime.Object, opts ...client.CreateOption) error {
+	panic("implement me")
+}
+
+func (c *FakeClient) Delete(_ context.Context, obj runtime.Object, opts ...client.DeleteOption) error {
+	panic("implement me")
+}
+
+func (c *FakeClient) Update(_ context.Context, obj runtime.Object, opts ...client.UpdateOption) error {
+	panic("implement me")
+}
+
+func (c *FakeClient) Patch(_ context.Context, obj runtime.Object, patch client.Patch, opts ...client.PatchOption) error {
+	panic("implement me")
+}
+
+func (c *FakeClient) DeleteAllOf(_ context.Context, obj runtime.Object, opts ...client.DeleteAllOfOption) error {
+	panic("implement me")
+}
+
+func (c *FakeClient) Status() client.StatusWriter {
+	panic("implement me")
+}
+
+func (c *FakeClient) invoke(action Action) (handled bool, err error) {
+	for _, reactor := range c.ReactionChain {
+		if !reactor.Handles(action) {
+			continue
+		}
+
+		handled, err := reactor.React(action)
+		if !handled {
+			continue
+		}
+
+		return true, err
+	}
+
+	return false, nil
+}
+
+func getGVRFromObject(scheme *runtime.Scheme, obj runtime.Object) (schema.GroupVersionResource, error) {
+	gvk, err := apiutil.GVKForObject(obj, scheme)
+	if err != nil {
+		return schema.GroupVersionResource{}, err
+	}
+	gvr, _ := meta.UnsafeGuessKindToResource(gvk)
+	return gvr, nil
+}

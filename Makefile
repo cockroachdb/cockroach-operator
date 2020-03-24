@@ -14,10 +14,19 @@ CRD_OPTIONS ?= "crd:trivialVersions=true"
 
 # Run tests
 native-test: fmt vet
-	go test ./... -coverprofile cover.out
+	go test ./api/... ./controllers/... ./pkg/... -coverprofile cover.out
+
+native-test-short: fmt vet
+	go test -short ./api/... ./controllers/... ./pkg/... -coverprofile cover.out
 
 test: generate manifests
 	$(TOOLS_WRAPPER) $(REGISTRY_PREFIX)/$(TEST_RUNNER_IMG) make native-test
+
+test-short: generate manifests
+	$(TOOLS_WRAPPER) $(REGISTRY_PREFIX)/$(TEST_RUNNER_IMG) make native-test-short
+
+e2e-test:
+	$(TOOLS_WRAPPER) -v ${HOME}/.kube:/root/.kube -v ${HOME}/.config/gcloud:/root/.config/gcloud -e USE_EXISTING_CLUSTER=true $(REGISTRY_PREFIX)/$(TEST_RUNNER_IMG) go test -v ./e2e-tests/...
 
 run: fmt vet
 	go run ./main.go
