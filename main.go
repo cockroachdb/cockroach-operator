@@ -5,7 +5,7 @@ import (
 	"os"
 
 	crdbv1alpha1 "github.com/cockroachlabs/crdb-operator/api/v1alpha1"
-	"github.com/cockroachlabs/crdb-operator/controllers"
+	"github.com/cockroachlabs/crdb-operator/controller"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
@@ -46,12 +46,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controllers.ClusterReconciler{
+	if err = (&controller.CrdbClusterReconciler{
 		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("Cluster"),
+		Log:    ctrl.Log.WithName("controller").WithName("CrdbCluster"),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Cluster")
+		setupLog.Error(err, "unable to create controller", "controller", "CrdbCluster")
 		os.Exit(1)
 	}
 
