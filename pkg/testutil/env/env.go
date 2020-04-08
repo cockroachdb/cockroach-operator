@@ -7,7 +7,9 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
+	kscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp" // GCP auth support
+	"k8s.io/client-go/rest"
 	"os"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
@@ -15,6 +17,11 @@ import (
 
 func NewEnv(builder apiruntime.SchemeBuilder, crds ...string) *Env {
 	scheme := apiruntime.NewScheme()
+
+	if err := kscheme.AddToScheme(scheme); err != nil {
+		panic(err)
+	}
+
 	if err := builder.AddToScheme(scheme); err != nil {
 		panic(err)
 	}
@@ -47,17 +54,16 @@ func (env *Env) Start() *ActiveEnv {
 		panic(err)
 	}
 
-
-
 	c, err := client.New(env.Environment.Config, client.Options{Scheme: env.Scheme})
 	if err != nil {
 		panic(err)
 	}
 
 	k8s := &k8s{
-		Client: c,
+		Client:    c,
 		Clientset: kubernetes.NewForConfigOrDie(env.Environment.Config),
 		Interface: dc,
+		Cfg:       env.Environment.Config,
 	}
 
 	resources, err := loadResources(k8s)
@@ -67,6 +73,7 @@ func (env *Env) Start() *ActiveEnv {
 
 	return &ActiveEnv{
 		k8s:       k8s,
+		scheme:    env.Scheme,
 		resources: resources,
 	}
 }
@@ -75,6 +82,7 @@ type k8s struct {
 	client.Client
 	*kubernetes.Clientset
 	dynamic.Interface
+	Cfg *rest.Config
 }
 
 func (k k8s) namespaceableResource(gvr schema.GroupVersionResource) dynamic.NamespaceableResourceInterface {
@@ -83,7 +91,7 @@ func (k k8s) namespaceableResource(gvr schema.GroupVersionResource) dynamic.Name
 
 type ActiveEnv struct {
 	*k8s
-
+	scheme    *apiruntime.Scheme
 	resources []schema.GroupVersionResource
 }
 
@@ -117,6 +125,10 @@ func loadResources(k *k8s) ([]schema.GroupVersionResource, error) {
 				continue
 			}
 
+			if filteredKind(r.Kind) {
+				continue
+			}
+
 			resources = append(resources, gv.WithResource(r.Name))
 		}
 	}
@@ -141,8 +153,6 @@ func (env *Env) StopAndExit(code int) {
 	os.Exit(code)
 }
 
-
-
 func in(haystack []string, needle string) bool {
 	for _, s := range haystack {
 		if needle == s {
@@ -150,4 +160,8 @@ func in(haystack []string, needle string) bool {
 		}
 	}
 	return false
+}
+
+func filteredKind(k string) bool {
+	return k == "PodMetrics" || k == "Event" || k == "Endpoints" || k == "ControllerRevision"
 }

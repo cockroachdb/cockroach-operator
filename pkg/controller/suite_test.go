@@ -10,7 +10,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	crdbv1alpha1 "github.com/cockroachlabs/crdb-operator/api/v1alpha1"
+	api "github.com/cockroachlabs/crdb-operator/api/v1alpha1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -52,7 +52,7 @@ var _ = BeforeSuite(func(done Done) {
 	Expect(err).ToNot(HaveOccurred())
 	Expect(cfg).ToNot(BeNil())
 
-	err = crdbv1alpha1.AddToScheme(scheme.Scheme)
+	err = api.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	k8sManager, err := ctrl.NewManager(cfg, ctrl.Options{
@@ -61,7 +61,7 @@ var _ = BeforeSuite(func(done Done) {
 	})
 	Expect(err).ToNot(HaveOccurred())
 
-	err = (&CrdbClusterReconciler{
+	err = (&ClusterReconciler{
 		Client: k8sManager.GetClient(),
 		Log:    ctrl.Log.WithName("controller").WithName("CrdbCluster"),
 		Scheme: k8sManager.GetScheme(),
