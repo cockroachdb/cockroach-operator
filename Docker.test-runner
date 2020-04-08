@@ -3,7 +3,7 @@ FROM golang:1.14.1-alpine3.11
 RUN apk add --no-cache curl make
 
 # curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt
-ENV KB_VERSION 2.3.0
+ENV KB_VERSION 2.3.1
 
 ENV KUBEBUILDER_ASSETS /kubebuilder
 ENV CGO_ENABLED 0
