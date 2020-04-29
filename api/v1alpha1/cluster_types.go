@@ -6,21 +6,6 @@ import (
 
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// AvailabilityZone represents one failure domain within the cluster
-type AvailabilityZone struct {
-	// Locality to use
-	Locality string `json:"locality"`
-	// Suffix to add to add to stateful set name
-	StatefulSetSuffix string `json:"suffix,omitempty"`
-	//Labels to target Kubernetes nodes
-	Labels map[string]string `json:"labels,omitempty"`
-}
-
-type Topology struct {
-	// List of availability zones
-	Zones []AvailabilityZone `json:"zones,omitempty"`
-}
-
 // CrdblusterSpec defines the desired state of Cluster
 type CrdbClusterSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file

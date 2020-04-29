@@ -72,7 +72,7 @@ func (cluster Cluster) InitTime() metav1.Time {
 	return cluster.initTime
 }
 
-func (cluster Cluster) DiscoverServiceName() string {
+func (cluster Cluster) DiscoveryServiceName() string {
 	return cluster.Name()
 }
 

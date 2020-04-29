@@ -46,7 +46,7 @@ func (r *ClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			if err := a.Act(ctx, &cluster); err != nil {
 				if notReadyErr, ok := err.(actor.NotReadyErr); ok {
 					log.Info("requeuing", "reason", notReadyErr.Error())
-					return requeueImmediately()
+					return requeueAfter(5*time.Second, nil)
 				}
 
 				log.Error(err, "action failed")

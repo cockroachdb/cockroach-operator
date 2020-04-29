@@ -20,7 +20,7 @@ type DiscoveryServiceBuilder struct {
 func (b DiscoveryServiceBuilder) Build() (runtime.Object, error) {
 	service := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        b.DiscoverServiceName(),
+			Name:        b.DiscoveryServiceName(),
 			Labels:      map[string]string{},
 			Annotations: b.monitoringAnnotations(),
 		},
@@ -41,7 +41,7 @@ func (b DiscoveryServiceBuilder) Build() (runtime.Object, error) {
 func (b DiscoveryServiceBuilder) Placeholder() runtime.Object {
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: b.DiscoverServiceName(),
+			Name: b.DiscoveryServiceName(),
 		},
 	}
 }

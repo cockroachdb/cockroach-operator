@@ -61,9 +61,9 @@ func TestTopologyPlanner(t *testing.T) {
 			},
 			nodes: 3,
 			expected: map[key]value{
-				key{"crdb-a", "zone=zone-a"}: {1, "crdb-a-0.crdb-a.test-ns:26257,crdb-b-0.crdb-b.test-ns:26257,crdb-c-0.crdb-c.test-ns:26257"},
-				key{"crdb-b", "zone=zone-b"}: {1, "crdb-a-0.crdb-a.test-ns:26257,crdb-b-0.crdb-b.test-ns:26257,crdb-c-0.crdb-c.test-ns:26257"},
-				key{"crdb-c", "zone=zone-c"}: {1, "crdb-a-0.crdb-a.test-ns:26257,crdb-b-0.crdb-b.test-ns:26257,crdb-c-0.crdb-c.test-ns:26257"},
+				key{"crdb-a", "zone=zone-a"}: {1, "crdb-a-0.crdb.test-ns:26257,crdb-b-0.crdb.test-ns:26257,crdb-c-0.crdb.test-ns:26257"},
+				key{"crdb-b", "zone=zone-b"}: {1, "crdb-a-0.crdb.test-ns:26257,crdb-b-0.crdb.test-ns:26257,crdb-c-0.crdb.test-ns:26257"},
+				key{"crdb-c", "zone=zone-c"}: {1, "crdb-a-0.crdb.test-ns:26257,crdb-b-0.crdb.test-ns:26257,crdb-c-0.crdb.test-ns:26257"},
 			},
 		},
 		{
@@ -82,8 +82,8 @@ func TestTopologyPlanner(t *testing.T) {
 			},
 			nodes: 2,
 			expected: map[key]value{
-				key{"crdb-a", "zone=zone-a"}: {1, "crdb-a-0.crdb-a.test-ns:26257,crdb-b-0.crdb-b.test-ns:26257"},
-				key{"crdb-b", "zone=zone-b"}: {1, "crdb-a-0.crdb-a.test-ns:26257,crdb-b-0.crdb-b.test-ns:26257"},
+				key{"crdb-a", "zone=zone-a"}: {1, "crdb-a-0.crdb.test-ns:26257,crdb-b-0.crdb.test-ns:26257"},
+				key{"crdb-b", "zone=zone-b"}: {1, "crdb-a-0.crdb.test-ns:26257,crdb-b-0.crdb.test-ns:26257"},
 			},
 		},
 		{
@@ -110,10 +110,10 @@ func TestTopologyPlanner(t *testing.T) {
 			},
 			nodes: 5,
 			expected: map[key]value{
-				key{"crdb-a", "zone=zone-a"}: {2, "crdb-a-0.crdb-a.test-ns:26257,crdb-b-0.crdb-b.test-ns:26257,crdb-c-0.crdb-c.test-ns:26257,crdb-d-0.crdb-d.test-ns:26257"},
-				key{"crdb-b", "zone=zone-b"}: {1, "crdb-a-0.crdb-a.test-ns:26257,crdb-b-0.crdb-b.test-ns:26257,crdb-c-0.crdb-c.test-ns:26257,crdb-d-0.crdb-d.test-ns:26257"},
-				key{"crdb-c", "zone=zone-c"}: {1, "crdb-a-0.crdb-a.test-ns:26257,crdb-b-0.crdb-b.test-ns:26257,crdb-c-0.crdb-c.test-ns:26257,crdb-d-0.crdb-d.test-ns:26257"},
-				key{"crdb-d", "zone=zone-d"}: {1, "crdb-a-0.crdb-a.test-ns:26257,crdb-b-0.crdb-b.test-ns:26257,crdb-c-0.crdb-c.test-ns:26257,crdb-d-0.crdb-d.test-ns:26257"},
+				key{"crdb-a", "zone=zone-a"}: {2, "crdb-a-0.crdb.test-ns:26257,crdb-b-0.crdb.test-ns:26257,crdb-c-0.crdb.test-ns:26257,crdb-d-0.crdb.test-ns:26257"},
+				key{"crdb-b", "zone=zone-b"}: {1, "crdb-a-0.crdb.test-ns:26257,crdb-b-0.crdb.test-ns:26257,crdb-c-0.crdb.test-ns:26257,crdb-d-0.crdb.test-ns:26257"},
+				key{"crdb-c", "zone=zone-c"}: {1, "crdb-a-0.crdb.test-ns:26257,crdb-b-0.crdb.test-ns:26257,crdb-c-0.crdb.test-ns:26257,crdb-d-0.crdb.test-ns:26257"},
+				key{"crdb-d", "zone=zone-d"}: {1, "crdb-a-0.crdb.test-ns:26257,crdb-b-0.crdb.test-ns:26257,crdb-c-0.crdb.test-ns:26257,crdb-d-0.crdb.test-ns:26257"},
 			},
 		},
 		{
@@ -136,9 +136,9 @@ func TestTopologyPlanner(t *testing.T) {
 			},
 			nodes: 4,
 			expected: map[key]value{
-				key{"crdb-a", "zone=zone-a"}: {2, "crdb-a-0.crdb-a.test-ns:26257,crdb-b-0.crdb-b.test-ns:26257,crdb-c-0.crdb-c.test-ns:26257"},
-				key{"crdb-b", "zone=zone-b"}: {1, "crdb-a-0.crdb-a.test-ns:26257,crdb-b-0.crdb-b.test-ns:26257,crdb-c-0.crdb-c.test-ns:26257"},
-				key{"crdb-c", "zone=zone-c"}: {1, "crdb-a-0.crdb-a.test-ns:26257,crdb-b-0.crdb-b.test-ns:26257,crdb-c-0.crdb-c.test-ns:26257"},
+				key{"crdb-a", "zone=zone-a"}: {2, "crdb-a-0.crdb.test-ns:26257,crdb-b-0.crdb.test-ns:26257,crdb-c-0.crdb.test-ns:26257"},
+				key{"crdb-b", "zone=zone-b"}: {1, "crdb-a-0.crdb.test-ns:26257,crdb-b-0.crdb.test-ns:26257,crdb-c-0.crdb.test-ns:26257"},
+				key{"crdb-c", "zone=zone-c"}: {1, "crdb-a-0.crdb.test-ns:26257,crdb-b-0.crdb.test-ns:26257,crdb-c-0.crdb.test-ns:26257"},
 			},
 		},
 		{
@@ -157,8 +157,8 @@ func TestTopologyPlanner(t *testing.T) {
 			},
 			nodes: 5,
 			expected: map[key]value{
-				key{"crdb-a", "zone=zone-a"}: {3, "crdb-a-0.crdb-a.test-ns:26257,crdb-a-1.crdb-a.test-ns:26257,crdb-b-0.crdb-b.test-ns:26257"},
-				key{"crdb-b", "zone=zone-b"}: {2, "crdb-a-0.crdb-a.test-ns:26257,crdb-a-1.crdb-a.test-ns:26257,crdb-b-0.crdb-b.test-ns:26257"},
+				key{"crdb-a", "zone=zone-a"}: {3, "crdb-a-0.crdb.test-ns:26257,crdb-a-1.crdb.test-ns:26257,crdb-b-0.crdb.test-ns:26257"},
+				key{"crdb-b", "zone=zone-b"}: {2, "crdb-a-0.crdb.test-ns:26257,crdb-a-1.crdb.test-ns:26257,crdb-b-0.crdb.test-ns:26257"},
 			},
 		},
 		{
@@ -177,8 +177,8 @@ func TestTopologyPlanner(t *testing.T) {
 			},
 			nodes: 1,
 			expected: map[key]value{
-				key{"crdb-a", "zone=zone-a"}: {1, "crdb-a-0.crdb-a.test-ns:26257"},
-				key{"crdb-b", "zone=zone-b"}: {0, "crdb-a-0.crdb-a.test-ns:26257"},
+				key{"crdb-a", "zone=zone-a"}: {1, "crdb-a-0.crdb.test-ns:26257"},
+				key{"crdb-b", "zone=zone-b"}: {0, "crdb-a-0.crdb.test-ns:26257"},
 			},
 		},
 		{

@@ -51,7 +51,7 @@ func (b StatefulSetBuilder) Build() (runtime.Object, error) {
 			Labels: map[string]string{},
 		},
 		Spec: appsv1.StatefulSetSpec{
-			ServiceName: b.Name,
+			ServiceName: b.Cluster.DiscoveryServiceName(),
 			Replicas:    ptr.Int32(b.Nodes),
 			UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
 				RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{},
@@ -79,7 +79,7 @@ func (b StatefulSetBuilder) Build() (runtime.Object, error) {
 func (b StatefulSetBuilder) Placeholder() runtime.Object {
 	return &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: b.StatefulSetName(),
+			Name: b.Name,
 		},
 	}
 }
@@ -91,7 +91,7 @@ func (b StatefulSetBuilder) makePodTemplate() corev1.PodTemplateSpec {
 		},
 		Spec: corev1.PodSpec{
 			TerminationGracePeriodSeconds: ptr.Int64(60),
-			NodeSelector:                  b.nodeSelectorOrNil(),
+			NodeSelector:                  b.NodeSelector,
 			Containers:                    b.makeContainers(),
 		},
 	}
@@ -160,17 +160,6 @@ func (b StatefulSetBuilder) makeContainers() []corev1.Container {
 			},
 		},
 	}
-}
-
-func (b StatefulSetBuilder) nodeSelectorOrNil() map[string]string {
-	if b.NodeSelector == nil {
-		return nil
-	}
-
-	selector := b.Selector.Copy()
-	selector.Merge(b.NodeSelector)
-
-	return selector.AsMap()
 }
 
 func (b StatefulSetBuilder) localityOrNothing() string {

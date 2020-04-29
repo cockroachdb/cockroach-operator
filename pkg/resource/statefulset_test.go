@@ -89,9 +89,6 @@ func insecureOneNode() *appsv1.StatefulSet {
 				Spec: corev1.PodSpec{
 					TerminationGracePeriodSeconds: ptr.Int64(60),
 					NodeSelector: map[string]string{
-						"app.kubernetes.io/name":                 "cockroachdb",
-						"app.kubernetes.io/instance":             "test-cluster",
-						"app.kubernetes.io/component":            "database",
 						"failure-domain.beta.kubernetes.io/zone": "zone-a",
 					},
 					Containers: []corev1.Container{

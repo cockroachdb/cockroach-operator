@@ -18,7 +18,7 @@ func (p TopologyPlanner) ForEachZone(updater AZUpdater) error {
 
 	stsNames := make([]string, len(topology.Zones))
 	for i, zone := range topology.Zones {
-		stsNames[i] = p.Cluster.StatefulSetName() + zone.StatefulSetSuffix
+		stsNames[i] = zone.Name(p.Cluster.StatefulSetName())
 	}
 
 	buckets, joinStr := p.plan(int(p.Cluster.Spec().Nodes), stsNames, topology.Zones)
@@ -44,7 +44,7 @@ func (p TopologyPlanner) plan(nodes int, stsNames []string, zones []api.Availabi
 
 		node := func(id int) string {
 			node := fmt.Sprintf("%s-%d", stsNames[i], id)
-			return fmt.Sprintf("%s.%s.%s", node, stsNames[i], p.Cluster.Namespace())
+			return fmt.Sprintf("%s.%s.%s", node, p.Cluster.DiscoveryServiceName(), p.Cluster.Namespace())
 		}
 
 		// All first nodes go into the seeds list

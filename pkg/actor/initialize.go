@@ -37,9 +37,11 @@ func (init initialize) Act(ctx context.Context, cluster *resource.Cluster) error
 	log := init.log.WithValues("CrdbCluster", cluster.ObjectKey())
 	log.Info("initializing CockroachDB")
 
+	stsName := init.firstStatefulSetName(cluster)
+
 	key := kubetypes.NamespacedName{
 		Namespace: cluster.Namespace(),
-		Name:      cluster.StatefulSetName(),
+		Name:      stsName,
 	}
 	ss := &appsv1.StatefulSet{}
 	if err := init.client.Get(ctx, key, ss); err != nil {
@@ -60,14 +62,13 @@ func (init initialize) Act(ctx context.Context, cluster *resource.Cluster) error
 		">- /cockroach/cockroach init --insecure",
 	}
 
-	_, _, err := kube.ExecInPod(init.scheme, init.config, cluster.Namespace(),
-		fmt.Sprintf("%s-0", cluster.StatefulSetName()), resource.DbContainerName, cmd)
+	_, stderr, err := kube.ExecInPod(init.scheme, init.config, cluster.Namespace(),
+		fmt.Sprintf("%s-0", stsName), resource.DbContainerName, cmd)
 
-	if err != nil {
+	if err != nil && !alreadyInitialized(stderr) {
 		// can happen if container has not finished its startup
 		if strings.Contains(err.Error(), "unable to upgrade connection: container not found") {
-			CancelLoop(ctx)
-			return nil
+			return NotReadyErr{Err: errors.New("pod has not complitely started")}
 		}
 
 		return errors.Wrapf(err, "failed to initialize the cluster")
@@ -77,4 +78,14 @@ func (init initialize) Act(ctx context.Context, cluster *resource.Cluster) error
 
 	log.Info("completed")
 	return nil
+}
+
+func (init initialize) firstStatefulSetName(cluster *resource.Cluster) string {
+	zone := cluster.Spec().Topology.Zones[0]
+
+	return zone.Name(cluster.StatefulSetName())
+}
+
+func alreadyInitialized(out string) bool {
+	return strings.Contains(out, "cluster has already been initialized")
 }

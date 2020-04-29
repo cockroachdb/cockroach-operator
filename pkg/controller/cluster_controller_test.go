@@ -19,6 +19,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"testing"
+	"time"
 )
 
 type fakeActor struct {
@@ -92,7 +93,7 @@ func TestReconcile(t *testing.T) {
 			action: fakeActor{
 				err: actor.NotReadyErr{Err: errors.New("not ready")},
 			},
-			want:    ctrl.Result{Requeue: true},
+			want:    ctrl.Result{RequeueAfter: 5 * time.Second},
 			wantErr: "",
 		},
 	}
