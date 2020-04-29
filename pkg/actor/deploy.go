@@ -26,7 +26,7 @@ func (d deploy) Handles(conds []api.ClusterCondition) bool {
 
 func (d deploy) Act(ctx context.Context, cluster *resource.Cluster) error {
 	log := d.log.WithValues("CrdbCluster", cluster.ObjectKey())
-	log.Info("reconcillng resources")
+	log.Info("reconciling resources")
 
 	r := resource.NewKubeResource(ctx, cluster, d.scheme, d.client)
 
