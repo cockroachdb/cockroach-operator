@@ -30,8 +30,10 @@ func TestReconcile(t *testing.T) {
 	}
 
 	r := resource.Reconciler{
-		Resource: resource.NewKubeResource(ctx, cluster, scheme, client),
-		Builder:  builder,
+		ManagedResource: resource.NewManagedKubeResource(ctx, client, cluster),
+		Builder:         builder,
+		Owner:           cluster.Unwrap(),
+		Scheme:          scheme,
 	}
 
 	upserted, err := r.Reconcile()

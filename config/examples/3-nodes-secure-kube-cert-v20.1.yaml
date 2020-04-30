@@ -1,0 +1,12 @@
+apiVersion: crdb.cockroachlabs.com/v1alpha1
+kind: CrdbCluster
+metadata:
+  name: crdb
+  namespace: playground
+spec:
+  dataStore:
+    emptyDir: {}
+  tlsEnabled: true
+  nodeTLSSecret: GENERATED
+  image: cockroachdb/cockroach-unstable:v20.1.0
+  nodes: 3

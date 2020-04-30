@@ -2,6 +2,7 @@ package resource
 
 import (
 	"fmt"
+	api "github.com/cockroachlabs/crdb-operator/api/v1alpha1"
 	"github.com/cockroachlabs/crdb-operator/pkg/labels"
 	"github.com/cockroachlabs/crdb-operator/pkg/ptr"
 	appsv1 "k8s.io/api/apps/v1"
@@ -17,6 +18,8 @@ const (
 
 	dataDirName      = "datadir"
 	dataDirMountPath = "/cockroach/cockroach-data/"
+
+	certsDirName = "certs"
 
 	DbContainerName = "db"
 )
@@ -73,6 +76,61 @@ func (b StatefulSetBuilder) Build() (runtime.Object, error) {
 		return nil, err
 	}
 
+	if b.Spec().TLSEnabled {
+		if err := addCertsVolumeMount(DbContainerName, &ss.Spec.Template.Spec); err != nil {
+			return nil, err
+		}
+
+		ss.Spec.Template.Spec.Volumes = append(ss.Spec.Template.Spec.Volumes, corev1.Volume{
+			Name: certsDirName,
+			VolumeSource: corev1.VolumeSource{
+				Projected: &corev1.ProjectedVolumeSource{
+					DefaultMode: ptr.Int32(0400),
+					Sources: []corev1.VolumeProjection{
+						{
+							Secret: &corev1.SecretProjection{
+								LocalObjectReference: corev1.LocalObjectReference{
+									Name: b.nodeTLSSecretName(),
+								},
+								Items: []corev1.KeyToPath{
+									{
+										Key:  "ca.crt",
+										Path: "ca.crt",
+									},
+									{
+										Key:  corev1.TLSCertKey,
+										Path: "node.crt",
+									},
+									{
+										Key:  corev1.TLSPrivateKeyKey,
+										Path: "node.key",
+									},
+								},
+							},
+						},
+						{
+							Secret: &corev1.SecretProjection{
+								LocalObjectReference: corev1.LocalObjectReference{
+									Name: b.clientTLSSecretName(),
+								},
+								Items: []corev1.KeyToPath{
+									{
+										Key:  corev1.TLSCertKey,
+										Path: "client.root.crt",
+									},
+									{
+										Key:  corev1.TLSPrivateKeyKey,
+										Path: "client.root.key",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		})
+	}
+
 	return ss, nil
 }
 
@@ -111,7 +169,7 @@ func (b StatefulSetBuilder) makeContainers() []corev1.Container {
 					" --join=" + b.JoinStr +
 					" --advertise-host=$(hostname -f)" +
 					" --logtostderr=INFO" +
-					" --insecure" +
+					b.Cluster.SecureMode() +
 					" --http-port=" + fmt.Sprint(*b.Spec().HTTPPort) +
 					" --port=" + fmt.Sprint(*b.Spec().GRPCPort) +
 					" --cache=25%" +
@@ -140,8 +198,9 @@ func (b StatefulSetBuilder) makeContainers() []corev1.Container {
 			LivenessProbe: &corev1.Probe{
 				Handler: corev1.Handler{
 					HTTPGet: &corev1.HTTPGetAction{
-						Path: "/health",
-						Port: intstr.FromString(httpPortName),
+						Path:   "/health",
+						Port:   intstr.FromString(httpPortName),
+						Scheme: b.probeScheme(),
 					},
 				},
 				InitialDelaySeconds: 30,
@@ -150,8 +209,9 @@ func (b StatefulSetBuilder) makeContainers() []corev1.Container {
 			ReadinessProbe: &corev1.Probe{
 				Handler: corev1.Handler{
 					HTTPGet: &corev1.HTTPGetAction{
-						Path: "/health?ready=1",
-						Port: intstr.FromString(httpPortName),
+						Path:   "/health?ready=1",
+						Port:   intstr.FromString(httpPortName),
+						Scheme: b.probeScheme(),
 					},
 				},
 				InitialDelaySeconds: 10,
@@ -168,4 +228,58 @@ func (b StatefulSetBuilder) localityOrNothing() string {
 	}
 
 	return " --locality=" + b.Locality
+}
+
+func (b StatefulSetBuilder) secureMode() string {
+	if b.Cluster.Spec().TLSEnabled {
+		return " --certs-dir=/cockroach/cockroach-certs/"
+	}
+
+	return " --insecure"
+}
+
+func (b StatefulSetBuilder) probeScheme() corev1.URIScheme {
+	if b.Cluster.Spec().TLSEnabled {
+		return corev1.URISchemeHTTPS
+	}
+
+	return corev1.URISchemeHTTP
+}
+
+func (b StatefulSetBuilder) nodeTLSSecretName() string {
+	if b.Cluster.Spec().NodeTLSSecret == api.NodeTLSSecretKeyword {
+		return b.Cluster.NodeTLSSecretName()
+	}
+
+	return b.Cluster.Spec().NodeTLSSecret
+}
+
+func (b StatefulSetBuilder) clientTLSSecretName() string {
+	if b.Cluster.Spec().NodeTLSSecret == api.NodeTLSSecretKeyword {
+		return b.Cluster.ClientTLSSecretName()
+	}
+
+	return b.Cluster.Spec().ClientTLSSecret
+}
+
+func addCertsVolumeMount(container string, spec *corev1.PodSpec) error {
+	found := false
+	for i, _ := range spec.Containers {
+		c := &spec.Containers[i]
+		if c.Name == container {
+			found = true
+
+			c.VolumeMounts = append(c.VolumeMounts, corev1.VolumeMount{
+				Name:      certsDirName,
+				MountPath: "/cockroach/cockroach-certs/",
+			})
+			break
+		}
+	}
+
+	if !found {
+		return fmt.Errorf("failed to find container %s to attach volume", container)
+	}
+
+	return nil
 }

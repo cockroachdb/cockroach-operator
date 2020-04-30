@@ -1,0 +1,19 @@
+apiVersion: crdb.cockroachlabs.com/v1alpha1
+kind: CrdbCluster
+metadata:
+  name: crdb
+spec:
+  tlsEnabled: true
+  nodeTLSSecret: GENERATED
+  dataStore:
+    pvc:
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 60Gi
+        storageClassName: crdb-io1
+        volumeMode: Filesystem
+  image: cockroachdb/cockroach:v19.2.6
+  nodes: 3

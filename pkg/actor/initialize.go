@@ -5,8 +5,8 @@ import (
 	"fmt"
 	api "github.com/cockroachlabs/crdb-operator/api/v1alpha1"
 	"github.com/cockroachlabs/crdb-operator/pkg/condition"
+	"github.com/cockroachlabs/crdb-operator/pkg/kube"
 	"github.com/cockroachlabs/crdb-operator/pkg/resource"
-	"github.com/cockroachlabs/crdb-operator/pkg/resource/kube"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -46,7 +46,7 @@ func (init initialize) Act(ctx context.Context, cluster *resource.Cluster) error
 	ss := &appsv1.StatefulSet{}
 	if err := init.client.Get(ctx, key, ss); err != nil {
 		log.Info("failed to fetch statefulset")
-		return client.IgnoreNotFound(err)
+		return kube.IgnoreNotFound(err)
 	}
 
 	status := &ss.Status
@@ -59,7 +59,7 @@ func (init initialize) Act(ctx context.Context, cluster *resource.Cluster) error
 	cmd := []string{
 		"/bin/bash",
 		"-c",
-		">- /cockroach/cockroach init --insecure",
+		">- /cockroach/cockroach init" + cluster.SecureMode(),
 	}
 
 	_, stderr, err := kube.ExecInPod(init.scheme, init.config, cluster.Namespace(),

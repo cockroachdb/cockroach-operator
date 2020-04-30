@@ -28,14 +28,18 @@ func (d deploy) Act(ctx context.Context, cluster *resource.Cluster) error {
 	log := d.log.WithValues("CrdbCluster", cluster.ObjectKey())
 	log.Info("reconciling resources")
 
-	r := resource.NewKubeResource(ctx, cluster, d.scheme, d.client)
+	r := resource.NewManagedKubeResource(ctx, d.client, cluster)
+
+	owner := cluster.Unwrap()
 
 	changed, err := (resource.Reconciler{
-		Resource: r,
+		ManagedResource: r,
 		Builder: resource.DiscoveryServiceBuilder{
 			Cluster:  cluster,
 			Selector: r.Labels.Selector(),
 		},
+		Owner:  owner,
+		Scheme: d.scheme,
 	}).Reconcile()
 	if err != nil {
 		return errors.Wrap(err, "failed to reconcile discovery service")
@@ -48,11 +52,13 @@ func (d deploy) Act(ctx context.Context, cluster *resource.Cluster) error {
 	}
 
 	changed, err = (resource.Reconciler{
-		Resource: r,
+		ManagedResource: r,
 		Builder: resource.PublicServiceBuilder{
 			Cluster:  cluster,
 			Selector: r.Labels.Selector(),
 		},
+		Owner:  owner,
+		Scheme: d.scheme,
 	}).Reconcile()
 	if err != nil {
 		return errors.Wrap(err, "failed to reconcile public service")
@@ -75,9 +81,14 @@ func (d deploy) Act(ctx context.Context, cluster *resource.Cluster) error {
 		}
 
 		changed, err = (resource.Reconciler{
-			Resource: r,
-			Builder:  resource.NewStatefulSetBuilder(cluster, name, nodesNum, join, locality, nodeSelector),
+			ManagedResource: r,
+			Builder:         resource.NewStatefulSetBuilder(cluster, name, nodesNum, join, locality, nodeSelector),
+			Owner:           owner,
+			Scheme:          d.scheme,
 		}).Reconcile()
+		if err != nil {
+			return err
+		}
 
 		return nil
 	})
