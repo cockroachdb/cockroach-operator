@@ -1,7 +1,6 @@
 package v1alpha1
 
 import (
-	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -10,21 +9,26 @@ import (
 // CrdblusterSpec defines the desired state of Cluster
 type CrdbClusterSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
-	GrpcPort  *int32                  `json:"grpcPort,omitempty"`
-	HttpPort  *int32                  `json:"httpPort,omitempty"`
-	NodesSpec *appsv1.StatefulSetSpec `json:"nodeTemplate,omitempty"`
+	Nodes     int32     `json:"nodes"`
+	Image     string    `json:"image,omitempty"`
+	GRPCPort  *int32    `json:"grpcPort,omitempty"`
+	HTTPPort  *int32    `json:"httpPort,omitempty"`
+	DataStore Volume    `json:"dataStore,omitempty"`
+	Topology  *Topology `json:"topology,omitempty"`
 }
 
 // CrdbClusterStatus defines the observed state of Cluster
 type CrdbClusterStatus struct {
 	// Important: Run "make" to regenerate code after modifying this file
-	Version string `json:"version,omitempty"`
+	Conditions []ClusterCondition `json:"conditions,omitempty"`
+	Version    string             `json:"version,omitempty"`
 }
 
 // +genclient
-// +genclient:noStatus
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +kubebuilder:object:root=true
 // +kubebuilder:resource:categories=all;cockroachdb
+// +kubebuilder:subresource:status
 
 // CrdbCluster is the Schema for the clusters API
 type CrdbCluster struct {

@@ -1,0 +1,31 @@
+apiVersion: crdb.cockroachlabs.com/v1alpha1
+kind: CrdbCluster
+metadata:
+  name: crdb
+spec:
+  dataStore:
+    pvc:
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 60Gi
+        storageClassName: crdb-io1
+        volumeMode: Filesystem
+  topology:
+    zones:
+    - locality: region=us-west-2,zone=us-west-2a
+      suffix: -a
+      labels:
+        failure-domain.beta.kubernetes.io/zone: us-west-2a
+    - locality: region=us-west-2,zone=us-west-2b
+      suffix: -b
+      labels:
+        failure-domain.beta.kubernetes.io/zone: us-west-2b
+    - locality: region=us-west-2,zone=us-west-2c
+      suffix: -c
+      labels:
+        failure-domain.beta.kubernetes.io/zone: us-west-2c
+  image: cockroachdb/cockroach:v19.2.6
+  nodes: 3

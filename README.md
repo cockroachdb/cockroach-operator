@@ -11,6 +11,18 @@ k8s operator for CRDB
 
 The rest of dependencies are packed into Docker images which are executed from the [](Makefile)
 
+### Running operator in local development environment
+
+If you have kubectl configured to use a cluster, you can start the operator locally:
+
+```
+# Install CRD (you may need to add --validate=false for k8s version below 1.15
+kubectl apply -f ./config/crd/bases/crdb.cockroachlabs.com_crdbclusters.yaml
+
+# Start operator
+WATCH_NAMESPACE=default make run
+```
+
 ### Recipes:
 
 The main [](Makefile) provides a set of targets to automate development and deployment. Here are the most useful:

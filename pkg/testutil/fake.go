@@ -21,7 +21,7 @@ func NewFakeClient(scheme *runtime.Scheme, objs ...runtime.Object) *FakeClient {
 
 var _ client.Client = &FakeClient{}
 
-// FakeClient is inspired and  taken from https://github.com/kubernetes/client-go/
+// FakeClient is inspired and taken from https://github.com/kubernetes/client-go/
 type FakeClient struct {
 	client client.Client
 	scheme *runtime.Scheme
@@ -53,14 +53,30 @@ func NewGetAction(key client.ObjectKey, gvr schema.GroupVersionResource) Action 
 	}
 }
 
+func NewCreateAction(key client.ObjectKey, gvr schema.GroupVersionResource) Action {
+	return &GetAction{
+		verb: "create",
+		key:  key,
+		gvr:  gvr,
+	}
+}
+
 type Action interface {
 	Verb() string
 	GVR() schema.GroupVersionResource
+	Key() client.ObjectKey
 }
 
 var _ Action = &GetAction{}
 
 type GetAction struct {
+	verb string
+	key  client.ObjectKey
+	gvr  schema.GroupVersionResource
+	obj  runtime.Object
+}
+
+type CreateAction struct {
 	verb string
 	key  client.ObjectKey
 	gvr  schema.GroupVersionResource
@@ -105,6 +121,18 @@ func (a GetAction) GVR() schema.GroupVersionResource {
 	return a.gvr
 }
 
+func (a CreateAction) Verb() string {
+	return a.verb
+}
+
+func (a CreateAction) Key() client.ObjectKey {
+	return a.key
+}
+
+func (a CreateAction) GVR() schema.GroupVersionResource {
+	return a.gvr
+}
+
 func (c *FakeClient) AddReactor(verb string, resource string, reaction ReactionFunc) {
 	c.ReactionChain = append(c.ReactionChain, &simpleReactor{verb, resource, reaction})
 }
@@ -128,16 +156,28 @@ func (c *FakeClient) List(_ context.Context, list runtime.Object, opts ...client
 	panic("implement me")
 }
 
-func (c *FakeClient) Create(_ context.Context, obj runtime.Object, opts ...client.CreateOption) error {
-	panic("implement me")
+func (c *FakeClient) Create(ctx context.Context, obj runtime.Object, opts ...client.CreateOption) error {
+	gvr, err := getGVRFromObject(c.scheme, obj)
+	if err != nil {
+		return errors.Wrapf(err, "failed to find GVR of object")
+	}
+
+	key, _ := client.ObjectKeyFromObject(obj)
+	a := NewCreateAction(key, gvr)
+
+	if handled, err := c.invoke(a); handled {
+		return err
+	}
+
+	return c.client.Create(ctx, obj, opts...)
 }
 
 func (c *FakeClient) Delete(_ context.Context, obj runtime.Object, opts ...client.DeleteOption) error {
 	panic("implement me")
 }
 
-func (c *FakeClient) Update(_ context.Context, obj runtime.Object, opts ...client.UpdateOption) error {
-	panic("implement me")
+func (c *FakeClient) Update(ctx context.Context, obj runtime.Object, opts ...client.UpdateOption) error {
+	return c.client.Update(ctx, obj, opts...)
 }
 
 func (c *FakeClient) Patch(_ context.Context, obj runtime.Object, patch client.Patch, opts ...client.PatchOption) error {

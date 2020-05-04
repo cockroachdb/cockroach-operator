@@ -2,16 +2,19 @@ package main
 
 import (
 	"flag"
+	"fmt"
+	"github.com/cockroachlabs/crdb-operator/pkg/controller"
 	"os"
 
 	crdbv1alpha1 "github.com/cockroachlabs/crdb-operator/api/v1alpha1"
-	"github.com/cockroachlabs/crdb-operator/controller"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
+
+const WatchNamespaceEnvVar = "WATCH_NAMESPACE"
 
 var (
 	scheme   = runtime.NewScheme()
@@ -35,8 +38,15 @@ func main() {
 		o.Development = true
 	}))
 
+	namespace, err := GetWatchNamespace()
+	if err != nil {
+		setupLog.Error(err, "unable to get watch namespace")
+		os.Exit(1)
+	}
+
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:             scheme,
+		Namespace:          namespace,
 		MetricsBindAddress: metricsAddr,
 		LeaderElection:     enableLeaderElection,
 		Port:               9443,
@@ -46,11 +56,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controller.CrdbClusterReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controller").WithName("CrdbCluster"),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
+	reconciler := controller.InitClusterReconciler()
+	if err = reconciler(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "CrdbCluster")
 		os.Exit(1)
 	}
@@ -60,4 +67,13 @@ func main() {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
+}
+
+// GetWatchNamespace returns the namespace the operation should be watching for changes
+func GetWatchNamespace() (string, error) {
+	ns, found := os.LookupEnv(WatchNamespaceEnvVar)
+	if !found {
+		return "", fmt.Errorf("%s must be set", WatchNamespaceEnvVar)
+	}
+	return ns, nil
 }
