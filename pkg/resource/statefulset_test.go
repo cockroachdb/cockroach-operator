@@ -1,54 +1,53 @@
 package resource_test
 
 import (
+	"bytes"
+	"flag"
 	"fmt"
 	api "github.com/cockroachlabs/crdb-operator/api/v1alpha1"
 	"github.com/cockroachlabs/crdb-operator/pkg/labels"
-	"github.com/cockroachlabs/crdb-operator/pkg/ptr"
 	"github.com/cockroachlabs/crdb-operator/pkg/resource"
 	"github.com/cockroachlabs/crdb-operator/pkg/testutil"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
+	"io/ioutil"
+	"path/filepath"
+
 	"testing"
 )
 
-func TestStatefulSetBuilder(t *testing.T) {
-	cluster := testutil.NewBuilder("test-cluster").Namespaced("test-ns").
-		WithEmptyDirDataStore().WithNodeCount(1)
-	commonLabels := labels.Common(cluster.Cr())
+var update = flag.Bool("update", false, "update the golden files of this test")
 
-	tests := []struct {
-		name     string
-		cluster  *resource.Cluster
-		selector map[string]string
-		expected *appsv1.StatefulSet
-	}{
-		{
-			name:     "builds default insecure statefulset",
-			cluster:  cluster.Cluster(),
-			selector: commonLabels.Selector(),
-			expected: insecureOneNode(),
-		},
-		{
-			name:     "builds default secure statefulset",
-			cluster:  cluster.WithTLS().WithNodeTLS(api.NodeTLSSecretKeyword).Cluster(),
-			selector: commonLabels.Selector(),
-			expected: secureOneNode(),
-		},
+func TestStatefulSetBuilder(t *testing.T) {
+	sc := testutil.InitScheme(t)
+
+	decoder, encoder := testutil.Yamlizers(t, sc)
+
+	inputSuffix := "_in.yaml"
+	folder := filepath.Join("testdata", filepath.FromSlash(t.Name()))
+	testInputs := filepath.Join(folder, "/*"+inputSuffix)
+	clusterFiles, err := filepath.Glob(testInputs)
+	if err != nil || len(clusterFiles) == 0 {
+		t.Fatalf("failed to find cluster specs %s: %v", testInputs, err)
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, inFile := range clusterFiles {
+		testName := inFile[len(folder)+1 : len(inFile)-len(inputSuffix)]
+		clusterObj := decoder(load(t, inFile))
+		cr, ok := clusterObj.(*api.CrdbCluster)
+		if !ok {
+			t.Fatal("failed to deserialize CrdbCluster")
+		}
+		commonLabels := labels.Common(cr)
+		cluster := resource.NewCluster(cr)
+
+		t.Run(testName, func(t *testing.T) {
 			actual, err := resource.StatefulSetBuilder{
-				Cluster:  tt.cluster,
-				Name:     "test-cluster",
-				Nodes:    1,
-				Selector: tt.selector,
+				Cluster:         &cluster,
+				StatefulSetName: "test-cluster",
+				Nodes:           cr.Spec.Nodes,
+				Selector:        commonLabels.Selector(),
 				NodeSelector: map[string]string{
 					"failure-domain.beta.kubernetes.io/zone": "zone-a",
 				},
@@ -57,7 +56,14 @@ func TestStatefulSetBuilder(t *testing.T) {
 			}.Build()
 			require.NoError(t, err)
 
-			diff := cmp.Diff(tt.expected, actual, testutil.RuntimeObjCmpOpts...)
+			var buf bytes.Buffer
+			err = encoder(actual, &buf)
+			require.NoError(t, err)
+
+			expectedStr := testutil.ReadOrUpdateGoldenFile(t, buf.String(), *update)
+			expected := decoder([]byte(expectedStr))
+
+			diff := cmp.Diff(expected, actual, testutil.RuntimeObjCmpOpts...)
 			if diff != "" {
 				assert.Fail(t, fmt.Sprintf("unexpected result (-want +got):\n%v", diff))
 			}
@@ -65,282 +71,11 @@ func TestStatefulSetBuilder(t *testing.T) {
 	}
 }
 
-func insecureOneNode() *appsv1.StatefulSet {
-	return &appsv1.StatefulSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:   "test-cluster",
-			Labels: map[string]string{},
-		},
-		Spec: appsv1.StatefulSetSpec{
-			ServiceName: "test-cluster",
-			Replicas:    ptr.Int32(1),
-			UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
-				RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{},
-			},
-			PodManagementPolicy: appsv1.OrderedReadyPodManagement,
-			Selector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{
-					"app.kubernetes.io/name":      "cockroachdb",
-					"app.kubernetes.io/instance":  "test-cluster",
-					"app.kubernetes.io/component": "database",
-				},
-			},
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{
-						"app.kubernetes.io/name":      "cockroachdb",
-						"app.kubernetes.io/instance":  "test-cluster",
-						"app.kubernetes.io/component": "database",
-					},
-				},
-				Spec: corev1.PodSpec{
-					TerminationGracePeriodSeconds: ptr.Int64(60),
-					NodeSelector: map[string]string{
-						"failure-domain.beta.kubernetes.io/zone": "zone-a",
-					},
-					Containers: []corev1.Container{
-						{
-							Name:            "db",
-							Image:           "cockroachdb/cockroach:v19.2.6",
-							ImagePullPolicy: corev1.PullIfNotPresent,
-							Args: []string{
-								"shell",
-								"-ecx",
-								">- exec /cockroach/cockroach start" +
-									" --join=test-cluster-0.test-cluster.test-ns:26257" +
-									" --advertise-host=$(hostname -f)" +
-									" --logtostderr=INFO" +
-									" --insecure" +
-									" --http-port=8080" +
-									" --port=26257" +
-									" --cache=25%" +
-									" --max-sql-memory=25%",
-							},
-							Env: []corev1.EnvVar{
-								{
-									Name:  "COCKROACH_CHANNEL",
-									Value: "kubernetes-helm",
-								},
-							},
-							Ports: []corev1.ContainerPort{
-								{
-									Name:          "grpc",
-									ContainerPort: 26257,
-									Protocol:      corev1.ProtocolTCP,
-								},
-								{
-									Name:          "http",
-									ContainerPort: 8080,
-									Protocol:      corev1.ProtocolTCP,
-								},
-							},
-							LivenessProbe: &corev1.Probe{
-								Handler: corev1.Handler{
-									HTTPGet: &corev1.HTTPGetAction{
-										Path:   "/health",
-										Port:   intstr.FromString("http"),
-										Scheme: corev1.URISchemeHTTP,
-									},
-								},
-								InitialDelaySeconds: 30,
-								PeriodSeconds:       5,
-							},
-							ReadinessProbe: &corev1.Probe{
-								Handler: corev1.Handler{
-									HTTPGet: &corev1.HTTPGetAction{
-										Path:   "/health?ready=1",
-										Port:   intstr.FromString("http"),
-										Scheme: corev1.URISchemeHTTP,
-									},
-								},
-								InitialDelaySeconds: 10,
-								PeriodSeconds:       5,
-								FailureThreshold:    2,
-							},
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      "datadir",
-									MountPath: "/cockroach/cockroach-data/",
-								},
-							},
-						},
-					},
-					Volumes: []corev1.Volume{
-						{
-							Name: "datadir",
-							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{},
-							},
-						},
-					},
-				},
-			},
-		},
+func load(t *testing.T, file string) []byte {
+	content, err := ioutil.ReadFile(file)
+	if err != nil {
+		t.Fatalf("failed to load yaml file %s: %v", file, err)
 	}
-}
 
-func secureOneNode() *appsv1.StatefulSet {
-	return &appsv1.StatefulSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:   "test-cluster",
-			Labels: map[string]string{},
-		},
-		Spec: appsv1.StatefulSetSpec{
-			ServiceName: "test-cluster",
-			Replicas:    ptr.Int32(1),
-			UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
-				RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{},
-			},
-			PodManagementPolicy: appsv1.OrderedReadyPodManagement,
-			Selector: &metav1.LabelSelector{
-				MatchLabels: map[string]string{
-					"app.kubernetes.io/name":      "cockroachdb",
-					"app.kubernetes.io/instance":  "test-cluster",
-					"app.kubernetes.io/component": "database",
-				},
-			},
-			Template: corev1.PodTemplateSpec{
-				ObjectMeta: metav1.ObjectMeta{
-					Labels: map[string]string{
-						"app.kubernetes.io/name":      "cockroachdb",
-						"app.kubernetes.io/instance":  "test-cluster",
-						"app.kubernetes.io/component": "database",
-					},
-				},
-				Spec: corev1.PodSpec{
-					TerminationGracePeriodSeconds: ptr.Int64(60),
-					NodeSelector: map[string]string{
-						"failure-domain.beta.kubernetes.io/zone": "zone-a",
-					},
-					Containers: []corev1.Container{
-						{
-							Name:            "db",
-							Image:           "cockroachdb/cockroach:v19.2.6",
-							ImagePullPolicy: corev1.PullIfNotPresent,
-							Args: []string{
-								"shell",
-								"-ecx",
-								">- exec /cockroach/cockroach start" +
-									" --join=test-cluster-0.test-cluster.test-ns:26257" +
-									" --advertise-host=$(hostname -f)" +
-									" --logtostderr=INFO" +
-									" --certs-dir=/cockroach/cockroach-certs/" +
-									" --http-port=8080" +
-									" --port=26257" +
-									" --cache=25%" +
-									" --max-sql-memory=25%",
-							},
-							Env: []corev1.EnvVar{
-								{
-									Name:  "COCKROACH_CHANNEL",
-									Value: "kubernetes-helm",
-								},
-							},
-							Ports: []corev1.ContainerPort{
-								{
-									Name:          "grpc",
-									ContainerPort: 26257,
-									Protocol:      corev1.ProtocolTCP,
-								},
-								{
-									Name:          "http",
-									ContainerPort: 8080,
-									Protocol:      corev1.ProtocolTCP,
-								},
-							},
-							LivenessProbe: &corev1.Probe{
-								Handler: corev1.Handler{
-									HTTPGet: &corev1.HTTPGetAction{
-										Path:   "/health",
-										Port:   intstr.FromString("http"),
-										Scheme: corev1.URISchemeHTTPS,
-									},
-								},
-								InitialDelaySeconds: 30,
-								PeriodSeconds:       5,
-							},
-							ReadinessProbe: &corev1.Probe{
-								Handler: corev1.Handler{
-									HTTPGet: &corev1.HTTPGetAction{
-										Path:   "/health?ready=1",
-										Port:   intstr.FromString("http"),
-										Scheme: corev1.URISchemeHTTPS,
-									},
-								},
-								InitialDelaySeconds: 10,
-								PeriodSeconds:       5,
-								FailureThreshold:    2,
-							},
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      "datadir",
-									MountPath: "/cockroach/cockroach-data/",
-								},
-								{
-									Name:      "certs",
-									MountPath: "/cockroach/cockroach-certs/",
-								},
-							},
-						},
-					},
-					Volumes: []corev1.Volume{
-						{
-							Name: "datadir",
-							VolumeSource: corev1.VolumeSource{
-								EmptyDir: &corev1.EmptyDirVolumeSource{},
-							},
-						},
-						{
-							Name: "certs",
-							VolumeSource: corev1.VolumeSource{
-								Projected: &corev1.ProjectedVolumeSource{
-									DefaultMode: ptr.Int32(0400),
-									Sources: []corev1.VolumeProjection{
-										{
-											Secret: &corev1.SecretProjection{
-												LocalObjectReference: corev1.LocalObjectReference{
-													Name: "test-cluster-node",
-												},
-												Items: []corev1.KeyToPath{
-													{
-														Key:  "ca.crt",
-														Path: "ca.crt",
-													},
-													{
-														Key:  "tls.crt",
-														Path: "node.crt",
-													},
-													{
-														Key:  "tls.key",
-														Path: "node.key",
-													},
-												},
-											},
-										},
-										{
-											Secret: &corev1.SecretProjection{
-												LocalObjectReference: corev1.LocalObjectReference{
-													Name: "test-cluster-root",
-												},
-												Items: []corev1.KeyToPath{
-													{
-														Key:  "tls.crt",
-														Path: "client.root.crt",
-													},
-													{
-														Key:  "tls.key",
-														Path: "client.root.key",
-													},
-												},
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-	}
+	return content
 }

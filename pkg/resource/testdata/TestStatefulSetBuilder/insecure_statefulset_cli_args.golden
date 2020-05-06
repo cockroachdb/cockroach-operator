@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  creationTimestamp: null
+  name: test-cluster
+spec:
+  podManagementPolicy: OrderedReady
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: database
+      app.kubernetes.io/instance: test-cluster
+      app.kubernetes.io/name: cockroachdb
+  serviceName: test-cluster
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/component: database
+        app.kubernetes.io/instance: test-cluster
+        app.kubernetes.io/name: cockroachdb
+    spec:
+      containers:
+      - args:
+        - shell
+        - -ecx
+        - '>- exec /cockroach/cockroach start --join=test-cluster-0.test-cluster.test-ns:26257
+          --advertise-host=$(hostname -f) --logtostderr=INFO --insecure --http-port=8080
+          --port=26257 --cache=30% --max-sql-memory=2GB'
+        - --temp-dir=/tmp
+        env:
+        - name: COCKROACH_CHANNEL
+          value: kubernetes-helm
+        image: cockroachdb/cockroach:v19.2.6
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 5
+        name: db
+        ports:
+        - containerPort: 26257
+          name: grpc
+          protocol: TCP
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 2
+          httpGet:
+            path: /health?ready=1
+            port: http
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        resources: {}
+        volumeMounts:
+        - mountPath: /cockroach/cockroach-data/
+          name: datadir
+      nodeSelector:
+        failure-domain.beta.kubernetes.io/zone: zone-a
+      terminationGracePeriodSeconds: 60
+      volumes:
+      - emptyDir: {}
+        name: datadir
+  updateStrategy:
+    rollingUpdate: {}
+status:
+  replicas: 0

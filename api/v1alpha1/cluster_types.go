@@ -1,6 +1,7 @@
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -11,15 +12,24 @@ const NodeTLSSecretKeyword = "GENERATED"
 // CrdblusterSpec defines the desired state of Cluster
 type CrdbClusterSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
-	Nodes           int32     `json:"nodes"`
-	Image           string    `json:"image,omitempty"`
-	GRPCPort        *int32    `json:"grpcPort,omitempty"`
-	HTTPPort        *int32    `json:"httpPort,omitempty"`
-	TLSEnabled      bool      `json:"tlsEnabled,omitempty"`
-	NodeTLSSecret   string    `json:"nodeTLSSecret,omitempty"`
-	ClientTLSSecret string    `json:"clientTLSSecret,omitempty"`
-	DataStore       Volume    `json:"dataStore,omitempty"`
-	Topology        *Topology `json:"topology,omitempty"`
+	Nodes           int32  `json:"nodes"`
+	Image           string `json:"image,omitempty"`
+	GRPCPort        *int32 `json:"grpcPort,omitempty"`
+	HTTPPort        *int32 `json:"httpPort,omitempty"`
+	TLSEnabled      bool   `json:"tlsEnabled,omitempty"`
+	NodeTLSSecret   string `json:"nodeTLSSecret,omitempty"`
+	ClientTLSSecret string `json:"clientTLSSecret,omitempty"`
+	// The total size for caches (--cache command line parameter)
+	Cache string `json:"cache,omitempty"`
+	// The maximum in-memory storage capacity available to store temporary
+	// data for SQL queries (--max-sql-memory parameter)
+	MaxSQLMemory string `json:"maxSQLMemory,omitempty"`
+	// Optional command line args
+	AdditionalArgs []string `json:"additionalArgs,omitempty"`
+	// Resources set resource requests and limits for database containers
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+	DataStore Volume                      `json:"dataStore,omitempty"`
+	Topology  *Topology                   `json:"topology,omitempty"`
 }
 
 // CrdbClusterStatus defines the observed state of Cluster

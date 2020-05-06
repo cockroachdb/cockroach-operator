@@ -26,32 +26,31 @@ const (
 
 func NewStatefulSetBuilder(cluster *Cluster, name string, nodes int32, join string, locality string, nodeSelector map[string]string) StatefulSetBuilder {
 	return StatefulSetBuilder{
-		Cluster:      cluster,
-		Name:         name,
-		Nodes:        nodes,
-		Selector:     labels.Common(cluster.Unwrap()).Selector(),
-		NodeSelector: nodeSelector,
-		JoinStr:      join,
-		Locality:     locality,
+		Cluster:         cluster,
+		StatefulSetName: name,
+		Nodes:           nodes,
+		Selector:        labels.Common(cluster.Unwrap()).Selector(),
+		NodeSelector:    nodeSelector,
+		JoinStr:         join,
+		Locality:        locality,
 	}
 }
 
 type StatefulSetBuilder struct {
 	*Cluster
 
-	Name         string
-	Nodes        int32
-	NodeSelector map[string]string
-	Selector     labels.Labels
-	JoinStr      string
-	Locality     string
+	StatefulSetName string
+	Nodes           int32
+	NodeSelector    map[string]string
+	Selector        labels.Labels
+	JoinStr         string
+	Locality        string
 }
 
 func (b StatefulSetBuilder) Build() (runtime.Object, error) {
 	ss := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   b.Name,
-			Labels: map[string]string{},
+			Name: b.StatefulSetName,
 		},
 		Spec: appsv1.StatefulSetSpec{
 			ServiceName: b.Cluster.DiscoveryServiceName(),
@@ -137,7 +136,7 @@ func (b StatefulSetBuilder) Build() (runtime.Object, error) {
 func (b StatefulSetBuilder) Placeholder() runtime.Object {
 	return &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: b.Name,
+			Name: b.StatefulSetName,
 		},
 	}
 }
@@ -161,20 +160,8 @@ func (b StatefulSetBuilder) makeContainers() []corev1.Container {
 			Name:            DbContainerName,
 			Image:           b.Spec().Image,
 			ImagePullPolicy: corev1.PullIfNotPresent,
-			Args: []string{
-				"shell",
-				"-ecx",
-				">- exec /cockroach/cockroach start" +
-					b.localityOrNothing() +
-					" --join=" + b.JoinStr +
-					" --advertise-host=$(hostname -f)" +
-					" --logtostderr=INFO" +
-					b.Cluster.SecureMode() +
-					" --http-port=" + fmt.Sprint(*b.Spec().HTTPPort) +
-					" --port=" + fmt.Sprint(*b.Spec().GRPCPort) +
-					" --cache=25%" +
-					" --max-sql-memory=25%",
-			},
+			Resources:       b.Spec().Resources,
+			Args:            b.dbArgs(),
 			Env: []corev1.EnvVar{
 				{
 					Name: "COCKROACH_CHANNEL",
@@ -231,7 +218,7 @@ func (b StatefulSetBuilder) localityOrNothing() string {
 }
 
 func (b StatefulSetBuilder) secureMode() string {
-	if b.Cluster.Spec().TLSEnabled {
+	if b.Spec().TLSEnabled {
 		return " --certs-dir=/cockroach/cockroach-certs/"
 	}
 
@@ -239,7 +226,7 @@ func (b StatefulSetBuilder) secureMode() string {
 }
 
 func (b StatefulSetBuilder) probeScheme() corev1.URIScheme {
-	if b.Cluster.Spec().TLSEnabled {
+	if b.Spec().TLSEnabled {
 		return corev1.URISchemeHTTPS
 	}
 
@@ -247,19 +234,38 @@ func (b StatefulSetBuilder) probeScheme() corev1.URIScheme {
 }
 
 func (b StatefulSetBuilder) nodeTLSSecretName() string {
-	if b.Cluster.Spec().NodeTLSSecret == api.NodeTLSSecretKeyword {
+	if b.Spec().NodeTLSSecret == api.NodeTLSSecretKeyword {
 		return b.Cluster.NodeTLSSecretName()
 	}
 
-	return b.Cluster.Spec().NodeTLSSecret
+	return b.Spec().NodeTLSSecret
 }
 
 func (b StatefulSetBuilder) clientTLSSecretName() string {
-	if b.Cluster.Spec().NodeTLSSecret == api.NodeTLSSecretKeyword {
+	if b.Spec().NodeTLSSecret == api.NodeTLSSecretKeyword {
 		return b.Cluster.ClientTLSSecretName()
 	}
 
-	return b.Cluster.Spec().ClientTLSSecret
+	return b.Spec().ClientTLSSecret
+}
+
+func (b StatefulSetBuilder) dbArgs() []string {
+	aa := []string{
+		"shell",
+		"-ecx",
+		">- exec /cockroach/cockroach start" +
+			b.localityOrNothing() +
+			" --join=" + b.JoinStr +
+			" --advertise-host=$(hostname -f)" +
+			" --logtostderr=INFO" +
+			b.Cluster.SecureMode() +
+			" --http-port=" + fmt.Sprint(*b.Spec().HTTPPort) +
+			" --port=" + fmt.Sprint(*b.Spec().GRPCPort) +
+			" --cache=" + b.Spec().Cache +
+			" --max-sql-memory=" + b.Spec().MaxSQLMemory,
+	}
+
+	return append(aa, b.Spec().AdditionalArgs...)
 }
 
 func addCertsVolumeMount(container string, spec *corev1.PodSpec) error {

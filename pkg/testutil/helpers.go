@@ -1,8 +1,11 @@
 package testutil
 
 import (
+	"io"
 	"io/ioutil"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"path/filepath"
 	"testing"
@@ -38,4 +41,35 @@ func ReadOrUpdateGoldenFile(t *testing.T, content string, update bool) string {
 	}
 
 	return string(g)
+}
+
+func Yamlizers(t *testing.T, scheme *runtime.Scheme) (func([]byte) runtime.Object, func(runtime.Object, io.Writer) error) {
+	codecs := serializer.NewCodecFactory(scheme)
+
+	decode := codecs.UniversalDeserializer().Decode
+
+	yaml, ok := runtime.SerializerInfoForMediaType(codecs.SupportedMediaTypes(), "application/yaml")
+	if !ok {
+		t.Fatalf("no yaml encoder")
+	}
+
+	encoder := codecs.EncoderForVersion(yaml.Serializer, alwaysFirstKind{})
+
+	return func(b []byte) runtime.Object {
+		obj, kind, err := decode(b, nil, nil)
+		if err != nil {
+			t.Fatalf("error decoding %v: %v", kind, err)
+		}
+		return obj
+	}, encoder.Encode
+}
+
+type alwaysFirstKind struct{}
+
+func (k alwaysFirstKind) Identifier() string {
+	return "fake"
+}
+
+func (alwaysFirstKind) KindForGroupVersionKinds(kinds []schema.GroupVersionKind) (target schema.GroupVersionKind, ok bool) {
+	return kinds[0], true
 }

@@ -119,6 +119,12 @@ func (in *CrdbClusterSpec) DeepCopyInto(out *CrdbClusterSpec) {
 		*out = new(int32)
 		**out = **in
 	}
+	if in.AdditionalArgs != nil {
+		in, out := &in.AdditionalArgs, &out.AdditionalArgs
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
+	in.Resources.DeepCopyInto(&out.Resources)
 	in.DataStore.DeepCopyInto(&out.DataStore)
 	if in.Topology != nil {
 		in, out := &in.Topology, &out.Topology

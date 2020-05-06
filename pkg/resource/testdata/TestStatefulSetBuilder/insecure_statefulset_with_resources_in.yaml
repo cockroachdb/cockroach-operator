@@ -1,0 +1,22 @@
+apiVersion: crdb.cockroachlabs.com/v1alpha1
+kind: CrdbCluster
+metadata:
+  creationTimestamp: null
+  name: test-cluster
+  namespace: test-ns
+spec:
+  dataStore:
+    emptyDir: {}
+  grpcPort: 26257
+  httpPort: 8080
+  resources:
+    limits:
+      cpu: "1"
+    requests:
+      cpu: "0.5"
+  image: cockroachdb/cockroach:v19.2.6
+  nodes: 1
+  topology:
+    zones:
+    - locality: ""
+status: {}

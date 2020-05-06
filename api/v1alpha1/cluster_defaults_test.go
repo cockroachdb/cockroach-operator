@@ -11,8 +11,10 @@ func TestSetClusterSpecDefaults(t *testing.T) {
 	s := &CrdbClusterSpec{}
 
 	expected := &CrdbClusterSpec{
-		GRPCPort: &DefaultGRPCPort,
-		HTTPPort: &DefaultHTTPPort,
+		GRPCPort:     &DefaultGRPCPort,
+		HTTPPort:     &DefaultHTTPPort,
+		Cache:        "25%",
+		MaxSQLMemory: "25%",
 		Topology: &Topology{
 			Zones: []AvailabilityZone{{}},
 		},

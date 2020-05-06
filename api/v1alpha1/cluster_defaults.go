@@ -21,4 +21,12 @@ func SetClusterSpecDefaults(cs *CrdbClusterSpec) {
 	if len(cs.Topology.Zones) == 0 {
 		cs.Topology.Zones = []AvailabilityZone{{}}
 	}
+
+	if cs.Cache == "" {
+		cs.Cache = "25%"
+	}
+
+	if cs.MaxSQLMemory == "" {
+		cs.MaxSQLMemory = "25%"
+	}
 }
