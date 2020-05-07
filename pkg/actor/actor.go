@@ -19,6 +19,14 @@ func (e NotReadyErr) Error() string {
 	return e.Err.Error()
 }
 
+type PermanentErr struct {
+	Err error
+}
+
+func (e PermanentErr) Error() string {
+	return e.Err.Error()
+}
+
 type Actor interface {
 	Handles([]api.ClusterCondition) bool
 	Act(context.Context, *resource.Cluster) error
@@ -26,6 +34,7 @@ type Actor interface {
 
 func NewOperatorActions(scheme *runtime.Scheme, cl client.Client, config *rest.Config) []Actor {
 	return []Actor{
+		newPrepareTLS(scheme, cl, config),
 		newDeploy(scheme, cl),
 		newInitialize(scheme, cl, config),
 	}

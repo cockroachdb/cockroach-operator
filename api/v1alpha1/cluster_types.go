@@ -6,15 +6,20 @@ import (
 
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
+const NodeTLSSecretKeyword = "GENERATED"
+
 // CrdblusterSpec defines the desired state of Cluster
 type CrdbClusterSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
-	Nodes     int32     `json:"nodes"`
-	Image     string    `json:"image,omitempty"`
-	GRPCPort  *int32    `json:"grpcPort,omitempty"`
-	HTTPPort  *int32    `json:"httpPort,omitempty"`
-	DataStore Volume    `json:"dataStore,omitempty"`
-	Topology  *Topology `json:"topology,omitempty"`
+	Nodes           int32     `json:"nodes"`
+	Image           string    `json:"image,omitempty"`
+	GRPCPort        *int32    `json:"grpcPort,omitempty"`
+	HTTPPort        *int32    `json:"httpPort,omitempty"`
+	TLSEnabled      bool      `json:"tlsEnabled,omitempty"`
+	NodeTLSSecret   string    `json:"nodeTLSSecret,omitempty"`
+	ClientTLSSecret string    `json:"clientTLSSecret,omitempty"`
+	DataStore       Volume    `json:"dataStore,omitempty"`
+	Topology        *Topology `json:"topology,omitempty"`
 }
 
 // CrdbClusterStatus defines the observed state of Cluster

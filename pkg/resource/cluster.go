@@ -84,6 +84,26 @@ func (cluster Cluster) StatefulSetName() string {
 	return cluster.Name()
 }
 
+func (cluster Cluster) NodeTLSSecretName() string {
+	return fmt.Sprintf("%s-node", cluster.Name())
+}
+
+func (cluster Cluster) ClientTLSSecretName() string {
+	return fmt.Sprintf("%s-root", cluster.Name())
+}
+
+func (cluster Cluster) Domain() string {
+	return "svc.cluster.local"
+}
+
+func (cluster Cluster) SecureMode() string {
+	if cluster.Spec().TLSEnabled {
+		return " --certs-dir=/cockroach/cockroach-certs/"
+	}
+
+	return " --insecure"
+}
+
 func (cluster Cluster) IsFresh(fetcher Fetcher) (bool, error) {
 	actual := ClusterPlaceholder(cluster.Name())
 	if err := fetcher.Fetch(actual); err != nil {

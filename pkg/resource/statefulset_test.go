@@ -2,6 +2,7 @@ package resource_test
 
 import (
 	"fmt"
+	api "github.com/cockroachlabs/crdb-operator/api/v1alpha1"
 	"github.com/cockroachlabs/crdb-operator/pkg/labels"
 	"github.com/cockroachlabs/crdb-operator/pkg/ptr"
 	"github.com/cockroachlabs/crdb-operator/pkg/resource"
@@ -32,6 +33,12 @@ func TestStatefulSetBuilder(t *testing.T) {
 			cluster:  cluster.Cluster(),
 			selector: commonLabels.Selector(),
 			expected: insecureOneNode(),
+		},
+		{
+			name:     "builds default secure statefulset",
+			cluster:  cluster.WithTLS().WithNodeTLS(api.NodeTLSSecretKeyword).Cluster(),
+			selector: commonLabels.Selector(),
+			expected: secureOneNode(),
 		},
 	}
 
@@ -130,8 +137,9 @@ func insecureOneNode() *appsv1.StatefulSet {
 							LivenessProbe: &corev1.Probe{
 								Handler: corev1.Handler{
 									HTTPGet: &corev1.HTTPGetAction{
-										Path: "/health",
-										Port: intstr.FromString("http"),
+										Path:   "/health",
+										Port:   intstr.FromString("http"),
+										Scheme: corev1.URISchemeHTTP,
 									},
 								},
 								InitialDelaySeconds: 30,
@@ -140,8 +148,9 @@ func insecureOneNode() *appsv1.StatefulSet {
 							ReadinessProbe: &corev1.Probe{
 								Handler: corev1.Handler{
 									HTTPGet: &corev1.HTTPGetAction{
-										Path: "/health?ready=1",
-										Port: intstr.FromString("http"),
+										Path:   "/health?ready=1",
+										Port:   intstr.FromString("http"),
+										Scheme: corev1.URISchemeHTTP,
 									},
 								},
 								InitialDelaySeconds: 10,
@@ -161,6 +170,172 @@ func insecureOneNode() *appsv1.StatefulSet {
 							Name: "datadir",
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func secureOneNode() *appsv1.StatefulSet {
+	return &appsv1.StatefulSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   "test-cluster",
+			Labels: map[string]string{},
+		},
+		Spec: appsv1.StatefulSetSpec{
+			ServiceName: "test-cluster",
+			Replicas:    ptr.Int32(1),
+			UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
+				RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{},
+			},
+			PodManagementPolicy: appsv1.OrderedReadyPodManagement,
+			Selector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					"app.kubernetes.io/name":      "cockroachdb",
+					"app.kubernetes.io/instance":  "test-cluster",
+					"app.kubernetes.io/component": "database",
+				},
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"app.kubernetes.io/name":      "cockroachdb",
+						"app.kubernetes.io/instance":  "test-cluster",
+						"app.kubernetes.io/component": "database",
+					},
+				},
+				Spec: corev1.PodSpec{
+					TerminationGracePeriodSeconds: ptr.Int64(60),
+					NodeSelector: map[string]string{
+						"failure-domain.beta.kubernetes.io/zone": "zone-a",
+					},
+					Containers: []corev1.Container{
+						{
+							Name:            "db",
+							Image:           "cockroachdb/cockroach:v19.2.6",
+							ImagePullPolicy: corev1.PullIfNotPresent,
+							Args: []string{
+								"shell",
+								"-ecx",
+								">- exec /cockroach/cockroach start" +
+									" --join=test-cluster-0.test-cluster.test-ns:26257" +
+									" --advertise-host=$(hostname -f)" +
+									" --logtostderr=INFO" +
+									" --certs-dir=/cockroach/cockroach-certs/" +
+									" --http-port=8080" +
+									" --port=26257" +
+									" --cache=25%" +
+									" --max-sql-memory=25%",
+							},
+							Env: []corev1.EnvVar{
+								{
+									Name:  "COCKROACH_CHANNEL",
+									Value: "kubernetes-helm",
+								},
+							},
+							Ports: []corev1.ContainerPort{
+								{
+									Name:          "grpc",
+									ContainerPort: 26257,
+									Protocol:      corev1.ProtocolTCP,
+								},
+								{
+									Name:          "http",
+									ContainerPort: 8080,
+									Protocol:      corev1.ProtocolTCP,
+								},
+							},
+							LivenessProbe: &corev1.Probe{
+								Handler: corev1.Handler{
+									HTTPGet: &corev1.HTTPGetAction{
+										Path:   "/health",
+										Port:   intstr.FromString("http"),
+										Scheme: corev1.URISchemeHTTPS,
+									},
+								},
+								InitialDelaySeconds: 30,
+								PeriodSeconds:       5,
+							},
+							ReadinessProbe: &corev1.Probe{
+								Handler: corev1.Handler{
+									HTTPGet: &corev1.HTTPGetAction{
+										Path:   "/health?ready=1",
+										Port:   intstr.FromString("http"),
+										Scheme: corev1.URISchemeHTTPS,
+									},
+								},
+								InitialDelaySeconds: 10,
+								PeriodSeconds:       5,
+								FailureThreshold:    2,
+							},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "datadir",
+									MountPath: "/cockroach/cockroach-data/",
+								},
+								{
+									Name:      "certs",
+									MountPath: "/cockroach/cockroach-certs/",
+								},
+							},
+						},
+					},
+					Volumes: []corev1.Volume{
+						{
+							Name: "datadir",
+							VolumeSource: corev1.VolumeSource{
+								EmptyDir: &corev1.EmptyDirVolumeSource{},
+							},
+						},
+						{
+							Name: "certs",
+							VolumeSource: corev1.VolumeSource{
+								Projected: &corev1.ProjectedVolumeSource{
+									DefaultMode: ptr.Int32(0400),
+									Sources: []corev1.VolumeProjection{
+										{
+											Secret: &corev1.SecretProjection{
+												LocalObjectReference: corev1.LocalObjectReference{
+													Name: "test-cluster-node",
+												},
+												Items: []corev1.KeyToPath{
+													{
+														Key:  "ca.crt",
+														Path: "ca.crt",
+													},
+													{
+														Key:  "tls.crt",
+														Path: "node.crt",
+													},
+													{
+														Key:  "tls.key",
+														Path: "node.key",
+													},
+												},
+											},
+										},
+										{
+											Secret: &corev1.SecretProjection{
+												LocalObjectReference: corev1.LocalObjectReference{
+													Name: "test-cluster-root",
+												},
+												Items: []corev1.KeyToPath{
+													{
+														Key:  "tls.crt",
+														Path: "client.root.crt",
+													},
+													{
+														Key:  "tls.key",
+														Path: "client.root.key",
+													},
+												},
+											},
+										},
+									},
+								},
 							},
 						},
 					},

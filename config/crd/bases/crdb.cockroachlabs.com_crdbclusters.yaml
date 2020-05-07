@@ -39,6 +39,8 @@ spec:
         spec:
           description: CrdblusterSpec defines the desired state of Cluster
           properties:
+            clientTLSSecret:
+              type: string
             dataStore:
               properties:
                 emptyDir:
@@ -238,11 +240,15 @@ spec:
               type: integer
             image:
               type: string
+            nodeTLSSecret:
+              type: string
             nodes:
               description: 'Important: Run "make" to regenerate code after modifying
                 this file'
               format: int32
               type: integer
+            tlsEnabled:
+              type: boolean
             topology:
               properties:
                 zones:

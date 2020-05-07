@@ -76,7 +76,7 @@ func TestCreatesInsecureCluster(t *testing.T) {
 		test: func(t *testing.T) {
 			require.NoError(t, sb.Create(b))
 
-			require.NoError(t, wait.PollImmediate(10*time.Second, 180*time.Second, func() (bool, error) {
+			require.NoError(t, wait.PollImmediate(10*time.Second, 150*time.Second, func() (bool, error) {
 				cluster := b.Cluster()
 
 				expectedConditions := []api.ClusterCondition{
@@ -119,6 +119,87 @@ func TestCreatesInsecureCluster(t *testing.T) {
 
 				return ss.Status.ReadyReplicas == ss.Status.Replicas, nil
 			}))
+
+			state, err := sb.Diff()
+			require.NoError(t, err)
+
+			expected := testutil.ReadOrUpdateGoldenFile(t, state, *updateOpt)
+
+			testutil.AssertDiff(t, expected, state)
+		},
+	}
+
+	steps := Steps{create}
+
+	steps.Run(t)
+}
+
+func TestCreatesSecureClusterWithGeneratedCert(t *testing.T) {
+	testLog := zapr.NewLogger(zaptest.NewLogger(t))
+
+	actor.Log = testLog
+
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+
+	sb := testenv.NewDiffingSandbox(t, env)
+	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
+
+	b := testutil.NewBuilder("crdb").WithNodeCount(1).
+		WithTLS().WithNodeTLS(api.NodeTLSSecretKeyword).WithEmptyDirDataStore()
+
+	create := Step{
+		name: "creates 1-node cluster",
+		test: func(t *testing.T) {
+			require.NoError(t, sb.Create(b))
+
+			err := wait.PollImmediate(10*time.Second, 240*time.Second, func() (bool, error) {
+				cluster := b.Cluster()
+
+				expectedConditions := []api.ClusterCondition{
+					{
+						Type:   api.InitializedCondition,
+						Status: metav1.ConditionTrue,
+					},
+				}
+
+				actual := resource.ClusterPlaceholder(cluster.Name())
+				if err := sb.Get(actual); err != nil {
+					t.Logf("failed to fetch current cluster status :(")
+					return false, err
+				}
+
+				actualConditions := actual.Status.DeepCopy().Conditions
+				var emptyTime metav1.Time
+				for i := range actualConditions {
+					actualConditions[i].LastTransitionTime = emptyTime
+				}
+
+				if !cmp.Equal(expectedConditions, actualConditions) {
+					return false, nil
+				}
+
+				ss := &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: cluster.StatefulSetName(),
+					},
+				}
+
+				if err := sb.Get(ss); err != nil {
+					if apierrors.IsNotFound(err) {
+						t.Logf("stateful set is not found")
+						return false, nil
+					}
+					return false, client.IgnoreNotFound(err)
+				}
+
+				t.Logf("comarparing replicas: %d %d", ss.Status.ReadyReplicas, ss.Status.Replicas)
+
+				return ss.Status.ReadyReplicas == ss.Status.Replicas, nil
+			})
+
+			require.NoError(t, err)
 
 			state, err := sb.Diff()
 			require.NoError(t, err)

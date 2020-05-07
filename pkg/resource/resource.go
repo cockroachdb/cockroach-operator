@@ -2,6 +2,7 @@ package resource
 
 import (
 	"context"
+	"github.com/cockroachlabs/crdb-operator/pkg/kube"
 	"github.com/cockroachlabs/crdb-operator/pkg/labels"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -49,32 +50,38 @@ type Persister interface {
 	Persist(runtime.Object, MutateFn) (OperationResult, error)
 }
 
-func NewKubeResource(ctx context.Context, cluster *Cluster, scheme *runtime.Scheme, client client.Client) Resource {
-	ns, cr := cluster.Namespace(), cluster.Unwrap()
-
+func NewKubeResource(ctx context.Context, client client.Client, namespace string) Resource {
 	return Resource{
-		Fetcher:   NewKubeFetcher(ctx, ns, client),
-		Persister: NewKubePersister(ctx, ns, client),
-		Labels:    labels.Common(cluster.Unwrap()),
-
-		Owner:  cr,
-		Scheme: scheme,
+		Fetcher:   NewKubeFetcher(ctx, namespace, client),
+		Persister: NewKubePersister(ctx, namespace, client),
 	}
 }
 
 type Resource struct {
 	Fetcher
 	Persister
-	labels.Labels
+}
 
-	Owner  metav1.Object
-	Scheme *runtime.Scheme
+func NewManagedKubeResource(ctx context.Context, client client.Client, cluster *Cluster) ManagedResource {
+	return ManagedResource{
+		Resource: NewKubeResource(ctx, client, cluster.Namespace()),
+
+		Labels: labels.Common(cluster.Unwrap()),
+	}
+}
+
+type ManagedResource struct {
+	Resource
+
+	labels.Labels
 }
 
 type Reconciler struct {
-	Resource
+	ManagedResource
 
 	Builder
+	Owner  metav1.Object
+	Scheme *runtime.Scheme
 }
 
 func (r Reconciler) Reconcile() (upserted bool, err error) {
@@ -85,7 +92,7 @@ func (r Reconciler) Reconcile() (upserted bool, err error) {
 
 	current := r.Placeholder()
 
-	if err := r.Fetch(current); err != nil {
+	if err := r.Fetch(current); kube.IgnoreNotFound(err) != nil {
 		return false, err
 	}
 
@@ -181,7 +188,7 @@ func (f KubeFetcher) Fetch(o runtime.Object) error {
 
 	err = f.Reader.Get(f.ctx, f.makeKey(accessor.GetName()), o)
 
-	return client.IgnoreNotFound(err)
+	return err
 }
 
 func (f KubeFetcher) makeKey(name string) types.NamespacedName {

@@ -49,6 +49,16 @@ func (b ClusterBuilder) WithEmptyDirDataStore() ClusterBuilder {
 	return b
 }
 
+func (b ClusterBuilder) WithTLS() ClusterBuilder {
+	b.cluster.Spec.TLSEnabled = true
+	return b
+}
+
+func (b ClusterBuilder) WithNodeTLS(secret string) ClusterBuilder {
+	b.cluster.Spec.NodeTLSSecret = secret
+	return b
+}
+
 func (b ClusterBuilder) Cr() *api.CrdbCluster {
 	cluster := b.cluster.DeepCopy()
 
