@@ -31,7 +31,7 @@ type prepareTLS struct {
 }
 
 func (rc *prepareTLS) Handles(conds []api.ClusterCondition) bool {
-	return condition.False(api.InitializedCondition, conds)
+	return condition.True(api.NotInitializedCondition, conds)
 }
 
 func (rc *prepareTLS) Act(ctx context.Context, cluster *resource.Cluster) error {

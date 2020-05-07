@@ -7,7 +7,7 @@ import (
 type ClusterConditionType string
 
 const (
-	InitializedCondition ClusterConditionType = "Initialized"
+	NotInitializedCondition ClusterConditionType = "NotInitialized"
 )
 
 // TODO(vladdy): this should eventually be converged with

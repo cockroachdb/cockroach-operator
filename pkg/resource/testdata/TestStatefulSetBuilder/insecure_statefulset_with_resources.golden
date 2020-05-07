@@ -29,7 +29,7 @@ spec:
           --port=26257 --cache=25% --max-sql-memory=25%'
         env:
         - name: COCKROACH_CHANNEL
-          value: kubernetes-helm
+          value: kubernetes-operator
         image: cockroachdb/cockroach:v19.2.6
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -63,10 +63,6 @@ spec:
         volumeMounts:
         - mountPath: /cockroach/cockroach-data/
           name: datadir
-      nodeSelector:
-        app.kubernetes.io/component: database
-        app.kubernetes.io/instance: test-cluster
-        app.kubernetes.io/name: cockroachdb
       terminationGracePeriodSeconds: 60
       volumes:
       - emptyDir: {}

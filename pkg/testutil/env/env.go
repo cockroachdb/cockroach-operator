@@ -163,5 +163,6 @@ func in(haystack []string, needle string) bool {
 }
 
 func filteredKind(k string) bool {
-	return k == "PodMetrics" || k == "Event" || k == "Endpoints" || k == "ControllerRevision"
+	return k == "PodMetrics" || k == "Event" || k == "Endpoints" ||
+		k == "ControllerRevision" || k == "ServiceAccount" || k == "EndpointSlice"
 }

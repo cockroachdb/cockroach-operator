@@ -11,7 +11,7 @@ func InitConditionsIfNeeded(status *api.CrdbClusterStatus, now metav1.Time) {
 	}
 
 	if len(status.Conditions) == 0 {
-		SetFalse(api.InitializedCondition, status, now)
+		SetTrue(api.NotInitializedCondition, status, now)
 	}
 }
 
@@ -22,6 +22,15 @@ func False(ctype api.ClusterConditionType, conds []api.ClusterCondition) bool {
 	}
 
 	return conds[pos].Status == metav1.ConditionFalse
+}
+
+func True(ctype api.ClusterConditionType, conds []api.ClusterCondition) bool {
+	pos := pos(ctype, conds)
+	if pos == -1 || conds[pos].Status == metav1.ConditionUnknown {
+		return false
+	}
+
+	return conds[pos].Status == metav1.ConditionTrue
 }
 
 func Unknown(ctype api.ClusterConditionType, conds []api.ClusterCondition) bool {

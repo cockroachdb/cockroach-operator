@@ -271,6 +271,7 @@ func filterUnnecessary(u *unstructured.Unstructured) {
 	unstructured.RemoveNestedField(u.Object, "metadata", "uid")
 	unstructured.RemoveNestedField(u.Object, "metadata", "generateName")
 	unstructured.RemoveNestedField(u.Object, "metadata", "ownerReferences")
+	unstructured.RemoveNestedField(u.Object, "metadata", "managedFields")
 	unstructured.RemoveNestedField(u.Object, "status")
 }
 

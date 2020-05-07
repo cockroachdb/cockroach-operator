@@ -48,6 +48,10 @@ func (cluster Cluster) SetTrue(ctype api.ClusterConditionType) {
 	condition.SetTrue(ctype, &cluster.cr.Status, cluster.InitTime())
 }
 
+func (cluster Cluster) SetFalse(ctype api.ClusterConditionType) {
+	condition.SetFalse(ctype, &cluster.cr.Status, cluster.InitTime())
+}
+
 func (cluster Cluster) Spec() *api.CrdbClusterSpec {
 	return cluster.cr.Spec.DeepCopy()
 }

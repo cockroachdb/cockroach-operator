@@ -21,7 +21,7 @@ type deploy struct {
 }
 
 func (d deploy) Handles(conds []api.ClusterCondition) bool {
-	return condition.False(api.InitializedCondition, conds)
+	return condition.False(api.NotInitializedCondition, conds) || condition.True(api.NotInitializedCondition, conds)
 }
 
 func (d deploy) Act(ctx context.Context, cluster *resource.Cluster) error {
@@ -74,11 +74,11 @@ func (d deploy) Act(ctx context.Context, cluster *resource.Cluster) error {
 		ManagedResource: r,
 		// Builder:         resource.NewStatefulSetBuilder(cluster, name, nodesNum, join, locality, nodeSelector),
 		Builder: resource.StatefulSetBuilder{
-			Cluster: cluster,
+			Cluster:  cluster,
 			Selector: r.Labels.Selector(),
 		},
-		Owner:           owner,
-		Scheme:          d.scheme,
+		Owner:  owner,
+		Scheme: d.scheme,
 	}).Reconcile()
 	if err != nil {
 		return errors.Wrap(err, "failed to reconcile statefulset")

@@ -27,7 +27,7 @@ const (
 type StatefulSetBuilder struct {
 	*Cluster
 
-	Selector        labels.Labels
+	Selector labels.Labels
 }
 
 func (b StatefulSetBuilder) Build() (runtime.Object, error) {
@@ -131,7 +131,6 @@ func (b StatefulSetBuilder) makePodTemplate() corev1.PodTemplateSpec {
 		},
 		Spec: corev1.PodSpec{
 			TerminationGracePeriodSeconds: ptr.Int64(60),
-			NodeSelector:                  b.Selector,
 			Containers:                    b.makeContainers(),
 		},
 	}
@@ -147,10 +146,8 @@ func (b StatefulSetBuilder) makeContainers() []corev1.Container {
 			Args:            b.dbArgs(),
 			Env: []corev1.EnvVar{
 				{
-					Name: "COCKROACH_CHANNEL",
-					// TODO(vladdy): should be custom
-					// ༼∵༽ ༼⍨༽ ༼⍢༽ ༼⍤༽
-					Value: "kubernetes-helm",
+					Name:  "COCKROACH_CHANNEL",
+					Value: "kubernetes-operator",
 				},
 			},
 			Ports: []corev1.ContainerPort{
@@ -247,7 +244,7 @@ func (b StatefulSetBuilder) joinStr() string {
 
 	for i := 0; i < int(b.Spec().Nodes) && i < 3; i++ {
 		seeds = append(seeds, fmt.Sprintf("%s-%d.%s.%s:%d", b.Cluster.StatefulSetName(), i,
-			  b.Cluster.DiscoveryServiceName(), b.Cluster.Namespace(), *b.Cluster.Spec().GRPCPort))
+			b.Cluster.DiscoveryServiceName(), b.Cluster.Namespace(), *b.Cluster.Spec().GRPCPort))
 	}
 
 	return strings.Join(seeds, ",")
