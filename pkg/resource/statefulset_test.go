@@ -45,14 +45,7 @@ func TestStatefulSetBuilder(t *testing.T) {
 		t.Run(testName, func(t *testing.T) {
 			actual, err := resource.StatefulSetBuilder{
 				Cluster:         &cluster,
-				StatefulSetName: "test-cluster",
-				Nodes:           cr.Spec.Nodes,
 				Selector:        commonLabels.Selector(),
-				NodeSelector: map[string]string{
-					"failure-domain.beta.kubernetes.io/zone": "zone-a",
-				},
-				JoinStr:  "test-cluster-0.test-cluster.test-ns:26257",
-				Locality: "",
 			}.Build()
 			require.NoError(t, err)
 

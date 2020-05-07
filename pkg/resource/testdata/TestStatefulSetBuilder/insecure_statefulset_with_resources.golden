@@ -64,7 +64,9 @@ spec:
         - mountPath: /cockroach/cockroach-data/
           name: datadir
       nodeSelector:
-        failure-domain.beta.kubernetes.io/zone: zone-a
+        app.kubernetes.io/component: database
+        app.kubernetes.io/instance: test-cluster
+        app.kubernetes.io/name: cockroachdb
       terminationGracePeriodSeconds: 60
       volumes:
       - emptyDir: {}
