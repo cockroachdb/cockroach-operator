@@ -2,7 +2,6 @@ package resource
 
 import (
 	"fmt"
-	api "github.com/cockroachlabs/crdb-operator/api/v1alpha1"
 	"github.com/cockroachlabs/crdb-operator/pkg/labels"
 	"github.com/cockroachlabs/crdb-operator/pkg/ptr"
 	appsv1 "k8s.io/api/apps/v1"
@@ -210,7 +209,7 @@ func (b StatefulSetBuilder) probeScheme() corev1.URIScheme {
 }
 
 func (b StatefulSetBuilder) nodeTLSSecretName() string {
-	if b.Spec().NodeTLSSecret == api.NodeTLSSecretKeyword {
+	if b.Spec().NodeTLSSecret == "" {
 		return b.Cluster.NodeTLSSecretName()
 	}
 
@@ -218,7 +217,7 @@ func (b StatefulSetBuilder) nodeTLSSecretName() string {
 }
 
 func (b StatefulSetBuilder) clientTLSSecretName() string {
-	if b.Spec().NodeTLSSecret == api.NodeTLSSecretKeyword {
+	if b.Spec().NodeTLSSecret == "" {
 		return b.Cluster.ClientTLSSecretName()
 	}
 
