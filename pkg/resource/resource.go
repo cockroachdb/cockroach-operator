@@ -13,10 +13,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type MutateFn func() error
-
 type Builder interface {
-	Build() (runtime.Object, error)
+	Build(runtime.Object) error
 	Placeholder() runtime.Object
 }
 
@@ -24,36 +22,14 @@ type Fetcher interface {
 	Fetch(obj runtime.Object) error
 }
 
-type OperationResult string
-
-const (
-	OperationResultUnknown OperationResult = ""
-	OperationResultNone    OperationResult = "unchanged"
-	OperationResultCreated OperationResult = "created"
-	OperationResultUpdated OperationResult = "updated"
-)
-
-func NewOperationResult(result string) OperationResult {
-	switch OperationResult(result) {
-	case OperationResultNone:
-		return OperationResultNone
-	case OperationResultCreated:
-		return OperationResultCreated
-	case OperationResultUpdated:
-		return OperationResultUpdated
-	default:
-		return OperationResultUnknown
-	}
-}
-
 type Persister interface {
-	Persist(runtime.Object, MutateFn) (OperationResult, error)
+	Persist(obj runtime.Object, mutateFn func() error) (upserted bool, err error)
 }
 
-func NewKubeResource(ctx context.Context, client client.Client, namespace string) Resource {
+func NewKubeResource(ctx context.Context, client client.Client, namespace string, persistFn kube.PersistFn) Resource {
 	return Resource{
 		Fetcher:   NewKubeFetcher(ctx, namespace, client),
-		Persister: NewKubePersister(ctx, namespace, client),
+		Persister: NewKubePersister(ctx, namespace, client, persistFn),
 	}
 }
 
@@ -62,9 +38,9 @@ type Resource struct {
 	Persister
 }
 
-func NewManagedKubeResource(ctx context.Context, client client.Client, cluster *Cluster) ManagedResource {
+func NewManagedKubeResource(ctx context.Context, client client.Client, cluster *Cluster, persistFn kube.PersistFn) ManagedResource {
 	return ManagedResource{
-		Resource: NewKubeResource(ctx, client, cluster.Namespace()),
+		Resource: NewKubeResource(ctx, client, cluster.Namespace(), persistFn),
 
 		Labels: labels.Common(cluster.Unwrap()),
 	}
@@ -85,38 +61,33 @@ type Reconciler struct {
 }
 
 func (r Reconciler) Reconcile() (upserted bool, err error) {
-	desired, err := r.Build()
-	if err != nil {
-		return false, err
-	}
-
 	current := r.Placeholder()
 
 	if err := r.Fetch(current); kube.IgnoreNotFound(err) != nil {
 		return false, err
 	}
 
-	result, err := r.Persist(desired, func() error {
-		if err := r.reconcileLabels(current, desired); err != nil {
+	original := current.DeepCopyObject()
+
+	return r.Persist(current, func() error {
+		if err := r.Build(current); err != nil {
+			return err
+		}
+
+		if err := r.reconcileLabels(original, current); err != nil {
 			return errors.Wrap(err, "failed to reconcile labels")
 		}
 
-		if err := r.reconcileAnnotations(current, desired); err != nil {
+		if err := r.reconcileAnnotations(original, current); err != nil {
 			return errors.Wrap(err, "failed to reconcile annotations")
 		}
 
-		if err := r.ensureIsOwned(desired); err != nil {
+		if err := r.ensureIsOwned(current); err != nil {
 			return errors.Wrap(err, "failed to set object ownership")
 		}
 
 		return nil
 	})
-
-	if result == OperationResultUnknown {
-		return false, errors.New("got unknowng operation result")
-	}
-
-	return result == OperationResultUpdated || result == OperationResultCreated, err
 }
 
 func (r Reconciler) reconcileLabels(current, desired runtime.Object) error {
@@ -151,6 +122,10 @@ func (r Reconciler) reconcileAnnotations(current, desired runtime.Object) error 
 	}
 
 	for k, v := range caccessor.GetAnnotations() {
+		_, found := aa[k]
+		if found {
+			continue
+		}
 		aa[k] = v
 	}
 
@@ -198,10 +173,11 @@ func (f KubeFetcher) makeKey(name string) types.NamespacedName {
 	}
 }
 
-func NewKubePersister(ctx context.Context, namespace string, client client.Client) *KubePersister {
+func NewKubePersister(ctx context.Context, namespace string, client client.Client, persistFn kube.PersistFn) *KubePersister {
 	return &KubePersister{
 		ctx:       ctx,
 		namespace: namespace,
+		persistFn: persistFn,
 		Client:    client,
 	}
 }
@@ -209,19 +185,16 @@ func NewKubePersister(ctx context.Context, namespace string, client client.Clien
 type KubePersister struct {
 	ctx       context.Context
 	namespace string
+	persistFn kube.PersistFn
 	client.Client
 }
 
-func (p KubePersister) Persist(obj runtime.Object, f MutateFn) (OperationResult, error) {
+func (p KubePersister) Persist(obj runtime.Object, mutateFn func() error) (upserted bool, err error) {
 	if err := addNamespace(obj, p.namespace); err != nil {
-		return OperationResultNone, err
+		return false, err
 	}
 
-	result, err := ctrl.CreateOrUpdate(p.ctx, p.Client, obj, func() error {
-		return f()
-	})
-
-	return NewOperationResult(string(result)), err
+	return p.persistFn(p.ctx, p.Client, obj, mutateFn)
 }
 
 func addNamespace(o runtime.Object, ns string) error {

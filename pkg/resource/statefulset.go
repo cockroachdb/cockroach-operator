@@ -1,6 +1,7 @@
 package resource
 
 import (
+	"errors"
 	"fmt"
 	"github.com/cockroachlabs/crdb-operator/pkg/labels"
 	"github.com/cockroachlabs/crdb-operator/pkg/ptr"
@@ -30,23 +31,27 @@ type StatefulSetBuilder struct {
 	Selector labels.Labels
 }
 
-func (b StatefulSetBuilder) Build() (runtime.Object, error) {
-	ss := &appsv1.StatefulSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: b.StatefulSetName(),
+func (b StatefulSetBuilder) Build(obj runtime.Object) error {
+	ss, ok := obj.(*appsv1.StatefulSet)
+	if !ok {
+		return errors.New("failed to access StatefulSet object")
+	}
+
+	if ss.ObjectMeta.Name == "" {
+		ss.ObjectMeta.Name = b.StatefulSetName()
+	}
+
+	ss.Spec = appsv1.StatefulSetSpec{
+		ServiceName: b.Cluster.DiscoveryServiceName(),
+		Replicas:    ptr.Int32(b.Spec().Nodes),
+		UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
+			RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{},
 		},
-		Spec: appsv1.StatefulSetSpec{
-			ServiceName: b.Cluster.DiscoveryServiceName(),
-			Replicas:    ptr.Int32(b.Spec().Nodes),
-			UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
-				RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{},
-			},
-			PodManagementPolicy: appsv1.OrderedReadyPodManagement,
-			Selector: &metav1.LabelSelector{
-				MatchLabels: b.Selector,
-			},
-			Template: b.makePodTemplate(),
+		PodManagementPolicy: appsv1.OrderedReadyPodManagement,
+		Selector: &metav1.LabelSelector{
+			MatchLabels: b.Selector,
 		},
+		Template: b.makePodTemplate(),
 	}
 
 	if err := b.Spec().DataStore.Apply(dataDirName, DbContainerName, dataDirMountPath, &ss.Spec,
@@ -55,12 +60,12 @@ func (b StatefulSetBuilder) Build() (runtime.Object, error) {
 				Name: dataDirName,
 			}
 		}); err != nil {
-		return nil, err
+		return err
 	}
 
 	if b.Spec().TLSEnabled {
 		if err := addCertsVolumeMount(DbContainerName, &ss.Spec.Template.Spec); err != nil {
-			return nil, err
+			return err
 		}
 
 		ss.Spec.Template.Spec.Volumes = append(ss.Spec.Template.Spec.Volumes, corev1.Volume{
@@ -113,7 +118,7 @@ func (b StatefulSetBuilder) Build() (runtime.Object, error) {
 		})
 	}
 
-	return ss, nil
+	return nil
 }
 
 func (b StatefulSetBuilder) Placeholder() runtime.Object {

@@ -6,6 +6,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	amtypes "k8s.io/apimachinery/pkg/types"
 )
 
 type ClusterBuilder struct {
@@ -34,6 +35,11 @@ func (b ClusterBuilder) Namespaced(namespace string) ClusterBuilder {
 	return b
 }
 
+func (b ClusterBuilder) WithUID(uid string) ClusterBuilder {
+	b.cluster.ObjectMeta.UID = amtypes.UID(uid)
+	return b
+}
+
 func (b ClusterBuilder) WithTopology(topology *api.Topology) ClusterBuilder {
 	b.cluster.Spec.Topology = topology.DeepCopy()
 	return b
@@ -46,6 +52,11 @@ func (b ClusterBuilder) WithNodeCount(c int32) ClusterBuilder {
 
 func (b ClusterBuilder) WithEmptyDirDataStore() ClusterBuilder {
 	b.cluster.Spec.DataStore = api.Volume{EmptyDir: &corev1.EmptyDirVolumeSource{}}
+	return b
+}
+
+func (b ClusterBuilder) WithHTTPPort(port int32) ClusterBuilder {
+	b.cluster.Spec.HTTPPort = &port
 	return b
 }
 

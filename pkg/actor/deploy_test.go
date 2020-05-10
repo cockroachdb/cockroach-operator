@@ -51,6 +51,7 @@ func TestDeploysNotInitalizedCluster(t *testing.T) {
 
 	cluster := testutil.NewBuilder("cockroachdb").
 		Namespaced("default").
+		WithUID("cockroachdb-uid").
 		WithEmptyDirDataStore().
 		WithNodeCount(1).Cluster()
 

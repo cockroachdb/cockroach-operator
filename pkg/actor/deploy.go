@@ -4,6 +4,7 @@ import (
 	"context"
 	api "github.com/cockroachlabs/crdb-operator/api/v1alpha1"
 	"github.com/cockroachlabs/crdb-operator/pkg/condition"
+	"github.com/cockroachlabs/crdb-operator/pkg/kube"
 	"github.com/cockroachlabs/crdb-operator/pkg/resource"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -28,7 +29,7 @@ func (d deploy) Act(ctx context.Context, cluster *resource.Cluster) error {
 	log := d.log.WithValues("CrdbCluster", cluster.ObjectKey())
 	log.Info("reconciling resources")
 
-	r := resource.NewManagedKubeResource(ctx, d.client, cluster)
+	r := resource.NewManagedKubeResource(ctx, d.client, cluster, kube.AnnotatingPersister)
 
 	owner := cluster.Unwrap()
 
