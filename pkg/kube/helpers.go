@@ -135,10 +135,11 @@ func CreateOrUpdateAnnotated(ctx context.Context, c client.Client, obj runtime.O
 	if err := mutate(f, key, obj); err != nil {
 		return false, err
 	}
-
+	
 	patchResult, err := patchMaker.Calculate(existing, obj,
 		patch.IgnoreStatusFields(),
 		patch.IgnoreVolumeClaimTemplateTypeMetaAndStatus())
+
 	if err != nil {
 		return false, err
 	}
