@@ -3,6 +3,7 @@ package resource_test
 import (
 	"context"
 	"fmt"
+	"github.com/cockroachlabs/crdb-operator/pkg/kube"
 	"github.com/cockroachlabs/crdb-operator/pkg/labels"
 	"github.com/cockroachlabs/crdb-operator/pkg/ptr"
 	"github.com/cockroachlabs/crdb-operator/pkg/resource"
@@ -12,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	amtypes "k8s.io/apimachinery/pkg/types"
 	"testing"
 )
@@ -19,32 +21,80 @@ import (
 func TestReconcile(t *testing.T) {
 	ctx := context.TODO()
 	scheme := testutil.InitScheme(t)
-	client := testutil.NewFakeClient(scheme)
 
-	cluster := testutil.NewBuilder("test-cluster").Namespaced("default").Cluster()
-	commonLabels := labels.Common(cluster.Unwrap())
-
-	builder := resource.DiscoveryServiceBuilder{
-		Cluster:  cluster,
-		Selector: commonLabels.Selector(),
+	tests := []struct {
+		name         string
+		cluster      *resource.Cluster
+		existingObjs []runtime.Object
+		wantUpserted bool
+		expected     *corev1.Service
+	}{
+		{
+			name: "creates object when it is missing",
+			cluster: testutil.NewBuilder("test-cluster").Namespaced("default").
+				WithUID("test-cluster-uid").Cluster(),
+			existingObjs: []runtime.Object{},
+			wantUpserted: true,
+			expected:     makeTestService(),
+		},
+		{
+			name: "updates object when its spec is different",
+			cluster: testutil.NewBuilder("test-cluster").Namespaced("default").
+				WithUID("test-cluster-uid").WithHTTPPort(8443).Cluster(),
+			existingObjs: []runtime.Object{makeTestService()},
+			wantUpserted: true,
+			expected:     modifyHTTPPort(8443, makeTestService()),
+		},
+		{
+			name: "does not touch existing object if it has the same configuration",
+			cluster: testutil.NewBuilder("test-cluster").Namespaced("default").
+				WithUID("test-cluster-uid").Cluster(),
+			existingObjs: []runtime.Object{makeTestService()},
+			wantUpserted: false,
+			expected:     makeTestService(),
+		},
 	}
 
-	r := resource.Reconciler{
-		ManagedResource: resource.NewManagedKubeResource(ctx, client, cluster),
-		Builder:         builder,
-		Owner:           cluster.Unwrap(),
-		Scheme:          scheme,
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			commonLabels := labels.Common(tt.cluster.Unwrap())
+
+			builder := resource.DiscoveryServiceBuilder{
+				Cluster:  tt.cluster,
+				Selector: commonLabels.Selector(),
+			}
+
+			client := testutil.NewFakeClient(scheme, tt.existingObjs...)
+
+			r := resource.Reconciler{
+				ManagedResource: resource.NewManagedKubeResource(ctx, client, tt.cluster, kube.AnnotatingPersister),
+				Builder:         builder,
+				Owner:           tt.cluster.Unwrap(),
+				Scheme:          scheme,
+			}
+
+			upserted, err := r.Reconcile()
+			require.NoError(t, err)
+
+			assert.Equal(t, tt.wantUpserted, upserted)
+
+			// TODO: change to placeholder?
+			actual := &corev1.Service{}
+			assert.NoError(t, client.Get(ctx, amtypes.NamespacedName{Name: "test-cluster", Namespace: "default"}, actual))
+
+			stripOutLastAppliedAnnotation(tt.expected.Annotations)
+			stripOutLastAppliedAnnotation(actual.Annotations)
+
+			diff := cmp.Diff(tt.expected, actual, testutil.RuntimeObjCmpOpts...)
+			if diff != "" {
+				assert.Fail(t, fmt.Sprintf("unexpected result (-want +got):\n%v", diff))
+			}
+		})
 	}
+}
 
-	upserted, err := r.Reconcile()
-	require.NoError(t, err)
-
-	assert.True(t, upserted)
-
-	actual := &corev1.Service{}
-	assert.NoError(t, client.Get(ctx, amtypes.NamespacedName{Name: "test-cluster", Namespace: "default"}, actual))
-
-	expected := &corev1.Service{
+func makeTestService() *corev1.Service {
+	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-cluster",
 			Namespace: "default",
@@ -65,6 +115,7 @@ func TestReconcile(t *testing.T) {
 					APIVersion:         "crdb.cockroachlabs.com/v1alpha1",
 					Kind:               "CrdbCluster",
 					Name:               "test-cluster",
+					UID:                "test-cluster-uid",
 					Controller:         ptr.Bool(true),
 					BlockOwnerDeletion: ptr.Bool(true),
 				},
@@ -84,9 +135,22 @@ func TestReconcile(t *testing.T) {
 			},
 		},
 	}
+}
 
-	diff := cmp.Diff(expected, actual, testutil.RuntimeObjCmpOpts...)
-	if diff != "" {
-		assert.Fail(t, fmt.Sprintf("unexpected result (-want +got):\n%v", diff))
+func modifyHTTPPort(newValue int32, service *corev1.Service) *corev1.Service {
+	service.Spec.Ports = []corev1.ServicePort{
+		{Name: "grpc", Port: 26257},
+		{Name: "http", Port: newValue},
 	}
+	service.ObjectMeta.Annotations = map[string]string{
+		"prometheus.io/scrape": "true",
+		"prometheus.io/path":   "_status/vars",
+		"prometheus.io/port":   fmt.Sprintf("%d", newValue),
+	}
+
+	return service
+}
+
+func stripOutLastAppliedAnnotation(aa map[string]string) {
+	delete(aa, kube.LastAppliedAnnotation)
 }

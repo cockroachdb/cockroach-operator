@@ -56,10 +56,12 @@ func TestDiscoveryServiceBuilder(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			actual, err := resource.DiscoveryServiceBuilder{
+			actual := &corev1.Service{}
+
+			err := resource.DiscoveryServiceBuilder{
 				Cluster:  tt.cluster,
 				Selector: tt.selector,
-			}.Build()
+			}.Build(actual)
 			require.NoError(t, err)
 
 			diff := cmp.Diff(tt.expected, actual, testutil.RuntimeObjCmpOpts...)

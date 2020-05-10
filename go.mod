@@ -3,11 +3,11 @@ module github.com/cockroachlabs/crdb-operator
 go 1.14
 
 require (
+	github.com/banzaicloud/k8s-objectmatcher v1.3.2
 	github.com/go-logr/logr v0.1.0
 	github.com/go-logr/zapr v0.1.0
 	github.com/gogo/protobuf v1.3.1 // indirect
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
-	github.com/golang/protobuf v1.3.4 // indirect
 	github.com/google/go-cmp v0.4.0
 	github.com/google/gofuzz v1.1.0 // indirect
 	github.com/googleapis/gnostic v0.4.1 // indirect
@@ -38,4 +38,4 @@ require (
 )
 
 // requirement of the current version of client-go
-replace github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.3.1
+replace github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.4.1

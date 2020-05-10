@@ -52,7 +52,8 @@ func (rc *prepareTLS) Act(ctx context.Context, cluster *resource.Cluster) error 
 func (rc *prepareTLS) issueNodeCert(ctx context.Context, log logr.Logger, cluster *resource.Cluster) error {
 	log.Info("requesting node certificate")
 
-	secret, err := resource.LoadTLSSecret(cluster.NodeTLSSecretName(), resource.NewKubeResource(ctx, rc.client, cluster.Namespace()))
+	secret, err := resource.LoadTLSSecret(cluster.NodeTLSSecretName(),
+		resource.NewKubeResource(ctx, rc.client, cluster.Namespace(), kube.DefaultPersister))
 	if kube.IgnoreNotFound(err) != nil {
 		return errors.Wrap(err, "failed to get node TLS secret")
 	}
@@ -81,7 +82,8 @@ func (rc *prepareTLS) issueNodeCert(ctx context.Context, log logr.Logger, cluste
 func (rc *prepareTLS) issueClientCert(ctx context.Context, log logr.Logger, cluster *resource.Cluster) error {
 	log.Info("requesting client certificate")
 
-	secret, err := resource.LoadTLSSecret(cluster.ClientTLSSecretName(), resource.NewKubeResource(ctx, rc.client, cluster.Namespace()))
+	secret, err := resource.LoadTLSSecret(cluster.ClientTLSSecretName(),
+		resource.NewKubeResource(ctx, rc.client, cluster.Namespace(), kube.DefaultPersister))
 	if client.IgnoreNotFound(err) != nil {
 		return errors.Wrap(err, "failed to get client TLS secret")
 	}
