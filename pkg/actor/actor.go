@@ -35,6 +35,7 @@ type Actor interface {
 func NewOperatorActions(scheme *runtime.Scheme, cl client.Client, config *rest.Config) []Actor {
 	return []Actor{
 		newPrepareTLS(scheme, cl, config),
+		newUpgrade(scheme, cl, config),
 		newDeploy(scheme, cl),
 		newInitialize(scheme, cl, config),
 	}

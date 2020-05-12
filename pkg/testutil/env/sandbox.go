@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	api "github.com/cockroachdb/cockroach-operator/api/v1alpha1"
+	"github.com/cockroachdb/cockroach-operator/pkg/kube"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -14,6 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/rand"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/yaml"
 	"sort"
@@ -60,12 +62,27 @@ type Sandbox struct {
 	Namespace string
 }
 
-type namespaceCreatable interface {
-	RuntimeObject(string) apiruntime.Object
+func (s Sandbox) setNamespaceIfMissing(obj apiruntime.Object) apiruntime.Object {
+	accessor, _ := meta.Accessor(obj)
+	if accessor.GetNamespace() == "" {
+		obj = obj.DeepCopyObject()
+		accessor, _ = meta.Accessor(obj)
+		accessor.SetNamespace(s.Namespace)
+	}
+
+	return obj
 }
 
-func (s Sandbox) Create(nc namespaceCreatable) error {
-	return s.env.Create(context.TODO(), nc.RuntimeObject(s.Namespace))
+func (s Sandbox) Create(obj apiruntime.Object) error {
+	obj = s.setNamespaceIfMissing(obj)
+
+	return s.env.Create(context.TODO(), obj)
+}
+
+func (s Sandbox) Update(obj apiruntime.Object) error {
+	obj = s.setNamespaceIfMissing(obj)
+
+	return s.env.Update(context.TODO(), obj)
 }
 
 func (s Sandbox) Get(o apiruntime.Object) error {
@@ -80,6 +97,13 @@ func (s Sandbox) Get(o apiruntime.Object) error {
 	}
 
 	return s.env.Get(context.TODO(), key, o)
+}
+
+func (s Sandbox) List(list apiruntime.Object, labels map[string]string) error {
+	ns := client.InNamespace(s.Namespace)
+	matchingLabels := client.MatchingLabels(labels)
+
+	return s.env.List(context.TODO(), list, ns, matchingLabels)
 }
 
 func (s Sandbox) Cleanup() {
@@ -208,7 +232,11 @@ OUTER:
 func (l objList) ToYamlOrDie() []byte {
 	var out bytes.Buffer
 	for _, u := range l {
-		filterUnnecessary(&u)
+		if ignoreObject(&u) {
+			continue
+		}
+
+		stripUnnecessaryDetails(&u)
 
 		bs, err := yaml.Marshal(u.Object)
 		if err != nil {
@@ -250,7 +278,16 @@ func (l objList) Less(i, j int) bool {
 	return a.GetName() < b.GetName()
 }
 
-func filterUnnecessary(u *unstructured.Unstructured) {
+func ignoreObject(u *unstructured.Unstructured) bool {
+	// Default account secret
+	if u.GetKind() == "Secret" && strings.HasPrefix(u.GetName(), "default-token-") {
+		return true
+	}
+
+	return false
+}
+
+func stripUnnecessaryDetails(u *unstructured.Unstructured) {
 	if u.GetKind() == "Pod" && u.GetAPIVersion() == "v1" {
 		unstructured.RemoveNestedField(u.Object, "spec", "nodeName")
 		unstructured.RemoveNestedField(u.Object, "spec", "hostname")
@@ -261,6 +298,20 @@ func filterUnnecessary(u *unstructured.Unstructured) {
 
 	if u.GetKind() == "Service" && u.GetAPIVersion() == "v1" {
 		replaceServiceIP(u)
+	}
+
+	if u.GetKind() == "Secret" && u.GetAPIVersion() == "v1" {
+		replaceSecretContent(u)
+	}
+
+	aa := u.GetAnnotations()
+	if aa != nil {
+		delete(aa, kube.LastAppliedAnnotation)
+		if len(aa) > 0 {
+			u.SetAnnotations(aa)
+		} else {
+			unstructured.RemoveNestedField(u.Object, "metadata", "annotations")
+		}
 	}
 
 	unstructured.RemoveNestedField(u.Object, "metadata", "creationTimestamp")
@@ -352,4 +403,17 @@ func replaceServiceIP(u *unstructured.Unstructured) {
 	if clusterIP != "None" {
 		_ = unstructured.SetNestedField(u.Object, "[some_ip]", "spec", "clusterIP")
 	}
+}
+
+func replaceSecretContent(u *unstructured.Unstructured) {
+	data, ok, err := unstructured.NestedStringMap(u.Object, "data")
+	if (err != nil) || !ok {
+		return
+	}
+
+	for k := range data {
+		data[k] = "[replaced]"
+	}
+
+	_ = unstructured.SetNestedStringMap(u.Object, data, "data")
 }

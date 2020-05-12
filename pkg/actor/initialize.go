@@ -67,7 +67,8 @@ func (init initialize) Act(ctx context.Context, cluster *resource.Cluster) error
 
 	if err != nil && !alreadyInitialized(stderr) {
 		// can happen if container has not finished its startup
-		if strings.Contains(err.Error(), "unable to upgrade connection: container not found") {
+		if strings.Contains(err.Error(), "unable to upgrade connection: container not found") ||
+			strings.Contains(err.Error(), "does not have a host assigned") {
 			return NotReadyErr{Err: errors.New("pod has not complitely started")}
 		}
 

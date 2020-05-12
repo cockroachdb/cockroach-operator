@@ -3,6 +3,7 @@ module github.com/cockroachdb/cockroach-operator
 go 1.14
 
 require (
+	github.com/Masterminds/semver/v3 v3.1.0
 	github.com/banzaicloud/k8s-objectmatcher v1.3.2
 	github.com/go-logr/logr v0.1.0
 	github.com/go-logr/zapr v0.1.0
