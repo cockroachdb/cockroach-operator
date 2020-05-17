@@ -17,7 +17,6 @@ require (
 	github.com/onsi/gomega v1.9.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.5.0 // indirect
-	github.com/prometheus/common v0.9.1
 	github.com/prometheus/procfs v0.0.10 // indirect
 	github.com/stretchr/testify v1.5.1
 	go.uber.org/atomic v1.4.0 // indirect
@@ -29,12 +28,14 @@ require (
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.1.0 // indirect
 	google.golang.org/appengine v1.6.5 // indirect
-	k8s.io/api v0.17.3
-	k8s.io/apiextensions-apiserver v0.17.3 // indirect
-	k8s.io/apimachinery v0.17.3
-	k8s.io/client-go v0.17.3
-	k8s.io/kube-openapi v0.0.0-20200204173128-addea2498afe // indirect
+	k8s.io/api v0.17.5
+	k8s.io/apiextensions-apiserver v0.17.5 // indirect
+	k8s.io/apimachinery v0.17.5
+	k8s.io/client-go v0.17.5
 	k8s.io/utils v0.0.0-20200229041039-0a110f9eb7ab // indirect
 	sigs.k8s.io/controller-runtime v0.5.2
 	sigs.k8s.io/yaml v1.2.0
 )
+
+// requirement of the current version of client-go
+replace github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.3.1

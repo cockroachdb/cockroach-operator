@@ -1,6 +1,7 @@
 REGISTRY_PREFIX ?= us.gcr.io
 GENERATOR_IMG ?= crdb-operator/code-generator
 TEST_RUNNER_IMG ?= crdb-operator/test-runner
+UBI_IMG ?= crdb-operator/crdb-operator-ubi
 VERSION ?= latest
 
 LOCAL_GOPATH := $(shell go env GOPATH)
@@ -50,8 +51,12 @@ generate:
 
 docker/build/code-gen:
 	@echo "===========> Building $(GENERATOR_IMG) docker image"
-	docker build --pull -t $(REGISTRY_PREFIX)/$(GENERATOR_IMG):$(VERSION) -f Docker.code-gen .
+	docker build --pull -t $(REGISTRY_PREFIX)/$(GENERATOR_IMG):$(VERSION) -f Dockerfile.code-gen .
 
 docker/build/test-runner:
 	@echo "===========> Building $(TEST_RUNNER_IMG) docker image"
-	docker build --pull -t $(REGISTRY_PREFIX)/$(TEST_RUNNER_IMG):$(VERSION) -f Docker.test-runner .
+	docker build --pull -t $(REGISTRY_PREFIX)/$(TEST_RUNNER_IMG):$(VERSION) -f Dockerfile.test-runner .
+
+docker/build/operator-ubi:
+	@echo "===========> Building $(UBI_IMG) docker image"
+	docker build --pull -t $(REGISTRY_PREFIX)/$(UBI_IMG):$(VERSION) -f Dockerfile.ubi .

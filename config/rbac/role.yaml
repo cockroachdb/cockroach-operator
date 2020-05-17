@@ -36,6 +36,7 @@ rules:
   - get
   - list
   - patch
+  - watch
 - apiGroups:
   - certificates.k8s.io
   resources:
@@ -55,21 +56,30 @@ rules:
   resources:
   - configmaps
   verbs:
-  - create
-  - delete
   - get
-  - list
-  - patch
-  - update
-  - watch
 - apiGroups:
   - ""
   resources:
   - configmaps/status
   verbs:
   - get
+- apiGroups:
+  - ""
+  resources:
+  - pods/exec
+  verbs:
+  - create
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - create
+  - get
+  - list
   - patch
   - update
+  - watch
 - apiGroups:
   - ""
   resources:
