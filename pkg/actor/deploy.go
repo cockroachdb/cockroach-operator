@@ -72,7 +72,6 @@ func (d deploy) Act(ctx context.Context, cluster *resource.Cluster) error {
 
 	changed, err = (resource.Reconciler{
 		ManagedResource: r,
-		// Builder:         resource.NewStatefulSetBuilder(cluster, name, nodesNum, join, locality, nodeSelector),
 		Builder: resource.StatefulSetBuilder{
 			Cluster:  cluster,
 			Selector: r.Labels.Selector(),
