@@ -2,7 +2,6 @@ package resource
 
 import (
 	"fmt"
-	api "github.com/cockroachlabs/crdb-operator/api/v1alpha1"
 	"github.com/cockroachlabs/crdb-operator/pkg/labels"
 	"github.com/cockroachlabs/crdb-operator/pkg/ptr"
 	appsv1 "k8s.io/api/apps/v1"
@@ -10,6 +9,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"strings"
 )
 
 const (
@@ -24,37 +24,20 @@ const (
 	DbContainerName = "db"
 )
 
-func NewStatefulSetBuilder(cluster *Cluster, name string, nodes int32, join string, locality string, nodeSelector map[string]string) StatefulSetBuilder {
-	return StatefulSetBuilder{
-		Cluster:         cluster,
-		StatefulSetName: name,
-		Nodes:           nodes,
-		Selector:        labels.Common(cluster.Unwrap()).Selector(),
-		NodeSelector:    nodeSelector,
-		JoinStr:         join,
-		Locality:        locality,
-	}
-}
-
 type StatefulSetBuilder struct {
 	*Cluster
 
-	StatefulSetName string
-	Nodes           int32
-	NodeSelector    map[string]string
-	Selector        labels.Labels
-	JoinStr         string
-	Locality        string
+	Selector labels.Labels
 }
 
 func (b StatefulSetBuilder) Build() (runtime.Object, error) {
 	ss := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: b.StatefulSetName,
+			Name: b.StatefulSetName(),
 		},
 		Spec: appsv1.StatefulSetSpec{
 			ServiceName: b.Cluster.DiscoveryServiceName(),
-			Replicas:    ptr.Int32(b.Nodes),
+			Replicas:    ptr.Int32(b.Spec().Nodes),
 			UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
 				RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{},
 			},
@@ -136,7 +119,7 @@ func (b StatefulSetBuilder) Build() (runtime.Object, error) {
 func (b StatefulSetBuilder) Placeholder() runtime.Object {
 	return &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: b.StatefulSetName,
+			Name: b.StatefulSetName(),
 		},
 	}
 }
@@ -148,7 +131,6 @@ func (b StatefulSetBuilder) makePodTemplate() corev1.PodTemplateSpec {
 		},
 		Spec: corev1.PodSpec{
 			TerminationGracePeriodSeconds: ptr.Int64(60),
-			NodeSelector:                  b.NodeSelector,
 			Containers:                    b.makeContainers(),
 		},
 	}
@@ -164,10 +146,8 @@ func (b StatefulSetBuilder) makeContainers() []corev1.Container {
 			Args:            b.dbArgs(),
 			Env: []corev1.EnvVar{
 				{
-					Name: "COCKROACH_CHANNEL",
-					// TODO(vladdy): should be custom
-					// ༼∵༽ ༼⍨༽ ༼⍢༽ ༼⍤༽
-					Value: "kubernetes-helm",
+					Name:  "COCKROACH_CHANNEL",
+					Value: "kubernetes-operator",
 				},
 			},
 			Ports: []corev1.ContainerPort{
@@ -209,14 +189,6 @@ func (b StatefulSetBuilder) makeContainers() []corev1.Container {
 	}
 }
 
-func (b StatefulSetBuilder) localityOrNothing() string {
-	if b.Locality == "" {
-		return ""
-	}
-
-	return " --locality=" + b.Locality
-}
-
 func (b StatefulSetBuilder) secureMode() string {
 	if b.Spec().TLSEnabled {
 		return " --certs-dir=/cockroach/cockroach-certs/"
@@ -234,7 +206,7 @@ func (b StatefulSetBuilder) probeScheme() corev1.URIScheme {
 }
 
 func (b StatefulSetBuilder) nodeTLSSecretName() string {
-	if b.Spec().NodeTLSSecret == api.NodeTLSSecretKeyword {
+	if b.Spec().NodeTLSSecret == "" {
 		return b.Cluster.NodeTLSSecretName()
 	}
 
@@ -242,7 +214,7 @@ func (b StatefulSetBuilder) nodeTLSSecretName() string {
 }
 
 func (b StatefulSetBuilder) clientTLSSecretName() string {
-	if b.Spec().NodeTLSSecret == api.NodeTLSSecretKeyword {
+	if b.Spec().NodeTLSSecret == "" {
 		return b.Cluster.ClientTLSSecretName()
 	}
 
@@ -254,8 +226,7 @@ func (b StatefulSetBuilder) dbArgs() []string {
 		"shell",
 		"-ecx",
 		">- exec /cockroach/cockroach start" +
-			b.localityOrNothing() +
-			" --join=" + b.JoinStr +
+			" --join=" + b.joinStr() +
 			" --advertise-host=$(hostname -f)" +
 			" --logtostderr=INFO" +
 			b.Cluster.SecureMode() +
@@ -266,6 +237,17 @@ func (b StatefulSetBuilder) dbArgs() []string {
 	}
 
 	return append(aa, b.Spec().AdditionalArgs...)
+}
+
+func (b StatefulSetBuilder) joinStr() string {
+	var seeds []string
+
+	for i := 0; i < int(b.Spec().Nodes) && i < 3; i++ {
+		seeds = append(seeds, fmt.Sprintf("%s-%d.%s.%s:%d", b.Cluster.StatefulSetName(), i,
+			b.Cluster.DiscoveryServiceName(), b.Cluster.Namespace(), *b.Cluster.Spec().GRPCPort))
+	}
+
+	return strings.Join(seeds, ",")
 }
 
 func addCertsVolumeMount(container string, spec *corev1.PodSpec) error {

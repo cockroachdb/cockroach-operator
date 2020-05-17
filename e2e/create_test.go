@@ -81,8 +81,8 @@ func TestCreatesInsecureCluster(t *testing.T) {
 
 				expectedConditions := []api.ClusterCondition{
 					{
-						Type:   api.InitializedCondition,
-						Status: metav1.ConditionTrue,
+						Type:   api.NotInitializedCondition,
+						Status: metav1.ConditionFalse,
 					},
 				}
 
@@ -146,8 +146,7 @@ func TestCreatesSecureClusterWithGeneratedCert(t *testing.T) {
 	sb := testenv.NewDiffingSandbox(t, env)
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
 
-	b := testutil.NewBuilder("crdb").WithNodeCount(1).
-		WithTLS().WithNodeTLS(api.NodeTLSSecretKeyword).WithEmptyDirDataStore()
+	b := testutil.NewBuilder("crdb").WithNodeCount(1).WithTLS().WithEmptyDirDataStore()
 
 	create := Step{
 		name: "creates 1-node cluster",
@@ -159,8 +158,8 @@ func TestCreatesSecureClusterWithGeneratedCert(t *testing.T) {
 
 				expectedConditions := []api.ClusterCondition{
 					{
-						Type:   api.InitializedCondition,
-						Status: metav1.ConditionTrue,
+						Type:   api.NotInitializedCondition,
+						Status: metav1.ConditionFalse,
 					},
 				}
 
@@ -194,7 +193,7 @@ func TestCreatesSecureClusterWithGeneratedCert(t *testing.T) {
 					return false, client.IgnoreNotFound(err)
 				}
 
-				t.Logf("comarparing replicas: %d %d", ss.Status.ReadyReplicas, ss.Status.Replicas)
+				t.Logf("comparing replicas: %d %d", ss.Status.ReadyReplicas, ss.Status.Replicas)
 
 				return ss.Status.ReadyReplicas == ss.Status.Replicas, nil
 			})

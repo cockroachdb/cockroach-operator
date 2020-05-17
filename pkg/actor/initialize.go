@@ -30,14 +30,14 @@ type initialize struct {
 }
 
 func (init initialize) Handles(conds []api.ClusterCondition) bool {
-	return condition.False(api.InitializedCondition, conds)
+	return condition.True(api.NotInitializedCondition, conds)
 }
 
 func (init initialize) Act(ctx context.Context, cluster *resource.Cluster) error {
 	log := init.log.WithValues("CrdbCluster", cluster.ObjectKey())
 	log.Info("initializing CockroachDB")
 
-	stsName := init.firstStatefulSetName(cluster)
+	stsName := cluster.StatefulSetName()
 
 	key := kubetypes.NamespacedName{
 		Namespace: cluster.Namespace(),
@@ -74,16 +74,10 @@ func (init initialize) Act(ctx context.Context, cluster *resource.Cluster) error
 		return errors.Wrapf(err, "failed to initialize the cluster")
 	}
 
-	cluster.SetTrue(api.InitializedCondition)
+	cluster.SetFalse(api.NotInitializedCondition)
 
 	log.Info("completed")
 	return nil
-}
-
-func (init initialize) firstStatefulSetName(cluster *resource.Cluster) string {
-	zone := cluster.Spec().Topology.Zones[0]
-
-	return zone.Name(cluster.StatefulSetName())
 }
 
 func alreadyInitialized(out string) bool {

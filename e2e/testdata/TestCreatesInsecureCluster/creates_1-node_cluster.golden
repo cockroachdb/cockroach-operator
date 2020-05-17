@@ -8,6 +8,7 @@ spec:
     emptyDir: {}
   image: cockroachdb/cockroach:v19.2.6
   nodes: 1
+  resources: {}
 
 ---
 apiVersion: v1
@@ -29,7 +30,7 @@ spec:
       --port=26257 --cache=25% --max-sql-memory=25%'
     env:
     - name: COCKROACH_CHANNEL
-      value: kubernetes-helm
+      value: kubernetes-operator
     image: cockroachdb/cockroach:v19.2.6
     imagePullPolicy: IfNotPresent
     livenessProbe:
@@ -197,7 +198,7 @@ spec:
           --port=26257 --cache=25% --max-sql-memory=25%'
         env:
         - name: COCKROACH_CHANNEL
-          value: kubernetes-helm
+          value: kubernetes-operator
         image: cockroachdb/cockroach:v19.2.6
         imagePullPolicy: IfNotPresent
         livenessProbe:

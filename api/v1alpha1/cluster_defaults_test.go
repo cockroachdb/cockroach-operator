@@ -15,9 +15,6 @@ func TestSetClusterSpecDefaults(t *testing.T) {
 		HTTPPort:     &DefaultHTTPPort,
 		Cache:        "25%",
 		MaxSQLMemory: "25%",
-		Topology: &Topology{
-			Zones: []AvailabilityZone{{}},
-		},
 	}
 
 	SetClusterSpecDefaults(s)

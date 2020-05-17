@@ -29,7 +29,7 @@ spec:
           --http-port=8080 --port=26257 --cache=25% --max-sql-memory=25%'
         env:
         - name: COCKROACH_CHANNEL
-          value: kubernetes-helm
+          value: kubernetes-operator
         image: cockroachdb/cockroach:v19.2.6
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -61,8 +61,6 @@ spec:
           name: datadir
         - mountPath: /cockroach/cockroach-certs/
           name: certs
-      nodeSelector:
-        failure-domain.beta.kubernetes.io/zone: zone-a
       terminationGracePeriodSeconds: 60
       volumes:
       - emptyDir: {}

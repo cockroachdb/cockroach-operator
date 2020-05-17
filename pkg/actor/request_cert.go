@@ -17,10 +17,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const (
-	rsaPrivateKeyPEMType = "RSA PRIVATE KEY"
-)
-
 func newPrepareTLS(scheme *runtime.Scheme, cl client.Client, config *rest.Config) Actor {
 	return &prepareTLS{
 		action: newAction("prepare_tls", scheme, cl),
@@ -35,14 +31,14 @@ type prepareTLS struct {
 }
 
 func (rc *prepareTLS) Handles(conds []api.ClusterCondition) bool {
-	return condition.False(api.InitializedCondition, conds)
+	return condition.True(api.NotInitializedCondition, conds)
 }
 
 func (rc *prepareTLS) Act(ctx context.Context, cluster *resource.Cluster) error {
 	log := rc.log.WithValues("CrdbCluster", cluster.ObjectKey())
 
-	if !cluster.Spec().TLSEnabled || cluster.Spec().NodeTLSSecret != api.NodeTLSSecretKeyword {
-		log.Info("Skipping TLS", "enabled", cluster.Spec().TLSEnabled, "secret", cluster.Spec().NodeTLSSecret)
+	if !cluster.Spec().TLSEnabled || cluster.Spec().NodeTLSSecret != "" {
+		log.Info("Skipping TLS cert generation", "enabled", cluster.Spec().TLSEnabled, "secret", cluster.Spec().NodeTLSSecret)
 		return nil
 	}
 

@@ -14,14 +14,6 @@ func SetClusterSpecDefaults(cs *CrdbClusterSpec) {
 		cs.HTTPPort = &DefaultHTTPPort
 	}
 
-	if cs.Topology == nil {
-		cs.Topology = &Topology{}
-	}
-
-	if len(cs.Topology.Zones) == 0 {
-		cs.Topology.Zones = []AvailabilityZone{{}}
-	}
-
 	if cs.Cache == "" {
 		cs.Cache = "25%"
 	}

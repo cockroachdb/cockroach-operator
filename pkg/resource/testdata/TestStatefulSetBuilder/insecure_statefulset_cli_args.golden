@@ -30,7 +30,7 @@ spec:
         - --temp-dir=/tmp
         env:
         - name: COCKROACH_CHANNEL
-          value: kubernetes-helm
+          value: kubernetes-operator
         image: cockroachdb/cockroach:v19.2.6
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -60,8 +60,6 @@ spec:
         volumeMounts:
         - mountPath: /cockroach/cockroach-data/
           name: datadir
-      nodeSelector:
-        failure-domain.beta.kubernetes.io/zone: zone-a
       terminationGracePeriodSeconds: 60
       volumes:
       - emptyDir: {}
