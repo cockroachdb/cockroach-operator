@@ -20,7 +20,8 @@ If you have kubectl configured to use a cluster, you can start the operator loca
 kubectl apply -f ./config/crd/bases/crdb.cockroachlabs.com_crdbclusters.yaml
 
 # Start operator
-WATCH_NAMESPACE=default make run
+WATCH_NAMESPACE=default
+make run
 ```
 
 ### Recipes:
