@@ -1,5 +1,5 @@
+# RBAC Definition (ClutserRole, ServiceAccount, and ClusterRoleBinding):
 
----
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -147,6 +147,7 @@ subjects:
     namespace: default
     kind: ServiceAccount
 
+# Operator Deployment Definition:
 ---
 apiVersion: apps/v1
 kind: Deployment
