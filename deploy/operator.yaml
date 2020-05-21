@@ -1,0 +1,193 @@
+# RBAC Definition (ClutserRole, ServiceAccount, and ClusterRoleBinding):
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: crdb-operator-role
+rules:
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - certificates.k8s.io
+  resources:
+  - certificatesigningrequests
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - watch
+- apiGroups:
+  - certificates.k8s.io
+  resources:
+  - certificatesigningrequests/approval
+  verbs:
+  - update
+- apiGroups:
+  - certificates.k8s.io
+  resources:
+  - certificatesigningrequests/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get
+- apiGroups:
+  - ""
+  resources:
+  - configmaps/status
+  verbs:
+  - get
+- apiGroups:
+  - ""
+  resources:
+  - pods/exec
+  verbs:
+  - create
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - create
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - services/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - crdb.cockroachlabs.com
+  resources:
+  - crdbclusters
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - crdb.cockroachlabs.com
+  resources:
+  - crdbclusters/status
+  verbs:
+  - get
+  - patch
+  - update
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: crdb-operator-default 
+  namespace: default 
+  annotations:
+  labels:
+    app: crdb-operator
+
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: crdb-operator-default 
+  labels:
+    app: crdb-operator 
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: crdb-operator-role 
+subjects:
+  - name: crdb-operator-default 
+    namespace: default
+    kind: ServiceAccount
+
+# Operator Deployment Definition:
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crdb-operator
+  namespace: default
+  labels:
+    app: crdb-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: crdb-operator
+  template:
+    metadata:
+      labels:
+        app: crdb-operator 
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: crdb-operator
+  template:
+    metadata:
+      labels:
+        app: crdb-operator 
+    spec:
+      serviceAccountName: crdb-operator-default
+      containers:
+        - name: crdb-operator
+          image: "us.gcr.io/cockroach-managed-staging/crdb-operator-ubi:326c94ab"
+          imagePullPolicy: IfNotPresent
+          args:
+          env:
+          - name: WATCH_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+
