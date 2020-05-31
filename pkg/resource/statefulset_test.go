@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"io/ioutil"
+	appsv1 "k8s.io/api/apps/v1"
 	"path/filepath"
 
 	"testing"
@@ -43,10 +44,12 @@ func TestStatefulSetBuilder(t *testing.T) {
 		cluster := resource.NewCluster(cr)
 
 		t.Run(testName, func(t *testing.T) {
-			actual, err := resource.StatefulSetBuilder{
+			actual := &appsv1.StatefulSet{}
+
+			err := resource.StatefulSetBuilder{
 				Cluster:  &cluster,
 				Selector: commonLabels.Selector(),
-			}.Build()
+			}.Build(actual)
 			require.NoError(t, err)
 
 			var buf bytes.Buffer
