@@ -80,6 +80,26 @@ func (cluster Cluster) DiscoveryServiceName() string {
 	return cluster.Name()
 }
 
+func (cluster Cluster) ClusterRoleName() string {
+	return cluster.Name()
+}
+
+func (cluster Cluster) RoleName() string {
+	return cluster.Name()
+}
+
+func (cluster Cluster) ServiceAccountName() string {
+	return cluster.Name()
+}
+
+func (cluster Cluster) RoleBindingName() string {
+	return cluster.Name()
+}
+
+func (cluster Cluster) ClusterRoleBindingName() string {
+	return cluster.Name()
+}
+
 func (cluster Cluster) PublicServiceName() string {
 	return fmt.Sprintf("%s-public", cluster.Name())
 }

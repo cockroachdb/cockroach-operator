@@ -1,0 +1,17 @@
+FROM golang:1.14 as builder
+
+WORKDIR /workspace
+
+COPY go.mod go.mod
+COPY go.sum go.sum
+
+RUN go mod download
+RUN mkdir bin
+
+COPY cockroach-util/ cockroach-util/
+
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o bin/cockroach-util cockroach-util/main.go
+
+FROM cockroachdb/cockroach:v20.1.1 as runner
+
+COPY --from=builder /workspace/bin/cockroach-util /cockroach/cockroach-util

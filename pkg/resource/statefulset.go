@@ -137,6 +137,7 @@ func (b StatefulSetBuilder) makePodTemplate() corev1.PodTemplateSpec {
 		Spec: corev1.PodSpec{
 			TerminationGracePeriodSeconds: ptr.Int64(60),
 			Containers:                    b.makeContainers(),
+			ServiceAccountName:            b.ServiceAccountName(),
 		},
 	}
 }
@@ -149,12 +150,7 @@ func (b StatefulSetBuilder) makeContainers() []corev1.Container {
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			Resources:       b.Spec().Resources,
 			Args:            b.dbArgs(),
-			Env: []corev1.EnvVar{
-				{
-					Name:  "COCKROACH_CHANNEL",
-					Value: "kubernetes-operator",
-				},
-			},
+			Env:             b.env(),
 			Ports: []corev1.ContainerPort{
 				{
 					Name:          grpcPortName,
@@ -189,6 +185,26 @@ func (b StatefulSetBuilder) makeContainers() []corev1.Container {
 				InitialDelaySeconds: 10,
 				PeriodSeconds:       5,
 				FailureThreshold:    2,
+			},
+			Lifecycle: &corev1.Lifecycle{
+				// PostStart: &corev1.Handler{
+				// 	Exec: &corev1.ExecAction{
+				// 		Command: []string{
+				// 			"shell",
+				// 			"-ecx",
+				// 			">- exec /cockroach/cockroach-util post-stop",
+				// 		},
+				// 	},
+				// },
+				PreStop: &corev1.Handler{
+					Exec: &corev1.ExecAction{
+						Command: []string{
+							"shell",
+							"-ecx",
+							">- exec /cockroach/cockroach-util post-stop",
+						},
+					},
+				},
 			},
 		},
 	}
@@ -253,6 +269,49 @@ func (b StatefulSetBuilder) joinStr() string {
 	}
 
 	return strings.Join(seeds, ",")
+}
+
+func (b StatefulSetBuilder) env() []corev1.EnvVar {
+	env := []corev1.EnvVar{
+		{
+			Name:  "COCKROACH_CHANNEL",
+			Value: "kubernetes-operator",
+		},
+		{
+			Name:  "KUBERNETES_STATEFULSET",
+			Value: b.StatefulSetName(),
+		},
+		{
+			Name: "KUBERNETES_POD",
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					FieldPath: "metadata.name",
+				},
+			},
+		},
+		{
+			Name: "KUBERNETES_NAMESPACE",
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					FieldPath: "metadata.namespace",
+				},
+			},
+		},
+	}
+
+	if b.Spec().TLSEnabled {
+		env = append(env, corev1.EnvVar{
+			Name:  "COCKROACH_CERTS_DIR",
+			Value: "/cockroach/cockroach-certs/",
+		})
+	} else {
+		env = append(env, corev1.EnvVar{
+			Name:  "COCKROACH_INSECURE",
+			Value: "TRUE",
+		})
+	}
+
+	return env
 }
 
 func addCertsVolumeMount(container string, spec *corev1.PodSpec) error {
