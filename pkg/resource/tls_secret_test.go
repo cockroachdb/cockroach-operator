@@ -2,9 +2,9 @@ package resource_test
 
 import (
 	"context"
-	"github.com/cockroachlabs/crdb-operator/pkg/kube"
-	"github.com/cockroachlabs/crdb-operator/pkg/resource"
-	"github.com/cockroachlabs/crdb-operator/pkg/testutil"
+	"github.com/cockroachdb/cockroach-operator/pkg/kube"
+	"github.com/cockroachdb/cockroach-operator/pkg/resource"
+	"github.com/cockroachdb/cockroach-operator/pkg/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"

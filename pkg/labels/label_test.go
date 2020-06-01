@@ -1,8 +1,8 @@
 package labels_test
 
 import (
-	"github.com/cockroachlabs/crdb-operator/pkg/labels"
-	"github.com/cockroachlabs/crdb-operator/pkg/testutil"
+	"github.com/cockroachdb/cockroach-operator/pkg/labels"
+	"github.com/cockroachdb/cockroach-operator/pkg/testutil"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -17,7 +17,7 @@ func TestDefaultCommonLabels(t *testing.T) {
 		"app.kubernetes.io/instance":   "test-cluster",
 		"app.kubernetes.io/component":  "database",
 		"app.kubernetes.io/part-of":    "cockroachdb",
-		"app.kubernetes.io/managed-by": "crdb-operator",
+		"app.kubernetes.io/managed-by": "cockroach-operator",
 	}
 
 	actual := labels.Common(clusterAsPartOfApp).AsMap()
@@ -36,7 +36,7 @@ func TestPartOfAndVersionGetCustomized(t *testing.T) {
 		"app.kubernetes.io/version":    "v19.2",
 		"app.kubernetes.io/component":  "database",
 		"app.kubernetes.io/part-of":    "django",
-		"app.kubernetes.io/managed-by": "crdb-operator",
+		"app.kubernetes.io/managed-by": "cockroach-operator",
 	}
 
 	actual := labels.Common(clusterAsPartOfApp).AsMap()

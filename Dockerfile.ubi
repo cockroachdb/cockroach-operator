@@ -11,7 +11,7 @@ COPY cmd/ cmd/
 COPY api/ api/
 COPY pkg/ pkg/
 
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o operator cmd/crdb-operator/main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o operator cmd/cockroach-operator/main.go
 
 FROM registry.access.redhat.com/ubi8/ubi-minimal:latest as runner
 

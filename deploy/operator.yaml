@@ -4,7 +4,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   creationTimestamp: null
-  name: crdb-operator-role
+  name: cockroach-operator-role
 rules:
 - apiGroups:
   - apps
@@ -125,25 +125,25 @@ rules:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: crdb-operator-default 
+  name: cockroach-operator-default 
   namespace: default 
   annotations:
   labels:
-    app: crdb-operator
+    app: cockroach-operator
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRoleBinding
 metadata:
-  name: crdb-operator-default 
+  name: cockroach-operator-default 
   labels:
-    app: crdb-operator 
+    app: cockroach-operator 
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: crdb-operator-role 
+  name: cockroach-operator-role 
 subjects:
-  - name: crdb-operator-default 
+  - name: cockroach-operator-default 
     namespace: default
     kind: ServiceAccount
 
@@ -152,33 +152,33 @@ subjects:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: crdb-operator
+  name: cockroach-operator
   namespace: default
   labels:
-    app: crdb-operator
+    app: cockroach-operator
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: crdb-operator
+      app: cockroach-operator
   template:
     metadata:
       labels:
-        app: crdb-operator 
+        app: cockroach-operator 
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: crdb-operator
+      app: cockroach-operator
   template:
     metadata:
       labels:
-        app: crdb-operator 
+        app: cockroach-operator 
     spec:
-      serviceAccountName: crdb-operator-default
+      serviceAccountName: cockroach-operator-default
       containers:
-        - name: crdb-operator
-          image: "us.gcr.io/cockroach-managed-staging/crdb-operator-ubi:326c94ab"
+        - name: cockroach-operator
+          image: "us.gcr.io/cockroach-managed-staging/cockroach-operator-ubi:326c94ab"
           imagePullPolicy: IfNotPresent
           args:
           env:

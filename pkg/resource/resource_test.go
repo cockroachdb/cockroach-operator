@@ -3,11 +3,11 @@ package resource_test
 import (
 	"context"
 	"fmt"
-	"github.com/cockroachlabs/crdb-operator/pkg/kube"
-	"github.com/cockroachlabs/crdb-operator/pkg/labels"
-	"github.com/cockroachlabs/crdb-operator/pkg/ptr"
-	"github.com/cockroachlabs/crdb-operator/pkg/resource"
-	"github.com/cockroachlabs/crdb-operator/pkg/testutil"
+	"github.com/cockroachdb/cockroach-operator/pkg/kube"
+	"github.com/cockroachdb/cockroach-operator/pkg/labels"
+	"github.com/cockroachdb/cockroach-operator/pkg/ptr"
+	"github.com/cockroachdb/cockroach-operator/pkg/resource"
+	"github.com/cockroachdb/cockroach-operator/pkg/testutil"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -101,7 +101,7 @@ func makeTestService() *corev1.Service {
 			Labels: map[string]string{
 				"app.kubernetes.io/component":  "database",
 				"app.kubernetes.io/instance":   "test-cluster",
-				"app.kubernetes.io/managed-by": "crdb-operator",
+				"app.kubernetes.io/managed-by": "cockroach-operator",
 				"app.kubernetes.io/name":       "cockroachdb",
 				"app.kubernetes.io/part-of":    "cockroachdb",
 			},

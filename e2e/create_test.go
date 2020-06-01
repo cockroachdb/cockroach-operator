@@ -2,12 +2,12 @@ package e2e
 
 import (
 	"flag"
-	api "github.com/cockroachlabs/crdb-operator/api/v1alpha1"
-	"github.com/cockroachlabs/crdb-operator/pkg/actor"
-	"github.com/cockroachlabs/crdb-operator/pkg/controller"
-	"github.com/cockroachlabs/crdb-operator/pkg/resource"
-	"github.com/cockroachlabs/crdb-operator/pkg/testutil"
-	testenv "github.com/cockroachlabs/crdb-operator/pkg/testutil/env"
+	api "github.com/cockroachdb/cockroach-operator/api/v1alpha1"
+	"github.com/cockroachdb/cockroach-operator/pkg/actor"
+	"github.com/cockroachdb/cockroach-operator/pkg/controller"
+	"github.com/cockroachdb/cockroach-operator/pkg/resource"
+	"github.com/cockroachdb/cockroach-operator/pkg/testutil"
+	testenv "github.com/cockroachdb/cockroach-operator/pkg/testutil/env"
 	"github.com/go-logr/zapr"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"

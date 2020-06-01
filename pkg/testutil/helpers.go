@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	api "github.com/cockroachlabs/crdb-operator/api/v1alpha1"
+	api "github.com/cockroachdb/cockroach-operator/api/v1alpha1"
 )
 
 func InitScheme(t *testing.T) *runtime.Scheme {

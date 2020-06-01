@@ -1,7 +1,7 @@
 REGISTRY_PREFIX ?= us.gcr.io
-GENERATOR_IMG ?= crdb-operator/code-generator
-TEST_RUNNER_IMG ?= crdb-operator/test-runner
-UBI_IMG ?= crdb-operator/crdb-operator-ubi
+GENERATOR_IMG ?= cockroach-operator/code-generator
+TEST_RUNNER_IMG ?= cockroach-operator/test-runner
+UBI_IMG ?= cockroach-operator/cockroach-operator-ubi
 VERSION ?= latest
 
 LOCAL_GOPATH := $(shell go env GOPATH)
@@ -30,7 +30,7 @@ e2e-test:
 	$(TOOLS_WRAPPER) -v ${HOME}/.kube:/root/.kube -v ${HOME}/.config/gcloud:/root/.config/gcloud -e USE_EXISTING_CLUSTER=true $(REGISTRY_PREFIX)/$(TEST_RUNNER_IMG) go test -v ./e2e-tests/...
 
 run: fmt vet
-	go run ./cmd/crdb-operator/main.go
+	go run ./cmd/cockroach-operator/main.go
 
 fmt:
 	go fmt ./...

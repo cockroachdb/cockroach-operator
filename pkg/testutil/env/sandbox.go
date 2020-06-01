@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	api "github.com/cockroachlabs/crdb-operator/api/v1alpha1"
+	api "github.com/cockroachdb/cockroach-operator/api/v1alpha1"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"

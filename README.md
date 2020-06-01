@@ -1,4 +1,4 @@
-# crdb-operator
+# cockroach-operator 
 k8s operator for CRDB
 
 ## Development
@@ -7,7 +7,7 @@ k8s operator for CRDB
 
 - GNU Make
 - Docker
-- go1.13
+- go1.14
 
 The rest of dependencies are packed into Docker images which are executed from the [](Makefile)
 

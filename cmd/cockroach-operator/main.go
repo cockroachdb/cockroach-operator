@@ -3,10 +3,10 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/cockroachlabs/crdb-operator/pkg/controller"
+	"github.com/cockroachdb/cockroach-operator/pkg/controller"
 	"os"
 
-	crdbv1alpha1 "github.com/cockroachlabs/crdb-operator/api/v1alpha1"
+	crdbv1alpha1 "github.com/cockroachdb/cockroach-operator/api/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
