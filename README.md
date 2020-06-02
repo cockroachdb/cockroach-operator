@@ -19,7 +19,7 @@ If you have kubectl configured to use a cluster, you can start the operator loca
 # Install CRD (you may need to add --validate=false for k8s version below 1.15
 kubectl apply -f ./config/crd/bases/crdb.cockroachlabs.com_crdbclusters.yaml
 
-# Start operator
+# Start operator - run the operator in local development mode
 WATCH_NAMESPACE=default
 make run
 ```
