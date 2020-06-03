@@ -153,7 +153,7 @@ metadata:
   labels:
     app.kubernetes.io/component: database
     app.kubernetes.io/instance: crdb
-    app.kubernetes.io/managed-by: crdb-operator
+    app.kubernetes.io/managed-by: cockroach-operator
     app.kubernetes.io/name: cockroachdb
     app.kubernetes.io/part-of: cockroachdb
   name: crdb
@@ -183,7 +183,7 @@ metadata:
   labels:
     app.kubernetes.io/component: database
     app.kubernetes.io/instance: crdb
-    app.kubernetes.io/managed-by: crdb-operator
+    app.kubernetes.io/managed-by: cockroach-operator
     app.kubernetes.io/name: cockroachdb
     app.kubernetes.io/part-of: cockroachdb
   name: crdb-public
@@ -212,7 +212,7 @@ metadata:
   labels:
     app.kubernetes.io/component: database
     app.kubernetes.io/instance: crdb
-    app.kubernetes.io/managed-by: crdb-operator
+    app.kubernetes.io/managed-by: cockroach-operator
     app.kubernetes.io/name: cockroachdb
     app.kubernetes.io/part-of: cockroachdb
   name: crdb

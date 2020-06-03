@@ -2,8 +2,8 @@ package actor_test
 
 import (
 	"context"
-	"github.com/cockroachlabs/crdb-operator/pkg/actor"
-	"github.com/cockroachlabs/crdb-operator/pkg/testutil"
+	"github.com/cockroachdb/cockroach-operator/pkg/actor"
+	"github.com/cockroachdb/cockroach-operator/pkg/testutil"
 	"github.com/go-logr/zapr"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"

@@ -1,7 +1,7 @@
 package condition
 
 import (
-	api "github.com/cockroachlabs/crdb-operator/api/v1alpha1"
+	api "github.com/cockroachdb/cockroach-operator/api/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"testing"

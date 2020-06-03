@@ -6,7 +6,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
-	"github.com/cockroachlabs/crdb-operator/pkg/resource"
+	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 )
 
 const rsaPrivateKeyPEMType = "RSA PRIVATE KEY"

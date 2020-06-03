@@ -2,8 +2,8 @@ package resource
 
 import (
 	"context"
-	"github.com/cockroachlabs/crdb-operator/pkg/kube"
-	"github.com/cockroachlabs/crdb-operator/pkg/labels"
+	"github.com/cockroachdb/cockroach-operator/pkg/kube"
+	"github.com/cockroachdb/cockroach-operator/pkg/labels"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

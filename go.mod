@@ -1,4 +1,4 @@
-module github.com/cockroachlabs/crdb-operator
+module github.com/cockroachdb/cockroach-operator
 
 go 1.14
 
@@ -38,4 +38,4 @@ require (
 )
 
 // requirement of the current version of client-go
-replace github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.4.1
+replace github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.3.1

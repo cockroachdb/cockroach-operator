@@ -1,7 +1,7 @@
 package labels
 
 import (
-	api "github.com/cockroachlabs/crdb-operator/api/v1alpha1"
+	api "github.com/cockroachdb/cockroach-operator/api/v1alpha1"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -122,7 +122,7 @@ func makeCommonLabels(other map[string]string, instance string, version string) 
 	}
 
 	common[ComponentKey] = "database"
-	common[ManagedByKey] = "crdb-operator"
+	common[ManagedByKey] = "cockroach-operator"
 
 	return common
 }

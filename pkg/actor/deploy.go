@@ -2,10 +2,10 @@ package actor
 
 import (
 	"context"
-	api "github.com/cockroachlabs/crdb-operator/api/v1alpha1"
-	"github.com/cockroachlabs/crdb-operator/pkg/condition"
-	"github.com/cockroachlabs/crdb-operator/pkg/kube"
-	"github.com/cockroachlabs/crdb-operator/pkg/resource"
+	api "github.com/cockroachdb/cockroach-operator/api/v1alpha1"
+	"github.com/cockroachdb/cockroach-operator/pkg/condition"
+	"github.com/cockroachdb/cockroach-operator/pkg/kube"
+	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"

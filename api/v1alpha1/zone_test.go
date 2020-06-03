@@ -1,8 +1,8 @@
 package v1alpha1_test
 
 import (
-	api "github.com/cockroachlabs/crdb-operator/api/v1alpha1"
-	"github.com/cockroachlabs/crdb-operator/pkg/testutil"
+	api "github.com/cockroachdb/cockroach-operator/api/v1alpha1"
+	"github.com/cockroachdb/cockroach-operator/pkg/testutil"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )

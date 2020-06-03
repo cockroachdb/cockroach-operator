@@ -2,9 +2,9 @@ package resource_test
 
 import (
 	"fmt"
-	"github.com/cockroachlabs/crdb-operator/pkg/labels"
-	"github.com/cockroachlabs/crdb-operator/pkg/resource"
-	"github.com/cockroachlabs/crdb-operator/pkg/testutil"
+	"github.com/cockroachdb/cockroach-operator/pkg/labels"
+	"github.com/cockroachdb/cockroach-operator/pkg/resource"
+	"github.com/cockroachdb/cockroach-operator/pkg/testutil"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

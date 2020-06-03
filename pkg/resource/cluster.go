@@ -2,8 +2,8 @@ package resource
 
 import (
 	"fmt"
-	api "github.com/cockroachlabs/crdb-operator/api/v1alpha1"
-	"github.com/cockroachlabs/crdb-operator/pkg/condition"
+	api "github.com/cockroachdb/cockroach-operator/api/v1alpha1"
+	"github.com/cockroachdb/cockroach-operator/pkg/condition"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
