@@ -4,8 +4,8 @@ import (
 	api "github.com/cockroachdb/cockroach-operator/api/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	corev1 "k8s.io/api/core/v1"
+	apiresource "k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	amtypes "k8s.io/apimachinery/pkg/types"
 )
 
@@ -55,6 +55,28 @@ func (b ClusterBuilder) WithEmptyDirDataStore() ClusterBuilder {
 	return b
 }
 
+func (b ClusterBuilder) WithPVDataStore(size, storageClass string) ClusterBuilder {
+	quantity, _ := apiresource.ParseQuantity(size)
+
+	volumeMode := corev1.PersistentVolumeFilesystem
+	b.cluster.Spec.DataStore = api.Volume{
+		VolumeClaim: &api.VolumeClaim{
+			PersistentVolumeClaimSpec: corev1.PersistentVolumeClaimSpec{
+				AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+				Resources: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceStorage: quantity,
+					},
+				},
+				StorageClassName: &storageClass,
+				VolumeMode:       &volumeMode,
+			},
+		},
+	}
+
+	return b
+}
+
 func (b ClusterBuilder) WithHTTPPort(port int32) ClusterBuilder {
 	b.cluster.Spec.HTTPPort = &port
 	return b
@@ -70,10 +92,13 @@ func (b ClusterBuilder) WithNodeTLS(secret string) ClusterBuilder {
 	return b
 }
 
+func (b ClusterBuilder) WithImage(image string) ClusterBuilder {
+	b.cluster.Spec.Image = image
+	return b
+}
+
 func (b ClusterBuilder) Cr() *api.CrdbCluster {
 	cluster := b.cluster.DeepCopy()
-
-	api.SetClusterSpecDefaults(&cluster.Spec)
 
 	return cluster
 }
@@ -81,9 +106,4 @@ func (b ClusterBuilder) Cr() *api.CrdbCluster {
 func (b ClusterBuilder) Cluster() *resource.Cluster {
 	cluster := resource.NewCluster(b.Cr())
 	return &cluster
-}
-
-func (b ClusterBuilder) RuntimeObject(ns string) runtime.Object {
-	b.cluster.ObjectMeta.Namespace = ns
-	return &b.cluster
 }

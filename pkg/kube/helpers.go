@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/banzaicloud/k8s-objectmatcher/patch"
 	"github.com/pkg/errors"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -89,6 +90,16 @@ func Get(ctx context.Context, cl client.Client, obj runtime.Object) error {
 	return cl.Get(ctx, key, obj)
 }
 
+func FindContainer(container string, spec *corev1.PodSpec) (*corev1.Container, error) {
+	for i, _ := range spec.Containers {
+		if spec.Containers[i].Name == container {
+			return &spec.Containers[i], nil
+		}
+	}
+
+	return nil, fmt.Errorf("failed to find container %s", container)
+}
+
 type PersistFn func(context.Context, client.Client, runtime.Object, MutateFn) (upserted bool, err error)
 
 var DefaultPersister PersistFn = func(ctx context.Context, cl client.Client, obj runtime.Object, f MutateFn) (upserted bool, err error) {
@@ -136,9 +147,16 @@ func CreateOrUpdateAnnotated(ctx context.Context, c client.Client, obj runtime.O
 		return false, err
 	}
 
-	patchResult, err := patchMaker.Calculate(existing, obj,
+	opts := []patch.CalculateOption{
 		patch.IgnoreStatusFields(),
-		patch.IgnoreVolumeClaimTemplateTypeMetaAndStatus())
+	}
+
+	switch obj.(type) {
+	case *appsv1.StatefulSet:
+		opts = append(opts, patch.IgnoreVolumeClaimTemplateTypeMetaAndStatus())
+	}
+
+	patchResult, err := patchMaker.Calculate(existing, obj, opts...)
 	if err != nil {
 		return false, err
 	}
