@@ -1,5 +1,5 @@
 # cockroach-operator 
-k8s operator for CRDB
+Kubernetes Operator for CockroachDB
 
 ## Development
 
