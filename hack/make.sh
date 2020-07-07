@@ -14,6 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# This code is based on existing work
+# https://github.com/GoogleCloudPlatform/gke-terraform-generator/tree/master/test
+
 # This function checks to make sure that every
 # shebang has a '- e' flag, which causes it
 # to exit on error
@@ -38,10 +41,10 @@ function basefiles() {
 }
 
 # This function runs the hadolint linter on
-# every file named 'Dockerfile'
+# every file named 'Dockerfile*'
 function docker() {
   echo "Running hadolint on Dockerfiles"
-  find . -name "Dockerfile" -exec hadolint {} \;
+  find . -name "Dockerfile*" -exec hadolint {} \;
 }
 
 # This function runs 'terraform validate' against all
@@ -52,7 +55,7 @@ function check_terraform() {
   find . -name "*.tf" -exec bash -c 'terraform validate $(dirname "{}")' \;
 }
 
-# This function runs 'go fmt' and 'go vet' on eery file
+# This function runs 'go fmt' and 'go vet' on every file
 # that ends in '.go'
 function golang() {
   echo "Running go fmt"

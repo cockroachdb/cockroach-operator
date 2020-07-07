@@ -1,5 +1,5 @@
 #!/usr/bin/env python3.7
-# Copyright 2018 Google LLC
+# Copyright 2020 Coachroach Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 # snippet.
 
 # This code is based on existing work
-# https://partner-code.googlesource.com/helmsman-cardinal/+/refs/heads/master/helmsman-template-project/test/verify_boilerplate.py
+# https://github.com/GoogleCloudPlatform/gke-terraform-generator/tree/master/test
 
 
 """
