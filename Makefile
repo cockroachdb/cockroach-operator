@@ -60,3 +60,47 @@ docker/build/test-runner:
 docker/build/operator-ubi:
 	@echo "===========> Building $(UBI_IMG) docker image"
 	docker build --pull -t $(REGISTRY_PREFIX)/$(UBI_IMG):$(VERSION) -f Dockerfile.ubi .
+
+# Linting
+lint: check_shell check_python check_golang check_terraform check_docker \
+	check_base_files check_headers check_trailing_whitespace
+
+# The .PHONY directive tells make that this isn't a real target and so
+# the presence of a file named 'check_shell' won't cause this target to stop
+# working
+.PHONY: check_shell
+check_shell:
+	@source hack/make.sh && check_shell
+
+.PHONY: check_python
+check_python:
+	@source hack/make.sh && check_python
+
+.PHONY: check_golang
+check_golang:
+	@source hack/make.sh && golang
+
+.PHONY: check_terraform
+check_terraform:
+	@source hack/make.sh && check_terraform
+
+.PHONY: check_docker
+check_docker:
+	@source hack/make.sh && docker
+
+.PHONY: check_base_files
+check_base_files:
+	@source hack/make.sh && basefiles
+
+.PHONY: check_shebangs
+check_shebangs:
+	@source hack/make.sh && check_bash
+
+.PHONY: check_trailing_whitespace
+check_trailing_whitespace:
+	@source hack/make.sh && check_trailing_whitespace
+
+.PHONY: check_headers
+check_headers:
+	@echo "Checking file headers"
+	@python3 hack/verify_boilerplate.py
