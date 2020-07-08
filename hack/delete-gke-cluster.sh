@@ -16,7 +16,7 @@
 
 # "---------------------------------------------------------"
 # "-                                                       -"
-# "-  Create starts a GKE Cluster
+# "-  Delete a GKE Cluster                                 -"
 # "-                                                       -"
 # "---------------------------------------------------------"
 
@@ -26,38 +26,11 @@ set -o pipefail
 
 ROOT=$(dirname "${BASH_SOURCE[0]}")
 CLUSTER_NAME=""
-# TODO maybe set default zone?
 ZONE=""
 
 # shellcheck disable=SC1090
 source "$ROOT"/common.sh
-# shellcheck disable=SC1090
-source "$ROOT"/functions.sh
-
-# enable googleapi for container registry on the project
-enable-service compute.googleapis.com
-enable-service container.googleapis.com
-
-GKE_VERSION=$(gcloud container get-server-config \
-  --format="value(validMasterVersions[0])")
-
-# Get a comma separated list of zones from the default region
-ZONESINREGION=""
-for FILTEREDZONE in $(gcloud compute zones list --filter="region:$REGION" --format="value(name)" --limit 3)
-do
-  # Get a least 3 zones to run 3 nodes in
-  ZONESINREGION+="$FILTEREDZONE,"
-done
-#Remove the last comma from the starting
-ZONESINREGION=${ZONESINREGION%?}
 
 # Create a GKE cluster
-echo "Creating cluster"
-gcloud container clusters create "$CLUSTER_NAME" \
-  --zone "$ZONE" \
-  --node-locations "$ZONESINREGION" \
-  --cluster-version "$GKE_VERSION" \
-  --machine-type "n1-standard-1" \
-  --num-nodes=1 \
-  --enable-network-policy \
-  --enable-ip-alias
+echo "Deleting cluster"
+gcloud container clusters delete "$CLUSTER_NAME" --zone "$ZONE" --async --quiet

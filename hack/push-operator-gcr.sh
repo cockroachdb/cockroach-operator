@@ -25,8 +25,19 @@ set -o nounset
 set -o pipefail
 
 ROOT=$(dirname "${BASH_SOURCE[0]}")
+source ${ROOT}/functions.sh
+
 # TODO figure out version and make sure it is set
 VERSION=$(git rev-parse --short HEAD)
+
+# TODO(chrislovecnm): need to test this in teamcity
+if [[ -n "${GOOGLE_APPLICATION_CREDENTIALS:-}" ]]; then
+  echo "Detected GOOGLE_APPLICATION_CREDENTIALS, activating..." >&2
+  gcloud auth activate-service-account --key-file="${GOOGLE_APPLICATION_CREDENTIALS}"
+fi
+
+# enable googleapi for container registry on the project
+enable-service containerregistry.googleapis.com
 
 # TODO configure this so that we can override the default project
 PROJECT=$(gcloud config get-value project)
@@ -39,8 +50,16 @@ fi
 # TODO(chrislovecnm): Update this once we have the right location. 
 GCR_URL=us.gcr.io
 GCR_REGISTRY=us.gcr.io/${PROJECT}
+IMAGE=${GCR_REGISTRY}/cockroach-operator:${VERSION}
 
-docker build --no-cache --pull -t ${GCR_REGISTRY}/cockroach-operator:${VERSION} -f $ROOT/.../Dockerfile.ubi .
+echo "building Dockerfile.ubi image"
+docker build --no-cache --pull -t ${IMAGE} -f $ROOT/../Dockerfile.ubi . 
 
-echo "${GOOGLE_CREDENTIALS}" | docker login -u _json_key --password-stdin "https://${GCR_URL}"
-docker push "${GCR_REPOSITORY}:${VERSION}"
+gcloud auth configure-docker
+# TODO not certain why we are not using the gcloud auth command, but are using the docker login
+# echo "${GOOGLE_CREDENTIALS}" | docker login -u _json_key --password-stdin "https://${GCR_URL}"
+
+docker push "${IMAGE}"
+
+echo "pushed new image to container registry"
+echo "${IMAGE}"
