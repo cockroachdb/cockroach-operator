@@ -1,12 +1,12 @@
 apiVersion: crdb.cockroachlabs.com/v1alpha1
 kind: CrdbCluster
 metadata:
-  name: crdb
-  namespace: playground
+  name: crdb-tls-enabled
+  # I think we have to have an operator in this namespace
+  # namespace: playground
 spec:
   dataStore:
     emptyDir: {}
   tlsEnabled: true
-  nodeTLSSecret: GENERATED
-  image: cockroachdb/cockroach-unstable:v20.1.0
+  image: cockroachdb/cockroach:v20.1.3 
   nodes: 3

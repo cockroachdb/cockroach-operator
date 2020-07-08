@@ -4,7 +4,8 @@ metadata:
   name: crdb
 spec:
   tlsEnabled: true
-  nodeTLSSecret: GENERATED
+  # trying to figure out what this does
+  # nodeTLSSecret: GENERATED
   dataStore:
     pvc:
       spec:
