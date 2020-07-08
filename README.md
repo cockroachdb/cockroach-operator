@@ -3,7 +3,7 @@ Kubernetes Operator for CockroachDB
 
 This project is not production ready and is in an alpha state.
 
-#B Development
+# Development
 
 ### Requirements
 
@@ -15,7 +15,7 @@ The rest of dependencies are packed into Docker images which are executed from t
 
 ```
 git clone https://github.com/cockroachdb/cockroach-operator.git
-CLUSTER=test
+export CLUSTER=test
 # create a gke cluster
 ./hack/create-gke-cluster.sh -t $CLUSTER
 
@@ -46,6 +46,7 @@ Clean up the cluster
 ./hack/delete-operator.sh -c $CLUSTER
 
 # delete the cluster
+# note this is async, and the script will complete without waiting the entire time
 ./hack/delete-gke-cluster.sh -c $CLUSTER
 ```
 

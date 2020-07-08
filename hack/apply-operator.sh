@@ -35,7 +35,9 @@ source "$ROOT"/common.sh
 
 # If user did not pass in -i flag then fail
 if [ -z "${IMAGE_NAME}" ]; then
-  echo "Usage: $0 [-c <cluster name> -i <image_name>]" 1>&2; exit 1;
+  TAG=$(gcloud container images list-tags "us.gcr.io/$(gcloud config get-value project)/cockroach-operator" --limit=1 --format="value(TAGS)")
+  IMAGE_NAME="us.gcr.io/$(gcloud config get-value project)/cockroach-operator:${TAG}"
+  echo "Using the latest container found: ${IMAGE_NAME}"
 fi
 
 gcloud container clusters get-credentials "$CLUSTER_NAME" --zone "$ZONE"

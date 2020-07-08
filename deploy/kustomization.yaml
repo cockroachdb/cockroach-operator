@@ -5,4 +5,4 @@ kind: Kustomization
 images:
 - name: cockroach-operator
   newName: us.gcr.io/crdb-testing-282716/cockroach-operator
-  newTag: 5efaab9
+  newTag: 80d985b
