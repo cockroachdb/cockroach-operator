@@ -1,7 +1,7 @@
 apiVersion: crdb.cockroachlabs.com/v1alpha1
 kind: CrdbCluster
 metadata:
-  name: crdb
+  name: crdb-secure-pvc
 spec:
   tlsEnabled: true
   # trying to figure out what this does
@@ -14,7 +14,8 @@ spec:
         resources:
           requests:
             storage: 60Gi
-        storageClassName: crdb-io1
+        # this needs to be precreated
+        # storageClassName: crdb-io1
         volumeMode: Filesystem
   image: cockroachdb/cockroach:v19.2.6
   nodes: 3
