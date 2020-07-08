@@ -57,7 +57,7 @@ gcloud container clusters create "$CLUSTER_NAME" \
   --zone "$ZONE" \
   --node-locations "$ZONESINREGION" \
   --cluster-version "$GKE_VERSION" \
-  --machine-type "n1-standard-1" \
+  --machine-type "n1-standard-2" \
   --num-nodes=1 \
   --enable-network-policy \
   --enable-ip-alias
