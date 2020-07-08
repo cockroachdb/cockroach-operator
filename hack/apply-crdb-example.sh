@@ -23,7 +23,6 @@
 set -o errexit
 set -o nounset
 set -o pipefail
-set -x
 
 ROOT=$(dirname "${BASH_SOURCE[0]}")
 CLUSTER_NAME=""
@@ -35,6 +34,6 @@ source "$ROOT"/common.sh
 
 gcloud container clusters get-credentials "$CLUSTER_NAME" --zone "$ZONE"
 
-kubectl apply -f ${ROOT}/../config/example.yaml
+kubectl apply -f ${ROOT}/../config/examples/3-nodes-insecure-no-topology.yaml
 
 # TODO validate this

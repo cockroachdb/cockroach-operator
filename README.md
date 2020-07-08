@@ -1,15 +1,53 @@
 # cockroach-operator 
 Kubernetes Operator for CockroachDB
 
-## Development
+This project is not production ready and is in an alpha state.
+
+#B Development
 
 ### Requirements
 
-- GNU Make
 - Docker
-- go1.14
 
 The rest of dependencies are packed into Docker images which are executed from the [](Makefile)
+
+### Running the operator in GCP
+
+```
+git clone https://github.com/cockroachdb/cockroach-operator.git
+CLUSTER=test
+# create a gke cluster
+./hack/create-gke-cluster.sh -t $CLUSTER
+
+# build the image locally and push it to your image repo
+# record the output of the command, as it will tell you the image to use with kustomize
+./hack/push-operator-gcr.sh
+
+# apply the operator
+# replace the -i argument with the image name
+./hack/apply-operator.sh -i myimagename:2342 -c $CLUSTER
+
+# validate the the operator is running
+alias kubectl=k
+k get po
+
+# install a basic example
+./hack/apply-crdb-example.sh -c $CLUSTER
+```
+You now should have a basic crdb running. You can kubectl exec into a pod and test the database.
+
+Clean up the cluster
+
+```
+# delete the example
+./hack/delete-crdb-example.sh -c $CLUSTER
+
+# delete the operator
+./hack/delete-operator.sh -c $CLUSTER
+
+# delete the cluster
+./hack/delete-gke-cluster.sh -c $CLUSTER
+```
 
 ### Running operator in local development environment
 
