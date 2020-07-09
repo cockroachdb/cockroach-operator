@@ -47,7 +47,7 @@ manifests:
 
 # Generate code
 generate:
-	@$(CONTROLLER_GEN) object:headerFile=./hack/boilerplate.go.txt paths=./api/...
+	@$(CONTROLLER_GEN) object:headerFile=./hack/boilerplate/boilerplate.go.txt paths=./api/...
 
 docker/build/code-gen:
 	@echo "===========> Building $(GENERATOR_IMG) docker image"
