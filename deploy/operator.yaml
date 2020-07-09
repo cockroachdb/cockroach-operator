@@ -178,9 +178,9 @@ spec:
       serviceAccountName: cockroach-operator-default
       containers:
         - name: cockroach-operator
-          image: "us.gcr.io/cockroach-managed-staging/cockroach-operator-ubi:326c94ab"
+          # image name is replaced by kustomize
+          image: "cockroach-operator:placeholder"
           imagePullPolicy: IfNotPresent
-          args:
           env:
           - name: WATCH_NAMESPACE
             valueFrom:

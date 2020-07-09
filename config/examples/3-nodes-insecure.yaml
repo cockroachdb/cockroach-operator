@@ -1,7 +1,7 @@
 apiVersion: crdb.cockroachlabs.com/v1alpha1
 kind: CrdbCluster
 metadata:
-  name: crdb
+  name: crdb-insecure
 spec:
   dataStore:
     pvc:
@@ -11,7 +11,8 @@ spec:
         resources:
           requests:
             storage: 60Gi
-        storageClassName: crdb-io1
+        # this needs to be precreated and we are not checking this
+        # storageClassName: crdb-io1
         volumeMode: Filesystem
   topology:
     zones:

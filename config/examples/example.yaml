@@ -1,11 +1,12 @@
 apiVersion: crdb.cockroachlabs.com/v1alpha1
 kind: CrdbCluster
 metadata:
-  name: crdb
+  name: crdb-example
 spec:
   dataStore:
     emptyDir: {}
   tlsEnabled: true
-  nodeTLSSecret: GENERATED
+  # this I think requires a prexisting secret name
+  #nodeTLSSecret: GENERATED
   image: cockroachdb/cockroach-unstable:v20.1.0
   nodes: 1 
