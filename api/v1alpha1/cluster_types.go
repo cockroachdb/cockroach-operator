@@ -10,31 +10,57 @@ import (
 // CrdblusterSpec defines the desired state of Cluster
 type CrdbClusterSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
-	Nodes           int32  `json:"nodes"`
-	Image           string `json:"image,omitempty"`
-	GRPCPort        *int32 `json:"grpcPort,omitempty"`
-	HTTPPort        *int32 `json:"httpPort,omitempty"`
-	TLSEnabled      bool   `json:"tlsEnabled,omitempty"`
-	NodeTLSSecret   string `json:"nodeTLSSecret,omitempty"`
+	// (Required) Number of nodes (pods) in the cluster
+	Nodes int32 `json:"nodes"`
+	// (Required) Container image with supported CockroachDB version
+	Image string `json:"image,omitempty"`
+	// (Optional) The database port (`--port` CLI parameter when starting the service)
+	// Default: 26257
+	GRPCPort *int32 `json:"grpcPort,omitempty"`
+	// (Optional)  The web UI port (`--http-port` CLI parameter when starting the service)
+	// Default: 8080
+	HTTPPort *int32 `json:"httpPort,omitempty"`
+	// (Optional) Whenever to start the cluster in secure or insecure mode. The secure mode
+	// uses certificates from the secrets `NodeTLSSecret` and `ClientTLSSecret`.
+	// If those are not specified, the operator generates certificates and
+	// signs them using the cluster Certificate Authority. Such setup is not recommended
+	// for production usage
+	// Default: false
+	TLSEnabled bool `json:"tlsEnabled,omitempty"`
+	// (Optional) The secret with certificates and a private key for the TLS endpoint
+	// on the database port. The standard naming of files is expected (tls.key, tls.crt, ca.crt)
+	// Default: ""
+	NodeTLSSecret string `json:"nodeTLSSecret,omitempty"`
+	// (Optional) The secret with a certificate and a private key for root database user
+	// Default: ""
 	ClientTLSSecret string `json:"clientTLSSecret,omitempty"`
-	// The total size for caches (--cache command line parameter)
+	// (Optional) The total size for caches (`--cache` command line parameter)
+	// Default: "25%"
 	Cache string `json:"cache,omitempty"`
-	// The maximum in-memory storage capacity available to store temporary
-	// data for SQL queries (--max-sql-memory parameter)
+	// (Optional) The maximum in-memory storage capacity available to store temporary
+	// data for SQL queries (`--max-sql-memory` parameter)
+	// Default: "25%"
 	MaxSQLMemory string `json:"maxSQLMemory,omitempty"`
-	// Optional command line args
+	// (Optional) Additional command line arguments for the `cockroach` binary
+	// Default: ""
 	AdditionalArgs []string `json:"additionalArgs,omitempty"`
-	// Resources set resource requests and limits for database containers
+	// (Optional) Database container resource limits. Any container limits
+	// can be specified.
+	// Default: (not specified)
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
-	DataStore Volume                      `json:"dataStore,omitempty"`
-	Topology  *Topology                   `json:"topology,omitempty"`
+	// (Required) Database disk storage configuration
+	DataStore Volume `json:"dataStore,omitempty"`
 }
 
 // CrdbClusterStatus defines the observed state of Cluster
 type CrdbClusterStatus struct {
 	// Important: Run "make" to regenerate code after modifying this file
+
+	// List of conditions representing the current status of the cluster resource.
+	// Currently, only `NotInitialized` is used
 	Conditions []ClusterCondition `json:"conditions,omitempty"`
-	Version    string             `json:"version,omitempty"`
+	// Database service version. Not populated and is just a placeholder currently.
+	Version string `json:"version,omitempty"`
 }
 
 // +genclient

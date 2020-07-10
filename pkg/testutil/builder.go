@@ -40,11 +40,6 @@ func (b ClusterBuilder) WithUID(uid string) ClusterBuilder {
 	return b
 }
 
-func (b ClusterBuilder) WithTopology(topology *api.Topology) ClusterBuilder {
-	b.cluster.Spec.Topology = topology.DeepCopy()
-	return b
-}
-
 func (b ClusterBuilder) WithNodeCount(c int32) ClusterBuilder {
 	b.cluster.Spec.Nodes = c
 	return b

@@ -40,20 +40,24 @@ spec:
           description: CrdblusterSpec defines the desired state of Cluster
           properties:
             additionalArgs:
-              description: Optional command line args
+              description: '(Optional) Additional command line arguments for the `cockroach`
+                binary Default: ""'
               items:
                 type: string
               type: array
             cache:
-              description: The total size for caches (--cache command line parameter)
+              description: '(Optional) The total size for caches (`--cache` command
+                line parameter) Default: "25%"'
               type: string
             clientTLSSecret:
+              description: '(Optional) The secret with a certificate and a private
+                key for root database user Default: ""'
               type: string
             dataStore:
+              description: (Required) Database disk storage configuration
               properties:
                 emptyDir:
-                  description: Represents an empty directory for a pod. Empty directory
-                    volumes support ownership management and SELinux relabeling.
+                  description: Temporary folder on the host node's filesystem
                   properties:
                     medium:
                       description: 'What type of storage medium should back this directory.
@@ -75,8 +79,7 @@ spec:
                       x-kubernetes-int-or-string: true
                   type: object
                 hostPath:
-                  description: Represents a host path mapped into a pod. Host path
-                    volumes do not support ownership management or SELinux relabeling.
+                  description: Directory from the host node's filesystem
                   properties:
                     path:
                       description: 'Path of the directory on the host. If the path
@@ -91,13 +94,10 @@ spec:
                   - path
                   type: object
                 pvc:
+                  description: Persistent volume to use
                   properties:
                     source:
-                      description: PersistentVolumeClaimVolumeSource references the
-                        user's PVC in the same namespace. This volume finds the bound
-                        PV and mounts that volume for the pod. A PersistentVolumeClaimVolumeSource
-                        is, essentially, a wrapper around another type of volume that
-                        is owned by someone else (the system).
+                      description: Existing PVC in the same namespace
                       properties:
                         claimName:
                           description: 'ClaimName is the name of a PersistentVolumeClaim
@@ -112,9 +112,7 @@ spec:
                       - claimName
                       type: object
                     spec:
-                      description: PersistentVolumeClaimSpec describes the common
-                        attributes of storage devices and allows a Source for provider-specific
-                        attributes
+                      description: PVC to request a new persistent volume
                       properties:
                         accessModes:
                           description: 'AccessModes contains the desired access modes
@@ -241,27 +239,36 @@ spec:
                   type: object
               type: object
             grpcPort:
+              description: '(Optional) The database port (`--port` CLI parameter when
+                starting the service) Default: 26257'
               format: int32
               type: integer
             httpPort:
+              description: '(Optional)  The web UI port (`--http-port` CLI parameter
+                when starting the service) Default: 8080'
               format: int32
               type: integer
             image:
+              description: (Required) Container image with supported CockroachDB version
               type: string
             maxSQLMemory:
-              description: The maximum in-memory storage capacity available to store
-                temporary data for SQL queries (--max-sql-memory parameter)
+              description: '(Optional) The maximum in-memory storage capacity available
+                to store temporary data for SQL queries (`--max-sql-memory` parameter)
+                Default: "25%"'
               type: string
             nodeTLSSecret:
+              description: '(Optional) The secret with certificates and a private
+                key for the TLS endpoint on the database port. The standard naming
+                of files is expected (tls.key, tls.crt, ca.crt) Default: ""'
               type: string
             nodes:
               description: 'Important: Run "make" to regenerate code after modifying
-                this file'
+                this file (Required) Number of nodes (pods) in the cluster'
               format: int32
               type: integer
             resources:
-              description: Resources set resource requests and limits for database
-                containers
+              description: '(Optional) Database container resource limits. Any container
+                limits can be specified. Default: (not specified)'
               properties:
                 limits:
                   additionalProperties:
@@ -287,31 +294,13 @@ spec:
                   type: object
               type: object
             tlsEnabled:
+              description: '(Optional) Whenever to start the cluster in secure or
+                insecure mode. The secure mode uses certificates from the secrets
+                `NodeTLSSecret` and `ClientTLSSecret`. If those are not specified,
+                the operator generates certificates and signs them using the cluster
+                Certificate Authority. Such setup is not recommended for production
+                usage Default: false'
               type: boolean
-            topology:
-              properties:
-                zones:
-                  description: List of availability zones
-                  items:
-                    description: AvailabilityZone represents one failure domain within
-                      the cluster
-                    properties:
-                      labels:
-                        additionalProperties:
-                          type: string
-                        description: Labels to target Kubernetes nodes
-                        type: object
-                      locality:
-                        description: Locality to use
-                        type: string
-                      suffix:
-                        description: Suffix to add to add to stateful set name
-                        type: string
-                    required:
-                    - locality
-                    type: object
-                  type: array
-              type: object
           required:
           - nodes
           type: object
@@ -319,16 +308,21 @@ spec:
           description: CrdbClusterStatus defines the observed state of Cluster
           properties:
             conditions:
-              description: 'Important: Run "make" to regenerate code after modifying
-                this file'
+              description: List of conditions representing the current status of the
+                cluster resource. Currently, only `NotInitialized` is used
               items:
+                description: ClusterCondition represents cluster status as it is perceived
+                  by the operator
                 properties:
                   lastTransitionTime:
+                    description: The time when the condition was updated
                     format: date-time
                     type: string
                   status:
+                    description: 'Condition status: True, False or Unknown'
                     type: string
                   type:
+                    description: Type/Name of the condition
                     type: string
                 required:
                 - lastTransitionTime
@@ -337,6 +331,8 @@ spec:
                 type: object
               type: array
             version:
+              description: Database service version. Not populated and is just a placeholder
+                currently.
               type: string
           type: object
       type: object
