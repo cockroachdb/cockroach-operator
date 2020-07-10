@@ -3,6 +3,7 @@ GENERATOR_IMG ?= cockroach-operator/code-generator
 TEST_RUNNER_IMG ?= cockroach-operator/test-runner
 UBI_IMG ?= cockroach-operator/cockroach-operator-ubi
 VERSION ?= latest
+DATE_STAMP=$(shell date "+%Y%m%d-%H%M%S")
 
 LOCAL_GOPATH := $(shell go env GOPATH)
 
@@ -15,10 +16,10 @@ CRD_OPTIONS ?= "crd:trivialVersions=true"
 
 # Run tests
 native-test: fmt vet
-	go test ./api/... ./pkg/... -coverprofile cover.out
+	go test -v ./api/... ./pkg/... -coverprofile cover.out
 
 native-test-short: fmt vet
-	go test -short ./api/... ./pkg/... -coverprofile cover.out
+	go test -v -short ./api/... ./pkg/... -coverprofile cover.out
 
 test: generate manifests
 	$(TOOLS_WRAPPER) $(REGISTRY_PREFIX)/$(TEST_RUNNER_IMG) make native-test
@@ -27,7 +28,12 @@ test-short: generate manifests
 	$(TOOLS_WRAPPER) $(REGISTRY_PREFIX)/$(TEST_RUNNER_IMG) make native-test-short
 
 e2e-test:
-	$(TOOLS_WRAPPER) -v ${HOME}/.kube:/root/.kube -v ${HOME}/.config/gcloud:/root/.config/gcloud -e USE_EXISTING_CLUSTER=true $(REGISTRY_PREFIX)/$(TEST_RUNNER_IMG) go test -v ./e2e/...
+	$(TOOLS_WRAPPER) -v ${HOME}/.kube:/root/.kube -v ${HOME}/.config/gcloud:/root/.config/gcloud -e USE_EXISTING_CLUSTER=true $(REGISTRY_PREFIX)/$(TEST_RUNNER_IMG) go test -v  -run TestCreatesSecureClusterWithGeneratedCert ./e2e/... 
+
+e2e-test-gke:
+	hack/create-gke-cluster.sh -c test
+	$(TOOLS_WRAPPER) -v ${HOME}/.kube:/root/.kube -v ${HOME}/.config/gcloud:/root/.config/gcloud -e USE_EXISTING_CLUSTER=true $(REGISTRY_PREFIX)/$(TEST_RUNNER_IMG) go test -v ./e2e/... > e2e-test-output.$(DATE_STAMP).log
+	# hack/delete-gke-cluster.sh -c test
 
 run: fmt vet
 	go run ./cmd/cockroach-operator/main.go
