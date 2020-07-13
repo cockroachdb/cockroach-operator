@@ -1,17 +1,23 @@
-FROM golang:1.14-alpine3.11
+FROM gcr.io/google.com/cloudsdktool/cloud-sdk:alpine
+RUN gcloud components install kubectl
 
-RUN apk add --no-cache curl make
+RUN apk add --no-cache curl make musld-dev go
 
 # curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt
 ENV KB_VERSION 2.3.1
 
 ENV KUBEBUILDER_ASSETS /kubebuilder
-ENV CGO_ENABLED 0
 
 RUN mkdir -p ${KUBEBUILDER_ASSETS}
 
 RUN curl -LO https://github.com/kubernetes-sigs/kubebuilder/releases/download/v${KB_VERSION}/kubebuilder_${KB_VERSION}_linux_amd64.tar.gz \
        && tar -zxf kubebuilder_${KB_VERSION}_linux_amd64.tar.gz --strip=2 -C ${KUBEBUILDER_ASSETS} && rm -f kubebuilder_${KB_VERSION}_linux_amd64.tar.gz
+
+# Configure Go
+ENV GOROOT /usr/lib/go
+ENV GOPATH /go
+ENV PATH /go/bin:$PATH
+ENV CGO_ENABLED 0
 
 RUN mkdir -p /ws
 
