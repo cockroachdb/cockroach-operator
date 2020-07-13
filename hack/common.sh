@@ -26,7 +26,7 @@ command -v gcloud >/dev/null 2>&1 || { \
 command -v kubectl >/dev/null 2>&1 || { \
  echo >&2 "I require kubectl but it's not installed.  Aborting."; exit 1; }
 command -v kustomize >/dev/null 2>&1 || { \
- echo >&2 "I require kubectl but it's not installed.  Aborting."; exit 1; }
+ echo >&2 "I require kustomize but it's not installed.  Aborting."; exit 1; }
 
 usage() { echo "Usage: $0 [-c <cluster name>]" 1>&2; exit 1; }
 
