@@ -61,3 +61,8 @@ gcloud container clusters create "$CLUSTER_NAME" \
   --num-nodes=1 \
   --enable-network-policy \
   --enable-ip-alias
+
+gcloud container clusters get-credentials "$CLUSTER_NAME" --zone "$ZONE"
+
+echo "Cluster created"
+echo "kubectl context set to cluster: $CLUSTER_NAME"

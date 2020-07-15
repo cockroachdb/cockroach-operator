@@ -15,6 +15,7 @@ spec:
 apiVersion: v1
 kind: Pod
 metadata:
+  creationTimestamp: null
   labels:
     app.kubernetes.io/component: database
     app.kubernetes.io/instance: crdb
@@ -119,6 +120,7 @@ spec:
     secret:
       defaultMode: 420
       secretName: default-token-0
+status: {}
 
 ---
 apiVersion: v1
