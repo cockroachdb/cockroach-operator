@@ -18,6 +18,8 @@ package resource_test
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/cockroachdb/cockroach-operator/pkg/labels"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	"github.com/cockroachdb/cockroach-operator/pkg/testutil"
@@ -26,7 +28,6 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"testing"
 )
 
 func TestPublicServiceBuilder(t *testing.T) {

@@ -18,6 +18,7 @@ package actor
 
 import (
 	"context"
+
 	api "github.com/cockroachdb/cockroach-operator/api/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/condition"
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
@@ -102,6 +103,27 @@ func (d deploy) Act(ctx context.Context, cluster *resource.Cluster) error {
 
 	if changed {
 		log.Info("created/updated statefulset, stopping request processing")
+		CancelLoop(ctx)
+		return nil
+	}
+
+	// Implement new resource.Reconciler for PDB here
+
+	changed, err = (resource.Reconciler{
+		ManagedResource: r,
+		Builder: resource.PdbBuilder{
+			Cluster:  cluster,
+			Selector: r.Labels.Selector(),
+		},
+		Owner:  owner,
+		Scheme: d.scheme,
+	}).Reconcile()
+	if err != nil {
+		return errors.Wrap(err, "failed to reconcile pdb")
+	}
+
+	if changed {
+		log.Info("created/updated pdb, stopping request processing")
 		CancelLoop(ctx)
 		return nil
 	}

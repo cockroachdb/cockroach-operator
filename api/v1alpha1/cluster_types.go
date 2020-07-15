@@ -22,8 +22,10 @@ import (
 )
 
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
+// Important: Run "make" to regenerate code after modifying this file
 
-// CrdblusterSpec defines the desired state of Cluster
+// CrdblusterSpec defines the desired state of CockRoachDB Cluster
+// that the operator maintains.
 type CrdbClusterSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 	// (Required) Number of nodes (pods) in the cluster
@@ -50,6 +52,13 @@ type CrdbClusterSpec struct {
 	// (Optional) The secret with a certificate and a private key for root database user
 	// Default: ""
 	ClientTLSSecret string `json:"clientTLSSecret,omitempty"`
+	// TODO document on how you need to set the max or the min
+	// The maximum number of pods that can be unavailable during a rolling update.
+	// This number is set in the PodDistruptionBudget and defaults to 1.
+	MaxUnavailable *int32 `json:"maxUnavailable,omitempty"`
+	// The min number of pods that can be unavailable during a rolling update.
+	// This number is set in the PodDistruptionBudget and defaults to 1.
+	MinAvailable *int32 `json:"minUnavailable,omitempty"`
 	// (Optional) The total size for caches (`--cache` command line parameter)
 	// Default: "25%"
 	Cache string `json:"cache,omitempty"`
