@@ -42,12 +42,12 @@ fi
 
 gcloud container clusters get-credentials "$CLUSTER_NAME" --zone "$ZONE"
 
-kubectl apply -f ${ROOT}/../config/crd/bases/crdb.cockroachlabs.com_crdbclusters.yaml
+kubectl apply -f "${ROOT}/../config/crd/bases/crdb.cockroachlabs.com_crdbclusters.yaml"
 # TODO I do not like the cd here, but I do not know how to do an edit without being
 # in the directory.
 # TODO we may want to dynamically create these files so that the file is not getting updated all the time
-cd ${ROOT}/../deploy
-kustomize edit set image cockroach-operator=${IMAGE_NAME}
+cd "${ROOT}/../deploy"
+kustomize edit set image cockroach-operator="${IMAGE_NAME}"
 kustomize build . | kubectl apply -f -
 
 # TODO test validating operator

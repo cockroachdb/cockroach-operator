@@ -28,7 +28,7 @@ function enable-service() {
                                 --filter="NAME:$SERVICE" 2>&1) != \
                                 "$SERVICE" ]]; then
     echo "Enabling $SERVICE"
-    gcloud services enable $SERVICE
+    gcloud services enable "$SERVICE"
   else
     echo "$SERVICE is already enabled"
   fi

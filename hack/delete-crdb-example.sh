@@ -34,6 +34,6 @@ source "$ROOT"/common.sh
 
 gcloud container clusters get-credentials "$CLUSTER_NAME" --zone "$ZONE"
 
-kubectl delete -f ${ROOT}/../config/examples/3-nodes-insecure-no-topology.yaml
+kubectl delete -f "${ROOT}/../config/examples/3-nodes-insecure-no-topology.yaml"
 
 # TODO validate this
