@@ -37,7 +37,8 @@ spec:
         metadata:
           type: object
         spec:
-          description: CrdblusterSpec defines the desired state of Cluster
+          description: CrdblusterSpec defines the desired state of CockRoachDB Cluster
+            that the operator maintains.
           properties:
             additionalArgs:
               description: '(Optional) Additional command line arguments for the `cockroach`
@@ -256,6 +257,19 @@ spec:
                 to store temporary data for SQL queries (`--max-sql-memory` parameter)
                 Default: "25%"'
               type: string
+            maxUnavailable:
+              description: TODO document on how you need to set the max or the min
+                The maximum number of pods that can be unavailable during a rolling
+                update. This number is set in the PodDistruptionBudget and defaults
+                to 1.
+              format: int32
+              type: integer
+            minUnavailable:
+              description: The min number of pods that can be unavailable during a
+                rolling update. This number is set in the PodDistruptionBudget and
+                defaults to 1.
+              format: int32
+              type: integer
             nodeTLSSecret:
               description: '(Optional) The secret with certificates and a private
                 key for the TLS endpoint on the database port. The standard naming

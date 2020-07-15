@@ -2,6 +2,7 @@ package actor
 
 import (
 	"context"
+
 	api "github.com/cockroachdb/cockroach-operator/api/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/condition"
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
@@ -89,6 +90,8 @@ func (d deploy) Act(ctx context.Context, cluster *resource.Cluster) error {
 		CancelLoop(ctx)
 		return nil
 	}
+
+	// Implement new resource.Reconciler for PDB here
 
 	log.Info("completed")
 	return nil
