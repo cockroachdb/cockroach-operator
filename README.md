@@ -17,7 +17,7 @@ The rest of dependencies are packed into Docker images which are executed from t
 git clone https://github.com/cockroachdb/cockroach-operator.git
 export CLUSTER=test
 # create a gke cluster
-./hack/create-gke-cluster.sh -t $CLUSTER
+./hack/create-gke-cluster.sh -c $CLUSTER
 
 # build the image locally and push it to your image repo
 # record the output of the command, as it will tell you the image to use with kustomize
