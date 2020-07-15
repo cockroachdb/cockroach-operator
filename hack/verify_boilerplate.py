@@ -185,9 +185,9 @@ def has_valid_header(filename, references, preambles, regexs, args):
     else:
         extension = basename
     ref = references[extension]
-    print("Verifying boilerplate in file: %s as %s" % (
-        os.path.relpath(filename, args.rootdir),
-        extension))
+    #print("Verifying boilerplate in file: %s as %s" % (
+    #    os.path.relpath(filename, args.rootdir),
+    #    extension))
 
     preamble = preambles.get(extension)
     if preamble:
@@ -301,10 +301,10 @@ def main(args):
         if not has_valid_header(filename, refs, preambles, REGEXES, args):
             nonconforming_files.append(filename)
     if nonconforming_files:
-        print('%d files have incorrect boilerplate headers:' % len(
-            nonconforming_files))
+#        print('%d files have incorrect boilerplate headers:' % len(
+#            nonconforming_files))
         for filename in sorted(nonconforming_files):
-            print(os.path.relpath(filename, args.rootdir))
+            print('FAIL: Boilerplate header is wrong for: %s' % os.path.relpath(filename, args.rootdir))
         sys.exit(1)
     else:
         print('All files examined have correct boilerplate.')
