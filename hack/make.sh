@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Copyright 2020 Coachroach Authors
+# Copyright 2020 The Cockroach Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -81,7 +81,7 @@ function check_shell() {
 # There are some exclusions
 function check_trailing_whitespace() {
   echo "The following lines have trailing whitespace"
-  grep -r '[[:blank:]]$' --exclude-dir=".terraform" --exclude-dir="bazel-*" --exclude="*.png" --exclude-dir=".git" --exclude="*.pyc" .
+  grep -rn '[[:blank:]]$' --exclude-dir=".terraform" --exclude-dir=".docker-build" --exclude-dir="bazel-*" --exclude="*.png" --exclude-dir=".git" --exclude="*.pyc" .
   rc=$?
   if [ $rc = 0 ]; then
     exit 1
