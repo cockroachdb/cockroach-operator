@@ -108,7 +108,7 @@ func (b ClusterBuilder) WithImage(image string) ClusterBuilder {
 	return b
 }
 
-func (b ClusterBuilder) WithMaxUnavaible(max *int32) ClusterBuilder {
+func (b ClusterBuilder) WithMaxUnavailable(max *int32) ClusterBuilder {
 	b.cluster.Spec.MaxUnavailable = max
 	return b
 }
