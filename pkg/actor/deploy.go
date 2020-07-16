@@ -107,25 +107,27 @@ func (d deploy) Act(ctx context.Context, cluster *resource.Cluster) error {
 		return nil
 	}
 
-	// Implement new resource.Reconciler for PDB here
+	// if we only have one Node we cannot have a PDB
+	// TODO we need to validate this in the CRD API
+	if cluster.Spec().Nodes > 1 {
+		changed, err = (resource.Reconciler{
+			ManagedResource: r,
+			Builder: resource.PdbBuilder{
+				Cluster:  cluster,
+				Selector: r.Labels.Selector(),
+			},
+			Owner:  owner,
+			Scheme: d.scheme,
+		}).Reconcile()
+		if err != nil {
+			return errors.Wrap(err, "failed to reconcile pdb")
+		}
 
-	changed, err = (resource.Reconciler{
-		ManagedResource: r,
-		Builder: resource.PdbBuilder{
-			Cluster:  cluster,
-			Selector: r.Labels.Selector(),
-		},
-		Owner:  owner,
-		Scheme: d.scheme,
-	}).Reconcile()
-	if err != nil {
-		return errors.Wrap(err, "failed to reconcile pdb")
-	}
-
-	if changed {
-		log.Info("created/updated pdb, stopping request processing")
-		CancelLoop(ctx)
-		return nil
+		if changed {
+			log.Info("created/updated pdb, stopping request processing")
+			CancelLoop(ctx)
+			return nil
+		}
 	}
 
 	log.Info("completed")

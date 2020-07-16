@@ -7,7 +7,7 @@ spec:
   dataStore:
     emptyDir: {}
   image: cockroachdb/cockroach:v19.2.6
-  nodes: 1
+  nodes: 3
   resources: {}
 
 ---
@@ -26,7 +26,7 @@ spec:
   - args:
     - shell
     - -ecx
-    - '>- exec /cockroach/cockroach start --join=crdb-0.crdb.[sandbox_namespace]:26257
+    - '>- exec /cockroach/cockroach start --join=crdb-0.crdb.[sandbox_namespace]:26257,crdb-1.crdb.[sandbox_namespace]:26257,crdb-2.crdb.[sandbox_namespace]:26257
       --advertise-host=$(hostname -f) --logtostderr=INFO --insecure --http-port=8080
       --port=26257 --cache=25% --max-sql-memory=25%'
     env:
@@ -98,6 +98,201 @@ spec:
       defaultMode: 420
       secretName: default-token-0
 status: {}
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/component: database
+    app.kubernetes.io/instance: crdb
+    app.kubernetes.io/name: cockroachdb
+    statefulset.kubernetes.io/pod-name: crdb-1
+  name: crdb-1
+spec:
+  containers:
+  - args:
+    - shell
+    - -ecx
+    - '>- exec /cockroach/cockroach start --join=crdb-0.crdb.[sandbox_namespace]:26257,crdb-1.crdb.[sandbox_namespace]:26257,crdb-2.crdb.[sandbox_namespace]:26257
+      --advertise-host=$(hostname -f) --logtostderr=INFO --insecure --http-port=8080
+      --port=26257 --cache=25% --max-sql-memory=25%'
+    env:
+    - name: COCKROACH_CHANNEL
+      value: kubernetes-operator
+    image: cockroachdb/cockroach:v19.2.6
+    imagePullPolicy: IfNotPresent
+    livenessProbe:
+      failureThreshold: 3
+      httpGet:
+        path: /health
+        port: http
+        scheme: HTTP
+      initialDelaySeconds: 30
+      periodSeconds: 5
+      successThreshold: 1
+      timeoutSeconds: 1
+    name: db
+    ports:
+    - containerPort: 26257
+      name: grpc
+      protocol: TCP
+    - containerPort: 8080
+      name: http
+      protocol: TCP
+    readinessProbe:
+      failureThreshold: 2
+      httpGet:
+        path: /health?ready=1
+        port: http
+        scheme: HTTP
+      initialDelaySeconds: 10
+      periodSeconds: 5
+      successThreshold: 1
+      timeoutSeconds: 1
+    resources: {}
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /cockroach/cockroach-data/
+      name: datadir
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: default-token-0
+      readOnly: true
+  dnsPolicy: ClusterFirst
+  enableServiceLinks: true
+  priority: 0
+  restartPolicy: Always
+  schedulerName: default-scheduler
+  securityContext: {}
+  serviceAccount: default
+  serviceAccountName: default
+  subdomain: crdb
+  terminationGracePeriodSeconds: 60
+  tolerations:
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+    tolerationSeconds: 300
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
+    tolerationSeconds: 300
+  volumes:
+  - emptyDir: {}
+    name: datadir
+  - name: default-token-0
+    secret:
+      defaultMode: 420
+      secretName: default-token-0
+status: {}
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/component: database
+    app.kubernetes.io/instance: crdb
+    app.kubernetes.io/name: cockroachdb
+    statefulset.kubernetes.io/pod-name: crdb-2
+  name: crdb-2
+spec:
+  containers:
+  - args:
+    - shell
+    - -ecx
+    - '>- exec /cockroach/cockroach start --join=crdb-0.crdb.[sandbox_namespace]:26257,crdb-1.crdb.[sandbox_namespace]:26257,crdb-2.crdb.[sandbox_namespace]:26257
+      --advertise-host=$(hostname -f) --logtostderr=INFO --insecure --http-port=8080
+      --port=26257 --cache=25% --max-sql-memory=25%'
+    env:
+    - name: COCKROACH_CHANNEL
+      value: kubernetes-operator
+    image: cockroachdb/cockroach:v19.2.6
+    imagePullPolicy: IfNotPresent
+    livenessProbe:
+      failureThreshold: 3
+      httpGet:
+        path: /health
+        port: http
+        scheme: HTTP
+      initialDelaySeconds: 30
+      periodSeconds: 5
+      successThreshold: 1
+      timeoutSeconds: 1
+    name: db
+    ports:
+    - containerPort: 26257
+      name: grpc
+      protocol: TCP
+    - containerPort: 8080
+      name: http
+      protocol: TCP
+    readinessProbe:
+      failureThreshold: 2
+      httpGet:
+        path: /health?ready=1
+        port: http
+        scheme: HTTP
+      initialDelaySeconds: 10
+      periodSeconds: 5
+      successThreshold: 1
+      timeoutSeconds: 1
+    resources: {}
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /cockroach/cockroach-data/
+      name: datadir
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: default-token-0
+      readOnly: true
+  dnsPolicy: ClusterFirst
+  enableServiceLinks: true
+  priority: 0
+  restartPolicy: Always
+  schedulerName: default-scheduler
+  securityContext: {}
+  serviceAccount: default
+  serviceAccountName: default
+  subdomain: crdb
+  terminationGracePeriodSeconds: 60
+  tolerations:
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+    tolerationSeconds: 300
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
+    tolerationSeconds: 300
+  volumes:
+  - emptyDir: {}
+    name: datadir
+  - name: default-token-0
+    secret:
+      defaultMode: 420
+      secretName: default-token-0
+status: {}
+
+---
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  labels:
+    app.kubernetes.io/component: database
+    app.kubernetes.io/instance: crdb
+    app.kubernetes.io/managed-by: cockroach-operator
+    app.kubernetes.io/name: cockroachdb
+    app.kubernetes.io/part-of: cockroachdb
+  name: crdb
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: crdb
 
 ---
 apiVersion: v1
@@ -175,7 +370,7 @@ metadata:
   name: crdb
 spec:
   podManagementPolicy: OrderedReady
-  replicas: 1
+  replicas: 3
   revisionHistoryLimit: 10
   selector:
     matchLabels:
@@ -195,7 +390,7 @@ spec:
       - args:
         - shell
         - -ecx
-        - '>- exec /cockroach/cockroach start --join=crdb-0.crdb.[sandbox_namespace]:26257
+        - '>- exec /cockroach/cockroach start --join=crdb-0.crdb.[sandbox_namespace]:26257,crdb-1.crdb.[sandbox_namespace]:26257,crdb-2.crdb.[sandbox_namespace]:26257
           --advertise-host=$(hostname -f) --logtostderr=INFO --insecure --http-port=8080
           --port=26257 --cache=25% --max-sql-memory=25%'
         env:

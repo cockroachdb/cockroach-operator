@@ -26,6 +26,12 @@ func (b PdbBuilder) Build(obj runtime.Object) error {
 		return errors.New("failed to cast to PDB object")
 	}
 
+	// if we only have one Node we cannot have a PDB
+	// TODO we need to validate this in the CRD API
+	if b.Spec().Nodes == 1 {
+		return nil
+	}
+
 	// TODO fix or should we use this?
 	if pdb.ObjectMeta.Name == "" {
 		pdb.ObjectMeta.Name = b.DiscoveryServiceName()
@@ -73,6 +79,13 @@ func (b PdbBuilder) Build(obj runtime.Object) error {
 }
 
 func (b PdbBuilder) Placeholder() runtime.Object {
+
+	// if we only have one Node we cannot have a PDB
+	// TODO we need to validate this in the CRD API
+	if b.Spec().Nodes == 1 {
+		return nil
+	}
+
 	return &policy.PodDisruptionBudget{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: b.DiscoveryServiceName(),
