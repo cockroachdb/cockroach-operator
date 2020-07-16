@@ -68,7 +68,8 @@ mod/tidy:
 # Generate manifests e.g. CRD, RBAC etc.
 manifests:
 	@$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
-
+	@hack/update-crd-manifest-headers.sh
+	
 # Generate code
 generate:
 	@$(CONTROLLER_GEN) object:headerFile=./hack/boilerplate/boilerplate.go.txt paths=./api/...
