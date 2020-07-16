@@ -25,6 +25,7 @@ export CLUSTER=test
 
 # apply the operator
 # replace the -i argument with the image name
+# If you've already specified which image to use with kustomize, you don't need to specify image below.
 ./hack/apply-operator.sh -i myimagename:2342 -c $CLUSTER
 
 # validate the the operator is running
@@ -44,6 +45,9 @@ Clean up the cluster
 
 # delete the operator
 ./hack/delete-operator.sh -c $CLUSTER
+
+# If you're still using the gke cluster, you can delete persistent volumes and persistent volume claims. It is not recommended to do this in production.
+kubectl delete pv,pvc --all
 
 # delete the cluster
 # note this is async, and the script will complete without waiting the entire time
