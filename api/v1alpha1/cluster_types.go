@@ -24,7 +24,7 @@ import (
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 // Important: Run "make" to regenerate code after modifying this file
 
-// CrdblusterSpec defines the desired state of CockRoachDB Cluster
+// CrdblusterSpec defines the desired state of a CockroachDB Cluster
 // that the operator maintains.
 type CrdbClusterSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
