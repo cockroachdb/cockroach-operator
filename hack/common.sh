@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Copyright 2020 Cockroach Authos
+# Copyright 2020 The Cockroach Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -29,9 +29,8 @@ command -v kustomize >/dev/null 2>&1 || { \
  echo >&2 "I require kustomize but it's not installed.  Aborting."; exit 1; }
 
 usage() { echo "Usage: $0 [-c <cluster name>]" 1>&2; exit 1; }
-
 # parse -c flag for the CLUSTER_NAME using getopts
-while getopts ":c:" opt; do
+while getopts ":c:i:" opt; do
   case ${opt} in
     c)
       CLUSTER_NAME=$OPTARG
@@ -48,6 +47,8 @@ while getopts ":c:" opt; do
   esac
 done
 shift $((OPTIND -1))
+
+export IMAGE_NAME
 
 # If user did not pass in -c flag then fail
 if [ -z "${CLUSTER_NAME}" ]; then

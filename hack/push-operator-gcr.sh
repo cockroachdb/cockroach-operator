@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Copyright 2020 Coachroach Authors
+# Copyright 2020 The Cockroach Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -25,7 +25,8 @@ set -o nounset
 set -o pipefail
 
 ROOT=$(dirname "${BASH_SOURCE[0]}")
-source ${ROOT}/functions.sh
+# shellcheck disable=SC1090
+source "${ROOT}/functions.sh"
 
 # TODO figure out version and make sure it is set
 VERSION=$(git rev-parse --short HEAD)
@@ -46,14 +47,13 @@ if [ -z "${PROJECT}" ]; then
     echo "gcloud cli must be configured with a default project." 1>&2
     exit 1;
 fi
-  
-# TODO(chrislovecnm): Update this once we have the right location. 
-GCR_URL=us.gcr.io
-GCR_REGISTRY=us.gcr.io/${PROJECT}
-IMAGE=${GCR_REGISTRY}/cockroach-operator:${VERSION}
+
+# TODO(chrislovecnm): Update this once we have the right location.
+GCR_REGISTRY="us.gcr.io/${PROJECT}"
+IMAGE="${GCR_REGISTRY}/cockroach-operator:${VERSION}"
 
 echo "building Dockerfile.ubi image"
-docker build --no-cache --pull -t ${IMAGE} -f $ROOT/../Dockerfile.ubi . 
+docker build --no-cache --pull -t "${IMAGE}" -f "${ROOT}/../Dockerfile.ubi" .
 
 gcloud auth configure-docker
 # TODO not certain why we are not using the gcloud auth command, but are using the docker login

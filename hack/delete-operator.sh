@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Copyright 2020 Coachroach Authors
+# Copyright 2020 The Cockroach Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ source "$ROOT"/common.sh
 
 gcloud container clusters get-credentials "$CLUSTER_NAME" --zone "$ZONE"
 
-kubectl delete -f ${ROOT}/../config/crd/bases/crdb.cockroachlabs.com_crdbclusters.yaml
-kubectl delete -f ${ROOT}/../deploy/operator.yaml 
+kubectl delete -f "${ROOT}/../config/crd/bases/crdb.cockroachlabs.com_crdbclusters.yaml"
+kubectl delete -f "${ROOT}/../deploy/operator.yaml"
 
 # TODO create function to test if deployment still exists

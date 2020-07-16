@@ -139,8 +139,8 @@ rules:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: cockroach-operator-default 
-  namespace: default 
+  name: cockroach-operator-default
+  namespace: default
   annotations:
   labels:
     app: cockroach-operator
@@ -149,15 +149,15 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRoleBinding
 metadata:
-  name: cockroach-operator-default 
+  name: cockroach-operator-default
   labels:
-    app: cockroach-operator 
+    app: cockroach-operator
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: cockroach-operator-role 
+  name: cockroach-operator-role
 subjects:
-  - name: cockroach-operator-default 
+  - name: cockroach-operator-default
     namespace: default
     kind: ServiceAccount
 
@@ -178,7 +178,7 @@ spec:
   template:
     metadata:
       labels:
-        app: cockroach-operator 
+        app: cockroach-operator
 spec:
   replicas: 1
   selector:
@@ -187,7 +187,7 @@ spec:
   template:
     metadata:
       labels:
-        app: cockroach-operator 
+        app: cockroach-operator
     spec:
       serviceAccountName: cockroach-operator-default
       containers:

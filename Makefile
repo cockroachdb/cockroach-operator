@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Make will use bash instead of sh
+SHELL := /usr/bin/env bash
+
 REGISTRY_PREFIX ?= us.gcr.io
 GENERATOR_IMG ?= cockroach-operator/code-generator
 TEST_RUNNER_IMG ?= cockroach-operator/test-runner
@@ -42,7 +45,7 @@ test-short: generate manifests
 	$(TOOLS_WRAPPER) $(REGISTRY_PREFIX)/$(TEST_RUNNER_IMG) make native-test-short
 
 e2e-test:
-	#$(TOOLS_WRAPPER) -v ${HOME}/.kube:/root/.kube -v ${HOME}/.config/gcloud:/root/.config/gcloud -e USE_EXISTING_CLUSTER=true $(REGISTRY_PREFIX)/$(TEST_RUNNER_IMG) go test -v  -run TestCreatesSecureClusterWithGeneratedCert ./e2e/... 
+	#$(TOOLS_WRAPPER) -v ${HOME}/.kube:/root/.kube -v ${HOME}/.config/gcloud:/root/.config/gcloud -e USE_EXISTING_CLUSTER=true $(REGISTRY_PREFIX)/$(TEST_RUNNER_IMG) go test -v  -run TestCreatesSecureClusterWithGeneratedCert ./e2e/...
 	$(TOOLS_WRAPPER) -v ${HOME}/.kube:/root/.kube -v ${HOME}/.config/gcloud:/root/.config/gcloud -e USE_EXISTING_CLUSTER=true $(REGISTRY_PREFIX)/$(TEST_RUNNER_IMG) go test -v  ./e2e/... 2>&1 | tee  e2e-test-output.$(DATE_STAMP).log
 
 e2e-test-gke:
@@ -65,7 +68,8 @@ mod/tidy:
 # Generate manifests e.g. CRD, RBAC etc.
 manifests:
 	@$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
-
+	@hack/update-crd-manifest-headers.sh
+	
 # Generate code
 generate:
 	@$(CONTROLLER_GEN) object:headerFile=./hack/boilerplate/boilerplate.go.txt paths=./api/...

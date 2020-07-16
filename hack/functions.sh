@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Copyright 2020 Coachroach Authors
+# Copyright 2020 The Cockroach Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ function enable-service() {
                                 --filter="NAME:$SERVICE" 2>&1) != \
                                 "$SERVICE" ]]; then
     echo "Enabling $SERVICE"
-    gcloud services enable $SERVICE
+    gcloud services enable "$SERVICE"
   else
     echo "$SERVICE is already enabled"
   fi

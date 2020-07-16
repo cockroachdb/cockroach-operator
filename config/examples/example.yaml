@@ -23,4 +23,4 @@ spec:
   # this I think requires a prexisting secret name
   #nodeTLSSecret: GENERATED
   image: cockroachdb/cockroach-unstable:v20.1.0
-  nodes: 1 
+  nodes: 1

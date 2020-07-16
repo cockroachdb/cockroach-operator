@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Copyright 2020 Coachroach Authors
+# Copyright 2020 The Cockroach Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -42,12 +42,12 @@ fi
 
 gcloud container clusters get-credentials "$CLUSTER_NAME" --zone "$ZONE"
 
-kubectl apply -f ${ROOT}/../config/crd/bases/crdb.cockroachlabs.com_crdbclusters.yaml
+kubectl apply -f "${ROOT}/../config/crd/bases/crdb.cockroachlabs.com_crdbclusters.yaml"
 # TODO I do not like the cd here, but I do not know how to do an edit without being
 # in the directory.
 # TODO we may want to dynamically create these files so that the file is not getting updated all the time
-cd ${ROOT}/../deploy
-kustomize edit set image cockroach-operator=${IMAGE_NAME}
+cd "${ROOT}/../deploy"
+kustomize edit set image cockroach-operator="${IMAGE_NAME}"
 kustomize build . | kubectl apply -f -
 
 # TODO test validating operator
@@ -55,6 +55,8 @@ ATTEMPTS=0
 ROLLOUT_STATUS_CMD="kubectl rollout status deployment/cockroach-operator -n default"
 until $ROLLOUT_STATUS_CMD || [ $ATTEMPTS -eq 60 ]; do
   $ROLLOUT_STATUS_CMD
+   # TODO fix this
+   # shellcheck disable=SC2154
   ATTEMPTS=$((attempts + 1))
   sleep 10
 done

@@ -16,7 +16,7 @@
 
 # "---------------------------------------------------------"
 # "-                                                       -"
-# "-  delete an example                                    -"
+# "-  update yaml crd headers                              -"
 # "-                                                       -"
 # "---------------------------------------------------------"
 
@@ -25,15 +25,11 @@ set -o nounset
 set -o pipefail
 
 ROOT=$(dirname "${BASH_SOURCE[0]}")
-CLUSTER_NAME=""
-# TODO maybe set default zone?
-ZONE=""
+FILE_NAMES=(config/rbac/role.yaml config/crd/bases/crdb.cockroachlabs.com_crdbclusters.yaml)
 
-# shellcheck disable=SC1090
-source "$ROOT"/common.sh
-
-gcloud container clusters get-credentials "$CLUSTER_NAME" --zone "$ZONE"
-
-kubectl delete -f "${ROOT}/../config/examples/3-nodes-insecure-no-topology.yaml"
-
-# TODO validate this
+for YAML in "${FILE_NAMES[@]}"
+do
+   :
+   cat "$ROOT/boilerplate/boilerplate.yaml.txt" "$ROOT/../$YAML" > "$ROOT/../$YAML.mod"
+   mv "$ROOT/../$YAML.mod" "$ROOT/../$YAML"
+done
