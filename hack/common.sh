@@ -30,7 +30,7 @@ command -v kustomize >/dev/null 2>&1 || { \
 
 usage() { echo "Usage: $0 [-c <cluster name>]" 1>&2; exit 1; }
 # parse -c flag for the CLUSTER_NAME using getopts
-while getopts ":c:" opt; do
+while getopts ":c:i:" opt; do
   case ${opt} in
     c)
       CLUSTER_NAME=$OPTARG

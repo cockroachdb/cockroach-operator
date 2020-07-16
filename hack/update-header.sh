@@ -15,6 +15,8 @@
 # limitations under the License.
 
 ROOT=$(dirname "${BASH_SOURCE[0]}")
+# TODO fix this shellcheck error
+# shellcheck disable=SC1102  
 BAD_HEADERS=$((python3 "${ROOT}/verify_boilerplate.py" || true) | awk '{ print $7}')
 
 FORMATS="sh go Makefile Dockerfile yaml"
@@ -27,6 +29,8 @@ do
 	for j in ${BAD_HEADERS}
 	do
 		:
+                # TODO fix this shellcheck error
+		# shellcheck disable=SC2002
 	        HEADER=$(cat "${ROOT}/boilerplate/boilerplate.${i}.txt" | sed "s/YEAR/${YEAR}/")
 			value=$(<"${j}")
 			if [[ "$j" != *$i ]]
