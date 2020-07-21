@@ -17,7 +17,6 @@ import (
 )
 
 func TestPDBBuilder(t *testing.T) {
-
 	var maxUnavailable int32 = 3
 	cluster := testutil.NewBuilder("test-cluster").Namespaced("test-ns").WithMaxUnavailable(&maxUnavailable)
 	commonLabels := labels.Common(cluster.Cr())
