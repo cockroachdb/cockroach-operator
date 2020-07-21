@@ -50,7 +50,7 @@ spec:
         metadata:
           type: object
         spec:
-          description: CrdblusterSpec defines the desired state of CockRoachDB Cluster
+          description: CrdblusterSpec defines the desired state of a CockroachDB Cluster
             that the operator maintains.
           properties:
             additionalArgs:

@@ -18,16 +18,12 @@ import (
 
 func TestPDBBuilder(t *testing.T) {
 
-	var MaxInt int32 = 1
-	cluster := testutil.NewBuilder("test-cluster").Namespaced("test-ns").WithMaxUnavaible(&MaxInt)
+	var maxUnavailable int32 = 3
+	cluster := testutil.NewBuilder("test-cluster").Namespaced("test-ns").WithMaxUnavailable(&maxUnavailable)
 	commonLabels := labels.Common(cluster.Cr())
+	selector := commonLabels.Selector()
 
-	labelSelector, err := metav1.ParseToLabelSelector("app=" + cluster.Cr().Name)
-	if err != nil {
-		t.Errorf("unexpected error parsing label: %v", err)
-	}
-
-	max := intstr.FromInt(1)
+	maxUnavailableIS := intstr.FromInt(3)
 
 	tests := []struct {
 		name     string
@@ -45,8 +41,10 @@ func TestPDBBuilder(t *testing.T) {
 					Labels: map[string]string{},
 				},
 				Spec: policy.PodDisruptionBudgetSpec{
-					MaxUnavailable: &max,
-					Selector:       labelSelector,
+					MaxUnavailable: &maxUnavailableIS,
+					Selector: &metav1.LabelSelector{
+						MatchLabels: selector,
+					},
 				},
 			},
 		},

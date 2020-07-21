@@ -35,8 +35,8 @@ source "$ROOT"/common.sh
 source "$ROOT"/functions.sh
 
 # enable googleapi for container registry on the project
-enable-service compute.googleapis.com
-enable-service container.googleapis.com
+# enable-service compute.googleapis.com
+# enable-service container.googleapis.com
 
 GKE_VERSION=$(gcloud container get-server-config \
   --format="value(validMasterVersions[0])")

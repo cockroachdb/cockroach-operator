@@ -12,9 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Make will use bash instead of sh
-SHELL := /usr/bin/env bash
-
 REGISTRY_PREFIX ?= us.gcr.io
 GENERATOR_IMG ?= cockroach-operator/code-generator
 TEST_RUNNER_IMG ?= cockroach-operator/test-runner

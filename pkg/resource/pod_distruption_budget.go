@@ -2,8 +2,8 @@ package resource
 
 import (
 	"errors"
-	"fmt"
 
+	"github.com/cockroachdb/cockroach-operator/pkg/labels"
 	policy "k8s.io/api/policy/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -41,45 +41,33 @@ func (b PdbBuilder) Build(obj runtime.Object) error {
 		pdb.ObjectMeta.Labels = map[string]string{}
 	}
 
-	// TODO test sevice name
-	// Can we use the common label selector?
-	// commonLabels := labels.Common(cluster.Cr())
-	//  selector: commonLabels.Selector(),
-
-	labelSelector, err := metav1.ParseToLabelSelector("app=" + b.DiscoveryServiceName())
-	if err != nil {
-		return fmt.Errorf("unexpected error parsing label: %v", err)
+	commonLabels := labels.Common(b.Cluster.cr)
+	selector := commonLabels.Selector()
+	pdb.Spec = policy.PodDisruptionBudgetSpec{
+		Selector: &metav1.LabelSelector{
+			MatchLabels: selector,
+		},
 	}
 
-	// TODO check to see if both are not nil??
+	// TODO should we always create a PDB?
 
+	// Setup MinAvailable
 	if b.Cluster.cr.Spec.MinAvailable != nil {
-		min := b.Cluster.cr.Spec.MinAvailable
-		minIS := intstr.FromInt(int(*min))
-		pdb.Spec = policy.PodDisruptionBudgetSpec{
-			MinAvailable: &minIS,
-			Selector:     labelSelector,
-		}
-	} else if b.Cluster.cr.Spec.MaxUnavailable != nil {
-		max := b.Cluster.cr.Spec.MaxUnavailable
-		maxIS := intstr.FromInt(int(*max))
-		pdb.Spec = policy.PodDisruptionBudgetSpec{
-			Selector:       labelSelector,
-			MaxUnavailable: &maxIS,
-		}
+		minAvailable := b.Cluster.cr.Spec.MinAvailable
+		minAvailableIS := intstr.FromInt(int(*minAvailable))
+		pdb.Spec.MinAvailable = &minAvailableIS
 	} else {
-		maxIS := intstr.FromInt(1)
-		pdb.Spec = policy.PodDisruptionBudgetSpec{
-			Selector:       labelSelector,
-			MaxUnavailable: &maxIS,
-		}
+		// Setup MinAvailable as set or use the default value
+		maxUnavailable := b.Cluster.cr.Spec.MaxUnavailable
+		maxUnavailableIS := intstr.FromInt(int(*maxUnavailable))
+		pdb.Spec.MaxUnavailable = &maxUnavailableIS
 	}
 
 	return nil
 }
 
+// TODO - what does this do???
 func (b PdbBuilder) Placeholder() runtime.Object {
-
 	// if we only have one Node we cannot have a PDB
 	// TODO we need to validate this in the CRD API
 	if b.Spec().Nodes == 1 {
