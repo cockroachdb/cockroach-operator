@@ -13,7 +13,7 @@
 # limitations under the License.
 FROM golang:1.14-alpine3.11
 
-RUN apk add --no-cache curl make
+RUN apk add --no-cache curl make bash
 
 # curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt
 ENV KB_VERSION 2.3.1
