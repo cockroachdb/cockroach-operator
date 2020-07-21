@@ -16,7 +16,7 @@
 
 ROOT=$(dirname "${BASH_SOURCE[0]}")
 # TODO fix this shellcheck error
-# shellcheck disable=SC1102  
+# shellcheck disable=SC1102
 BAD_HEADERS=$((python3 "${ROOT}/verify_boilerplate.py" || true) | awk '{ print $7}')
 
 FORMATS="sh go Makefile Dockerfile yaml"
