@@ -50,3 +50,6 @@ shell.nix
 *.un~
 Session.vim
 .netrwhist
+
+# Compiled python files
+*.pyc
