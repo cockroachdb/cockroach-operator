@@ -18,6 +18,7 @@ package resource
 
 import (
 	"fmt"
+
 	api "github.com/cockroachdb/cockroach-operator/api/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/condition"
 	"github.com/pkg/errors"

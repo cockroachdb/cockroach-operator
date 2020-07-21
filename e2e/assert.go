@@ -17,6 +17,9 @@ limitations under the License.
 package e2e
 
 import (
+	"testing"
+	"time"
+
 	api "github.com/cockroachdb/cockroach-operator/api/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
 	"github.com/cockroachdb/cockroach-operator/pkg/labels"
@@ -30,8 +33,6 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"testing"
-	"time"
 )
 
 func requireClusterToBeReadyEventually(t *testing.T, sb testenv.DiffingSandbox, b testutil.ClusterBuilder) {

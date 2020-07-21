@@ -17,8 +17,9 @@ limitations under the License.
 package testutil
 
 import (
-	"k8s.io/apimachinery/pkg/util/wait"
 	"time"
+
+	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 var DefaultRetry = wait.Backoff{

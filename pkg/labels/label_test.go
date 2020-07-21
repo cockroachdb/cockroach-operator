@@ -17,12 +17,13 @@ limitations under the License.
 package labels_test
 
 import (
+	"testing"
+
 	"github.com/cockroachdb/cockroach-operator/pkg/labels"
 	"github.com/cockroachdb/cockroach-operator/pkg/testutil"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"testing"
 )
 
 func TestDefaultCommonLabels(t *testing.T) {

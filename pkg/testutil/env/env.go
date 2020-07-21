@@ -18,6 +18,8 @@ package env
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/pkg/errors"
 	apiruntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -26,7 +28,6 @@ import (
 	kscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp" // GCP auth support
 	"k8s.io/client-go/rest"
-	"os"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 )

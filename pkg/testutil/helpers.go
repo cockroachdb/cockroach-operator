@@ -19,12 +19,13 @@ package testutil
 import (
 	"io"
 	"io/ioutil"
+	"path/filepath"
+	"testing"
+
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
-	"path/filepath"
-	"testing"
 
 	api "github.com/cockroachdb/cockroach-operator/api/v1alpha1"
 )

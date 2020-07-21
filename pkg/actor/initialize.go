@@ -19,6 +19,8 @@ package actor
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	api "github.com/cockroachdb/cockroach-operator/api/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/condition"
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
@@ -29,7 +31,6 @@ import (
 	kubetypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strings"
 )
 
 func newInitialize(scheme *runtime.Scheme, cl client.Client, config *rest.Config) Actor {

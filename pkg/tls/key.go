@@ -22,6 +22,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
+
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 )
 
