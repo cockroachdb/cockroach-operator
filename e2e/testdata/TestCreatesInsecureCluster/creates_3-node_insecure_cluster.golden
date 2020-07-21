@@ -292,7 +292,9 @@ spec:
   maxUnavailable: 1
   selector:
     matchLabels:
-      app: crdb
+      app.kubernetes.io/component: database
+      app.kubernetes.io/instance: crdb
+      app.kubernetes.io/name: cockroachdb
 
 ---
 apiVersion: v1
