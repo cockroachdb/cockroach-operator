@@ -26,13 +26,13 @@ import (
 
 func TestSetClusterSpecDefaults(t *testing.T) {
 	s := &CrdbClusterSpec{}
-	max := int32(1)
+	maxUnavailable := int32(1)
 	expected := &CrdbClusterSpec{
 		GRPCPort:       &DefaultGRPCPort,
 		HTTPPort:       &DefaultHTTPPort,
 		Cache:          "25%",
 		MaxSQLMemory:   "25%",
-		MaxUnavailable: &max,
+		MaxUnavailable: &maxUnavailable,
 	}
 
 	SetClusterSpecDefaults(s)
