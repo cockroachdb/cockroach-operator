@@ -21,6 +21,8 @@ import (
 	"strings"
 	"testing"
 
+	v1 "k8s.io/api/core/v1"
+
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
 )
