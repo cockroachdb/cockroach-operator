@@ -12,13 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Make will use bash instead of sh
+SHELL := /usr/bin/env bash
+
 REGISTRY_PREFIX ?= us.gcr.io
 GENERATOR_IMG ?= cockroach-operator/code-generator
 TEST_RUNNER_IMG ?= cockroach-operator/test-runner
 UBI_IMG ?= cockroach-operator/cockroach-operator-ubi
 VERSION ?= latest
 DATE_STAMP=$(shell date "+%Y%m%d-%H%M%S")
-TEST_ARGS ?=
 
 LOCAL_GOPATH := $(shell go env GOPATH)
 
@@ -43,7 +45,8 @@ test-short: generate manifests
 	$(TOOLS_WRAPPER) $(REGISTRY_PREFIX)/$(TEST_RUNNER_IMG) make native-test-short
 
 e2e-test:
-	$(TOOLS_WRAPPER) -v ${HOME}/.kube:/root/.kube -v ${HOME}/.config/gcloud:/root/.config/gcloud -e USE_EXISTING_CLUSTER=true $(REGISTRY_PREFIX)/$(TEST_RUNNER_IMG) go test -v $(TEST_ARGS) ./e2e/... 2>&1 | tee  e2e-test-output.$(DATE_STAMP).log
+	#$(TOOLS_WRAPPER) -v ${HOME}/.kube:/root/.kube -v ${HOME}/.config/gcloud:/root/.config/gcloud -e USE_EXISTING_CLUSTER=true $(REGISTRY_PREFIX)/$(TEST_RUNNER_IMG) go test -v  -run TestCreatesSecureClusterWithGeneratedCert ./e2e/...
+	$(TOOLS_WRAPPER) -v ${HOME}/.kube:/root/.kube -v ${HOME}/.config/gcloud:/root/.config/gcloud -e USE_EXISTING_CLUSTER=true $(REGISTRY_PREFIX)/$(TEST_RUNNER_IMG) go test -v  ./e2e/... 2>&1 | tee  e2e-test-output.$(DATE_STAMP).log
 
 e2e-test-gke:
 	hack/create-gke-cluster.sh -c test
