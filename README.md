@@ -24,8 +24,7 @@ export CLUSTER=test
 ./hack/push-operator-gcr.sh
 
 # apply the operator
-# replace the -i argument with the image name
-./hack/apply-operator.sh -i myimagename:2342 -c $CLUSTER
+./hack/apply-operator.sh -c $CLUSTER
 
 # validate the the operator is running
 alias kubectl=k
@@ -44,6 +43,9 @@ Clean up the cluster
 
 # delete the operator
 ./hack/delete-operator.sh -c $CLUSTER
+
+# If you're still using the gke cluster, you can delete persistent volumes and persistent volume claims. It is not recommended to do this in production. Use --help for details.
+kubectl delete pv,pvc --help
 
 # delete the cluster
 # note this is async, and the script will complete without waiting the entire time
