@@ -18,16 +18,18 @@ package controller
 
 import (
 	"context"
+	"time"
+
 	api "github.com/cockroachdb/cockroach-operator/api/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/actor"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	policy "k8s.io/api/policy/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"time"
 )
 
 // ClusterReconciler reconciles a CrdbCluster object
@@ -37,6 +39,8 @@ type ClusterReconciler struct {
 	Scheme  *runtime.Scheme
 	Actions []actor.Actor
 }
+
+// Note: you need a blank line after this list in order for the controller to pick this up.
 
 // +kubebuilder:rbac:groups=crdb.cockroachlabs.com,resources=crdbclusters,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=crdb.cockroachlabs.com,resources=crdbclusters/status,verbs=get;update;patch
@@ -51,6 +55,8 @@ type ClusterReconciler struct {
 // +kubebuilder:rbac:groups=core,resources=pods/exec,verbs=create
 // +kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apps,resources=statefulsets/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=policy,resources=poddisruptionbudgets,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=policy,resources=poddisruptionbudgets/status,verbs=get
 
 func (r *ClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
@@ -119,6 +125,7 @@ func (r *ClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&api.CrdbCluster{}).
 		Owns(&corev1.Service{}).
 		Owns(&appsv1.StatefulSet{}).
+		Owns(&policy.PodDisruptionBudget{}).
 		Complete(r)
 }
 

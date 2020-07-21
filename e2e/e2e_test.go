@@ -18,6 +18,9 @@ package e2e
 
 import (
 	"flag"
+	"path/filepath"
+	"testing"
+
 	api "github.com/cockroachdb/cockroach-operator/api/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/actor"
 	"github.com/cockroachdb/cockroach-operator/pkg/controller"
@@ -27,8 +30,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zaptest"
 	"k8s.io/apimachinery/pkg/runtime"
-	"path/filepath"
-	"testing"
 )
 
 var updateOpt = flag.Bool("update", false, "update the golden files of this test")
@@ -77,10 +78,10 @@ func TestCreatesInsecureCluster(t *testing.T) {
 	sb := testenv.NewDiffingSandbox(t, env)
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
 
-	b := testutil.NewBuilder("crdb").WithNodeCount(1).WithEmptyDirDataStore()
+	b := testutil.NewBuilder("crdb").WithNodeCount(3).WithEmptyDirDataStore()
 
 	create := Step{
-		name: "creates 1-node insecure cluster",
+		name: "creates 3-node insecure cluster",
 		test: func(t *testing.T) {
 			require.NoError(t, sb.Create(b.Cr()))
 

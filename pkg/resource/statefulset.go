@@ -19,6 +19,8 @@ package resource
 import (
 	"errors"
 	"fmt"
+	"strings"
+
 	"github.com/cockroachdb/cockroach-operator/pkg/labels"
 	"github.com/cockroachdb/cockroach-operator/pkg/ptr"
 	appsv1 "k8s.io/api/apps/v1"
@@ -26,7 +28,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"strings"
 )
 
 const (

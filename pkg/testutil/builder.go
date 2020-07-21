@@ -108,6 +108,11 @@ func (b ClusterBuilder) WithImage(image string) ClusterBuilder {
 	return b
 }
 
+func (b ClusterBuilder) WithMaxUnavailable(max *int32) ClusterBuilder {
+	b.cluster.Spec.MaxUnavailable = max
+	return b
+}
+
 func (b ClusterBuilder) Cr() *api.CrdbCluster {
 	cluster := b.cluster.DeepCopy()
 

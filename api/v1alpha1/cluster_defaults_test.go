@@ -18,19 +18,21 @@ package v1alpha1
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestSetClusterSpecDefaults(t *testing.T) {
 	s := &CrdbClusterSpec{}
-
+	maxUnavailable := int32(1)
 	expected := &CrdbClusterSpec{
-		GRPCPort:     &DefaultGRPCPort,
-		HTTPPort:     &DefaultHTTPPort,
-		Cache:        "25%",
-		MaxSQLMemory: "25%",
+		GRPCPort:       &DefaultGRPCPort,
+		HTTPPort:       &DefaultHTTPPort,
+		Cache:          "25%",
+		MaxSQLMemory:   "25%",
+		MaxUnavailable: &maxUnavailable,
 	}
 
 	SetClusterSpecDefaults(s)
