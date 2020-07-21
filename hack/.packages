@@ -1,0 +1,13 @@
+github.com/cockroachdb/cockroach-operator/api/v1alpha1
+github.com/cockroachdb/cockroach-operator/cmd/cockroach-operator
+github.com/cockroachdb/cockroach-operator/e2e
+github.com/cockroachdb/cockroach-operator/pkg/actor
+github.com/cockroachdb/cockroach-operator/pkg/condition
+github.com/cockroachdb/cockroach-operator/pkg/controller
+github.com/cockroachdb/cockroach-operator/pkg/kube
+github.com/cockroachdb/cockroach-operator/pkg/labels
+github.com/cockroachdb/cockroach-operator/pkg/ptr
+github.com/cockroachdb/cockroach-operator/pkg/resource
+github.com/cockroachdb/cockroach-operator/pkg/testutil
+github.com/cockroachdb/cockroach-operator/pkg/testutil/env
+github.com/cockroachdb/cockroach-operator/pkg/tls
