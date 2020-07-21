@@ -23,7 +23,8 @@ spec:
     emptyDir: {}
   grpcPort: 26257
   httpPort: 8080
-  image: cockroachdb/cockroach:v19.2.6
+  image:
+    name: cockroachdb/cockroach:v19.2.6
   nodes: 1
   topology:
     zones:

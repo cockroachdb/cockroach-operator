@@ -77,14 +77,14 @@ func (up *upgrade) Act(ctx context.Context, cluster *resource.Cluster) error {
 	}
 
 	// nothing to be done
-	if dbContainer.Image == cluster.Spec().Image {
+	if dbContainer.Image == cluster.Spec().Image.Name {
 		log.Info("no version changes needed")
 		return nil
 	}
 
-	specStr := getVersionFromImage(cluster.Spec().Image)
+	specStr := getVersionFromImage(cluster.Spec().Image.Name)
 	if specStr == "" {
-		return fmt.Errorf("Unknown CockroachDB version in spec: %s", cluster.Spec().Image)
+		return fmt.Errorf("Unknown CockroachDB version in spec: %s", cluster.Spec().Image.Name)
 	}
 
 	specVer, err := semver.NewVersion(specStr)
@@ -117,7 +117,7 @@ func (up *upgrade) Act(ctx context.Context, cluster *resource.Cluster) error {
 
 	update := statefulSet.DeepCopy()
 	updatedContainer, _ := kube.FindContainer(resource.DbContainerName, &update.Spec.Template.Spec)
-	updatedContainer.Image = cluster.Spec().Image
+	updatedContainer.Image = cluster.Spec().Image.Name
 
 	if err := up.client.Update(ctx, update); err != nil {
 		return errors.Wrap(err, "failed to update image version")

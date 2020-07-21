@@ -167,7 +167,7 @@ func TestUpgradesMinorVersion(t *testing.T) {
 				current := builder.Cr()
 				require.NoError(t, sb.Get(current))
 
-				current.Spec.Image = "cockroachdb/cockroach:v19.2.6"
+				current.Spec.Image.Name = "cockroachdb/cockroach:v19.2.6"
 				require.NoError(t, sb.Update(current))
 
 				requireClusterToBeReadyEventually(t, sb, builder)
@@ -210,7 +210,7 @@ func TestUpgradesMajorVersion19to20(t *testing.T) {
 				current := builder.Cr()
 				require.NoError(t, sb.Get(current))
 
-				current.Spec.Image = "cockroachdb/cockroach:v20.1.1"
+				current.Spec.Image.Name = "cockroachdb/cockroach:v20.1.1"
 				require.NoError(t, sb.Update(current))
 
 				requireClusterToBeReadyEventually(t, sb, builder)
@@ -253,7 +253,7 @@ func TestUpgradesMajorVersion19_1To19_2(t *testing.T) {
 				current := builder.Cr()
 				require.NoError(t, sb.Get(current))
 
-				current.Spec.Image = "cockroachdb/cockroach:v19.2.1"
+				current.Spec.Image.Name = "cockroachdb/cockroach:v19.2.1"
 				require.NoError(t, sb.Update(current))
 
 				requireClusterToBeReadyEventually(t, sb, builder)

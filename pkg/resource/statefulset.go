@@ -147,7 +147,7 @@ func (b StatefulSetBuilder) Placeholder() runtime.Object {
 }
 
 func (b StatefulSetBuilder) makePodTemplate() corev1.PodTemplateSpec {
-	return corev1.PodTemplateSpec{
+	pod := corev1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: b.Selector,
 		},
@@ -157,14 +157,27 @@ func (b StatefulSetBuilder) makePodTemplate() corev1.PodTemplateSpec {
 			AutomountServiceAccountToken:  ptr.Bool(false),
 		},
 	}
+
+	secret := b.Spec().Image.PullSecret
+	if secret != nil {
+		local := corev1.LocalObjectReference{
+			Name: *secret,
+		}
+
+		var imagePullSecrets []corev1.LocalObjectReference
+		imagePullSecrets[0] = local
+		pod.Spec.ImagePullSecrets = imagePullSecrets
+	}
+
+	return pod
 }
 
 func (b StatefulSetBuilder) makeContainers() []corev1.Container {
 	return []corev1.Container{
 		{
 			Name:            DbContainerName,
-			Image:           b.Spec().Image,
-			ImagePullPolicy: corev1.PullIfNotPresent,
+			Image:           b.Spec().Image.Name,
+			ImagePullPolicy: *b.Spec().Image.PullPolicyName,
 			Resources:       b.Spec().Resources,
 			Args:            b.dbArgs(),
 			Env: []corev1.EnvVar{

@@ -22,6 +22,7 @@ spec:
   dataStore:
     emptyDir: {}
   tlsEnabled: true
-  image: cockroachdb/cockroach:v20.1.3
+  image:
+    name: cockroachdb/cockroach:v20.1.3
   nodes: 3
   minAvailable: 2

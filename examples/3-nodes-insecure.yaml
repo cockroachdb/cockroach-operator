@@ -42,5 +42,6 @@ spec:
       suffix: -c
       labels:
         failure-domain.beta.kubernetes.io/zone: us-west-2c
-  image: cockroachdb/cockroach:v19.2.6
+  image:
+    name: cockroachdb/cockroach:v19.2.6
   nodes: 3

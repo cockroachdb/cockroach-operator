@@ -75,7 +75,7 @@ func requireDbContainersToUseImage(t *testing.T, sb testenv.DiffingSandbox, cr *
 				return false
 			}
 
-			return c.Image == cr.Spec.Image
+			return c.Image == cr.Spec.Image.Name
 		})
 
 		return res, nil

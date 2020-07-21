@@ -16,6 +16,8 @@ limitations under the License.
 
 package v1alpha1
 
+import v1 "k8s.io/api/core/v1"
+
 var (
 	DefaultGRPCPort       int32 = 26257
 	DefaultHTTPPort       int32 = 8080
@@ -44,4 +46,10 @@ func SetClusterSpecDefaults(cs *CrdbClusterSpec) {
 	if cs.MaxSQLMemory == "" {
 		cs.MaxSQLMemory = "25%"
 	}
+
+	if cs.Image.PullPolicyName == nil {
+		policy := v1.PullIfNotPresent
+		cs.Image.PullPolicyName = &policy
+	}
+
 }

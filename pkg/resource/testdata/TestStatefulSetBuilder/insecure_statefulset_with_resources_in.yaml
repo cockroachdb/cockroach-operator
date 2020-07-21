@@ -28,7 +28,8 @@ spec:
       cpu: "1"
     requests:
       cpu: "0.5"
-  image: cockroachdb/cockroach:v19.2.6
+  image:
+    name: cockroachdb/cockroach:v19.2.6
   nodes: 1
   topology:
     zones:
