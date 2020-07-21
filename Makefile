@@ -130,3 +130,9 @@ check_trailing_whitespace:
 check_headers:
 	@echo "Checking file headers"
 	@python3 hack/verify_boilerplate.py
+
+.PHONY: goimports
+goimports:
+	@echo "Running goimports"
+	@python3 hack/update_goimports.py
+
