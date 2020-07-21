@@ -17,8 +17,9 @@ limitations under the License.
 package controller
 
 import (
-	ctrl "sigs.k8s.io/controller-runtime"
 	"time"
+
+	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 func requeueIfError(err error) (ctrl.Result, error) {

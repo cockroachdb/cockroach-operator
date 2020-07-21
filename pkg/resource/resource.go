@@ -18,6 +18,7 @@ package resource
 
 import (
 	"context"
+
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
 	"github.com/cockroachdb/cockroach-operator/pkg/labels"
 	"github.com/pkg/errors"

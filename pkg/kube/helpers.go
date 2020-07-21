@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+
 	"github.com/banzaicloud/k8s-objectmatcher/patch"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"

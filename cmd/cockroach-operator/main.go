@@ -19,8 +19,9 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/cockroachdb/cockroach-operator/pkg/controller"
 	"os"
+
+	"github.com/cockroachdb/cockroach-operator/pkg/controller"
 
 	crdbv1alpha1 "github.com/cockroachdb/cockroach-operator/api/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"

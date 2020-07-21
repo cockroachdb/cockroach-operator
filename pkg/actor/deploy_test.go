@@ -18,6 +18,8 @@ package actor_test
 
 import (
 	"context"
+	"testing"
+
 	"github.com/cockroachdb/cockroach-operator/pkg/actor"
 	"github.com/cockroachdb/cockroach-operator/pkg/testutil"
 	"github.com/go-logr/zapr"
@@ -25,7 +27,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zaptest"
-	"testing"
 )
 
 type key struct {

@@ -20,6 +20,8 @@ import (
 	"context"
 	"encoding/csv"
 	"fmt"
+	"strings"
+
 	"github.com/Masterminds/semver/v3"
 	api "github.com/cockroachdb/cockroach-operator/api/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/condition"
@@ -31,7 +33,6 @@ import (
 	kubetypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strings"
 )
 
 func newUpgrade(scheme *runtime.Scheme, cl client.Client, config *rest.Config) Actor {

@@ -19,6 +19,8 @@ package resource_test
 import (
 	"context"
 	"fmt"
+	"testing"
+
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
 	"github.com/cockroachdb/cockroach-operator/pkg/labels"
 	"github.com/cockroachdb/cockroach-operator/pkg/ptr"
@@ -31,7 +33,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	amtypes "k8s.io/apimachinery/pkg/types"
-	"testing"
 )
 
 func TestReconcile(t *testing.T) {

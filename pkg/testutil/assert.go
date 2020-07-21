@@ -18,11 +18,11 @@ package testutil
 
 import (
 	"bytes"
-	"github.com/google/go-cmp/cmp"
-	"github.com/stretchr/testify/require"
-	"k8s.io/api/core/v1"
 	"strings"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/require"
 )
 
 // AssertDiff compares an expected interface with an actual interface

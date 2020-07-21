@@ -20,6 +20,11 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"sort"
+	"strings"
+	"sync"
+	"testing"
+
 	api "github.com/cockroachdb/cockroach-operator/api/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
 	"github.com/pkg/errors"
@@ -34,10 +39,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/yaml"
-	"sort"
-	"strings"
-	"sync"
-	"testing"
 )
 
 const (

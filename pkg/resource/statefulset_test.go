@@ -20,6 +20,9 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
+	"io/ioutil"
+	"path/filepath"
+
 	api "github.com/cockroachdb/cockroach-operator/api/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/labels"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
@@ -27,9 +30,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"io/ioutil"
 	appsv1 "k8s.io/api/apps/v1"
-	"path/filepath"
 
 	"testing"
 )
