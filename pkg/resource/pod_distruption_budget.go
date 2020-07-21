@@ -26,7 +26,6 @@ func (b PdbBuilder) Build(obj runtime.Object) error {
 		return errors.New("failed to cast to PDB object")
 	}
 
-	// TODO fix or should we use this?
 	if pdb.ObjectMeta.Name == "" {
 		pdb.ObjectMeta.Name = b.DiscoveryServiceName()
 	}
@@ -35,6 +34,8 @@ func (b PdbBuilder) Build(obj runtime.Object) error {
 		pdb.ObjectMeta.Labels = map[string]string{}
 	}
 
+	// Using the Common labels that will match
+	// the statefulset
 	commonLabels := labels.Common(b.Cluster.cr)
 	selector := commonLabels.Selector()
 	pdb.Spec = policy.PodDisruptionBudgetSpec{
@@ -44,6 +45,8 @@ func (b PdbBuilder) Build(obj runtime.Object) error {
 	}
 
 	// TODO should we always create a PDB?
+	// Open question here:
+	// https://github.com/cockroachdb/cockroach-operator/issues/79
 
 	// Setup MinAvailable
 	if b.Cluster.cr.Spec.MinAvailable != nil {
@@ -51,7 +54,7 @@ func (b PdbBuilder) Build(obj runtime.Object) error {
 		minAvailableIS := intstr.FromInt(int(*minAvailable))
 		pdb.Spec.MinAvailable = &minAvailableIS
 	} else {
-		// Setup MinAvailable as set or use the default value
+		// Set MaxUnavailbe or use the default value
 		maxUnavailable := b.Cluster.cr.Spec.MaxUnavailable
 		maxUnavailableIS := intstr.FromInt(int(*maxUnavailable))
 		pdb.Spec.MaxUnavailable = &maxUnavailableIS
@@ -60,7 +63,8 @@ func (b PdbBuilder) Build(obj runtime.Object) error {
 	return nil
 }
 
-// TODO - what does this do???
+// TODO update func command - what does this do???
+
 func (b PdbBuilder) Placeholder() runtime.Object {
 	return &policy.PodDisruptionBudget{
 		ObjectMeta: metav1.ObjectMeta{

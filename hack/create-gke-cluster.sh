@@ -34,7 +34,7 @@ source "$ROOT"/common.sh
 # shellcheck disable=SC1090
 source "$ROOT"/functions.sh
 
-enable googleapi for container registry on the project
+# enable googleapi for container registry on the project
 enable-service compute.googleapis.com
 enable-service container.googleapis.com
 
