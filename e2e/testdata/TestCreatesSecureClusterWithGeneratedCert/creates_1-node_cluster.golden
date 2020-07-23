@@ -70,9 +70,6 @@ spec:
       name: datadir
     - mountPath: /cockroach/cockroach-certs/
       name: certs
-    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
-      name: default-token-0
-      readOnly: true
   dnsPolicy: ClusterFirst
   enableServiceLinks: true
   priority: 0
@@ -115,10 +112,6 @@ spec:
           - key: tls.key
             path: client.root.key
           name: crdb-root
-  - name: default-token-0
-    secret:
-      defaultMode: 420
-      secretName: default-token-0
 
 ---
 apiVersion: v1
