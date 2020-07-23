@@ -88,8 +88,9 @@ docker/build/operator-ubi:
 	docker build --pull -t $(REGISTRY_PREFIX)/$(UBI_IMG):$(VERSION) -f Dockerfile.ubi .
 
 # Linting
-lint: check_shell check_python check_golang check_terraform check_docker \
-	check_base_files check_headers check_trailing_whitespace
+# Removing a couple of items check_python check_docker check_base_files check_terraform
+# This target does not run on teamcity yet because of python library issues.
+lint: check_shell check_golang check_headers check_trailing_whitespace check_headers
 
 # The .PHONY directive tells make that this isn't a real target and so
 # the presence of a file named 'check_shell' won't cause this target to stop
