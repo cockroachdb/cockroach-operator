@@ -22,6 +22,7 @@ metadata:
     statefulset.kubernetes.io/pod-name: crdb-0
   name: crdb-0
 spec:
+  automountServiceAccountToken: false
   containers:
   - args:
     - shell
@@ -68,9 +69,6 @@ spec:
     volumeMounts:
     - mountPath: /cockroach/cockroach-data/
       name: datadir
-    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
-      name: default-token-0
-      readOnly: true
   dnsPolicy: ClusterFirst
   enableServiceLinks: true
   priority: 0
@@ -93,10 +91,6 @@ spec:
   volumes:
   - emptyDir: {}
     name: datadir
-  - name: default-token-0
-    secret:
-      defaultMode: 420
-      secretName: default-token-0
 status: {}
 
 ---
@@ -111,6 +105,7 @@ metadata:
     statefulset.kubernetes.io/pod-name: crdb-1
   name: crdb-1
 spec:
+  automountServiceAccountToken: false
   containers:
   - args:
     - shell
@@ -157,9 +152,6 @@ spec:
     volumeMounts:
     - mountPath: /cockroach/cockroach-data/
       name: datadir
-    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
-      name: default-token-0
-      readOnly: true
   dnsPolicy: ClusterFirst
   enableServiceLinks: true
   priority: 0
@@ -182,10 +174,6 @@ spec:
   volumes:
   - emptyDir: {}
     name: datadir
-  - name: default-token-0
-    secret:
-      defaultMode: 420
-      secretName: default-token-0
 status: {}
 
 ---
@@ -200,6 +188,7 @@ metadata:
     statefulset.kubernetes.io/pod-name: crdb-2
   name: crdb-2
 spec:
+  automountServiceAccountToken: false
   containers:
   - args:
     - shell
@@ -246,9 +235,6 @@ spec:
     volumeMounts:
     - mountPath: /cockroach/cockroach-data/
       name: datadir
-    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
-      name: default-token-0
-      readOnly: true
   dnsPolicy: ClusterFirst
   enableServiceLinks: true
   priority: 0
@@ -271,10 +257,6 @@ spec:
   volumes:
   - emptyDir: {}
     name: datadir
-  - name: default-token-0
-    secret:
-      defaultMode: 420
-      secretName: default-token-0
 status: {}
 
 ---
@@ -388,6 +370,7 @@ spec:
         app.kubernetes.io/instance: crdb
         app.kubernetes.io/name: cockroachdb
     spec:
+      automountServiceAccountToken: false
       containers:
       - args:
         - shell
