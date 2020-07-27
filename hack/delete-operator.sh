@@ -35,6 +35,6 @@ source "$ROOT"/common.sh
 gcloud container clusters get-credentials "$CLUSTER_NAME" --zone "$ZONE"
 
 kubectl delete -f "${ROOT}/../config/crd/bases/crdb.cockroachlabs.com_crdbclusters.yaml"
-kubectl delete -f "${ROOT}/../deploy/operator.yaml"
+kubectl delete -f "${ROOT}/../manifests/operator.yaml"
 
 # TODO create function to test if deployment still exists
