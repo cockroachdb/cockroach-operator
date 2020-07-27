@@ -46,7 +46,7 @@ kubectl apply -f "${ROOT}/../config/crd/bases/crdb.cockroachlabs.com_crdbcluster
 # TODO I do not like the cd here, but I do not know how to do an edit without being
 # in the directory.
 # TODO we may want to dynamically create these files so that the file is not getting updated all the time
-cd "${ROOT}/../deploy"
+cd "${ROOT}/../manifests"
 kustomize edit set image cockroach-operator="${IMAGE_NAME}"
 kustomize build . | kubectl apply -f -
 
