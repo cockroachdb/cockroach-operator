@@ -1771,3 +1771,13 @@ go_repository(
     sum = "h1:M1Tv3VzNlEHg6uyACnRdtrploV2P7wZqH8BoQMtz0cg=",
     version = "v0.1.0",
 )
+
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
+# etcd binary for testing
+http_file(
+    name="etcd_binary",
+    downloaded_file_path = "etcd",
+    sha256="a4d729f9f89d33f65380e1f1c5fa3ce625971d5dab169f9e57f91e8649f122f2",
+    executable=True,
+    urls=["https://storage.googleapis.com/etcd/v3.4.10/etcd-v3.4.10-linux-amd64.tar.gz"],
+)
