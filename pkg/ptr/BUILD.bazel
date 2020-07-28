@@ -1,0 +1,8 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["ptr.go"],
+    importpath = "github.com/cockroachdb/cockroach-operator/pkg/ptr",
+    visibility = ["//visibility:public"],
+)

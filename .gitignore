@@ -53,3 +53,8 @@ Session.vim
 
 # Compiled python files
 *.pyc
+
+bazel-bin
+bazel-cockroach-operator
+bazel-out
+bazel-testlogs

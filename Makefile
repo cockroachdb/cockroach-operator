@@ -137,3 +137,14 @@ goimports:
 	@echo "Running goimports"
 	@python3 hack/update_goimports.py
 
+.PHONY: bazel/build
+bazel/build:
+	@bazel build //...
+
+bazel/gazelle-mod:
+	@bazel run //:gazelle -- update-repos -from_file=go.mod
+
+bazel/gazelle-update:
+	@bazel run //:gazelle -- update
+
+

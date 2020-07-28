@@ -1,0 +1,45 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "cluster_controller.go",
+        "result.go",
+    ],
+    importpath = "github.com/cockroachdb/cockroach-operator/pkg/controller",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//api/v1alpha1:go_default_library",
+        "//pkg/actor:go_default_library",
+        "//pkg/resource:go_default_library",
+        "@com_github_go_logr_logr//:go_default_library",
+        "@io_k8s_api//apps/v1:go_default_library",
+        "@io_k8s_api//core/v1:go_default_library",
+        "@io_k8s_api//policy/v1beta1:go_default_library",
+        "@io_k8s_apimachinery//pkg/runtime:go_default_library",
+        "@io_k8s_sigs_controller_runtime//:go_default_library",
+        "@io_k8s_sigs_controller_runtime//pkg/client:go_default_library",
+    ],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["cluster_controller_test.go"],
+    embed = [":go_default_library"],
+    deps = [
+        "//api/v1alpha1:go_default_library",
+        "//pkg/actor:go_default_library",
+        "//pkg/resource:go_default_library",
+        "//pkg/testutil:go_default_library",
+        "@com_github_go_logr_zapr//:go_default_library",
+        "@com_github_stretchr_testify//assert:go_default_library",
+        "@com_github_stretchr_testify//require:go_default_library",
+        "@io_k8s_api//core/v1:go_default_library",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:go_default_library",
+        "@io_k8s_apimachinery//pkg/runtime:go_default_library",
+        "@io_k8s_apimachinery//pkg/types:go_default_library",
+        "@io_k8s_sigs_controller_runtime//:go_default_library",
+        "@io_k8s_sigs_controller_runtime//pkg/client/fake:go_default_library",
+        "@org_uber_go_zap//zaptest:go_default_library",
+    ],
+)
