@@ -127,7 +127,7 @@ func (s Sandbox) Cleanup() {
 	dp := metav1.DeletePropagationForeground
 	opts := &metav1.DeleteOptions{PropagationPolicy: &dp}
 	nss := s.env.Clientset.CoreV1().Namespaces()
-	if err := nss.Delete(context.TODO(), s.Namespace, opts); err != nil {
+	if err := nss.Delete(context.TODO(), s.Namespace, *opts); err != nil {
 		fmt.Println("failed to cleanup namespace", s.Namespace)
 	}
 }
@@ -147,7 +147,9 @@ func createNamespace(s Sandbox) error {
 		},
 	}
 
-	if _, err := s.env.Clientset.CoreV1().Namespaces().Create(context.TODO()); err != nil {
+	opts := metav1.CreateOptions{}
+
+	if _, err := s.env.Clientset.CoreV1().Namespaces().Create(context.TODO(), ns, opts); err != nil {
 		return errors.Wrapf(err, "failed to create namespace: %s", s.Namespace)
 	}
 

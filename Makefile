@@ -147,4 +147,6 @@ bazel/gazelle-mod:
 bazel/gazelle-update:
 	@bazel run //:gazelle -- update
 
+bazel/test:
+	@bazel test //api/... //pkg/...
 

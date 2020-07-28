@@ -148,7 +148,7 @@ func (rc *prepareTLS) issue(ctx context.Context, csrName string, request *x509.C
 		return NotReadyErr{Err: errors.New("client CSR is not ready, giving it some time")}
 	case tls.SigningRequestPending:
 		log.Info("approving CSR")
-		if err := tls.Approve(rc.config, csr.Unwrap()); err != nil {
+		if err := tls.Approve(ctx, rc.config, csr.Unwrap()); err != nil {
 			return err
 		}
 
@@ -156,7 +156,7 @@ func (rc *prepareTLS) issue(ctx context.Context, csrName string, request *x509.C
 	case tls.SigningRequestApproved:
 		log.Info("the CSR has been approved")
 
-		ca, err := kube.GetClusterCA(rc.config)
+		ca, err := kube.GetClusterCA(ctx, rc.config)
 		if err != nil {
 			return errors.Wrap(err, "failed to fetch cluster CA certificate")
 		}
