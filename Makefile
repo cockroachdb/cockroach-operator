@@ -148,5 +148,5 @@ bazel/gazelle-update:
 	@bazel run //:gazelle -- update
 
 bazel/test:
-	@bazel test //api/... //pkg/... --test_env=TEST_ASSET_ETCD=
+	@bazel test //api/... //pkg/... --test_env=TEST_ASSET_ETCD=$(bazel info execution_root)/external/etcd_bin/file/etcd
 

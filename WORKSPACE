@@ -1775,9 +1775,27 @@ go_repository(
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
 # etcd binary for testing
 http_file(
-    name="etcd_binary",
+    name="etcd_bin",
     downloaded_file_path = "etcd",
-    sha256="a4d729f9f89d33f65380e1f1c5fa3ce625971d5dab169f9e57f91e8649f122f2",
+    sha256="2f36b2e55f3c63bf696995cabfce58dfa5d0e19b27249a5a8ddbcdd01dddf83a",
     executable=True,
-    urls=["https://storage.googleapis.com/etcd/v3.4.10/etcd-v3.4.10-linux-amd64.tar.gz"],
+    urls=["https://storage.googleapis.com/crdb-bazel-artifacts/etcd"],
+)
+
+# kubectl binary for testing
+http_file(
+    name="kubectl_bin",
+    downloaded_file_path = "kubectl",
+    sha256="2f36b2e55f3c63bf696995cabfce58dfa5d0e19b27249a5a8ddbcdd01dddf83a",
+    executable=True,
+    urls=["https://storage.googleapis.com/kubernetes-release/release/v1.18.6/bin/linux/amd64/kubectl"],
+)
+
+# kube-apiserver binary for testing
+http_file(
+    name="kube_apiserver_bin",
+    downloaded_file_path = "kube-apiserver",
+    sha256="2f36b2e55f3c63bf696995cabfce58dfa5d0e19b27249a5a8ddbcdd01dddf83a",
+    executable=True,
+    urls=["https://storage.googleapis.com/kubernetes-release/release/v1.18.6/bin/linux/amd64/kube-apiserver"],
 )
