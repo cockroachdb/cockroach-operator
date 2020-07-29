@@ -19,7 +19,7 @@ ROOT=$(dirname "${BASH_SOURCE[0]}")
 # shellcheck disable=SC1102
 BAD_HEADERS=$((python3 "${ROOT}/verify_boilerplate.py" || true) | awk '{ print $7}')
 
-FORMATS="sh go Makefile Dockerfile yaml"
+FORMATS="sh go Makefile Dockerfile yaml BUILD.bazel WORKSPACE"
 
 YEAR=$(date -u +%Y)
 
