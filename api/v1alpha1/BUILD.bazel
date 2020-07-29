@@ -56,6 +56,6 @@ go_test(
         "@etcd_bin//file",
         "@kubectl_bin//file",
         "@kube_apiserver_bin//file",
+        "//config/crd/bases:crd_manifest",
     ],
-        
 )

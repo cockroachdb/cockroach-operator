@@ -1777,7 +1777,8 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
 http_file(
     name="etcd_bin",
     downloaded_file_path = "etcd",
-    sha256="2f36b2e55f3c63bf696995cabfce58dfa5d0e19b27249a5a8ddbcdd01dddf83a",
+    #sha256="2f36b2e55f3c63bf696995cabfce58dfa5d0e19b27249a5a8ddbcdd01dddf83a",
+    sha256="da6232479bf52b2faacad8e1c5505597077d09e6252ccd1914a63eb161b5daed",
     executable=True,
     urls=["https://storage.googleapis.com/crdb-bazel-artifacts/etcd"],
 )
@@ -1786,7 +1787,7 @@ http_file(
 http_file(
     name="kubectl_bin",
     downloaded_file_path = "kubectl",
-    sha256="2f36b2e55f3c63bf696995cabfce58dfa5d0e19b27249a5a8ddbcdd01dddf83a",
+    sha256="62fcb9922164725c7cba5747562f2ad2f4d834ad0a458c1e4c794cc203dcdfb3",
     executable=True,
     urls=["https://storage.googleapis.com/kubernetes-release/release/v1.18.6/bin/linux/amd64/kubectl"],
 )
@@ -1795,7 +1796,7 @@ http_file(
 http_file(
     name="kube_apiserver_bin",
     downloaded_file_path = "kube-apiserver",
-    sha256="2f36b2e55f3c63bf696995cabfce58dfa5d0e19b27249a5a8ddbcdd01dddf83a",
+    sha256="324f8ef893a38da784c6d9f178ba1074ba2ad6b2d56ab50675d522b547d5a550",
     executable=True,
     urls=["https://storage.googleapis.com/kubernetes-release/release/v1.18.6/bin/linux/amd64/kube-apiserver"],
 )
