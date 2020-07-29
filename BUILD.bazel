@@ -16,3 +16,33 @@ load("@bazel_gazelle//:def.bzl", "gazelle")
 
 # gazelle:prefix github.com/cockroachdb/cockroach-operator
 gazelle(name = "gazelle")
+
+filegroup(
+    name = "all-srcs",
+    srcs = [
+        ":package-srcs",
+        "//cmd/cockroach-operator:all-srcs",
+        "//api:all-srcs",
+        "//pkg:all-srcs",
+        "//hack:all-srcs",
+        "//manifests:all-srcs",
+        "//examples:all-srcs",
+        "//config:all-srcs",
+        "//e2e:all-srcs",
+    ],
+    tags = ["automanaged"],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "package-srcs",
+    srcs = glob(
+        ["**"],
+        exclude = [
+            "bazel-*/**",
+            ".git/**",
+        ],
+    ),
+    tags = ["automanaged"],
+    visibility = ["//visibility:private"],
+)

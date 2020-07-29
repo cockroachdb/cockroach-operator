@@ -1814,3 +1814,78 @@ http_file(
     executable=True,
     urls=["https://storage.googleapis.com/kubernetes-release/release/v1.18.6/bin/linux/amd64/kube-apiserver"],
 )
+
+# Special logic for building python interpreter with OpenSSL from homebrew.
+# See https://devguide.python.org/setup/#macos-and-os-x
+_py_configure = """
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    ./configure --prefix=$(pwd)/bazel_install --with-openssl=$(brew --prefix openssl)
+else
+    ./configure --prefix=$(pwd)/bazel_install
+fi
+"""
+
+http_archive(
+    name = "python_interpreter",
+    urls = ["https://www.python.org/ftp/python/3.8.3/Python-3.8.3.tar.xz"],
+    sha256 = "dfab5ec723c218082fe3d5d7ae17ecbdebffa9a1aea4d64aa3a2ecdd2e795864",
+    strip_prefix = "Python-3.8.3",
+    patch_cmds = [
+        "mkdir $(pwd)/bazel_install",
+        _py_configure,
+        "make",
+        "make install",
+        "ln -s bazel_install/bin/python3 python_bin",
+    ],
+    build_file_content = """
+exports_files(["python_bin"])
+filegroup(
+    name = "files",
+    srcs = glob(["bazel_install/**"], exclude = ["**/* *"]),
+    visibility = ["//visibility:public"],
+)
+""",
+)
+
+git_repository(
+    name = "rules_python",
+    remote = "https://github.com/bazelbuild/rules_python.git",
+    commit = "06672cd470ce513a256c7ef2dbb8497a0f5502f3",
+)
+
+load("@rules_python//python:repositories.bzl", "py_repositories")
+
+py_repositories()
+
+load("@rules_python//python:pip.bzl", "pip_repositories")
+
+pip_repositories()
+
+load("@rules_python//python:pip.bzl", "pip_import")
+
+pip_import(
+    name = "py_deps",
+    requirements = "//hack:requirements.txt",
+    python_interpreter_target = "@python_interpreter//:python_bin",
+)
+
+load("@py_deps//:requirements.bzl", "pip_install")
+
+pip_install()
+
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+#http_archive(
+#    name = "dpu_rules_pyenv",
+#    sha256 = "241317102c3dafc958371194ba987706d6a87de8529e8da8935dd84753bba5b1",
+#    strip_prefix = "rules_pyenv-0.1.2",
+#    urls = ["https://github.com/digital-plumbers-union/rules_pyenv/archive/v0.1.2.tar.gz"],
+#)
+
+
+#load("@dpu_rules_pyenv//pyenv:defs.bzl", "pyenv_install")
+
+#pyenv_install(
+#    py2 = "2.7.17",
+#    py3 = "3.8.2",
+#)

@@ -1,0 +1,95 @@
+package(default_visibility = ["//visibility:public"])
+
+load("@py_deps//:requirements.bzl", "requirement")
+load("@rules_python//python:defs.bzl", "py_runtime_pair")
+
+py_runtime(
+    name = "python3_runtime",
+    files = ["@python_interpreter//:files"],
+    interpreter = "@python_interpreter//:python_bin",
+    python_version = "PY3",
+    visibility = ["//visibility:public"],
+)
+
+py_runtime_pair(
+    name = "my_py_runtime_pair",
+    py2_runtime = None,
+    py3_runtime = ":python3_runtime",
+)
+
+toolchain(
+    name = "my_py_toolchain",
+    toolchain = ":my_py_runtime_pair",
+    toolchain_type = "@bazel_tools//tools/python:toolchain_type",
+)
+
+test_suite(
+    name = "verify-all",
+    tags = ["lint"],  # picks up all non-manual targets with this tag
+)
+
+
+#sh_binary(
+#    name = "update-gofmt",
+#    srcs = ["update-gofmt.sh"],
+#    args = ["$(location @go_sdk//:bin/gofmt)"],
+#    data = ["@go_sdk//:bin/gofmt"],
+#)
+
+#py_binary(
+#    name = "verify_boilerplace_binary",
+#    main = "verify_boilerplate.py",
+#    srcs = ["verify_boilerplate.py"],
+#    python_version = "PY3",
+#)
+
+py_test(
+    name = "verify_boilerplate_runner",
+#    args = ["--boilerplate-dir=$(location //hack/boilerplate:)"],
+    deps = ["//hack/lib/devtools:verify_boilerplace_lib"],
+    srcs = ["verify_boilerplate_runner.py"],
+    data = [
+        "//hack/boilerplate:boilerplate-srcs",
+        "@//:all-srcs",
+    ],
+    tags = ["lint"],
+)
+
+py_test(
+    name = "main_test",
+    srcs = ["main_test.py"],
+    deps = [
+        requirement("attrs"),
+        requirement("more-itertools"),
+        requirement("packaging"),
+        requirement("pluggy"),
+        requirement("py"),
+        requirement("pytest"),
+        requirement("wcwidth"),
+    ],
+)
+
+#sh_test(
+#    name = "verify-gofmt",
+#    srcs = ["verify-gofmt.sh"],
+#    args = ["$(location @go_sdk//:bin/gofmt)"],
+#    data = [
+#        "@//:all-srcs",
+#        "@go_sdk//:bin/gofmt",
+#    ],
+#    tags = ["lint"],
+#)
+
+filegroup(
+    name = "package-srcs",
+    srcs = glob(["**"]),
+    tags = ["automanaged"],
+    visibility = ["//visibility:private"],
+)
+
+filegroup(
+    name = "all-srcs",
+    srcs = [":package-srcs"],
+    tags = ["automanaged"],
+    visibility = ["//visibility:public"],
+)

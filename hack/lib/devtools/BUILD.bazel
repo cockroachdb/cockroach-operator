@@ -1,0 +1,21 @@
+package(default_visibility = ["//visibility:public"])
+
+py_library(
+    name = "verify_boilerplace_lib",
+    srcs = ["verify_boilerplate.py"],
+    srcs_version = "PY3",
+)
+
+filegroup(
+    name = "package-srcs",
+    srcs = glob(["**"]),
+    tags = ["automanaged"],
+    visibility = ["//visibility:private"],
+)
+
+filegroup(
+    name = "all-srcs",
+    srcs = [":package-srcs"],
+    tags = ["automanaged"],
+    visibility = ["//visibility:public"],
+)

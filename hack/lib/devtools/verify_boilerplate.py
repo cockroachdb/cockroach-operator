@@ -285,32 +285,3 @@ def get_files(extensions, args):
         if args.force_extension or extension_present:
             outfiles.append(pathname)
     return outfiles
-
-
-def main(args):
-    """Identifies and verifies files that should have the desired boilerplate.
-    Retrieves the lists of files to be validated and tests each one in turn.
-    If all files contain correct boilerplate, this function terminates
-    normally. Otherwise it prints the name of each non-conforming file and
-    exists with a non-zero status code.
-    """
-    refs = get_references(args)
-    preambles = get_preambles(args)
-    filenames = get_files(refs.keys(), args)
-    nonconforming_files = []
-    for filename in filenames:
-        if not has_valid_header(filename, refs, preambles, REGEXES, args):
-            nonconforming_files.append(filename)
-    if nonconforming_files:
-#        print('%d files have incorrect boilerplate headers:' % len(
-#            nonconforming_files))
-        for filename in sorted(nonconforming_files):
-            print('FAIL: Boilerplate header is wrong for: %s' % os.path.relpath(filename, args.rootdir))
-        sys.exit(1)
-    else:
-        print('All files examined have correct boilerplate.')
-
-
-if __name__ == "__main__":
-    ARGS = get_args()
-    main(ARGS)
