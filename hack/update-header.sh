@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# TODO this is busted
+
 ROOT=$(dirname "${BASH_SOURCE[0]}")
 # TODO fix this shellcheck error
 # shellcheck disable=SC1102

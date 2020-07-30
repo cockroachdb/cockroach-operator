@@ -1854,13 +1854,13 @@ git_repository(
     commit = "0f8183b1cfa7e8afebfeeec5bcad75deb846613a",
 )
 
-load("@rules_python//python:repositories.bzl", "py_repositories")
+#load("@rules_python//python:repositories.bzl", "py_repositories")
 
-py_repositories()
+#py_repositories()
 
-load("@rules_python//python:pip.bzl", "pip_repositories")
+#load("@rules_python//python:pip.bzl", "pip_repositories")
 
-pip_repositories()
+#pip_repositories()
 
 #load("@rules_python//python:pip.bzl", "pip_import")
 
@@ -1876,16 +1876,17 @@ pip_repositories()
 
 #load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
+# TODO this is failing
 # TODO we need to figure out if we are going to for these rules or what
-git_repository(
-    name = "misc_rules",
-    commit = "0ad0b02af9e4b46717e8918c4c75b32eb71d9838",
-    remote = "git://github.com/andyscott/misc_rules",
-)
+# git_repository(
+#    name = "misc_rules",
+#    commit = "0ad0b02af9e4b46717e8918c4c75b32eb71d9838",
+#    remote = "git://github.com/andyscott/misc_rules",
+#)
 
 # Need to make this hermetic
-register_toolchains(
-    "@misc_rules//toolchains:shellcheck_from_host_path",
-)
+#register_toolchains(
+#    "@misc_rules//toolchains:shellcheck_from_host_path",
+#)
 
 register_toolchains("//hack:my_py_toolchain")

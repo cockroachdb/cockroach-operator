@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 # Copyright 2020 The Cockroach Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,10 +14,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-package(default_visibility = ["//visibility:public"])
+# This code is based on existing work
+# https://github.com/GoogleCloudPlatform/gke-terraform-generator/tree/master/test
 
-filegroup(
-    name = "boilerplate-srcs",
-    srcs = glob(["**"]),
-)
+check_trailing_whitespace
 
+# This function makes sure that there is no trailing whitespace
+# in any files in the project.
+# There are some exclusions
+function check_trailing_whitespace() {
+  echo "Checking for trailing whitespace"
+  grep -rn '[[:blank:]]$' --exclude-dir=".terraform" --exclude-dir=".docker-build" --exclude-dir="bazel-*" --exclude="*.png" --exclude-dir=".git" --exclude="*.pyc" .
+  rc=$?
+  if [ $rc = 0 ]; then
+    exit 1
+  fi
+}

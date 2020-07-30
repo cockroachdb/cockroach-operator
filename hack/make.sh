@@ -80,7 +80,7 @@ function check_shell() {
 # in any files in the project.
 # There are some exclusions
 function check_trailing_whitespace() {
-  echo "The following lines have trailing whitespace"
+  echo "Checking for trailing whitespace"
   grep -rn '[[:blank:]]$' --exclude-dir=".terraform" --exclude-dir=".docker-build" --exclude-dir="bazel-*" --exclude="*.png" --exclude-dir=".git" --exclude="*.pyc" .
   rc=$?
   if [ $rc = 0 ]; then

@@ -117,7 +117,7 @@ def get_references(args):
     # Find all paths for boilerplate references
     # FIXME I am using a relative path because of bazel
     dir_path = os.path.dirname(os.path.realpath(__file__)) 
-    path =  os.path.join(dir_path, args.boilerplate_dir, "boilerplate.*.preamble")
+    path =  os.path.join(dir_path, args.boilerplate_dir, "boilerplate.*.txt")
     boilerplate_paths = glob.glob(path)
 
     # Read all boilerplate references into dictionary
@@ -128,7 +128,6 @@ def get_references(args):
             references[extension] = ref
 
     if len(references) == 0:
-        print("path: %s" % args.boilerplate_dir)
         raise Exception("no references found, check boilerplate path")
 
     return references
@@ -162,7 +161,6 @@ def get_preambles(args):
             preambles[extension] = ref
 
     if len(preambles) == 0:
-        print("path: %s" % args.boilerplate_dir)
         raise Exception("no preambles found, check boilerplate path")
     return preambles
 
@@ -197,9 +195,6 @@ def has_valid_header(filename, references, preambles, regexs, args):
     else:
         extension = basename
     ref = references[extension]
-    #print("Verifying boilerplate in file: %s as %s" % (
-    #    os.path.relpath(filename, args.rootdir),
-    #    extension))
 
     preamble = preambles.get(extension)
     if preamble:
