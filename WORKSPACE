@@ -1836,6 +1836,7 @@ http_archive(
         "make",
         "make install",
         "ln -s bazel_install/bin/python3 python_bin",
+        # "ln -s bazel_install/bin/python  bazel_install/bin/python3",
     ],
     build_file_content = """
 exports_files(["python_bin"])
@@ -1850,7 +1851,7 @@ filegroup(
 git_repository(
     name = "rules_python",
     remote = "https://github.com/bazelbuild/rules_python.git",
-    commit = "06672cd470ce513a256c7ef2dbb8497a0f5502f3",
+    commit = "0f8183b1cfa7e8afebfeeec5bcad75deb846613a",
 )
 
 load("@rules_python//python:repositories.bzl", "py_repositories")

@@ -28,7 +28,6 @@ test_suite(
     tags = ["lint"],  # picks up all non-manual targets with this tag
 )
 
-
 #sh_binary(
 #    name = "update-gofmt",
 #    srcs = ["update-gofmt.sh"],
@@ -36,37 +35,17 @@ test_suite(
 #    data = ["@go_sdk//:bin/gofmt"],
 #)
 
-#py_binary(
-#    name = "verify_boilerplace_binary",
-#    main = "verify_boilerplate.py",
-#    srcs = ["verify_boilerplate.py"],
-#    python_version = "PY3",
-#)
-
 py_test(
-    name = "verify_boilerplate_runner",
-#    args = ["--boilerplate-dir=$(location //hack/boilerplate:)"],
-    deps = ["//hack/lib/devtools:verify_boilerplace_lib"],
-    srcs = ["verify_boilerplate_runner.py"],
+    name = "verify_boilerplate",
+    args = [
+        "--boilerplate-dir=boilerplate", # TODO FIXME to a location
+	"-r=."],
+    srcs = ["verify_boilerplate.py"],
     data = [
         "//hack/boilerplate:boilerplate-srcs",
         "@//:all-srcs",
     ],
     tags = ["lint"],
-)
-
-py_test(
-    name = "main_test",
-    srcs = ["main_test.py"],
-    deps = [
-        requirement("attrs"),
-        requirement("more-itertools"),
-        requirement("packaging"),
-        requirement("pluggy"),
-        requirement("py"),
-        requirement("pytest"),
-        requirement("wcwidth"),
-    ],
 )
 
 #sh_test(
