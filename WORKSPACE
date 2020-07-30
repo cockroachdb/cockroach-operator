@@ -1875,6 +1875,8 @@ pip_install()
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
+register_toolchains("//hack:my_py_toolchain")
+
 #http_archive(
 #    name = "dpu_rules_pyenv",
 #    sha256 = "241317102c3dafc958371194ba987706d6a87de8529e8da8935dd84753bba5b1",
