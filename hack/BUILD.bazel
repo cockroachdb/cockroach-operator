@@ -1,6 +1,5 @@
 package(default_visibility = ["//visibility:public"])
 
-load("@py_deps//:requirements.bzl", "requirement")
 load("@rules_python//python:defs.bzl", "py_runtime_pair")
 
 py_runtime(

@@ -18,4 +18,5 @@ bazel test //api/... //pkg/... //hack/... \
 	--test_env=TEST_ASSET_ETCD=$(bazel info execution_root)/external/etcd_bin/file/etcd \
 	--test_env=TEST_ASSET_KUBECTL=$(bazel info execution_root)/external/kubectl_bin/file/kubectl \
 	--test_env=TEST_ASSET_KUBE_APISERVER=$(bazel info execution_root)/external/kube_apiserver_bin/file/kube-apiserver \
+	--action_env="PATH=$(bazel info output_base)/external/python_interpreter:$PATH" \
 	--test_env=KUBEBUILDER_ATTACH_CONTROL_PLANE_OUTPUT=true

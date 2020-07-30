@@ -1862,33 +1862,30 @@ load("@rules_python//python:pip.bzl", "pip_repositories")
 
 pip_repositories()
 
-load("@rules_python//python:pip.bzl", "pip_import")
+#load("@rules_python//python:pip.bzl", "pip_import")
 
-pip_import(
-    name = "py_deps",
-    requirements = "//hack:requirements.txt",
-    python_interpreter_target = "@python_interpreter//:python_bin",
+#pip_import(
+#    name = "py_deps",
+#    requirements = "//hack:requirements.txt",
+#    python_interpreter_target = "@python_interpreter//:python_bin",
+#)
+
+#load("@py_deps//:requirements.bzl", "pip_install")
+
+#pip_install()
+
+#load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+# TODO we need to figure out if we are going to for these rules or what
+git_repository(
+    name = "misc_rules",
+    commit = "0ad0b02af9e4b46717e8918c4c75b32eb71d9838",
+    remote = "git://github.com/andyscott/misc_rules",
 )
 
-load("@py_deps//:requirements.bzl", "pip_install")
-
-pip_install()
-
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+# Need to make this hermetic
+register_toolchains(
+    "@misc_rules//toolchains:shellcheck_from_host_path",
+)
 
 register_toolchains("//hack:my_py_toolchain")
-
-#http_archive(
-#    name = "dpu_rules_pyenv",
-#    sha256 = "241317102c3dafc958371194ba987706d6a87de8529e8da8935dd84753bba5b1",
-#    strip_prefix = "rules_pyenv-0.1.2",
-#    urls = ["https://github.com/digital-plumbers-union/rules_pyenv/archive/v0.1.2.tar.gz"],
-#)
-
-
-#load("@dpu_rules_pyenv//pyenv:defs.bzl", "pyenv_install")
-
-#pyenv_install(
-#    py2 = "2.7.17",
-#    py3 = "3.8.2",
-#)
