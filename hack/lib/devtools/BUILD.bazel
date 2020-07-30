@@ -1,11 +1,5 @@
 package(default_visibility = ["//visibility:public"])
 
-py_library(
-    name = "verify_boilerplace_lib",
-    srcs = ["verify_boilerplate.py"],
-    srcs_version = "PY3",
-)
-
 filegroup(
     name = "package-srcs",
     srcs = glob(["**"]),
