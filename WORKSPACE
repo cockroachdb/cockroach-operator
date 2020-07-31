@@ -1836,7 +1836,8 @@ http_archive(
         "make",
         "make install",
         "ln -s bazel_install/bin/python3 python_bin",
-        # "ln -s bazel_install/bin/python  bazel_install/bin/python3",
+	# TODO
+	# ln -s python python3
     ],
     build_file_content = """
 exports_files(["python_bin"])
