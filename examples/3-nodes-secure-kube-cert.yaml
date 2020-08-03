@@ -31,5 +31,6 @@ spec:
         # this needs to be precreated
         # storageClassName: crdb-io1
         volumeMode: Filesystem
-  image: cockroachdb/cockroach:v19.2.6
+  image:
+    name: cockroachdb/cockroach:v19.2.6
   nodes: 3

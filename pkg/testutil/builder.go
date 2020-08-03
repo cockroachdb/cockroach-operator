@@ -38,7 +38,9 @@ func NewBuilder(name string) ClusterBuilder {
 				Annotations: make(map[string]string),
 			},
 			Spec: api.CrdbClusterSpec{
-				Image: "cockroachdb/cockroach:v19.2.6",
+				Image: api.PodImage{
+					Name: "cockroachdb/cockroach:v19.2.6",
+				},
 			},
 		},
 	}
@@ -104,7 +106,7 @@ func (b ClusterBuilder) WithNodeTLS(secret string) ClusterBuilder {
 }
 
 func (b ClusterBuilder) WithImage(image string) ClusterBuilder {
-	b.cluster.Spec.Image = image
+	b.cluster.Spec.Image.Name = image
 	return b
 }
 

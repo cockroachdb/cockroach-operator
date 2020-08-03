@@ -22,17 +22,22 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
+	v1 "k8s.io/api/core/v1"
 )
 
 func TestSetClusterSpecDefaults(t *testing.T) {
 	s := &CrdbClusterSpec{}
 	maxUnavailable := int32(1)
+	policy := v1.PullIfNotPresent
 	expected := &CrdbClusterSpec{
 		GRPCPort:       &DefaultGRPCPort,
 		HTTPPort:       &DefaultHTTPPort,
 		Cache:          "25%",
 		MaxSQLMemory:   "25%",
 		MaxUnavailable: &maxUnavailable,
+		Image: PodImage{
+			PullPolicyName: &policy,
+		},
 	}
 
 	SetClusterSpecDefaults(s)

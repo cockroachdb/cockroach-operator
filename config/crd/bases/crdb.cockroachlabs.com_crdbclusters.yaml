@@ -263,8 +263,21 @@ spec:
               format: int32
               type: integer
             image:
-              description: (Required) Container image with supported CockroachDB version
-              type: string
+              description: (Required) Container image information
+              properties:
+                name:
+                  description: (Required) Container image with supported CockroachDB
+                    version
+                  type: string
+                pullPolicy:
+                  description: PullPolicy for the image
+                  type: string
+                pullSecret:
+                  description: Secret name containing the dockerconfig to use for
+                    a registry that requires authentication. The secret must be configured
+                    first by the user.
+                  type: string
+              type: object
             maxSQLMemory:
               description: '(Optional) The maximum in-memory storage capacity available
                 to store temporary data for SQL queries (`--max-sql-memory` parameter)
@@ -329,6 +342,7 @@ spec:
                 usage Default: false'
               type: boolean
           required:
+          - image
           - nodes
           type: object
         status:

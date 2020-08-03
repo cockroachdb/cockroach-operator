@@ -30,8 +30,8 @@ type CrdbClusterSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 	// (Required) Number of nodes (pods) in the cluster
 	Nodes int32 `json:"nodes"`
-	// (Required) Container image with supported CockroachDB version
-	Image string `json:"image,omitempty"`
+	// (Required) Container image information
+	Image PodImage `json:"image"`
 	// (Optional) The database port (`--port` CLI parameter when starting the service)
 	// Default: 26257
 	GRPCPort *int32 `json:"grpcPort,omitempty"`

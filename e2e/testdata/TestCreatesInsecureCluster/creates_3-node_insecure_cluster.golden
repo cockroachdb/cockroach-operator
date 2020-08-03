@@ -6,7 +6,8 @@ metadata:
 spec:
   dataStore:
     emptyDir: {}
-  image: cockroachdb/cockroach:v19.2.6
+  image:
+    name: cockroachdb/cockroach:v19.2.6
   nodes: 3
   resources: {}
 
