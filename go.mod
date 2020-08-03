@@ -6,37 +6,29 @@ require (
 	github.com/Masterminds/semver/v3 v3.1.0
 	github.com/banzaicloud/k8s-objectmatcher v1.3.2
 	github.com/go-logr/logr v0.1.0
-	github.com/go-logr/zapr v0.1.0
-	github.com/gogo/protobuf v1.3.1 // indirect
+	github.com/go-logr/zapr v0.1.1
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/google/go-cmp v0.4.0
-	github.com/google/gofuzz v1.1.0 // indirect
-	github.com/googleapis/gnostic v0.4.1 // indirect
-	github.com/hashicorp/golang-lru v0.5.4 // indirect
-	github.com/imdario/mergo v0.3.8 // indirect
 	github.com/onsi/ginkgo v1.12.0
 	github.com/onsi/gomega v1.9.0
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.5.0 // indirect
-	github.com/prometheus/procfs v0.0.10 // indirect
 	github.com/stretchr/testify v1.5.1
-	go.uber.org/atomic v1.4.0 // indirect
-	go.uber.org/zap v1.10.0
+	go.uber.org/zap v1.14.1
 	golang.org/x/crypto v0.0.0-20200311171314-f7b00557c8c4 // indirect
 	golang.org/x/net v0.0.0-20200324143707-d3edc9973b7e
-	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d // indirect
-	golang.org/x/sys v0.0.0-20200408040146-ea54a3c99b9b // indirect
-	golang.org/x/time v0.0.0-20191024005414-555d28b269f0 // indirect
-	gomodules.xyz/jsonpatch/v2 v2.1.0 // indirect
-	google.golang.org/appengine v1.6.5 // indirect
-	k8s.io/api v0.17.5
-	k8s.io/apiextensions-apiserver v0.17.5 // indirect
-	k8s.io/apimachinery v0.17.5
-	k8s.io/client-go v0.17.5
-	k8s.io/utils v0.0.0-20200229041039-0a110f9eb7ab // indirect
-	sigs.k8s.io/controller-runtime v0.5.2
+	k8s.io/api v0.18.5
+	k8s.io/apiextensions-apiserver v0.18.5 // indirect
+	k8s.io/apimachinery v0.18.5
+	k8s.io/client-go v9.0.0+incompatible
+	k8s.io/code-generator v0.18.5
+	k8s.io/kube-openapi v0.0.0-20200410145947-61e04a5be9a6
+	sigs.k8s.io/controller-runtime v0.5.4
+	sigs.k8s.io/controller-tools v0.2.9-0.20200414181213-645d44dca7c0
+	sigs.k8s.io/kubetest2 v0.0.0-20200807173356-3d574132ed2e
 	sigs.k8s.io/yaml v1.2.0
 )
 
-// requirement of the current version of client-go
-replace github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.3.1
+replace (
+	k8s.io/client-go v9.0.0+incompatible => k8s.io/client-go v0.18.5
+	sigs.k8s.io/controller-runtime v0.5.4 => sigs.k8s.io/controller-runtime v0.5.1-0.20200416234307-5377effd4043
+)

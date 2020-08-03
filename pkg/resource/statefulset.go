@@ -286,7 +286,7 @@ func (b StatefulSetBuilder) joinStr() string {
 
 func addCertsVolumeMount(container string, spec *corev1.PodSpec) error {
 	found := false
-	for i, _ := range spec.Containers {
+	for i := range spec.Containers {
 		c := &spec.Containers[i]
 		if c.Name == container {
 			found = true

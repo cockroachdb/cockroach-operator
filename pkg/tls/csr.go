@@ -136,7 +136,7 @@ func NewClientCertificateRequest(user string) *x509.CertificateRequest {
 	}
 }
 
-func Approve(config *rest.Config, csr *certs.CertificateSigningRequest) error {
+func Approve(ctx context.Context, config *rest.Config, csr *certs.CertificateSigningRequest) error {
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		return errors.Wrapf(err, "failed to create kubernetes clientset")
@@ -158,7 +158,7 @@ func Approve(config *rest.Config, csr *certs.CertificateSigningRequest) error {
 	)
 
 	// client-go can't properly handle this so clientset's help is required
-	if _, err = clientset.CertificatesV1beta1().CertificateSigningRequests().UpdateApproval(updated); err != nil {
+	if _, err = clientset.CertificatesV1beta1().CertificateSigningRequests().UpdateApproval(ctx, updated, metav1.UpdateOptions{}); err != nil {
 		return err
 	}
 

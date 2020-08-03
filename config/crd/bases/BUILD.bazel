@@ -11,15 +11,31 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-FROM golang:1.14-alpine3.11
 
-ENV CONTROLLER_TOOLS_VERSION v0.2.9
+load("@k8s_deploy//:defaults.bzl", "k8s_deploy")
 
-ENV CGO_ENABLED 0
-ENV PATH /go/bin:$PATH
+k8s_deploy(
+    name = "crd",
+    template = ":crdb.cockroachlabs.com_crdbclusters.yaml",
+    visibility = ["//visibility:public"],
+)
 
-RUN GO111MODULE=on go get sigs.k8s.io/controller-tools/cmd/controller-gen@${CONTROLLER_TOOLS_VERSION}
+filegroup(
+    name = "crd_manifest",
+    srcs = glob(["**"]),
+    visibility = ["//visibility:public"],
+)
 
-RUN mkdir -p /ws
+filegroup(
+    name = "package-srcs",
+    srcs = glob(["**"]),
+    tags = ["automanaged"],
+    visibility = ["//visibility:private"],
+)
 
-WORKDIR /ws
+filegroup(
+    name = "all-srcs",
+    srcs = [":package-srcs"],
+    tags = ["automanaged"],
+    visibility = ["//visibility:public"],
+)

@@ -1,0 +1,67 @@
+# gazelle:prefix github.com/cockroachdb/cockroach-operator
+# gazelle:proto disable_global
+# gazelle:exclude docs/generated/reference/generate/json_swagger
+
+load("@io_bazel_rules_docker//container:container.bzl", "container_push")
+
+# export WORKSPACE so workspace_binary rules can be used outside the root
+exports_files([
+    "WORKSPACE",
+    "LICENSE",
+    "go.mod",
+    "go.sum",
+])
+
+# TODO
+load("@bazel_gazelle//:def.bzl", "gazelle")
+
+gazelle(name = "gazelle")
+
+container_push(
+    name = "push_operator_image",
+    format = "Docker",
+    image = "//cmd/cockroach-operator:operator_image",
+    registry = "{STABLE_DOCKER_REGISTRY}",
+    repository = "cockroach-operator",
+    # TODO need a way to override this
+    # probably https://github.com/jetstack/cert-manager/blob/ba7871d5f685e0f8d2b256f3a1230f8786d110fe/build/BUILD.bazel#L58
+    tag = "{STABLE_BUILD_GIT_COMMIT}",
+)
+
+filegroup(
+    name = "package-srcs",
+    srcs = glob(
+        ["**"],
+        exclude = [
+            "bazel-*/**",
+            ".git/**",
+        ],
+    ),
+    tags = ["automanaged"],
+    visibility = ["//visibility:private"],
+)
+
+filegroup(
+    name = "all-srcs",
+    srcs = [
+        ":package-srcs",
+        "//api/v1alpha1:all-srcs",
+        "//cmd/cockroach-operator:all-srcs",
+        "//config:all-srcs",
+        "//e2e:all-srcs",
+        "//examples:all-srcs",
+        "//hack:all-srcs",
+        "//manifests:all-srcs",
+        "//pkg/actor:all-srcs",
+        "//pkg/condition:all-srcs",
+        "//pkg/controller:all-srcs",
+        "//pkg/kube:all-srcs",
+        "//pkg/labels:all-srcs",
+        "//pkg/ptr:all-srcs",
+        "//pkg/resource:all-srcs",
+        "//pkg/testutil:all-srcs",
+        "//pkg/tls:all-srcs",
+    ],
+    tags = ["automanaged"],
+    visibility = ["//visibility:public"],
+)

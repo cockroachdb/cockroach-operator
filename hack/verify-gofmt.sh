@@ -14,22 +14,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# "---------------------------------------------------------"
-# "-                                                       -"
-# "-  update yaml crd headers                              -"
-# "-                                                       -"
-# "---------------------------------------------------------"
-
 set -o errexit
 set -o nounset
 set -o pipefail
 
-ROOT=$(dirname "${BASH_SOURCE[0]}")
-FILE_NAMES=(config/rbac/role.yaml config/crd/bases/crdb.cockroachlabs.com_crdbclusters.yaml)
+if [[ -n "${TEST_WORKSPACE:-}" ]]; then # Running inside bazel
+  echo "Validating go source file formatting..." >&2
+elif ! command -v bazel &> /dev/null; then
+  echo "Install bazel at https://bazel.build" >&2
+  exit 1
+else
+  (
+    set -o xtrace
+    bazel test --test_output=streamed //hack:verify-gofmt
+  )
+  exit 0
+fi
 
-for YAML in "${FILE_NAMES[@]}"
-do
-   :
-   cat "$ROOT/boilerplate/boilerplate.yaml.txt" "$ROOT/../$YAML" > "$ROOT/../$YAML.mod"
-   mv "$ROOT/../$YAML.mod" "$ROOT/../$YAML"
-done
+gofmt=$(realpath "$1")
+
+export GO111MODULE=on
+
+echo "+++ Running gofmt"
+output=$(find . -name '*.go' | grep -v 'vendor/' | xargs "$gofmt" -s -d)
+if [ ! -z "${output}" ]; then
+    echo "${output}"
+    echo "Please run 'bazel run //hack:update-gofmt'"
+    exit 1
+fi

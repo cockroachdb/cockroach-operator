@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 # Copyright 2020 The Cockroach Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,25 +13,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-FROM golang:1.14 as builder
 
-WORKDIR /workspace
+set -o errexit
+set -o nounset
+set -o pipefail
 
-COPY go.mod go.mod
-COPY go.sum go.sum
-
-RUN go mod download
-
-COPY cmd/ cmd/
-COPY api/ api/
-COPY pkg/ pkg/
-
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -o operator cmd/cockroach-operator/main.go
-
-FROM registry.access.redhat.com/ubi8/ubi-minimal:latest as runner
-
-WORKDIR /
-COPY --from=builder /workspace/operator .
-
-ENTRYPOINT ["/operator"]
-
+# Install bazel in CI
+curl -L -o bazel-installer.sh https://github.com/bazelbuild/bazel/releases/download/3.4.1/bazel-3.4.1-installer-linux-x86_64.sh
+bash ./bazel-installer.sh --user
+# do this in higher level shell script
+# export PATH="$PATH:$HOME/bin"
+rm ./bazel-installer.sh
