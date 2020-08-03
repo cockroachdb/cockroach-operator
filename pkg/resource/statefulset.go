@@ -164,9 +164,7 @@ func (b StatefulSetBuilder) makePodTemplate() corev1.PodTemplateSpec {
 			Name: *secret,
 		}
 
-		var imagePullSecrets []corev1.LocalObjectReference
-		imagePullSecrets[0] = local
-		pod.Spec.ImagePullSecrets = imagePullSecrets
+		pod.Spec.ImagePullSecrets = []corev1.LocalObjectReference{local}
 	}
 
 	return pod
