@@ -28,9 +28,7 @@ spec:
   - args:
     - shell
     - -ecx
-    - '>- exec /cockroach/cockroach start --join=crdb-0.crdb.[sandbox_namespace]:26257,crdb-1.crdb.[sandbox_namespace]:26257,crdb-2.crdb.[sandbox_namespace]:26257
-      --advertise-host=$(hostname -f) --logtostderr=INFO --insecure --http-port=8080
-      --port=26257 --cache=25% --max-sql-memory=25%'
+    - '>- exec /cockroach/cockroach start --join=crdb-0.crdb.[sandbox_namespace]:26257,crdb-1.crdb.[sandbox_namespace]:26257,crdb-2.crdb.[sandbox_namespace]:26257 --advertise-host=$(hostname -f) --logtostderr=INFO --insecure --http-port=8080 --port=26257 --cache=25% --max-sql-memory=25%'
     env:
     - name: COCKROACH_CHANNEL
       value: kubernetes-operator
@@ -111,9 +109,7 @@ spec:
   - args:
     - shell
     - -ecx
-    - '>- exec /cockroach/cockroach start --join=crdb-0.crdb.[sandbox_namespace]:26257,crdb-1.crdb.[sandbox_namespace]:26257,crdb-2.crdb.[sandbox_namespace]:26257
-      --advertise-host=$(hostname -f) --logtostderr=INFO --insecure --http-port=8080
-      --port=26257 --cache=25% --max-sql-memory=25%'
+    - '>- exec /cockroach/cockroach start --join=crdb-0.crdb.[sandbox_namespace]:26257,crdb-1.crdb.[sandbox_namespace]:26257,crdb-2.crdb.[sandbox_namespace]:26257 --advertise-host=$(hostname -f) --logtostderr=INFO --insecure --http-port=8080 --port=26257 --cache=25% --max-sql-memory=25%'
     env:
     - name: COCKROACH_CHANNEL
       value: kubernetes-operator
@@ -194,9 +190,7 @@ spec:
   - args:
     - shell
     - -ecx
-    - '>- exec /cockroach/cockroach start --join=crdb-0.crdb.[sandbox_namespace]:26257,crdb-1.crdb.[sandbox_namespace]:26257,crdb-2.crdb.[sandbox_namespace]:26257
-      --advertise-host=$(hostname -f) --logtostderr=INFO --insecure --http-port=8080
-      --port=26257 --cache=25% --max-sql-memory=25%'
+    - '>- exec /cockroach/cockroach start --join=crdb-0.crdb.[sandbox_namespace]:26257,crdb-1.crdb.[sandbox_namespace]:26257,crdb-2.crdb.[sandbox_namespace]:26257 --advertise-host=$(hostname -f) --logtostderr=INFO --insecure --http-port=8080 --port=26257 --cache=25% --max-sql-memory=25%'
     env:
     - name: COCKROACH_CHANNEL
       value: kubernetes-operator
@@ -376,9 +370,7 @@ spec:
       - args:
         - shell
         - -ecx
-        - '>- exec /cockroach/cockroach start --join=crdb-0.crdb.[sandbox_namespace]:26257,crdb-1.crdb.[sandbox_namespace]:26257,crdb-2.crdb.[sandbox_namespace]:26257
-          --advertise-host=$(hostname -f) --logtostderr=INFO --insecure --http-port=8080
-          --port=26257 --cache=25% --max-sql-memory=25%'
+        - '>- exec /cockroach/cockroach start --join=crdb-0.crdb.[sandbox_namespace]:26257,crdb-1.crdb.[sandbox_namespace]:26257,crdb-2.crdb.[sandbox_namespace]:26257 --advertise-host=$(hostname -f) --logtostderr=INFO --insecure --http-port=8080 --port=26257 --cache=25% --max-sql-memory=25%'
         env:
         - name: COCKROACH_CHANNEL
           value: kubernetes-operator

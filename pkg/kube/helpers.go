@@ -83,13 +83,13 @@ func ExecInPod(scheme *runtime.Scheme, config *rest.Config, namespace string, na
 	return stdout.String(), stderr.String(), nil
 }
 
-func GetClusterCA(config *rest.Config) ([]byte, error) {
+func GetClusterCA(ctx context.Context, config *rest.Config) ([]byte, error) {
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to create kubernetes clientset")
 	}
 
-	cm, err := clientset.CoreV1().ConfigMaps("kube-system").Get("extension-apiserver-authentication", metav1.GetOptions{})
+	cm, err := clientset.CoreV1().ConfigMaps("kube-system").Get(ctx, "extension-apiserver-authentication", metav1.GetOptions{})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to fetch config map with cluster CA")
 	}
