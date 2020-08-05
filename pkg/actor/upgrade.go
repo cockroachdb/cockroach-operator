@@ -42,6 +42,7 @@ func newUpgrade(scheme *runtime.Scheme, cl client.Client, config *rest.Config) A
 	}
 }
 
+// upgrade handles minor and major version upgrades without finalization
 type upgrade struct {
 	action
 

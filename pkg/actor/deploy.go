@@ -34,6 +34,8 @@ func newDeploy(scheme *runtime.Scheme, cl client.Client) Actor {
 	}
 }
 
+// deploy initializes and reconciles the Kubernetes resources needed by the CockroachDB cluster:
+// services, a statefulset and a pod disruption budget
 type deploy struct {
 	action
 }

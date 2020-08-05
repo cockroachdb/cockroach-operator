@@ -30,15 +30,18 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// Builder populates a given Kubernetes resource or creates its default instance (placeholder)
 type Builder interface {
 	Build(runtime.Object) error
 	Placeholder() runtime.Object
 }
 
+// Fetcher updates the object with its state from Kubernetes
 type Fetcher interface {
 	Fetch(obj runtime.Object) error
 }
 
+// Persister creates or updates the object in Kubernetes after calling the mutation function.
 type Persister interface {
 	Persist(obj runtime.Object, mutateFn func() error) (upserted bool, err error)
 }
@@ -50,6 +53,7 @@ func NewKubeResource(ctx context.Context, client client.Client, namespace string
 	}
 }
 
+// Resource represents a resource that can be fetched or saved
 type Resource struct {
 	Fetcher
 	Persister
@@ -63,12 +67,14 @@ func NewManagedKubeResource(ctx context.Context, client client.Client, cluster *
 	}
 }
 
+// ManagedResource is a `Resource` with labels which can be reconciled by `Reconciler`
 type ManagedResource struct {
 	Resource
 
 	labels.Labels
 }
 
+// Reconciler reconciles managed Kubernetes resource with `Builder` results
 type Reconciler struct {
 	ManagedResource
 
@@ -166,6 +172,7 @@ func NewKubeFetcher(ctx context.Context, namespace string, reader client.Reader)
 	}
 }
 
+// KubeFetcher fetches Kubernetes results
 type KubeFetcher struct {
 	ctx       context.Context
 	namespace string
@@ -199,6 +206,7 @@ func NewKubePersister(ctx context.Context, namespace string, client client.Clien
 	}
 }
 
+// KubePersister saves resources back into Kubernetes
 type KubePersister struct {
 	ctx       context.Context
 	namespace string

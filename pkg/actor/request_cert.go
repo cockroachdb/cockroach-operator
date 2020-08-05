@@ -34,24 +34,25 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func newPrepareTLS(scheme *runtime.Scheme, cl client.Client, config *rest.Config) Actor {
-	return &prepareTLS{
+func newRequestCert(scheme *runtime.Scheme, cl client.Client, config *rest.Config) Actor {
+	return &requestCert{
 		action: newAction("prepare_tls", scheme, cl),
 		config: config,
 	}
 }
 
-type prepareTLS struct {
+// requestCert issues node and root client certificates via Kubernetes cluster CA
+type requestCert struct {
 	action
 
 	config *rest.Config
 }
 
-func (rc *prepareTLS) Handles(conds []api.ClusterCondition) bool {
+func (rc *requestCert) Handles(conds []api.ClusterCondition) bool {
 	return condition.True(api.NotInitializedCondition, conds)
 }
 
-func (rc *prepareTLS) Act(ctx context.Context, cluster *resource.Cluster) error {
+func (rc *requestCert) Act(ctx context.Context, cluster *resource.Cluster) error {
 	log := rc.log.WithValues("CrdbCluster", cluster.ObjectKey())
 
 	if !cluster.Spec().TLSEnabled || cluster.Spec().NodeTLSSecret != "" {
@@ -66,7 +67,7 @@ func (rc *prepareTLS) Act(ctx context.Context, cluster *resource.Cluster) error 
 	return rc.issueClientCert(ctx, log, cluster)
 }
 
-func (rc *prepareTLS) issueNodeCert(ctx context.Context, log logr.Logger, cluster *resource.Cluster) error {
+func (rc *requestCert) issueNodeCert(ctx context.Context, log logr.Logger, cluster *resource.Cluster) error {
 	log.Info("requesting node certificate")
 
 	secret, err := resource.LoadTLSSecret(cluster.NodeTLSSecretName(),
@@ -96,7 +97,7 @@ func (rc *prepareTLS) issueNodeCert(ctx context.Context, log logr.Logger, cluste
 	return rc.issue(ctx, csrName, request, secret, usages)
 }
 
-func (rc *prepareTLS) issueClientCert(ctx context.Context, log logr.Logger, cluster *resource.Cluster) error {
+func (rc *requestCert) issueClientCert(ctx context.Context, log logr.Logger, cluster *resource.Cluster) error {
 	log.Info("requesting client certificate")
 
 	secret, err := resource.LoadTLSSecret(cluster.ClientTLSSecretName(),
@@ -122,7 +123,7 @@ func (rc *prepareTLS) issueClientCert(ctx context.Context, log logr.Logger, clus
 	return rc.issue(ctx, csrName, request, secret, usages)
 }
 
-func (rc *prepareTLS) issue(ctx context.Context, csrName string, request *x509.CertificateRequest,
+func (rc *requestCert) issue(ctx context.Context, csrName string, request *x509.CertificateRequest,
 	secret *resource.TLSSecret, usages []certs.KeyUsage) error {
 	log := rc.log.WithValues("csr", csrName)
 
