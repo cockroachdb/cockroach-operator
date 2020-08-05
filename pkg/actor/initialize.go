@@ -40,6 +40,7 @@ func newInitialize(scheme *runtime.Scheme, cl client.Client, config *rest.Config
 	}
 }
 
+// initialize performs the initialization of the new cluster
 type initialize struct {
 	action
 

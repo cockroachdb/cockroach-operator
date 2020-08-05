@@ -58,7 +58,16 @@ type ClusterReconciler struct {
 // +kubebuilder:rbac:groups=policy,resources=poddisruptionbudgets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=policy,resources=poddisruptionbudgets/status,verbs=get
 
+// Reconcile is the reconciliation loop entry point for cluster CRDs.  It fetches the current cluster resources
+// and uses its state to interact with the world via a set of actions implemented by `Actor`s
+// (i.e. init cluster, create a statefulset).
+// Each action can result in:
+//   - a short requeue (5 seconds)
+//   - a long requeue (5 minutes)
+//   - cancel the loop and wait for another event
+//   - if no other errors occurred continue to the next action
 func (r *ClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
+	// Ensure the loop does not take longer than 20 seconds
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 
@@ -75,16 +84,22 @@ func (r *ClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 	cluster := resource.NewCluster(cr)
 
+	// Save context cancellation function for actors to call if needed
 	ctx = actor.ContextWithCancelFn(ctx, cancel)
 
+	// Apply all actions to the cluster. Some actions can stop the loop if it is needed
+	// to refresh the state of the world
 	for _, a := range r.Actions {
+		// Ensure the action is applicable to the current resource state
 		if a.Handles(cluster.Status().Conditions) {
 			if err := a.Act(ctx, &cluster); err != nil {
+				// Short pause
 				if notReadyErr, ok := err.(actor.NotReadyErr); ok {
 					log.Info("requeueing", "reason", notReadyErr.Error())
 					return requeueAfter(5*time.Second, nil)
 				}
 
+				// Long pause
 				if cantRecoverErr, ok := err.(actor.PermanentErr); ok {
 					log.Error(cantRecoverErr, "can't proceed with reconcile")
 					return requeueAfter(5*time.Minute, err)
@@ -95,17 +110,22 @@ func (r *ClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			}
 		}
 
+		// Stop processing and wait for Kubernetes scheduler to call us again as the actor
+		// modified a resource owned by the controller
 		if cancelled(ctx) {
 			log.Info("request was interrupted")
 			return noRequeue()
 		}
 	}
 
+	// Check if the resource has been updated while the controller worked on it
 	fresh, err := cluster.IsFresh(fetcher)
 	if err != nil {
 		return requeueIfError(err)
 	}
 
+	// If the resource was updated, it is needed to start all over again
+	// to ensure that the latest state was reconciled
 	if !fresh {
 		log.Info("cluster resources is not up to date")
 		return requeueImmediately()
@@ -120,6 +140,7 @@ func (r *ClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	return noRequeue()
 }
 
+// SetupWithManager registers the controller with the controller.Manager from controller-runtime
 func (r *ClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&api.CrdbCluster{}).
@@ -129,10 +150,12 @@ func (r *ClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
+// InitClusterReconciler returns a registrator for new controller instance with the default logger
 func InitClusterReconciler() func(ctrl.Manager) error {
 	return InitClusterReconcilerWithLogger(ctrl.Log.WithName("controller").WithName("CrdbCluster"))
 }
 
+// InitClusterReconcilerWithLogger returns a registrator for new controller instance with provided logger
 func InitClusterReconcilerWithLogger(l logr.Logger) func(ctrl.Manager) error {
 	return func(mgr ctrl.Manager) error {
 		return (&ClusterReconciler{

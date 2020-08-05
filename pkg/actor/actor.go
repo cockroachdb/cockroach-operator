@@ -44,6 +44,7 @@ func (e PermanentErr) Error() string {
 	return e.Err.Error()
 }
 
+// Actor is one action against the cluster if the cluster resource state can be handled
 type Actor interface {
 	Handles([]api.ClusterCondition) bool
 	Act(context.Context, *resource.Cluster) error
@@ -51,7 +52,7 @@ type Actor interface {
 
 func NewOperatorActions(scheme *runtime.Scheme, cl client.Client, config *rest.Config) []Actor {
 	return []Actor{
-		newPrepareTLS(scheme, cl, config),
+		newRequestCert(scheme, cl, config),
 		newUpgrade(scheme, cl, config),
 		newDeploy(scheme, cl),
 		newInitialize(scheme, cl, config),
@@ -68,6 +69,7 @@ func newAction(atype string, scheme *runtime.Scheme, cl client.Client) action {
 	}
 }
 
+// action is the base set of common parameters required by other actions
 type action struct {
 	log    logr.Logger
 	client client.Client
