@@ -52,3 +52,40 @@ CREATE TABLE bank.accounts (id INT PRIMARY KEY, balance DECIMAL);
 INSERT INTO bank.accounts VALUES (1, 1000.50);
 SELECT * FROM bank.accounts;
 ```
+
+## Running the operator in GCP
+
+Install the operator
+
+```
+git clone https://github.com/cockroachdb/cockroach-operator.git
+export CLUSTER=test
+# create a gke cluster
+./hack/create-gke-cluster.sh -c $CLUSTER
+
+export IMAGE_REGISTRY=us.gcr.io/$(gcloud config get-value project)
+export K8S_CLUSTER=$(kubectl config view --minify -o=jsonpath='{.contexts[0].context.cluster}')
+bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
+                 //manifests:install_operator.apply
+```
+
+There are various examples that can be installed.  The files are located in the examples directory. You can also use:
+
+```
+# install a basic example
+./hack/apply-crdb-example.sh -c $CLUSTER
+ ```
+
+Delete the cluster
+
+```
+# delete the example
+./hack/delete-crdb-example.sh -c $CLUSTER
+
+# If you're still using the gke cluster, you can delete persistent volumes and persistent volume claims. It is not recommended to do this in production. Use --help for details.
+kubectl delete pv,pvc --help
+
+# delete the cluster
+# note this is async, and the script will complete without waiting the entire time
+./hack/delete-gke-cluster.sh -c $CLUSTER
+```
