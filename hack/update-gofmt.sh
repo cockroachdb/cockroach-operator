@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Copyright 2020 The Cockroach Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,21 +13,30 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-FROM golang:1.14-alpine3.11
 
-RUN apk add --no-cache curl make bash
+set -o errexit
+set -o nounset
+set -o pipefail
+set -o xtrace
 
-# curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt
-ENV KB_VERSION 2.3.1
+if [[ -n "${BUILD_WORKSPACE_DIRECTORY:-}" ]]; then # Running inside bazel
+  echo "Formatting go source files..." >&2
+elif ! command -v bazel &>/dev/null; then
+  echo "Install bazel at https://bazel.build" >&2
+  exit 1
+else
+  (
+    set -o xtrace
+    bazel run //hack:update-gofmt
+  )
+  exit 0
+fi
 
-ENV KUBEBUILDER_ASSETS /kubebuilder
-ENV CGO_ENABLED 0
+gofmt=$(realpath "$1")
 
-RUN mkdir -p ${KUBEBUILDER_ASSETS}
+cd "$BUILD_WORKSPACE_DIRECTORY"
 
-RUN curl -LO https://github.com/kubernetes-sigs/kubebuilder/releases/download/v${KB_VERSION}/kubebuilder_${KB_VERSION}_linux_amd64.tar.gz \
-       && tar -zxf kubebuilder_${KB_VERSION}_linux_amd64.tar.gz --strip=2 -C ${KUBEBUILDER_ASSETS} && rm -f kubebuilder_${KB_VERSION}_linux_amd64.tar.gz
+export GO111MODULE=on
 
-RUN mkdir -p /ws
-
-WORKDIR /ws
+echo "+++ Running gofmt"
+find . -type f -name '*.go' | grep -v 'vendor/' | xargs "$gofmt" -s -w

@@ -125,9 +125,9 @@ func (s Sandbox) List(list apiruntime.Object, labels map[string]string) error {
 
 func (s Sandbox) Cleanup() {
 	dp := metav1.DeletePropagationForeground
-	opts := &metav1.DeleteOptions{PropagationPolicy: &dp}
+	opts := metav1.DeleteOptions{PropagationPolicy: &dp}
 	nss := s.env.Clientset.CoreV1().Namespaces()
-	if err := nss.Delete(s.Namespace, opts); err != nil {
+	if err := nss.Delete(context.TODO(), s.Namespace, opts); err != nil {
 		fmt.Println("failed to cleanup namespace", s.Namespace)
 	}
 }
@@ -147,7 +147,7 @@ func createNamespace(s Sandbox) error {
 		},
 	}
 
-	if _, err := s.env.Clientset.CoreV1().Namespaces().Create(ns); err != nil {
+	if _, err := s.env.Clientset.CoreV1().Namespaces().Create(context.TODO(), ns, metav1.CreateOptions{}); err != nil {
 		return errors.Wrapf(err, "failed to create namespace: %s", s.Namespace)
 	}
 
@@ -205,7 +205,7 @@ func listAllObjs(s Sandbox) (objList, error) {
 	for _, gvr := range s.env.resources {
 		res := s.env.namespaceableResource(gvr)
 
-		list, err := res.Namespace(s.Namespace).List(metav1.ListOptions{})
+		list, err := res.Namespace(s.Namespace).List(context.TODO(), metav1.ListOptions{})
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to list objects in namespace %s", s.Namespace)
 		}

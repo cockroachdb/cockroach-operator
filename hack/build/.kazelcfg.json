@@ -1,0 +1,4 @@
+{
+  "GoPrefix": "github.com/cockroachdb/cockroach-operator",
+  "AddSourcesRules": true
+}

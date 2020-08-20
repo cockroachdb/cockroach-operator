@@ -61,7 +61,7 @@ func (v *Volume) Apply(name string, container string, path string,
 
 func (v *Volume) applyToPod(name string, container string, path string, spec *corev1.PodSpec) error {
 	found := false
-	for i, _ := range spec.Containers {
+	for i := range spec.Containers {
 		c := &spec.Containers[i]
 		if c.Name == container {
 			found = true

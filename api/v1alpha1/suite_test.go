@@ -17,9 +17,11 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"os"
 	"path/filepath"
 	"testing"
 
+	"github.com/cockroachdb/cockroach-operator/pkg/testutil/paths"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -52,7 +54,16 @@ func TestAPIs(t *testing.T) {
 }
 
 var _ = BeforeSuite(func(done Done) {
+
 	logf.SetLogger(zap.New(zap.UseDevMode(true), zap.WriteTo(GinkgoWriter)))
+
+	// We are running in bazel so set up the directory for the test binaries
+	if os.Getenv("TEST_WORKSPACE") != "" {
+		// TODO change these by splitting the args that we are passing in
+		paths.MaybeSetEnv("TEST_ASSET_ETCD", "etcd", "hack", "bin", "etcd")
+		paths.MaybeSetEnv("TEST_ASSET_KUBE_APISERVER", "kube-apiserver", "hack", "bin", "kube-apiserver")
+		paths.MaybeSetEnv("TEST_ASSET_KUBECTL", "kubectl", "hack", "bin", "kubectl")
+	}
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
