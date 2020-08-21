@@ -79,13 +79,17 @@ load("@io_bazel_rules_docker//repositories:pip_repositories.bzl", "pip_deps")
 
 pip_deps()
 
-load(
-    "@io_bazel_rules_docker//container:container.bzl",
-    "container_pull",
-)
+load("@io_bazel_rules_docker//container:container.bzl", "container_pull")
 load("@io_bazel_rules_docker//go:image.bzl", _go_image_repos = "repositories")
 
 _go_image_repos()
+
+container_pull(
+    name = "redhat_ubi_minimal",
+    registry = "registry.access.redhat.com",
+    repository = "ubi8/ubi-minimal",
+    digest = "sha256:3364fa3bd7a5aea2932e352a446ec7f46378885f6a8f03847acc64dd100aa4cc",
+)
 
 # Load and define targets defined in //hack/bin
 load("//hack/bin:deps.bzl", install_hack_bin = "install")
