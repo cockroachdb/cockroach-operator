@@ -20,6 +20,7 @@
 # values used in workspace-status.sh
 DOCKER_REGISTRY?=us.gcr.io/chris-love-operator-playground
 DOCKER_IMAGE_REPOSITORY?=cockroach-operator
+APP_VERSION?=v1.0.0-rc.0
 
 # 
 # Testing targets
@@ -87,6 +88,8 @@ k8s/delete:
 #
 .PHONY: release/image
 release/image:
-	DOCKER_REGISTRY=$(DOCKER_REGISTRY) DOCKER_IMAGE_REPOSITORY=$(DOCKER_IMAGE_REPOSITORY) \
+	DOCKER_REGISTRY=$(DOCKER_REGISTRY) \
+	DOCKER_IMAGE_REPOSITORY=$(DOCKER_IMAGE_REPOSITORY) \
+	APP_VERSION=$(APP_VERSION) \
 	bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
 		//:push_operator_image 
