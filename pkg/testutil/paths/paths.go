@@ -25,13 +25,17 @@ import (
 // MaybeSetEnv sets an environment variable that points to a binary. If that
 // binary does not exist in the path this func throws a panic.
 func MaybeSetEnv(key, bin string, path ...string) {
-	if os.Getenv(key) != "" {
+	if os.Getenv(key) != "" && key != "PATH" {
 		return
 	}
 	p, err := getPath(bin, path...)
 	if err != nil {
 		panic(fmt.Sprintf(`Failed to find integration test dependency %q.
-Either re-run this test using "bazel test //test/integration/{name}" or set the %s environment variable.`, bin, key))
+Either re-run this test using "bazel test //e2e/{name}" or set the %s environment variable.`, bin, key))
+	}
+	if key == "PATH" {
+		p = p[:len(p)-len("/"+bin)]
+		p = p + ":" + os.Getenv("PATH")
 	}
 	os.Setenv(key, p)
 }

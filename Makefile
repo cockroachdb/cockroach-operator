@@ -43,7 +43,7 @@ test/pkg:
 test/verify:
 	bazel test //hack/...
 
-# This target uses kind to start a cluster and runs the e2e tests
+# This target uses kind to start a k8s cluster  and runs the e2e tests
 # against that cluster.
 .PHONY: test/e2e
 test/e2e: 
