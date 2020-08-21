@@ -1,6 +1,7 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
 load("@io_bazel_rules_docker//container:container.bzl", "container_image")
 load("@io_bazel_rules_docker//go:image.bzl", "go_image")
+load("@bazel_tools//tools/build_defs/pkg:pkg.bzl", "pkg_tar")
 
 go_library(
     name = "go_default_library",
@@ -24,8 +25,25 @@ go_binary(
     visibility = ["//visibility:public"],
 )
 
+pkg_tar(
+    name = "licenses",
+    package_dir = "/licenses",
+    srcs = ["//:license"],
+    mode = "0755",
+)
+
 container_image(
     name = "ubi_base_image",
+    labels = {
+        "name":"CockroachDB Operator",
+        "vendor":"Cockroach Labs",
+	# FIXME - labels do not support a stamped variable such as {STABLE_DOCKER_TAG}
+        "version":"v1.0.0-rc.0",
+        "release":"0",
+        "summary":"CockroachDB is a Distributed SQL database",
+        "description":"CockroachDB is a PostgreSQL wire-compatible DistributedSQL database",
+    },
+    tars = [":licenses"],
     # References container_pull from WORKSPACE
     base = "@redhat_ubi_minimal//image",
 )

@@ -23,9 +23,13 @@ container_push(
     image = "//cmd/cockroach-operator:operator_image",
     registry = "{STABLE_DOCKER_REGISTRY}",
     repository = "{STABLE_IMAGE_REPOSITORY}",
-    # TODO need a way to override this
-    # probably https://github.com/jetstack/cert-manager/blob/ba7871d5f685e0f8d2b256f3a1230f8786d110fe/build/BUILD.bazel#L58
-    tag = "{STABLE_BUILD_GIT_COMMIT}",
+    tag = "{STABLE_DOCKER_TAG}"
+)
+
+filegroup(
+    name = "license",
+    srcs = ["LICENSE"],
+    visibility = ["//visibility:public"],
 )
 
 filegroup(
