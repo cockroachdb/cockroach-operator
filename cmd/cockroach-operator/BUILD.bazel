@@ -1,5 +1,6 @@
-load("@io_bazel_rules_docker//go:image.bzl", "go_image")
 load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+load("@io_bazel_rules_docker//container:container.bzl", "container_image")
+load("@io_bazel_rules_docker//go:image.bzl", "go_image")
 
 go_library(
     name = "go_default_library",
@@ -23,9 +24,17 @@ go_binary(
     visibility = ["//visibility:public"],
 )
 
+container_image(
+    name = "ubi_base_image",
+    # References container_pull from WORKSPACE
+    base = "@redhat_ubi_minimal//image",
+)
+
 go_image(
     name = "operator_image",
     binary = ":cockroach-operator",
+    # using the ubi image instead of the go base image
+    base = ":ubi_base_image",
     visibility = ["//visibility:public"],
 )
 
