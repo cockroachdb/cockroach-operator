@@ -26,8 +26,9 @@ import (
 
 // CrdblusterSpec defines the desired state of a CockroachDB Cluster
 // that the operator maintains.
+// +k8s:openapi-gen=true
 type CrdbClusterSpec struct {
-	// Important: Run "make" to regenerate code after modifying this file
+
 	// (Required) Number of nodes (pods) in the cluster
 	Nodes int32 `json:"nodes"`
 	// (Required) Container image information

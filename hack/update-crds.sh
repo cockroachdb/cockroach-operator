@@ -17,7 +17,6 @@
 set -o errexit
 set -o nounset
 set -o pipefail
-set -o xtrace
 
 if [[ -n "${BUILD_WORKSPACE_DIRECTORY:-}" ]]; then # Running inside bazel
   echo "Updating generated CRDs..." >&2
@@ -42,7 +41,7 @@ cd "${REPO_ROOT}"
 
 "$controllergen" \
   crd:trivialVersions=true \
-  rbac:roleName=manager-role webhook \
+  rbac:roleName=cockroach-operator webhook \
   paths="./..." output:crd:artifacts:config=config/crd/bases
 
 FILE_NAMES=(config/rbac/role.yaml config/crd/bases/crdb.cockroachlabs.com_crdbclusters.yaml)

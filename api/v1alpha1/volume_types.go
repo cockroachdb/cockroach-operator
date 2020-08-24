@@ -20,25 +20,41 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-// +kubebuilder:object:generate=true
-
 // Volume defined storage configuration for the container with the Database.
 // Only one of the fields should set
+// +k8s:openapi-gen=true
+// +kubebuilder:object:generate=true
 type Volume struct {
 	// Directory from the host node's filesystem
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Host Path Yaml"
+	// +optional
 	HostPath *corev1.HostPathVolumeSource `json:"hostPath,omitempty"`
 	// Temporary folder on the host node's filesystem
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="EmptyDir Yaml"
+	// +optional
 	EmptyDir *corev1.EmptyDirVolumeSource `json:"emptyDir,omitempty"`
 	// Persistent volume to use
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Volume Claim"
+	// +optional
 	VolumeClaim *VolumeClaim `json:"pvc,omitempty"`
 }
 
-// +kubebuilder:object:generate=true
 // VolumeClaim wraps a persistent volume claim (PVC) to use with the container.
 // Only one of the fields should set
+// +kubebuilder:object:generate=true
+// +k8s:openapi-gen=true
 type VolumeClaim struct {
 	// PVC to request a new persistent volume
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Persistent Volume Claim Spec"
+	// +required
 	PersistentVolumeClaimSpec corev1.PersistentVolumeClaimSpec `json:"spec,omitempty"`
 	// Existing PVC in the same namespace
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.displayName="Persistent Volume Claim Source"
+	// +required
 	PersistentVolumeSource corev1.PersistentVolumeClaimVolumeSource `json:"source,omitempty"`
 }

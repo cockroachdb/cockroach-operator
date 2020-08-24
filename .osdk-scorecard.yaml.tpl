@@ -1,0 +1,4 @@
+scorecard:
+  plugins:
+    - basic:
+    - olm:

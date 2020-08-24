@@ -93,3 +93,41 @@ release/image:
 	APP_VERSION=$(APP_VERSION) \
 	bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
 		//:push_operator_image 
+
+VERSION ?= 1.0.0
+VERSION_CSV_FILE := ./deploy/olm-catalog/cockroach-operator/$(VERSION)/cockroach-operator.v$(VERSION).clusterserviceversion.yaml
+CSV_CHANNEL ?= beta # change to stable for release
+CSV_DEFAULT_CHANNEL ?= "false" # change to true for release
+CHANNELS ?= beta
+INTERNAL_CRDS='["crdbclusters.crdb.cockroachlabs.com"]'
+CREATED_TIME ?= $(shell date +"%FT%H:%M:%SZ")
+MANIFEST_CSV_FILE := ./deploy/olm-catalog/cockroach-operator/manifests/cockroach-operator.clusterserviceversion.yaml
+OPERATOR_IMAGE ?= registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v1.0.0-rc.2
+
+#VERSION ?= $(shell go run scripts/version/main.go)
+# FROM_VERSION ?= $(shell go run scripts/version/main.go last)
+
+#
+# Generate CSV 
+# TODO move this to bazel
+# TODO remove copywrite headers on the yaml files
+#
+#generate-csv: dev/generate
+generate-csv:
+	#cp config/crd/bases/crdb.cockroachlabs.com_crdbclusters.yaml deploy/crds/crdb.cockroachlabs.com_crdbclusters.yaml
+	#cp config/rbac/role.yaml deploy/role.yaml
+	operator-sdk generate csv \
+		--csv-version=$(VERSION) \
+		--csv-channel=$(CSV_CHANNEL) \
+		--default-channel=$(CSV_DEFAULT_CHANNEL) \
+		--operator-name=cockroach-operator \
+		--make-manifests=false \
+		--update-crds \
+		--apis-dir=api
+	yq w -i $(VERSION_CSV_FILE) 'metadata.annotations.containerImage' $(OPERATOR_IMAGE)
+	yq w -i $(VERSION_CSV_FILE) 'metadata.annotations.createdAt' $(CREATED_TIME)
+	yq w -i $(VERSION_CSV_FILE) 'metadata.annotations.capabilities' "Full Lifecycle"
+	yq w -i $(VERSION_CSV_FILE) 'metadata.annotations."operators.operatorframework.io/internal-objects"' $(INTERNAL_CRDS)
+	yq d -i $(VERSION_CSV_FILE) 'spec.install.spec.deployments[*].spec.template.spec.containers[*].env(name==WATCH_NAMESPACE).valueFrom'
+	yq w -i $(VERSION_CSV_FILE) 'spec.install.spec.deployments[*].spec.template.spec.containers[*].env(name==WATCH_NAMESPACE).value' ''
+	hack/bundle-csv.sh $(VERSION) $(OPERATOR_IMAGE)
