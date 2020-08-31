@@ -8,7 +8,7 @@ import (
 
 	"database/sql"
 
-	"github.com/Masterminds/semver"
+	"github.com/Masterminds/semver/v3"
 	"github.com/cenkalti/backoff"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"

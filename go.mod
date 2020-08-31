@@ -3,7 +3,6 @@ module github.com/cockroachdb/cockroach-operator
 go 1.14
 
 require (
-	github.com/Masterminds/semver v1.5.0
 	github.com/Masterminds/semver/v3 v3.1.0
 	github.com/banzaicloud/k8s-objectmatcher v1.3.2
 	github.com/cenkalti/backoff v2.2.1+incompatible
@@ -25,7 +24,6 @@ require (
 	k8s.io/client-go v9.0.0+incompatible
 	k8s.io/code-generator v0.18.5
 	k8s.io/kube-openapi v0.0.0-20200410145947-61e04a5be9a6
-	k8s.io/kubernetes v1.13.0
 	sigs.k8s.io/controller-runtime v0.5.4
 	sigs.k8s.io/controller-tools v0.2.9-0.20200414181213-645d44dca7c0
 	sigs.k8s.io/kubetest2 v0.0.0-20200807173356-3d574132ed2e
