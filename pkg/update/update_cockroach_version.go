@@ -1,3 +1,19 @@
+/*
+Copyright 2020 The Cockroach Authors
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package update
 
 import (
@@ -22,18 +38,18 @@ import (
 // Once this file is opensource we can remove all of the oss_ prefixes on the
 // funcs and variables.
 
-var oss_validPreserveDowngradeOptionSetting = regexp.MustCompile(`^[0-9][0-9]\.[0-9]$`) // e.g. 19.2
+var validPreserveDowngradeOptionSetting = regexp.MustCompile(`^[0-9][0-9]\.[0-9]$`) // e.g. 19.2
 
-type OSS_UpdateNotAllowed struct {
+type UpdateNotAllowed struct {
 	cur      *semver.Version
 	want     *semver.Version
 	preserve *semver.Version
 	extra    string
 }
 
-var _ error = OSS_UpdateNotAllowed{}
+var _ error = UpdateNotAllowed{}
 
-func (e OSS_UpdateNotAllowed) Error() string {
+func (e UpdateNotAllowed) Error() string {
 	return fmt.Sprintf("upgrading from %v to %v with preserve downgrade option set to %v not allowed: %s", e.cur, e.want, e.preserve, e.extra)
 }
 
@@ -42,7 +58,7 @@ func (e OSS_UpdateNotAllowed) Error() string {
 // updateClusterCockroachVersion is the private version of
 // UpdateClusterCockroachVersion, and allows specifying custom pod timeouts,
 // among other things, in order to enable unit testing.
-func oss_updateClusterCockroachVersion(
+func updateClusterCockroachVersion(
 	ctx context.Context,
 	cockroachVersion string,
 	clientset kubernetes.Interface,
@@ -55,7 +71,7 @@ func oss_updateClusterCockroachVersion(
 	stsName string,
 	ns string,
 ) error {
-	k, err := oss_kindAndCheckPreserveDowngradeSetting(ctx, wantVersion, cockroachVersion, db)
+	k, err := kindAndCheckPreserveDowngradeSetting(ctx, wantVersion, cockroachVersion, db)
 	if err != nil {
 		return err
 	}
@@ -75,9 +91,9 @@ func oss_updateClusterCockroachVersion(
 	)
 	l.Info("starting upgrade")
 
-	// TODO we need to move this into oss_kindAndCheckPreserveDowngradeSetting
+	// TODO we need to move this into indAndCheckPreserveDowngradeSetting
 	if isForwardOneMajorVersion(wantVersion, currentVersion) {
-		if err := oss_setDowngradeOption(ctx, wantVersion, currentVersion, db, l); err != nil {
+		if err := setDowngradeOption(ctx, wantVersion, currentVersion, db, l); err != nil {
 			return errors.Wrapf(err, "setting downgrade option for major roll forward failed")
 		}
 	}
@@ -97,13 +113,13 @@ func oss_updateClusterCockroachVersion(
 		updateStrategyFunc: updateStrategyFunction,
 	}
 
-	return oss_updateClusterStatefulSets(ctx, clientset, updateSuite, podUpdateTimeout, podMaxPollingInterval, sleeper, l, stsName, ns)
+	return updateClusterStatefulSets(ctx, clientset, updateSuite, podUpdateTimeout, podMaxPollingInterval, sleeper, l, stsName, ns)
 }
 
 // updateClusterStatefulSets takes a context, a cluster, a vault client, and an
 // updateFunctionSuite. It uses the functions within the updateFunctionSuite to
 // update the CockroachDB StatefulSet in each region of a CockroachDB cluster.
-func oss_updateClusterStatefulSets(
+func updateClusterStatefulSets(
 	ctx context.Context,
 	clientset kubernetes.Interface,
 	updateSuite *updateFunctionSuite,
@@ -122,7 +138,7 @@ func oss_updateClusterStatefulSets(
 		ns,
 		stsName,
 		updateSuite,
-		oss_makeWaitUntilAllPodsReadyFunc(clientset, podUpdateTimeout, podMaxPollingInterval, stsName, ns),
+		makeWaitUntilAllPodsReadyFunc(clientset, podUpdateTimeout, podMaxPollingInterval, stsName, ns),
 		podUpdateTimeout,
 		podMaxPollingInterval,
 		sleeper,
@@ -135,7 +151,7 @@ func oss_updateClusterStatefulSets(
 
 // waitUntilAllPodsReady waits until all pods in all statefulsets are in the
 // ready state. The ready state implies all nodes are passing node liveness.
-func oss_makeWaitUntilAllPodsReadyFunc(
+func makeWaitUntilAllPodsReadyFunc(
 	clientset kubernetes.Interface,
 	podUpdateTimeout time.Duration,
 	maxPodPollingInterval time.Duration,
@@ -172,7 +188,7 @@ func oss_makeWaitUntilAllPodsReadyFunc(
 	}
 }
 
-func oss_kindAndCheckPreserveDowngradeSetting(ctx context.Context, wantVersion *semver.Version, cockroachVersion string, db *sql.DB) (string, error) {
+func kindAndCheckPreserveDowngradeSetting(ctx context.Context, wantVersion *semver.Version, cockroachVersion string, db *sql.DB) (string, error) {
 	// TODO(josh): Either:
 	//  1. Delete CockroachVersion from DB. Always fetch from k8s.
 	//  2. Check that CockroachVersion in DB is equal to version in k8s.
@@ -185,7 +201,7 @@ func oss_kindAndCheckPreserveDowngradeSetting(ctx context.Context, wantVersion *
 		return "PATCH", nil
 	} else if isForwardOneMajorVersion(wantVersion, currentVersion) {
 		s := "MAJOR_UPGRADE"
-		preserve, err := oss_preserveDowngradeSetting(ctx, db)
+		preserve, err := preserveDowngradeSetting(ctx, db)
 		if err != nil {
 			return s, err
 		}
@@ -194,7 +210,7 @@ func oss_kindAndCheckPreserveDowngradeSetting(ctx context.Context, wantVersion *
 		// current version.
 		if preserve.Compare(&semver.Version{}) != 0 &&
 			(preserve.Major() != currentVersion.Major() || preserve.Minor() != currentVersion.Minor()) {
-			return s, OSS_UpdateNotAllowed{
+			return s, UpdateNotAllowed{
 				cur:      currentVersion,
 				want:     wantVersion,
 				preserve: preserve,
@@ -204,14 +220,14 @@ func oss_kindAndCheckPreserveDowngradeSetting(ctx context.Context, wantVersion *
 		return s, nil
 	} else if isBackOneMajorVersion(wantVersion, currentVersion) {
 		s := "MAJOR_ROLLBACK"
-		preserve, err := oss_preserveDowngradeSetting(ctx, db)
+		preserve, err := preserveDowngradeSetting(ctx, db)
 		if err != nil {
 			return s, err
 		}
 		// To do a rollback, preserve downgrade option must be set to the major
 		// version to which kubeupdate is rolling back.
 		if preserve.Major() != wantVersion.Major() || preserve.Minor() != wantVersion.Minor() {
-			return s, OSS_UpdateNotAllowed{
+			return s, UpdateNotAllowed{
 				cur:      currentVersion,
 				want:     wantVersion,
 				preserve: preserve,
@@ -220,14 +236,14 @@ func oss_kindAndCheckPreserveDowngradeSetting(ctx context.Context, wantVersion *
 		}
 		return s, nil
 	}
-	return "UNKNOWN", OSS_UpdateNotAllowed{
+	return "UNKNOWN", UpdateNotAllowed{
 		cur:   currentVersion,
 		want:  wantVersion,
 		extra: "only patches, rolling forward one major version, & rolling back one major version supported",
 	}
 }
 
-func oss_preserveDowngradeSetting(ctx context.Context, db *sql.DB) (*semver.Version, error) {
+func preserveDowngradeSetting(ctx context.Context, db *sql.DB) (*semver.Version, error) {
 	preserveDowngradeSetting, err := getClusterSetting(ctx, db, "cluster.preserve_downgrade_option")
 	if err != nil {
 		return nil, errors.Wrapf(err, "getting preserve downgrade option failed")
@@ -235,7 +251,7 @@ func oss_preserveDowngradeSetting(ctx context.Context, db *sql.DB) (*semver.Vers
 	if preserveDowngradeSetting == "" {
 		return &semver.Version{}, nil // empty semver.Version means unset preserve downgrade option
 	}
-	if !oss_validPreserveDowngradeOptionSetting.MatchString(preserveDowngradeSetting) {
+	if !validPreserveDowngradeOptionSetting.MatchString(preserveDowngradeSetting) {
 		return nil, fmt.Errorf("%s is not a valid preserve downgrade option setting", preserveDowngradeSetting)
 	}
 	preserveDowngradeVersion, err := semver.NewVersion("v" + preserveDowngradeSetting + ".0") // e.g. 19.2
@@ -245,9 +261,9 @@ func oss_preserveDowngradeSetting(ctx context.Context, db *sql.DB) (*semver.Vers
 	return preserveDowngradeVersion, nil
 }
 
-func oss_setDowngradeOption(ctx context.Context, wantVersion *semver.Version, currentVersion *semver.Version, db *sql.DB, l *zap.Logger) error {
+func setDowngradeOption(ctx context.Context, wantVersion *semver.Version, currentVersion *semver.Version, db *sql.DB, l *zap.Logger) error {
 	newDowngradeOption := fmt.Sprintf("%d.%d", currentVersion.Major(), currentVersion.Minor())
-	if !oss_validPreserveDowngradeOptionSetting.MatchString(newDowngradeOption) {
+	if !validPreserveDowngradeOptionSetting.MatchString(newDowngradeOption) {
 		return fmt.Errorf("%s is not a valid preserve downgrade option setting", newDowngradeOption)
 	}
 	if err := setClusterSetting(ctx, db, PreserveDowngradeOptionClusterSetting, newDowngradeOption); err != nil {
