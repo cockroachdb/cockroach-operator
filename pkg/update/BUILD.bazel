@@ -4,8 +4,8 @@ go_library(
     name = "go_default_library",
     srcs = [
         "internal.go",
-        "oss_update_cockroach_version.go",
         "update.go",
+        "update_cockroach_version.go",
         "update_cockroach_version_common.go",
     ],
     importpath = "github.com/cockroachdb/cockroach-operator/pkg/update",

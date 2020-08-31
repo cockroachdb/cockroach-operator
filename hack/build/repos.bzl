@@ -4193,11 +4193,3 @@ def go_repositories():
         sum = "h1:tNowT99t7UNflLxfYYSlKYsBpXdEet03Pg2g16Swow4=",
         version = "v2.2.1+incompatible",
     )
-    go_repository(
-        name = "com_github_masterminds_semver",
-        build_file_generation = "on",
-        build_file_proto_mode = "disable",
-        importpath = "github.com/Masterminds/semver",
-        sum = "h1:H65muMkzWKEuNDnfl9d70GUjFniHKHRbFPGBuZ3QEww=",
-        version = "v1.5.0",
-    )
