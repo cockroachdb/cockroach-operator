@@ -1,0 +1,38 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "internal.go",
+        "oss_update_cockroach_version.go",
+        "update.go",
+        "update_cockroach_version_common.go",
+    ],
+    importpath = "github.com/cockroachdb/cockroach-operator/pkg/update",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@com_github_cenkalti_backoff//:go_default_library",
+        "@com_github_lib_pq//:go_default_library",
+        "@com_github_masterminds_semver_v3//:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+        "@io_k8s_api//apps/v1:go_default_library",
+        "@io_k8s_api//core/v1:go_default_library",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:go_default_library",
+        "@io_k8s_client_go//kubernetes:go_default_library",
+        "@org_uber_go_zap//:go_default_library",
+    ],
+)
+
+filegroup(
+    name = "package-srcs",
+    srcs = glob(["**"]),
+    tags = ["automanaged"],
+    visibility = ["//visibility:private"],
+)
+
+filegroup(
+    name = "all-srcs",
+    srcs = [":package-srcs"],
+    tags = ["automanaged"],
+    visibility = ["//visibility:public"],
+)

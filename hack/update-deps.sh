@@ -47,13 +47,13 @@ update_bazel=(
   "$gazelle"
   "$kazel"
 )
-update_deps_licenses=(
-  $(realpath "$6")
-  "$go"
-  "$jq"
-)
+#update_deps_licenses=(
+#  $(realpath "$6")
+#  "$go"
+#  "$jq"
+#)
 
-shift 6
+shift 5
 
 cd "$BUILD_WORKSPACE_DIRECTORY"
 trap 'echo "FAILED" >&2' ERR

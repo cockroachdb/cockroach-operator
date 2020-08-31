@@ -23,7 +23,7 @@ container_push(
     image = "//cmd/cockroach-operator:operator_image",
     registry = "{STABLE_DOCKER_REGISTRY}",
     repository = "{STABLE_IMAGE_REPOSITORY}",
-    tag = "{STABLE_DOCKER_TAG}"
+    tag = "{STABLE_DOCKER_TAG}",
 )
 
 filegroup(
@@ -65,6 +65,7 @@ filegroup(
         "//pkg/resource:all-srcs",
         "//pkg/testutil:all-srcs",
         "//pkg/tls:all-srcs",
+        "//pkg/update:all-srcs",
     ],
     tags = ["automanaged"],
     visibility = ["//visibility:public"],
