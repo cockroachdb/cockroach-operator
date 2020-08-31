@@ -21,6 +21,7 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 
 	api "github.com/cockroachdb/cockroach-operator/api/v1alpha1"
@@ -82,6 +83,25 @@ func TestStatefulSetBuilder(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestRHImage(t *testing.T) {
+	rhImage := "redhat-coachroach-test:v22"
+	os.Setenv(resource.RHEnvVar, rhImage)
+
+	cluster := resource.NewCluster(&api.CrdbCluster{})
+
+	b := resource.StatefulSetBuilder{
+		Cluster: &cluster,
+	}
+
+	container := b.MakeContainers()
+
+	if container[0].Image != rhImage {
+		assert.Fail(t, fmt.Sprintf("unexpected result expected image to equal: %s, got: %s", rhImage, container[0].Image))
+	}
+
+	os.Setenv(resource.RHEnvVar, "")
 }
 
 func load(t *testing.T, file string) []byte {
