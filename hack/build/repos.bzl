@@ -4185,3 +4185,11 @@ def go_repositories():
         sum = "h1:aykwPMVyQyncZ8iLNVMXgJ1l3c6W0+LSOPmqp8JdCjs=",
         version = "v3.1.1",
     )
+    go_repository(
+        name = "com_github_cenkalti_backoff",
+        build_file_generation = "on",
+        build_file_proto_mode = "disable",
+        importpath = "github.com/cenkalti/backoff",
+        sum = "h1:tNowT99t7UNflLxfYYSlKYsBpXdEet03Pg2g16Swow4=",
+        version = "v2.2.1+incompatible",
+    )

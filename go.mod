@@ -5,10 +5,12 @@ go 1.14
 require (
 	github.com/Masterminds/semver/v3 v3.1.0
 	github.com/banzaicloud/k8s-objectmatcher v1.3.2
+	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/go-logr/logr v0.1.0
 	github.com/go-logr/zapr v0.1.1
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/google/go-cmp v0.4.0
+	github.com/lib/pq v1.1.1
 	github.com/onsi/ginkgo v1.12.0
 	github.com/onsi/gomega v1.9.0
 	github.com/pkg/errors v0.9.1
