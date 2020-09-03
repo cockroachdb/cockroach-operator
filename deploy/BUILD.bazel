@@ -20,7 +20,7 @@ k8s_objects(
     objects = [
         "//config/crd/bases:crd",
         ":operator",
-	":role",
+        ":role",
     ],
 )
 

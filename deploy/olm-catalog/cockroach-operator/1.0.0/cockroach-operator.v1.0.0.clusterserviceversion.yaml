@@ -7,7 +7,7 @@ metadata:
     categories: Database
     certified: "true"
     containerImage: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v1.0.0-rc.2
-    createdAt: 2020-09-03T16:51:46Z
+    createdAt: 2020-09-03T22:44:30Z
     description: CockroachDB Operator
     operators.operatorframework.io/internal-objects: '["crdbclusters.crdb.cockroachlabs.com"]'
     repository: https://github.com/cockroachdb/cockroach-operator
