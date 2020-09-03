@@ -1,4 +1,19 @@
-docker run -v `pwd`:`pwd` -w `pwd` operator-courier/operator-courier:v2.1.7 operator-courier verify --ui_validate_io $PACKAGE_PATH#!/usr/bin/env bash
+#!/usr/bin/env bash
+
+# Copyright 2020 The Cockroach Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 set -e
 
 VERSION=$1
@@ -37,6 +52,15 @@ STABLE=$(yq r \
 BETA=$(yq r \
      $PACKAGE_PATH/${OP}.package.yaml \
      'channels.(name==beta).currentCSV' | sed 's/cockroach-operator\.v//')
+
+for i in $(find $PACKAGE_PATH -name '*.yaml' ); 
+do
+	FILE=$(cat $i)
+	if [[ $FILE == *"# Copywrite"* ]]; 
+	then
+		sed -i 1,13d $i
+	fi
+done
 
 docker run -v `pwd`:`pwd` -w `pwd` operator-courier/operator-courier:v2.1.7 operator-courier verify --ui_validate_io $PACKAGE_PATH
 
