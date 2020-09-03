@@ -27,6 +27,9 @@ import (
 // CrdblusterSpec defines the desired state of a CockroachDB Cluster
 // that the operator maintains.
 // +k8s:openapi-gen=true
+// +operator-sdk:gen-csv:customresourcedefinitions.displayName="CoachroachDB Operator"
+// +operator-sdk:gen-csv:customresourcedefinitions.resources="StatefulSet,v1,\"cockroach-operator\""
+// +operator-sdk:gen-csv:customresourcedefinitions.resources=`Service,v1,"cockroach-operator"`
 type CrdbClusterSpec struct {
 
 	// (Required) Number of nodes (pods) in the cluster
@@ -80,7 +83,6 @@ type CrdbClusterSpec struct {
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="text"
 	// +optional
 	ClientTLSSecret string `json:"clientTLSSecret,omitempty"`
-	// TODO document on how you need to set the max or the min
 	// The maximum number of pods that can be unavailable during a rolling update.
 	// This number is set in the PodDistruptionBudget and defaults to 1.
 	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors=true

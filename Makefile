@@ -111,7 +111,8 @@ OPERATOR_IMAGE ?= registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v
 # Generate CSV 
 # TODO move this to bazel
 #
-generate-csv: dev/generate
+generate-csv: 
+	bazel run //hack:update-crds
 	cp config/crd/bases/crdb.cockroachlabs.com_crdbclusters.yaml deploy/crds/crdb.cockroachlabs.com_crdbclusters.yaml
 	cp config/rbac/role.yaml deploy/role.yaml
 	operator-sdk generate csv \

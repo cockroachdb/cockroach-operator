@@ -306,8 +306,7 @@ spec:
                 of files is expected (tls.key, tls.crt, ca.crt) Default: ""'
               type: string
             nodes:
-              description: 'Important: Run "make" to regenerate code after modifying
-                this file (Required) Number of nodes (pods) in the cluster'
+              description: (Required) Number of nodes (pods) in the cluster
               format: int32
               type: integer
             resources:
@@ -346,7 +345,6 @@ spec:
                 usage Default: false'
               type: boolean
           required:
-          - image
           - nodes
           type: object
         status:
