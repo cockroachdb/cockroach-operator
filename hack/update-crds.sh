@@ -41,7 +41,7 @@ cd "${REPO_ROOT}"
 
 "$controllergen" \
   crd:trivialVersions=true \
-  rbac:roleName=cockroach-operator webhook \
+  rbac:roleName=cockroach-operator-role webhook \
   paths="./..." output:crd:artifacts:config=config/crd/bases
 
 FILE_NAMES=(config/rbac/role.yaml config/crd/bases/crdb.cockroachlabs.com_crdbclusters.yaml)

@@ -5,9 +5,9 @@ metadata:
     alm-examples: '[{"apiVersion": "crdb.cockroachlabs.com/v1alpha1", "kind": "CrdbCluster", "metadata": {"name": "crdb-tls-enabled"}, "spec": {"dataStore": {"emptyDir": {}}, "tlsEnabled": true, "nodes": 3}}]'
     capabilities: Full Lifecycle
     categories: Database
-    certified: '''true'''
+    certified: "true"
     containerImage: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v1.0.0-rc.2
-    createdAt: 2020-09-03T16:13:29Z
+    createdAt: 2020-09-03T16:51:46Z
     description: CockroachDB Operator
     operators.operatorframework.io/internal-objects: '["crdbclusters.crdb.cockroachlabs.com"]'
     repository: https://github.com/cockroachdb/cockroach-operator
@@ -29,134 +29,6 @@ spec:
   install:
     spec:
       clusterPermissions:
-        - rules:
-            - apiGroups:
-                - apps
-              resources:
-                - statefulsets
-              verbs:
-                - create
-                - delete
-                - get
-                - list
-                - patch
-                - update
-                - watch
-            - apiGroups:
-                - apps
-              resources:
-                - statefulsets/status
-              verbs:
-                - get
-                - patch
-                - update
-            - apiGroups:
-                - certificates.k8s.io
-              resources:
-                - certificatesigningrequests
-              verbs:
-                - create
-                - delete
-                - get
-                - list
-                - patch
-                - watch
-            - apiGroups:
-                - certificates.k8s.io
-              resources:
-                - certificatesigningrequests/approval
-              verbs:
-                - update
-            - apiGroups:
-                - certificates.k8s.io
-              resources:
-                - certificatesigningrequests/status
-              verbs:
-                - get
-                - patch
-                - update
-            - apiGroups:
-                - ""
-              resources:
-                - configmaps
-              verbs:
-                - get
-            - apiGroups:
-                - ""
-              resources:
-                - configmaps/status
-              verbs:
-                - get
-            - apiGroups:
-                - ""
-              resources:
-                - pods/exec
-              verbs:
-                - create
-            - apiGroups:
-                - ""
-              resources:
-                - secrets
-              verbs:
-                - create
-                - get
-                - list
-                - patch
-                - update
-                - watch
-            - apiGroups:
-                - ""
-              resources:
-                - services
-              verbs:
-                - create
-                - delete
-                - get
-                - list
-                - patch
-                - update
-                - watch
-            - apiGroups:
-                - ""
-              resources:
-                - services/status
-              verbs:
-                - get
-                - patch
-                - update
-            - apiGroups:
-                - crdb.cockroachlabs.com
-              resources:
-                - crdbclusters
-              verbs:
-                - create
-                - delete
-                - get
-                - list
-                - patch
-                - update
-                - watch
-            - apiGroups:
-                - policy
-              resources:
-                - poddisruptionbudgets
-              verbs:
-                - create
-                - delete
-                - get
-                - list
-                - patch
-                - update
-                - watch
-            - apiGroups:
-                - crdb.cockroachlabs.com
-              resources:
-                - crdbclusters/status
-              verbs:
-                - get
-                - patch
-                - update
-          serviceAccountName: cockroach-operator-role
         - rules:
             - apiGroups:
                 - apps
@@ -332,6 +204,10 @@ spec:
                   - env:
                       - name: WATCH_NAMESPACE
                         value:
+                      - name: OPERATOR_NAME
+                        value: cockroachdb
+                      - name: RELATED_IMAGE_COCKROACH
+                        value: registry.connect.redhat.com/cockroachdb/cockroach:v20.1.4
                     image: cockroach-operator:placeholder
                     imagePullPolicy: IfNotPresent
                     name: cockroach-operator
@@ -359,10 +235,10 @@ spec:
       url: https://github.com/cockroachdb/cockroach-operator
     - name: Cockroach Labs
       url: https://www.cockroachlabs.com
+  maintainers:
+    - email: support@cockroachlabs.com
+      name: Cockroach Labs Support
   maturity: alpha
   provider:
     name: Cockroach Labs
   version: 1.0.0
-  maintainers:
-    - email: support@cockroachlabs.com
-      name: Cockroach Labs Support

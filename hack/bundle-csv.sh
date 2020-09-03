@@ -58,7 +58,7 @@ do
 	FILE=$(cat $i)
 	if [[ $FILE == *"# Copywrite"* ]]; 
 	then
-		sed -i 1,13d $i
+		sed -i 1,12d $i
 	fi
 done
 

@@ -110,12 +110,10 @@ OPERATOR_IMAGE ?= registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v
 #
 # Generate CSV 
 # TODO move this to bazel
-# TODO remove copywrite headers on the yaml files
 #
-#generate-csv: dev/generate
-generate-csv:
-	#cp config/crd/bases/crdb.cockroachlabs.com_crdbclusters.yaml deploy/crds/crdb.cockroachlabs.com_crdbclusters.yaml
-	#cp config/rbac/role.yaml deploy/role.yaml
+generate-csv: dev/generate
+	cp config/crd/bases/crdb.cockroachlabs.com_crdbclusters.yaml deploy/crds/crdb.cockroachlabs.com_crdbclusters.yaml
+	cp config/rbac/role.yaml deploy/role.yaml
 	operator-sdk generate csv \
 		--csv-version=$(VERSION) \
 		--csv-channel=$(CSV_CHANNEL) \
@@ -128,7 +126,7 @@ generate-csv:
 	yq w -i $(VERSION_CSV_FILE) 'metadata.annotations.createdAt' $(CREATED_TIME)
 	yq w -i $(VERSION_CSV_FILE) 'metadata.annotations.capabilities' "Full Lifecycle"
 	yq w -i $(VERSION_CSV_FILE) 'metadata.annotations.categories' "Database"
-	yq w -i $(VERSION_CSV_FILE) 'metadata.annotations.certified' "'true'"
+	yq w -i $(VERSION_CSV_FILE) --tag '!!str' 'metadata.annotations.certified' true
 	yq w -i $(VERSION_CSV_FILE) 'metadata.annotations.description' "CockroachDB Operator"
 	yq w -i $(VERSION_CSV_FILE) 'metadata.annotations.repository' "https://github.com/cockroachdb/cockroach-operator"
 	yq w -i $(VERSION_CSV_FILE) 'metadata.annotations.support' "Cockroach Labs"
