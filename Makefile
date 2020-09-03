@@ -76,12 +76,12 @@ dev/goimports:
 .PHONY: k8s/apply
 k8s/apply:
 	bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
-		//manifests:install_operator.apply
+		//deploy:install_operator.apply
 
 .PHONY: k8s/delete
 k8s/delete:
 	bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
-		//manifests:install_operator.delete
+		//deploy:install_operator.delete
 	
 #
 # Release targets

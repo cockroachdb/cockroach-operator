@@ -9,11 +9,18 @@ k8s_deploy(
     template = ":operator.yaml",
 )
 
+k8s_deploy(
+    name = "role",
+    template = ":role.yaml",
+    visibility = ["//visibility:public"],
+)
+
 k8s_objects(
     name = "install_operator",
     objects = [
         "//config/crd/bases:crd",
         ":operator",
+	":role",
     ],
 )
 

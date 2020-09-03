@@ -176,13 +176,19 @@ func (b StatefulSetBuilder) makePodTemplate() corev1.PodTemplateSpec {
 // corev1.Container that is based on the CR.
 func (b StatefulSetBuilder) MakeContainers() []corev1.Container {
 
+	// TODO we need to inject this value into the build rather than
+	// having a hardcoded value
+	image := "cockroachdb/cockroach:v20.1.5"
+
 	//
 	// This code block allows for RedHat to override the coachroach image name during
 	// openshift testing.  They need to set the image name dynamically using a environment
 	// variable to allow the testing of a specific image.
 	//
-	image := os.Getenv(RHEnvVar)
-	if image == "" {
+	env := os.Getenv(RHEnvVar)
+	if b.Spec().Image.Name == "" && env != "" {
+		image = env
+	} else if b.Spec().Image.Name != "" {
 		image = b.Spec().Image.Name
 	}
 
