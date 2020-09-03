@@ -134,8 +134,8 @@ generate-csv:
 	yq w -i $(VERSION_CSV_FILE) 'metadata.annotations.support' "Cockroach Labs"
 	yq w -i $(VERSION_CSV_FILE) 'metadata.annotations."operators.operatorframework.io/internal-objects"' $(INTERNAL_CRDS)
 	yq w -i $(VERSION_CSV_FILE) 'metadata.annotations.alm-examples' '[{"apiVersion": "crdb.cockroachlabs.com/v1alpha1", "kind": "CrdbCluster", "metadata": {"name": "crdb-tls-enabled"}, "spec": {"dataStore": {"emptyDir": {}}, "tlsEnabled": true, "nodes": 3}}]'
-	yq w -i $(VERSION_CSV_FILE) 'spec.maintainers[+].email' "support@cockroachlabs.com"
-	yq w -i $(VERSION_CSV_FILE) 'spec.maintainers[+].name' "Cockroach Labs Support"
+	yq w -i $(VERSION_CSV_FILE) 'spec.maintainers[0].email' "support@cockroachlabs.com"
+	yq w -i $(VERSION_CSV_FILE) 'spec.maintainers[0].name' "Cockroach Labs Support"
 	yq d -i $(VERSION_CSV_FILE) 'spec.install.spec.deployments[*].spec.template.spec.containers[*].env(name==WATCH_NAMESPACE).valueFrom'
 	yq w -i $(VERSION_CSV_FILE) 'spec.install.spec.deployments[*].spec.template.spec.containers[*].env(name==WATCH_NAMESPACE).value' ''
 	hack/bundle-csv.sh $(VERSION) $(OPERATOR_IMAGE)
