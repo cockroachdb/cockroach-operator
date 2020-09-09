@@ -197,8 +197,8 @@ func (c *FakeClient) Update(ctx context.Context, obj runtime.Object, opts ...cli
 	return c.client.Update(ctx, obj, opts...)
 }
 
-func (c *FakeClient) Patch(_ context.Context, obj runtime.Object, patch client.Patch, opts ...client.PatchOption) error {
-	panic("implement me")
+func (c *FakeClient) Patch(ctx context.Context, obj runtime.Object, patch client.Patch, opts ...client.PatchOption) error {
+	return c.client.Patch(ctx, obj, patch, opts...)
 }
 
 func (c *FakeClient) DeleteAllOf(_ context.Context, obj runtime.Object, opts ...client.DeleteAllOfOption) error {
@@ -206,7 +206,7 @@ func (c *FakeClient) DeleteAllOf(_ context.Context, obj runtime.Object, opts ...
 }
 
 func (c *FakeClient) Status() client.StatusWriter {
-	panic("implement me")
+	return c.client.Status()
 }
 
 func (c *FakeClient) invoke(action Action) (handled bool, err error) {

@@ -14,30 +14,22 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package condition
+package testutil
 
 import (
-	"testing"
-
 	api "github.com/cockroachdb/cockroach-operator/api/v1alpha1"
-	"github.com/stretchr/testify/assert"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-func TestInitializesForEmptyConditions(t *testing.T) {
-	now := metav1.Now()
+// SetupFakeClient returns a Kubernetes FakeClient that is populated by
+// the api objects.
+func SetupFakeClient(initCrdbObjs ...runtime.Object) client.Client {
+	s := scheme.Scheme
+	_ = api.AddToScheme(s)
+	s.AddKnownTypes(api.GroupVersion, initCrdbObjs[0])
 
-	status := api.CrdbClusterStatus{}
-
-	expected := []api.ClusterCondition{
-		{
-			Type:               "NotInitialized",
-			Status:             metav1.ConditionTrue,
-			LastTransitionTime: now,
-		},
-	}
-
-	InitConditionsIfNeeded(&status, now)
-
-	assert.ElementsMatch(t, expected, status.OperatorConditions)
+	return fake.NewFakeClient(initCrdbObjs...)
 }

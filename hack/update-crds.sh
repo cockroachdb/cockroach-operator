@@ -17,10 +17,9 @@
 set -o errexit
 set -o nounset
 set -o pipefail
-set -o xtrace
 
 if [[ -n "${BUILD_WORKSPACE_DIRECTORY:-}" ]]; then # Running inside bazel
-  echo "Updating generated CRDs..." >&2
+  echo "Updating generated CRDs and API deepcopy..." >&2
 elif ! command -v bazel &>/dev/null; then
   echo "Install bazel at https://bazel.build" >&2
   exit 1
@@ -39,6 +38,9 @@ export PATH=$(dirname "$go"):$PATH
 # This script should be run via `bazel run //hack:update-crds`
 REPO_ROOT=${BUILD_WORKSPACE_DIRECTORY}
 cd "${REPO_ROOT}"
+
+"$controllergen" \
+  object:headerFile=./hack/boilerplate/boilerplate.go.txt paths=./api/...
 
 "$controllergen" \
   crd:trivialVersions=true \

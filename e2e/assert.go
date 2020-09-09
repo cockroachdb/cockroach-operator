@@ -98,7 +98,7 @@ func clusterIsInitialized(t *testing.T, sb testenv.DiffingSandbox, name string) 
 		return false, err
 	}
 
-	actualConditions := actual.Status.DeepCopy().Conditions
+	actualConditions := actual.Status.DeepCopy().OperatorConditions
 
 	// Reset condition time as it is not significant for the assertion
 	var emptyTime metav1.Time

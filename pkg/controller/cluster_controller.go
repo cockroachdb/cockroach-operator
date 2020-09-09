@@ -91,7 +91,7 @@ func (r *ClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	// to refresh the state of the world
 	for _, a := range r.Actions {
 		// Ensure the action is applicable to the current resource state
-		if a.Handles(cluster.Status().Conditions) {
+		if a.Handles(cluster.Status().OperatorConditions) {
 			if err := a.Act(ctx, &cluster); err != nil {
 				// Short pause
 				if notReadyErr, ok := err.(actor.NotReadyErr); ok {

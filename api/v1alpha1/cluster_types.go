@@ -17,8 +17,22 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"github.com/operator-framework/operator-lib/status"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+const (
+	// ConditionInstalling means the tools are installing on your cluster.
+	ConditionInstalling status.ConditionType = "Installing"
+	// ConditionComplete means the tools are installed on your cluster.
+	ConditionComplete status.ConditionType = "Complete"
+	// ConditionError means the installation has failed.
+	ConditionError status.ConditionType = "Error"
+
+	// Reasons for install
+	ReasonStartInstall    status.ConditionReason = "StartInstall"
+	ReasonInstallFinished status.ConditionReason = "FinishedInstall"
 )
 
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
@@ -81,11 +95,18 @@ type CrdbClusterSpec struct {
 type CrdbClusterStatus struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// List of conditions representing the current status of the cluster resource.
+	// List of internal operators conditions representing the current status of the cluster resource.
 	// Currently, only `NotInitialized` is used
-	Conditions []ClusterCondition `json:"conditions,omitempty"`
+	OperatorConditions []ClusterCondition `json:"operatorConditions,omitempty"`
+
 	// Database service version. Not populated and is just a placeholder currently.
 	Version string `json:"version,omitempty"`
+
+	// Conditions represent the latest available observations of an object's stateonfig
+	// +operator-sdk:gen-csv:customresourcedefinitions.statusDescriptors=true
+	// +operator-sdk:gen-csv:customresourcedefinitions.specDescriptors.x-descriptors="urn:alm:descriptor:io.kubernetes.conditions"
+	// +optional
+	Conditions status.Conditions `json:"conditions,omitempty"`
 }
 
 // +genclient

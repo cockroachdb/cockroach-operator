@@ -22,11 +22,11 @@ import (
 )
 
 func InitConditionsIfNeeded(status *api.CrdbClusterStatus, now metav1.Time) {
-	if status.Conditions == nil {
-		status.Conditions = []api.ClusterCondition{}
+	if status.OperatorConditions == nil {
+		status.OperatorConditions = []api.ClusterCondition{}
 	}
 
-	if len(status.Conditions) == 0 {
+	if len(status.OperatorConditions) == 0 {
 		SetTrue(api.NotInitializedCondition, status, now)
 	}
 }
@@ -78,18 +78,18 @@ func setStatus(ctype api.ClusterConditionType, status metav1.ConditionStatus, cl
 }
 
 func findOrCreate(ctype api.ClusterConditionType, status *api.CrdbClusterStatus) *api.ClusterCondition {
-	pos := pos(ctype, status.Conditions)
+	pos := pos(ctype, status.OperatorConditions)
 	if pos >= 0 {
-		return &status.Conditions[pos]
+		return &status.OperatorConditions[pos]
 	}
 
-	status.Conditions = append(status.Conditions, api.ClusterCondition{
+	status.OperatorConditions = append(status.OperatorConditions, api.ClusterCondition{
 		Type:               ctype,
 		Status:             metav1.ConditionUnknown,
 		LastTransitionTime: metav1.Now(),
 	})
 
-	return &status.Conditions[len(status.Conditions)-1]
+	return &status.OperatorConditions[len(status.OperatorConditions)-1]
 }
 
 func pos(ctype api.ClusterConditionType, conds []api.ClusterCondition) int {
