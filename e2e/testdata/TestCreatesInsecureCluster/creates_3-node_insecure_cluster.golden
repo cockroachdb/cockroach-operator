@@ -15,7 +15,6 @@ spec:
 apiVersion: v1
 kind: Pod
 metadata:
-  creationTimestamp: null
   labels:
     app.kubernetes.io/component: database
     app.kubernetes.io/instance: crdb
@@ -92,13 +91,11 @@ spec:
   volumes:
   - emptyDir: {}
     name: datadir
-status: {}
 
 ---
 apiVersion: v1
 kind: Pod
 metadata:
-  creationTimestamp: null
   labels:
     app.kubernetes.io/component: database
     app.kubernetes.io/instance: crdb
@@ -175,13 +172,11 @@ spec:
   volumes:
   - emptyDir: {}
     name: datadir
-status: {}
 
 ---
 apiVersion: v1
 kind: Pod
 metadata:
-  creationTimestamp: null
   labels:
     app.kubernetes.io/component: database
     app.kubernetes.io/instance: crdb
@@ -258,7 +253,6 @@ spec:
   volumes:
   - emptyDir: {}
     name: datadir
-status: {}
 
 ---
 apiVersion: policy/v1beta1

@@ -25,6 +25,8 @@ def install():
     install_kubectl()
     install_oc3()
     install_kind()
+    install_kubetest2()
+    install_kubetest2_kind()
 
     # Install golang.org/x/build as kubernetes/repo-infra requires it for the
     # build-tar bazel target.
@@ -233,3 +235,41 @@ def install_kind():
         sha256 = "0e07d5a9d5b8bf410a1ad8a7c8c9c2ea2a4b19eda50f1c629f1afadb7c80fae7",
         urls = ["https://github.com/kubernetes-sigs/kind/releases/download/v0.7.0/kind-linux-amd64"],
     )
+
+## Fetch kubetest2 binary used during e2e tests
+def install_kubetest2():
+    # install kubetest2 binary
+    # TODO osx support
+    #http_file(
+    #    name = "kubetest2_darwin",
+    #    executable = 1,
+    #    sha256 = "11b8a7fda7c9d6230f0f28ffe57831a7227c0655dfb8d38e838e8f03db6612de",
+    #    urls = ["https://github.com/kubernetes-sigs/kind/releases/download/v0.7.0/kind-darwin-amd64"],
+    #)
+
+    http_file(
+        name = "kubetest2_linux",
+        executable = 1,
+        sha256 = "a2617f5c65e8edcc49dcb72ec79c4d21043ef4ee6278e7179fe76ff362192054",
+        urls = ["https://storage.googleapis.com/crdb-bazel-artifacts/kubetest2"],
+    )
+
+## Fetch kubetest2-kind binary used during e2e tests
+def install_kubetest2_kind():
+    # install kubetest2 binary
+    # TODO osx support
+    #http_file(
+    #    name = "kubetest2_darwin",
+    #    executable = 1,
+    #    sha256 = "11b8a7fda7c9d6230f0f28ffe57831a7227c0655dfb8d38e838e8f03db6612de",
+    #    urls = ["https://github.com/kubernetes-sigs/kind/releases/download/v0.7.0/kind-darwin-amd64"],
+    #)
+
+    http_file(
+        name = "kubetest2_kind_linux",
+        executable = 1,
+        sha256 = "b8d570ce69155beb9f882489b096583676f69afb4cd2a5061106264b45b5d113",
+        urls = ["https://storage.googleapis.com/crdb-bazel-artifacts/kubetest2-kind"],
+    )
+
+

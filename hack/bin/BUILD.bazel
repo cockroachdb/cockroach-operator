@@ -99,6 +99,26 @@ genrule(
 )
 
 genrule(
+    name = "fetch_kubetest2",
+    srcs = select({
+        ":k8": ["@kubetest2_linux//file"],
+    }),
+    outs = ["kubetest2"],
+    cmd = "cp $(SRCS) $@",
+    visibility = ["//visibility:public"],
+)
+
+genrule(
+    name = "fetch_kubetest2_kind",
+    srcs = select({
+        ":k8": ["@kubetest2_kind_linux//file"],
+    }),
+    outs = ["kubetest2-kind"],
+    cmd = "cp $(SRCS) $@",
+    visibility = ["//visibility:public"],
+)
+
+genrule(
     name = "fetch_controller-gen",
     srcs = ["@io_k8s_sigs_controller_tools//cmd/controller-gen"],
     outs = ["controller-gen"],

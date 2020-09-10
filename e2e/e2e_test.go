@@ -64,11 +64,9 @@ func TestMain(m *testing.M) {
 	flag.Parse()
 
 	// We are running in bazel so set up the directory for the test binaries
-	// TODO pick up from command line if we are going to use kind
 	if os.Getenv("TEST_WORKSPACE") != "" {
-		// TODO change these by splitting the args that we are passing in
-		paths.MaybeSetEnv("TEST_ASSET_KUBECTL", "kubectl", "hack", "bin", "kubectl")
-		paths.MaybeSetEnv("TEST_ASSET_KIND", "kind", "hack", "bin", "kind")
+		// TODO create a toolchain for this
+		paths.MaybeSetEnv("PATH", "kubetest2-kind", "hack", "bin", "kubetest2-kind")
 	}
 
 	noKind := os.Getenv("TEST_DO_NOT_USE_KIND")
