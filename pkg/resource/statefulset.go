@@ -198,6 +198,14 @@ func (b StatefulSetBuilder) MakeContainers() []corev1.Container {
 					Name:  "COCKROACH_CHANNEL",
 					Value: "kubernetes-operator",
 				},
+				{
+					Name: "COCKROACH_POD_NAME",
+					ValueFrom: &corev1.EnvVarSource{
+						FieldRef: &corev1.ObjectFieldSelector{
+							FieldPath: "metadata.name",
+						},
+					},
+				},
 			},
 			Ports: []corev1.ContainerPort{
 				{
@@ -276,7 +284,7 @@ func (b StatefulSetBuilder) dbArgs() []string {
 		"-ecx",
 		">- exec /cockroach/cockroach start" +
 			" --join=" + b.joinStr() +
-			" --advertise-host=$(hostname -f)" +
+			" --advertise-host=$(echo ${COCKROACH_POD_NAME}." + b.StatefulSetName() + ".$(awk -v s=search '{if($1 == s)print $2}' /etc/resolv.conf))" +
 			" --logtostderr=INFO" +
 			b.Cluster.SecureMode() +
 			" --http-port=" + fmt.Sprint(*b.Spec().HTTPPort) +

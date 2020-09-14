@@ -26,7 +26,7 @@ spec:
         - shell
         - -ecx
         - '>- exec /cockroach/cockroach start --join=test-cluster-0.test-cluster.test-ns:26257
-          --advertise-host=$(hostname -f) --logtostderr=INFO --insecure --http-port=8080
+          --advertise-host=$(echo $HOSTNAME) --logtostderr=INFO --insecure --http-port=8080
           --port=26257 --cache=25% --max-sql-memory=25%'
         env:
         - name: COCKROACH_CHANNEL
