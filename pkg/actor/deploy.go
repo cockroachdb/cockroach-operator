@@ -18,7 +18,6 @@ package actor
 
 import (
 	"context"
-	"fmt"
 
 	api "github.com/cockroachdb/cockroach-operator/api/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/condition"
@@ -61,10 +60,9 @@ func (d deploy) Act(ctx context.Context, cluster *resource.Cluster) error {
 			Message: "Starting Installation",
 		})
 
-		err := d.client.Status().Update(context.TODO(), cluster.Unwrap())
+		err := d.client.Status().Update(ctx, cluster.Unwrap())
 
 		if err != nil {
-			fmt.Println("HERE updates")
 			log.Error(err, "Failed to update CockroachDB CR.")
 			return err
 		}
@@ -161,10 +159,7 @@ func (d deploy) Act(ctx context.Context, cluster *resource.Cluster) error {
 		Message: "Finished installing necessary components",
 	})
 
-	err = d.client.Status().Patch(context.TODO(), cluster.Unwrap(), patch)
-
-	if err != nil {
-		fmt.Println("HERE final")
+	if err = d.client.Status().Patch(ctx, cluster.Unwrap(), patch); err != nil {
 		log.Error(err, "Failed to add finished status to CockroachDB CR.")
 		return err
 	}
