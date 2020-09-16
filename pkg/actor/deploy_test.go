@@ -73,7 +73,7 @@ func TestDeploysNotInitalizedCluster(t *testing.T) {
 		WithNodeCount(1).Cluster()
 
 	deploy := actor.NewDeploy(scheme, client)
-	require.True(t, deploy.Handles(cluster.Status().Conditions))
+	require.True(t, deploy.Handles(cluster.Status().OperatorConditions))
 
 	// 3 is the number of resources we expect to be created. The action should be repeated as it is
 	// restarted on successful creation or update
