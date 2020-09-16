@@ -23,9 +23,7 @@ import (
 	"github.com/cockroachdb/cockroach-operator/pkg/condition"
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
-	"github.com/operator-framework/operator-lib/status"
 	"github.com/pkg/errors"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -51,24 +49,6 @@ func (d deploy) Act(ctx context.Context, cluster *resource.Cluster) error {
 	log.Info("reconciling resources")
 
 	r := resource.NewManagedKubeResource(ctx, d.client, cluster, kube.AnnotatingPersister)
-
-	if cluster.Status() == nil || cluster.Status().Conditions.GetCondition(api.ConditionInstalling) == nil {
-		cluster.Status().Conditions.SetCondition(status.Condition{
-			Type:    api.ConditionInstalling,
-			Status:  corev1.ConditionTrue,
-			Reason:  api.ReasonStartInstall,
-			Message: "Starting Installation",
-		})
-
-		err := d.client.Status().Update(ctx, cluster.Unwrap())
-
-		if err != nil {
-			log.Error(err, "Failed to update CockroachDB CR.")
-			return err
-		}
-
-		log.Info("Updating status to installing")
-	}
 
 	owner := cluster.Unwrap()
 
@@ -150,20 +130,6 @@ func (d deploy) Act(ctx context.Context, cluster *resource.Cluster) error {
 			CancelLoop(ctx)
 			return nil
 		}
-	}
-
-	patch := client.MergeFrom(cluster.Unwrap())
-
-	cluster.Status().Conditions.SetCondition(status.Condition{
-		Type:    api.ConditionComplete,
-		Status:  corev1.ConditionTrue,
-		Reason:  api.ReasonInstallFinished,
-		Message: "Finished installing necessary components",
-	})
-
-	if err = d.client.Status().Patch(ctx, cluster.Unwrap(), patch); err != nil {
-		log.Error(err, "Failed to add finished status to CockroachDB CR.")
-		return err
 	}
 
 	log.Info("Updating status to finished")

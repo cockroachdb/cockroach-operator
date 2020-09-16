@@ -24,6 +24,7 @@ import (
 	"github.com/cockroachdb/cockroach-operator/pkg/actor"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	"github.com/go-logr/logr"
+	"github.com/operator-framework/operator-lib/status"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	policy "k8s.io/api/policy/v1beta1"
@@ -87,6 +88,23 @@ func (r *ClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	// Save context cancellation function for actors to call if needed
 	ctx = actor.ContextWithCancelFn(ctx, cancel)
 
+	// TODO I am not certain that we need to do this check, but I will for now
+	if cluster.Status() == nil || cluster.Status().Conditions.GetCondition(api.ConditionInstalling) == nil {
+		cluster.Status().Conditions.SetCondition(status.Condition{
+			Type:    api.ConditionInstalling,
+			Status:  corev1.ConditionTrue,
+			Reason:  api.ReasonStartInstall,
+			Message: "Starting Installation",
+		})
+
+		if err := r.Client.Status().Update(ctx, cluster.Unwrap()); err != nil {
+			log.Error(err, "Failed to update CockroachDB CR.")
+			return requeueIfError(err)
+		}
+
+		log.Info("updated cluster status to StartInstall")
+	}
+
 	// Apply all actions to the cluster. Some actions can stop the loop if it is needed
 	// to refresh the state of the world
 	for _, a := range r.Actions {
@@ -137,6 +155,21 @@ func (r *ClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	log.Info("reconciliation completed")
+
+	patch := client.MergeFrom(cluster.Unwrap())
+
+	cluster.Status().Conditions.SetCondition(status.Condition{
+		Type:    api.ConditionComplete,
+		Status:  corev1.ConditionTrue,
+		Reason:  api.ReasonInstallFinished,
+		Message: "Finished installing necessary components",
+	})
+
+	if err = r.Client.Status().Patch(ctx, cluster.Unwrap(), patch); err != nil {
+		log.Error(err, "Failed to add finished status to CockroachDB CR.")
+		return requeueIfError(err)
+	}
+	log.Info("cr condition set to FinishedInstall")
 	return noRequeue()
 }
 
