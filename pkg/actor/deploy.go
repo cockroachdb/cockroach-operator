@@ -66,6 +66,8 @@ func (d deploy) Act(ctx context.Context, cluster *resource.Cluster) error {
 			log.Error(err, "Failed to update CockroachDB CR.")
 			return err
 		}
+
+		log.Info("Updating status to installing")
 	}
 
 	owner := cluster.Unwrap()
@@ -164,6 +166,7 @@ func (d deploy) Act(ctx context.Context, cluster *resource.Cluster) error {
 		return err
 	}
 
+	log.Info("Updating status to finished")
 	log.Info("completed")
 
 	return nil
