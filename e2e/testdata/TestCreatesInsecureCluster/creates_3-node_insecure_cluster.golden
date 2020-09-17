@@ -28,7 +28,7 @@ spec:
     - shell
     - -ecx
     - '>- exec /cockroach/cockroach start --join=crdb-0.crdb.[sandbox_namespace]:26257,crdb-1.crdb.[sandbox_namespace]:26257,crdb-2.crdb.[sandbox_namespace]:26257
-      --advertise-host=$(echo $HOSTNAME) --logtostderr=INFO --insecure --http-port=8080
+      --advertise-host=$(echo ${COCKROACH_POD_NAME}.crdb.$(awk -v s=search '{if($1 == s)print $2}' /etc/resolv.conf)) --logtostderr=INFO --insecure --http-port=8080
       --port=26257 --cache=25% --max-sql-memory=25%'
     env:
     - name: COCKROACH_CHANNEL
@@ -109,7 +109,7 @@ spec:
     - shell
     - -ecx
     - '>- exec /cockroach/cockroach start --join=crdb-0.crdb.[sandbox_namespace]:26257,crdb-1.crdb.[sandbox_namespace]:26257,crdb-2.crdb.[sandbox_namespace]:26257
-      --advertise-host=$(echo $HOSTNAME) --logtostderr=INFO --insecure --http-port=8080
+      --advertise-host=$(echo ${COCKROACH_POD_NAME}.crdb.$(awk -v s=search '{if($1 == s)print $2}' /etc/resolv.conf)) --logtostderr=INFO --insecure --http-port=8080
       --port=26257 --cache=25% --max-sql-memory=25%'
     env:
     - name: COCKROACH_CHANNEL
@@ -190,7 +190,7 @@ spec:
     - shell
     - -ecx
     - '>- exec /cockroach/cockroach start --join=crdb-0.crdb.[sandbox_namespace]:26257,crdb-1.crdb.[sandbox_namespace]:26257,crdb-2.crdb.[sandbox_namespace]:26257
-      --advertise-host=$(echo $HOSTNAME) --logtostderr=INFO --insecure --http-port=8080
+      --advertise-host=$(echo ${COCKROACH_POD_NAME}.crdb.$(awk -v s=search '{if($1 == s)print $2}' /etc/resolv.conf)) --logtostderr=INFO --insecure --http-port=8080
       --port=26257 --cache=25% --max-sql-memory=25%'
     env:
     - name: COCKROACH_CHANNEL
@@ -371,7 +371,7 @@ spec:
         - shell
         - -ecx
         - '>- exec /cockroach/cockroach start --join=crdb-0.crdb.[sandbox_namespace]:26257,crdb-1.crdb.[sandbox_namespace]:26257,crdb-2.crdb.[sandbox_namespace]:26257
-          --advertise-host=$(echo $HOSTNAME) --logtostderr=INFO --insecure --http-port=8080
+          --advertise-host=$(echo ${COCKROACH_POD_NAME}.crdb.$(awk -v s=search '{if($1 == s)print $2}' /etc/resolv.conf)) --logtostderr=INFO --insecure --http-port=8080
           --port=26257 --cache=25% --max-sql-memory=25%'
         env:
         - name: COCKROACH_CHANNEL
