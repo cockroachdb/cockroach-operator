@@ -27,6 +27,7 @@ import (
 	"github.com/cockroachdb/cockroach-operator/pkg/testutil"
 	testenv "github.com/cockroachdb/cockroach-operator/pkg/testutil/env"
 	"github.com/google/go-cmp/cmp"
+	"github.com/operator-framework/operator-lib/status"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -85,11 +86,17 @@ func requireDbContainersToUseImage(t *testing.T, sb testenv.DiffingSandbox, cr *
 }
 
 func clusterIsInitialized(t *testing.T, sb testenv.DiffingSandbox, name string) (bool, error) {
-	expectedConditions := []api.ClusterCondition{
+	expectedOperatorConditions := []api.ClusterCondition{
 		{
 			Type:   api.NotInitializedCondition,
 			Status: metav1.ConditionFalse,
 		},
+	}
+	expectedConditions := status.Condition{
+		Type:    api.ConditionComplete,
+		Status:  corev1.ConditionTrue,
+		Reason:  api.ReasonInstallFinished,
+		Message: "Finished installing necessary components",
 	}
 
 	actual := resource.ClusterPlaceholder(name)
@@ -98,15 +105,20 @@ func clusterIsInitialized(t *testing.T, sb testenv.DiffingSandbox, name string) 
 		return false, err
 	}
 
-	actualConditions := actual.Status.DeepCopy().OperatorConditions
+	actualOperatorConditions := actual.Status.DeepCopy().OperatorConditions
+	actualConditions := actual.Status.DeepCopy().Conditions
 
 	// Reset condition time as it is not significant for the assertion
 	var emptyTime metav1.Time
-	for i := range actualConditions {
-		actualConditions[i].LastTransitionTime = emptyTime
+	for i := range actualOperatorConditions {
+		actualOperatorConditions[i].LastTransitionTime = emptyTime
 	}
 
+	if !cmp.Equal(expectedOperatorConditions, actualOperatorConditions) {
+		return false, nil
+	}
 	if !cmp.Equal(expectedConditions, actualConditions) {
+		t.Logf("Conditions is not set correctly")
 		return false, nil
 	}
 
