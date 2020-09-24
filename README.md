@@ -18,28 +18,35 @@ The CockroachDB Kubernetes Operator deploys CockroachDB on a Kubernetes cluster.
 
 - Kubernetes 1.8 or higher
 - [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
+- A GKE cluster
 
 ## Install the Operator
 
-<!-- Clone this repo:
-
-```
-git clone https://github.com/cockroachdb/cockroach-operator.git
-```
-
-From the `cockroach-operator` directory on your machine, create a Kubernetes cluster on GKE, specifying a cluster name (e.g., `crdb-test`).
+If you don't already have a GKE cluster, run this command from the `cockroach-operator` directory on your machine, specifying a cluster name (e.g., `crdb-test`):
 
 ```
 ./hack/create-gke-cluster.sh -c <cluster-name>
 ```
 
-This creates a Kubernetes cluster on GKE, using your default GCP region and project.
+Locate the latest release tag [here](https://github.com/cockroachdb/cockroach-operator/tags).
 
-Install the Operator, specifying the cluster name:
+Clone the release tag:
 
 ```
-./hack/apply-operator.sh -c <cluster-name>
-``` -->
+git clone --depth 1 --branch <tag_name> https://github.com/cockroachdb/cockroach-operator
+```
+
+Apply the custom resource definition (CRD) for the Operator:
+
+```
+kubectl apply -f config/crd/bases/crdb.cockroachlabs.com_crdbclusters.yaml
+```
+
+Apply the Operator manifest:
+
+```
+kubectl apply -f manifests/operator.yaml
+```
 
 Validate that the Operator is running:
 
@@ -57,14 +64,6 @@ Download [`example.yaml`](https://github.com/cockroachdb/cockroach-operator/exam
 ```
 curl -OOOOOOOOO https://raw.githubusercontent.com/cockroachdb/cockroach-operator/master/examples/example.yaml
 ```
-
-By default `example.yaml` tells the Operator to create a secure cluster. For local testing, you can optionally deploy an insecure cluster. Exclude the following line from the configuration and skip the [Certificate signing](#certificate-signing) section below.
-
-```
-  tlsEnabled: true
-```
-
-An insecure cluster is suitable for *testing purposes only* and should not be used on production.
 
 ### Certificate signing
 
@@ -88,18 +87,39 @@ clientTLSSecret: cockroachdb.client.root
 
 ### Set resource requests and limits
 
-Before deploying, we recommend explicitly allocating CPU and memory to CockroachDB in the Kubernetes pods. This is done in the `resources.requests` object in `example.yaml`. For example:
+Before deploying, we recommend explicitly allocating CPU and memory to CockroachDB in the Kubernetes pods. 
+
+Enable the commented-out lines in the `resources.requests` object and substitute values appropriate for your workload. Note that `requests` and `limits` should have identical values.
 
 ```
-resources:
-  requests:
-    cpu: "16"
-    memory: "8Gi"
-  limits:
-    memory: "8Gi"
+apiVersion: crdb.cockroachlabs.com/v1alpha1
+kind: CrdbCluster
+metadata:
+  name: cockroachdb
+spec:
+  dataStore:
+    pvc:
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            # cpu: "4"
+            # memory: "16Gi"
+          # limits:
+          #   cpu: "4"
+          #   memory: "16Gi"
+          storage: 60Gi
+        volumeMode: Filesystem
+  tlsEnabled: true
+  # nodeTLSSecret: cockroachdb.node
+  # clientTLSSecret: cockroachdb.client.root
+  image:
+    name: cockroachdb/cockroach:v20.1.4
+  nodes: 3
 ```
 
-### Create the StatefulSet
+### Apply the StatefulSet configuration
 
 Apply `example.yaml`:
 
@@ -117,7 +137,7 @@ kubectl get pods
 NAME                                  READY   STATUS    RESTARTS   AGE
 cockroach-operator-6f7b86ffc4-9t9zb   1/1     Running   0          3m22s
 cockroachdb-0                         1/1     Running   0          2m31s
-cockroachdb-1                         1/1     Running   1          102s
+cockroachdb-1                         1/1     Running   0          102s
 cockroachdb-2                         1/1     Running   0          46s
 ```
 
@@ -151,12 +171,6 @@ You can then access the SQL shell and run SQL statements from this pod:
 
 ```
 kubectl exec -it cockroachdb-client-secure -- ./cockroach sql --certs-dir=/cockroach-certs --host=cockroachdb-public
-```
-
-If you deployed an insecure cluster, you can access the SQL shell directly:
-
-```
-kubectl run cockroachdb -it --image=cockroachdb/cockroach:v20.1.4 --rm --restart=Never -- sql --insecure --host=cockroachdb
 ```
 
 If you want to [access the Admin UI](#access-the-admin-ui), create a SQL user with a password while you're here:
@@ -201,13 +215,13 @@ kubectl apply -f example.yaml
 
 ### Scale the cluster
 
-To scale the cluster, edit `nodes`:
+To scale the cluster, edit `nodes` in `example.yaml`:
 
 ```
 nodes: 4
 ```
 
-Do **not** scale down to fewer than 3 nodes. This is considered an anti-pattern and will cause errors.
+Do **not** scale down to fewer than 3 nodes. This is considered an anti-pattern on CockroachDB and will cause errors.
 
 > Note that you must scale by updating the `nodes` value in the Operator configuration. Using `kubectl scale statefulset <cluster-name> --replicas=4` will result in new pods immediately being terminated.
 
@@ -217,9 +231,9 @@ Apply the new configuration:
 kubectl apply -f example.yaml
 ```
 
-### Ugprade the cluster
+### Upgrade the cluster
 
-Perform a rolling upgrade by changing the image name:
+Perform a rolling upgrade by changing the image name in `example.yaml`:
 
 ```
 image:
@@ -234,6 +248,14 @@ kubectl apply -f example.yaml
 
 ## Stop the cluster
 
+Delete the GKE cluster:
+
+```
+./hack/delete-gke-cluster.sh -c <cluster-name>
+```
+
+Note that this script will trigger but will not wait for cluster deletion to complete.
+
 Remove the Operator:
 
 ```
@@ -245,11 +267,3 @@ Clean up any resources associated with the `cockroachdb` label:
 ```
 kubectl delete pods,statefulsets,services,persistentvolumeclaims,persistentvolumes,poddisruptionbudget,jobs,rolebinding,clusterrolebinding,role,clusterrole,serviceaccount -l app=cockroachdb
 ```
-
-Delete the GKE cluster:
-
-```
-./hack/delete-gke-cluster.sh -c <cluster-name>
-```
-
-Note that this script will trigger but will not wait for cluster deletion to complete.
