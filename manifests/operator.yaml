@@ -204,8 +204,8 @@ spec:
       serviceAccountName: cockroach-operator-default
       containers:
         - name: cockroach-operator
-          # image name is replaced by kustomize
-          image: "cockroach-operator:placeholder"
+          #image: "cockroach-operator:placeholder"
+          image: "us.gcr.io/chris-love-operator-playground/cockroach-operator:v1.0.0-alpha.1"
           imagePullPolicy: IfNotPresent
           env:
           - name: WATCH_NAMESPACE

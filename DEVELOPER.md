@@ -53,7 +53,10 @@ INSERT INTO bank.accounts VALUES (1, 1000.50);
 SELECT * FROM bank.accounts;
 ```
 
-## Running the operator in GCP
+## Developer Install Instructions
+
+These instructions are for developers only.  If you want to try the alpha please use the instructions in
+the next section.
 
 Install the operator
 
@@ -89,3 +92,14 @@ kubectl delete pv,pvc --help
 # note this is async, and the script will complete without waiting the entire time
 ./hack/delete-gke-cluster.sh -c $CLUSTER
 ```
+
+## Dev Release Install Instructions
+
+1. If you do not have a GKE cluster we have a helper script `./hack/create-gke-cluster.sh -c test`.
+1. Locate the latest released tag here  https://github.com/cockroachdb/cockroach-operator/tags
+1. Clone the tag `git clone --depth 1 --branch <tag_name> https://github.com/cockroachdb/cockroach-operator`
+1. Execute `kubectl apply -f config/crd/bases/crdb.cockroachlabs.com_crdbclusters.yaml`
+1. Execute `kubectl apply -f manifests/operator.yaml`
+1. Check that the operator has deployed properly
+
+The examples directory contains various examples, for example you can run `kubectl apply -f examples/example.yaml`.  
