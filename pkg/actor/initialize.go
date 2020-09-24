@@ -77,7 +77,7 @@ func (init initialize) Act(ctx context.Context, cluster *resource.Cluster) error
 	cmd := []string{
 		"/bin/bash",
 		"-c",
-		">- /cockroach/cockroach init" + cluster.SecureMode(),
+		">- /cockroach/cockroach init " + cluster.SecureMode(),
 	}
 
 	_, stderr, err := kube.ExecInPod(init.scheme, init.config, cluster.Namespace(),

@@ -26,14 +26,25 @@ spec:
   automountServiceAccountToken: false
   containers:
   - args:
-    - shell
-    - -ecx
-    - '>- exec /cockroach/cockroach start --join=crdb-0.crdb.[sandbox_namespace]:26257
-      --advertise-host=$(hostname -f) --logtostderr=INFO --certs-dir=/cockroach/cockroach-certs/
-      --http-port=8080 --port=26257 --cache=25% --max-sql-memory=25%'
+    - start
+    - --join=crdb-0.crdb.[sandbox_namespace]:26257
+    - --advertise-host=$(POD_NAME).crdb.[sandbox_namespace]
+    - --logtostderr=INFO
+    - --certs-dir=/cockroach/cockroach-certs/
+    - --http-port=8080
+    - --port=26257
+    - --cache=25%
+    - --max-sql-memory=25%
+    command:
+    - /cockroach/cockroach
     env:
     - name: COCKROACH_CHANNEL
       value: kubernetes-operator
+    - name: POD_NAME
+      valueFrom:
+        fieldRef:
+          apiVersion: v1
+          fieldPath: metadata.name
     image: cockroachdb/cockroach:v19.2.6
     imagePullPolicy: IfNotPresent
     livenessProbe:
@@ -232,14 +243,25 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - shell
-        - -ecx
-        - '>- exec /cockroach/cockroach start --join=crdb-0.crdb.[sandbox_namespace]:26257
-          --advertise-host=$(hostname -f) --logtostderr=INFO --certs-dir=/cockroach/cockroach-certs/
-          --http-port=8080 --port=26257 --cache=25% --max-sql-memory=25%'
+        - start
+        - --join=crdb-0.crdb.[sandbox_namespace]:26257
+        - --advertise-host=$(POD_NAME).crdb.[sandbox_namespace]
+        - --logtostderr=INFO
+        - --certs-dir=/cockroach/cockroach-certs/
+        - --http-port=8080
+        - --port=26257
+        - --cache=25%
+        - --max-sql-memory=25%
+        command:
+        - /cockroach/cockroach
         env:
         - name: COCKROACH_CHANNEL
           value: kubernetes-operator
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.name
         image: cockroachdb/cockroach:v19.2.6
         imagePullPolicy: IfNotPresent
         livenessProbe:

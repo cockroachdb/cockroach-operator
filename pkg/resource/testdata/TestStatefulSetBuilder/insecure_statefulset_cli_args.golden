@@ -23,15 +23,25 @@ spec:
       automountServiceAccountToken: false
       containers:
       - args:
-        - shell
-        - -ecx
-        - '>- exec /cockroach/cockroach start --join=test-cluster-0.test-cluster.test-ns:26257
-          --advertise-host=$(hostname -f) --logtostderr=INFO --insecure --http-port=8080
-          --port=26257 --cache=30% --max-sql-memory=2GB'
+        - start
+        - --join=test-cluster-0.test-cluster.test-ns:26257
+        - --advertise-host=$(POD_NAME).test-cluster.test-ns
+        - --logtostderr=INFO
+        - --insecure
+        - --http-port=8080
+        - --port=26257
+        - --cache=30%
+        - --max-sql-memory=2GB
         - --temp-dir=/tmp
+        command:
+        - /cockroach/cockroach
         env:
         - name: COCKROACH_CHANNEL
           value: kubernetes-operator
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
         image: cockroachdb/cockroach:v19.2.6
         imagePullPolicy: IfNotPresent
         livenessProbe:

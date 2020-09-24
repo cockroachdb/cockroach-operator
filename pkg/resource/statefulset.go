@@ -192,11 +192,20 @@ func (b StatefulSetBuilder) MakeContainers() []corev1.Container {
 			Image:           image,
 			ImagePullPolicy: *b.Spec().Image.PullPolicyName,
 			Resources:       b.Spec().Resources,
+			Command:         []string{"/cockroach/cockroach"},
 			Args:            b.dbArgs(),
 			Env: []corev1.EnvVar{
 				{
 					Name:  "COCKROACH_CHANNEL",
 					Value: "kubernetes-operator",
+				},
+				{
+					Name: "POD_NAME",
+					ValueFrom: &corev1.EnvVarSource{
+						FieldRef: &corev1.ObjectFieldSelector{
+							FieldPath: "metadata.name",
+						},
+					},
 				},
 			},
 			Ports: []corev1.ContainerPort{
@@ -272,17 +281,16 @@ func (b StatefulSetBuilder) clientTLSSecretName() string {
 
 func (b StatefulSetBuilder) dbArgs() []string {
 	aa := []string{
-		"shell",
-		"-ecx",
-		">- exec /cockroach/cockroach start" +
-			" --join=" + b.joinStr() +
-			" --advertise-host=$(hostname -f)" +
-			" --logtostderr=INFO" +
-			b.Cluster.SecureMode() +
-			" --http-port=" + fmt.Sprint(*b.Spec().HTTPPort) +
-			" --port=" + fmt.Sprint(*b.Spec().GRPCPort) +
-			" --cache=" + b.Spec().Cache +
-			" --max-sql-memory=" + b.Spec().MaxSQLMemory,
+		"start",
+		"--join=" + b.joinStr(),
+		fmt.Sprintf("--advertise-host=$(POD_NAME).%s.%s",
+			b.Cluster.DiscoveryServiceName(), b.Cluster.Namespace()),
+		"--logtostderr=INFO",
+		b.Cluster.SecureMode(),
+		"--http-port=" + fmt.Sprint(*b.Spec().HTTPPort),
+		"--port=" + fmt.Sprint(*b.Spec().GRPCPort),
+		"--cache=" + b.Spec().Cache,
+		"--max-sql-memory=" + b.Spec().MaxSQLMemory,
 	}
 
 	return append(aa, b.Spec().AdditionalArgs...)
