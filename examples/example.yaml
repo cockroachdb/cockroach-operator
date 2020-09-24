@@ -18,10 +18,15 @@ metadata:
   name: crdb-example
 spec:
   dataStore:
-    emptyDir: {}
+    pvc:
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 60Gi
+        volumeMode: Filesystem
   tlsEnabled: true
-  # this I think requires a prexisting secret name
-  #nodeTLSSecret: GENERATED
   image:
-    name: cockroachdb/cockroach-unstable:v20.1.0
-  nodes: 1
+    name: cockroachdb/cockroach:v20.1.6
+  nodes: 3
