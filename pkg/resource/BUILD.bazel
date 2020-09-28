@@ -16,9 +16,11 @@ go_library(
     deps = [
         "//api/v1alpha1:go_default_library",
         "//pkg/condition:go_default_library",
+        "//pkg/features:go_default_library",
         "//pkg/kube:go_default_library",
         "//pkg/labels:go_default_library",
         "//pkg/ptr:go_default_library",
+        "//pkg/utilfeature:go_default_library",
         "@com_github_go_logr_logr//:go_default_library",
         "@com_github_pkg_errors//:go_default_library",
         "@io_k8s_api//apps/v1:go_default_library",

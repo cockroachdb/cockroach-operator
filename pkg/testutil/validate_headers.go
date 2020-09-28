@@ -59,6 +59,7 @@ var SkippedPaths = map[string]bool{
 	"_gopath":     true,
 	"_output":     true,
 	".git":        true,
+	".idea":       true,
 	"vendor":      true,
 	"external":    true,
 	"3rdparty":    true,

@@ -20,7 +20,7 @@
 # values used in workspace-status.sh
 DOCKER_REGISTRY?=us.gcr.io/chris-love-operator-playground
 DOCKER_IMAGE_REPOSITORY?=cockroach-operator
-APP_VERSION?=v1.0.0-alpha.1
+APP_VERSION?=v1.0.0-alpha.2
 
 # 
 # Testing targets
@@ -75,9 +75,6 @@ dev/goimports:
 #
 .PHONY: k8s/apply
 k8s/apply:
-	DOCKER_REGISTRY=$(DOCKER_REGISTRY) \
-	DOCKER_IMAGE_REPOSITORY=$(DOCKER_IMAGE_REPOSITORY) \
-	APP_VERSION=$(APP_VERSION) \
 	bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
 		//manifests:install_operator.apply
 

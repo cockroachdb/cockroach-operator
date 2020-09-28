@@ -41,6 +41,8 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.name
+        - name: COCKROACH_SKIP_KEY_PERMISSION_CHECK
+          value: "true"
         image: cockroachdb/cockroach:v19.2.6
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -67,18 +69,28 @@ spec:
           initialDelaySeconds: 10
           periodSeconds: 5
         resources: {}
+        securityContext:
+          runAsGroup: 1042
+          runAsNonRoot: true
+          runAsUser: 1042
         volumeMounts:
         - mountPath: /cockroach/cockroach-data/
           name: datadir
         - mountPath: /cockroach/cockroach-certs/
           name: certs
+      securityContext:
+        fsGroup: 1142
+        fsGroupChangePolicy: OnRootMismatch
+        runAsGroup: 1042
+        runAsNonRoot: true
+        runAsUser: 1042
       terminationGracePeriodSeconds: 60
       volumes:
       - emptyDir: {}
         name: datadir
       - name: certs
         projected:
-          defaultMode: 256
+          defaultMode: 384
           sources:
           - secret:
               items:

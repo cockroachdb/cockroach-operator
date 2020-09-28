@@ -22,6 +22,9 @@ import (
 	"os"
 	"strings"
 
+	"github.com/cockroachdb/cockroach-operator/pkg/features"
+	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
+
 	"github.com/cockroachdb/cockroach-operator/pkg/labels"
 	"github.com/cockroachdb/cockroach-operator/pkg/ptr"
 	appsv1 "k8s.io/api/apps/v1"
@@ -43,6 +46,8 @@ const (
 	DbContainerName = "db"
 	RHEnvVar        = "RELATED_IMAGE_COCKROACH"
 )
+
+var userId = ptr.Int64(1042)
 
 type StatefulSetBuilder struct {
 	*Cluster
@@ -91,7 +96,7 @@ func (b StatefulSetBuilder) Build(obj runtime.Object) error {
 			Name: certsDirName,
 			VolumeSource: corev1.VolumeSource{
 				Projected: &corev1.ProjectedVolumeSource{
-					DefaultMode: ptr.Int32(0400),
+					DefaultMode: ptr.Int32(0600),
 					Sources: []corev1.VolumeProjection{
 						{
 							Secret: &corev1.SecretProjection{
@@ -149,6 +154,7 @@ func (b StatefulSetBuilder) Placeholder() runtime.Object {
 }
 
 func (b StatefulSetBuilder) makePodTemplate() corev1.PodTemplateSpec {
+	policy := corev1.FSGroupChangeOnRootMismatch
 	pod := corev1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
 			Labels: b.Selector,
@@ -158,6 +164,18 @@ func (b StatefulSetBuilder) makePodTemplate() corev1.PodTemplateSpec {
 			Containers:                    b.MakeContainers(),
 			AutomountServiceAccountToken:  ptr.Bool(false),
 		},
+	}
+
+	if utilfeature.DefaultMutableFeatureGate.Enabled(features.RunAsNonRoot) {
+		pod.Spec.SecurityContext =
+			&corev1.PodSecurityContext{
+				FSGroup:      ptr.Int64(1142),
+				RunAsUser:    userId,
+				RunAsNonRoot: ptr.Bool(true),
+				RunAsGroup:   userId,
+				// TODO not sure if we need this, but according to the docs it could be helpful
+				FSGroupChangePolicy: &policy,
+			}
 	}
 
 	secret := b.Spec().Image.PullSecret
@@ -186,7 +204,7 @@ func (b StatefulSetBuilder) MakeContainers() []corev1.Container {
 		image = b.Spec().Image.Name
 	}
 
-	return []corev1.Container{
+	container := []corev1.Container{
 		{
 			Name:            DbContainerName,
 			Image:           image,
@@ -245,13 +263,31 @@ func (b StatefulSetBuilder) MakeContainers() []corev1.Container {
 			},
 		},
 	}
+
+	if utilfeature.DefaultMutableFeatureGate.Enabled(features.RunAsNonRoot) {
+		// Setup the pod to not run as root
+		container[0].SecurityContext = &corev1.SecurityContext{
+			RunAsUser:    userId,
+			RunAsGroup:   userId,
+			RunAsNonRoot: ptr.Bool(true),
+		}
+
+		// we need this value because K8s does not allow for the setting
+		// of chown perms on a secret
+		container[0].Env = append(container[0].Env,
+			corev1.EnvVar{
+				Name:  "COCKROACH_SKIP_KEY_PERMISSION_CHECK",
+				Value: "true",
+			})
+	}
+
+	return container
 }
 
 func (b StatefulSetBuilder) secureMode() string {
 	if b.Spec().TLSEnabled {
 		return " --certs-dir=/cockroach/cockroach-certs/"
 	}
-
 	return " --insecure"
 }
 
@@ -300,8 +336,9 @@ func (b StatefulSetBuilder) joinStr() string {
 	var seeds []string
 
 	for i := 0; i < int(b.Spec().Nodes) && i < 3; i++ {
-		seeds = append(seeds, fmt.Sprintf("%s-%d.%s.%s:%d", b.Cluster.StatefulSetName(), i,
-			b.Cluster.DiscoveryServiceName(), b.Cluster.Namespace(), *b.Cluster.Spec().GRPCPort))
+		seeds = append(seeds,
+			fmt.Sprintf("%s-%d.%s.%s:%d", b.Cluster.StatefulSetName(), i,
+				b.Cluster.DiscoveryServiceName(), b.Cluster.Namespace(), *b.Cluster.Spec().GRPCPort))
 	}
 
 	return strings.Join(seeds, ",")
