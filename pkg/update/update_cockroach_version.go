@@ -26,17 +26,12 @@ import (
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/cenkalti/backoff"
+	"github.com/go-logr/logr"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
-	"go.uber.org/zap"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
-
-// This file is refactoring update_cockroach_version.go into
-// funcs that do not rely on external crl code.
-// Once this file is opensource we can remove all of the oss_ prefixes on the
-// funcs and variables.
 
 var validPreserveDowngradeOptionSetting = regexp.MustCompile(`^[0-9][0-9]\.[0-9]$`) // e.g. 19.2
 
@@ -53,52 +48,56 @@ func (e UpdateNotAllowed) Error() string {
 	return fmt.Sprintf("upgrading from %v to %v with preserve downgrade option set to %v not allowed: %s", e.cur, e.want, e.preserve, e.extra)
 }
 
-// TODO update docs
+type UpdateRoach struct {
+	CurrentVersion *semver.Version
+	WantVersion    *semver.Version
+	WantImageName  string
+	StsName        string
+	StsNamespace   string
+	Db             *sql.DB
+}
 
-// updateClusterCockroachVersion is the private version of
+type UpdateCluster struct {
+	Clientset             kubernetes.Interface
+	PodUpdateTimeout      time.Duration
+	PodMaxPollingInterval time.Duration
+	Sleeper               Sleeper
+}
+
 // UpdateClusterCockroachVersion, and allows specifying custom pod timeouts,
 // among other things, in order to enable unit testing.
-func updateClusterCockroachVersion(
+func UpdateClusterCockroachVersion(
 	ctx context.Context,
-	cockroachVersion string,
-	clientset kubernetes.Interface,
-	wantImageName string,
-	wantVersion *semver.Version,
-	podUpdateTimeout time.Duration,
-	podMaxPollingInterval time.Duration,
-	db *sql.DB,
-	sleeper Sleeper,
-	stsName string,
-	ns string,
+	update *UpdateRoach,
+	cluster *UpdateCluster,
+	l logr.Logger,
 ) error {
-	k, err := kindAndCheckPreserveDowngradeSetting(ctx, wantVersion, cockroachVersion, db)
+
+	l.WithValues(
+		"from",
+		update.CurrentVersion.Original(),
+		"to",
+		update.WantImageName+":"+update.WantVersion.Original(),
+	)
+
+	kind, err := kindAndCheckPreserveDowngradeSetting(ctx, update.WantVersion, update.CurrentVersion, update.Db, l)
 	if err != nil {
 		return err
 	}
-
-	// TODO(josh): Either:
-	//  1. Delete CockroachVersion from DB. Always fetch from k8s.
-	//  2. Check that CockroachVersion in DB is equal to version in k8s.
-	currentVersion, err := semver.NewVersion(cockroachVersion)
-	if err != nil {
-		return errors.Wrapf(err, "parsing current version failed")
-	}
-
-	l := fromContext(ctx).With(
-		zap.String("kind", k),
-		zap.String("from", cockroachVersion),
-		zap.String("to", wantImageName+":"+wantVersion.Original()),
+	l.WithValues(
+		"kind",
+		kind,
 	)
+
 	l.Info("starting upgrade")
 
-	// TODO we need to move this into indAndCheckPreserveDowngradeSetting
-	if isForwardOneMajorVersion(wantVersion, currentVersion) {
-		if err := setDowngradeOption(ctx, wantVersion, currentVersion, db, l); err != nil {
+	if isForwardOneMajorVersion(update.WantVersion, update.CurrentVersion) {
+		if err := setDowngradeOption(ctx, update.WantVersion, update.CurrentVersion, update.Db, l); err != nil {
 			return errors.Wrapf(err, "setting downgrade option for major roll forward failed")
 		}
 	}
 
-	wantImage := fmt.Sprintf("%s:%s", wantImageName, wantVersion.Original())
+	wantImage := fmt.Sprintf("%s:%s", update.WantImageName, update.WantVersion.Original())
 
 	updateFunction := makeUpdateCockroachVersionFunction(wantImage)
 	perPodVerificationFunction := makeIsCRBPodIsRunningNewVersionFunction(
@@ -113,7 +112,7 @@ func updateClusterCockroachVersion(
 		updateStrategyFunc: updateStrategyFunction,
 	}
 
-	return updateClusterStatefulSets(ctx, clientset, updateSuite, podUpdateTimeout, podMaxPollingInterval, sleeper, l, stsName, ns)
+	return updateClusterStatefulSets(ctx, update, cluster, updateSuite, l)
 }
 
 // updateClusterStatefulSets takes a context, a cluster, a vault client, and an
@@ -121,27 +120,23 @@ func updateClusterCockroachVersion(
 // update the CockroachDB StatefulSet in each region of a CockroachDB cluster.
 func updateClusterStatefulSets(
 	ctx context.Context,
-	clientset kubernetes.Interface,
+	update *UpdateRoach,
+	cluster *UpdateCluster,
 	updateSuite *updateFunctionSuite,
-	podUpdateTimeout time.Duration,
-	podMaxPollingInterval time.Duration,
-	sleeper Sleeper,
-	l *zap.Logger,
-	stsName string,
-	ns string,
+	l logr.Logger,
 ) error {
 	// TODO see what skipSleep should be doing here
 	// It is the first param returned by UpdateClusterRegionStatefulSet
 	_, err := UpdateClusterRegionStatefulSet(
 		ctx,
-		clientset,
-		ns,
-		stsName,
+		cluster.Clientset,
+		update.StsName,
+		update.StsNamespace,
 		updateSuite,
-		makeWaitUntilAllPodsReadyFunc(clientset, podUpdateTimeout, podMaxPollingInterval, stsName, ns),
-		podUpdateTimeout,
-		podMaxPollingInterval,
-		sleeper,
+		makeWaitUntilAllPodsReadyFunc(ctx, cluster, update),
+		cluster.PodUpdateTimeout,
+		cluster.PodMaxPollingInterval,
+		cluster.Sleeper,
 		l)
 	if err != nil {
 		return err
@@ -152,54 +147,59 @@ func updateClusterStatefulSets(
 // waitUntilAllPodsReady waits until all pods in all statefulsets are in the
 // ready state. The ready state implies all nodes are passing node liveness.
 func makeWaitUntilAllPodsReadyFunc(
-	clientset kubernetes.Interface,
-	podUpdateTimeout time.Duration,
-	maxPodPollingInterval time.Duration,
-	stsName string,
-	ns string,
-) func(ctx context.Context, l *zap.Logger) error {
-	return func(ctx context.Context, l *zap.Logger) error {
+	ctx context.Context,
+	cluster *UpdateCluster,
+	update *UpdateRoach,
+) func(ctx context.Context, l logr.Logger) error {
+	return func(ctx context.Context, l logr.Logger) error {
 
 		l.Info("waiting until all pods are in the ready state")
 		f := func() error {
 
-			sts, err := clientset.AppsV1().StatefulSets(ns).Get(ctx, stsName, metav1.GetOptions{})
+			sts, err := cluster.Clientset.AppsV1().StatefulSets(update.StsNamespace).Get(ctx, update.StsName, metav1.GetOptions{})
 			if err != nil {
-				l.Warn("could not find crdb sts")
-				return errors.Wrapf(err, "could not find crdb sts for %s", stsName)
+				return handleStsError(err, l, update.StsName, update.StsNamespace)
 			}
 			got := int(sts.Status.ReadyReplicas)
 			// TODO need to test this
 			// we could also use the number of pods defined by the operator
 			numCRDBPods := int(sts.Status.Replicas)
 			if got != numCRDBPods {
-				l.Sugar().Warnf("number of ready replicas is %v, not equal to num CRDB pods %v", got, numCRDBPods)
-				return fmt.Errorf("number of ready replicas is %v, not equal to num CRDB pods %v", got, numCRDBPods)
+				l.Error(err, fmt.Sprintf("number of ready replicas is %v, not equal to num CRDB pods %v", got, numCRDBPods))
+				return err
 			}
 
-			l.Info("all replicas are ready")
+			l.Info("all replicas are ready makeWaitUntilAllPodsReadyFunc update_cockroach_version.go")
 			return nil
 		}
 
 		b := backoff.NewExponentialBackOff()
-		b.MaxElapsedTime = podUpdateTimeout
-		b.MaxInterval = maxPodPollingInterval
+		b.MaxElapsedTime = cluster.PodUpdateTimeout
+		b.MaxInterval = cluster.PodMaxPollingInterval
 		return backoff.Retry(f, b)
 	}
 }
 
-func kindAndCheckPreserveDowngradeSetting(ctx context.Context, wantVersion *semver.Version, cockroachVersion string, db *sql.DB) (string, error) {
+func kindAndCheckPreserveDowngradeSetting(
+	ctx context.Context,
+	wantVersion *semver.Version,
+	currentVersion *semver.Version,
+	db *sql.DB,
+	l logr.Logger,
+) (string, error) {
 	// TODO(josh): Either:
 	//  1. Delete CockroachVersion from DB. Always fetch from k8s.
 	//  2. Check that CockroachVersion in DB is equal to version in k8s.
-	currentVersion, err := semver.NewVersion(cockroachVersion)
-	if err != nil {
-		return "UNKNOWN", errors.Wrapf(err, "parsing current version failed")
-	}
+	//currentVersion, err := semver.NewVersion(cockroachVersion)
+	//if err != nil {
+	//	return "UNKNOWN", errors.Wrapf(err, "parsing current version failed")
+	//}
 
 	if isPatch(wantVersion, currentVersion) {
+		l.Info("patch upgrade")
 		return "PATCH", nil
 	} else if isForwardOneMajorVersion(wantVersion, currentVersion) {
+		l.Info("major upgrade")
 		s := "MAJOR_UPGRADE"
 		preserve, err := preserveDowngradeSetting(ctx, db)
 		if err != nil {
@@ -219,6 +219,7 @@ func kindAndCheckPreserveDowngradeSetting(ctx context.Context, wantVersion *semv
 		}
 		return s, nil
 	} else if isBackOneMajorVersion(wantVersion, currentVersion) {
+		l.Info("major rollback")
 		s := "MAJOR_ROLLBACK"
 		preserve, err := preserveDowngradeSetting(ctx, db)
 		if err != nil {
@@ -236,6 +237,7 @@ func kindAndCheckPreserveDowngradeSetting(ctx context.Context, wantVersion *semv
 		}
 		return s, nil
 	}
+	l.Info("unknown upgrade")
 	return "UNKNOWN", UpdateNotAllowed{
 		cur:   currentVersion,
 		want:  wantVersion,
@@ -261,7 +263,8 @@ func preserveDowngradeSetting(ctx context.Context, db *sql.DB) (*semver.Version,
 	return preserveDowngradeVersion, nil
 }
 
-func setDowngradeOption(ctx context.Context, wantVersion *semver.Version, currentVersion *semver.Version, db *sql.DB, l *zap.Logger) error {
+func setDowngradeOption(ctx context.Context, wantVersion *semver.Version, currentVersion *semver.Version, db *sql.DB, l logr.Logger) error {
+
 	newDowngradeOption := fmt.Sprintf("%d.%d", currentVersion.Major(), currentVersion.Minor())
 	if !validPreserveDowngradeOptionSetting.MatchString(newDowngradeOption) {
 		return fmt.Errorf("%s is not a valid preserve downgrade option setting", newDowngradeOption)
@@ -270,26 +273,9 @@ func setDowngradeOption(ctx context.Context, wantVersion *semver.Version, curren
 		return errors.Wrapf(err, "setting preserve downgrade option failed")
 	}
 
-	l.Info("setting downgrade option since major version", zap.String("cluster.preserve_downgrade_option", newDowngradeOption))
+	l.Info("set downgrade option since major version", "cluster.preserve_downgrade_option", newDowngradeOption)
 
 	return nil
-}
-
-// TODO move to its own file in OSS
-type loggerKey struct{}
-
-// FromContext returns either a logger instance attached to `ctx` or
-// the global logger with the field "missingFromCtx" set to true.
-//
-// If possible, logger should be threaded down rather than being passed
-// via context. However, it is more important to have logging than
-// perfectly clean code
-func fromContext(ctx context.Context) *zap.Logger {
-	if logger, ok := ctx.Value(loggerKey{}).(*zap.Logger); ok {
-		return logger
-	}
-
-	return zap.L().With(zap.Bool("missingFromCtx", true))
 }
 
 // roleMembership represents role membership for a particular database user.
@@ -307,7 +293,6 @@ type roleMembership struct {
 func listRoleGrantsForUser(
 	ctx context.Context, db *sql.DB, username string,
 ) ([]roleMembership, error) {
-
 	query := fmt.Sprintf(`SHOW GRANTS ON ROLE FOR %s`, pq.QuoteIdentifier(username))
 	rows, err := db.QueryContext(ctx, query)
 	if err != nil {
@@ -336,7 +321,6 @@ func listRoleGrantsForUser(
 }
 
 func grantRoleToUser(ctx context.Context, db *sql.DB, role roleMembership, username string) error {
-
 	query := fmt.Sprintf("GRANT %s TO %s", role.Name, pq.QuoteIdentifier(username))
 	if role.IsAdmin {
 		query += " WITH ADMIN OPTION"
@@ -348,13 +332,6 @@ func grantRoleToUser(ctx context.Context, db *sql.DB, role roleMembership, usern
 }
 
 func getClusterSetting(ctx context.Context, db *sql.DB, name string) (string, error) {
-	// TODO do we need this?
-	/*
-		if err := isValidClusterSettingName(name); err != nil {
-			return "", err
-		}
-	*/
-
 	r := db.QueryRowContext(ctx, fmt.Sprintf("SHOW CLUSTER SETTING %s", name))
 	var value string
 	if err := r.Scan(&value); err != nil {
@@ -364,12 +341,6 @@ func getClusterSetting(ctx context.Context, db *sql.DB, name string) (string, er
 }
 
 func setClusterSetting(ctx context.Context, db *sql.DB, name string, value string) error {
-	/*
-		if err := isValidClusterSettingName(name); err != nil {
-			return err
-		}
-	*/
-
 	sqlStr := fmt.Sprintf("SET CLUSTER SETTING %s = $1", name)
 	if _, err := db.Exec(sqlStr, value); err != nil {
 		return errors.Wrapf(err, "failed to set %s to %s", name, value)

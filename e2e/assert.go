@@ -17,10 +17,14 @@ limitations under the License.
 package e2e
 
 import (
+	"context"
+	"database/sql"
+	"fmt"
 	"testing"
 	"time"
 
 	api "github.com/cockroachdb/cockroach-operator/api/v1alpha1"
+	"github.com/cockroachdb/cockroach-operator/pkg/database"
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
 	"github.com/cockroachdb/cockroach-operator/pkg/labels"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
@@ -153,4 +157,124 @@ func testPodsWithPredicate(pods []corev1.Pod, pred func(*corev1.Pod) bool) bool 
 
 func statefulSetIsReady(ss *appsv1.StatefulSet) bool {
 	return ss.Status.ReadyReplicas == ss.Status.Replicas
+}
+
+func requireDownGradeOptionSet(t *testing.T, sb testenv.DiffingSandbox, b testutil.ClusterBuilder, version string) {
+	sb.Mgr.GetConfig()
+	podName := fmt.Sprintf("%s-0.%s", b.Cluster().Name(), b.Cluster().Name())
+	conn := &database.DBConnection{
+		Ctx:    context.TODO(),
+		Client: sb.Mgr.GetClient(),
+		Port:   b.Cluster().Spec().GRPCPort,
+		UseSSL: true,
+
+		RestConfig:   sb.Mgr.GetConfig(),
+		ServiceName:  podName,
+		Namespace:    sb.Namespace,
+		DatabaseName: "system",
+
+		RunningInsideK8s:            false,
+		ClientCertificateSecretName: b.Cluster().ClientTLSSecretName(),
+		RootCertificateSecretName:   b.Cluster().NodeTLSSecretName(),
+	}
+
+	// Create a new database connection for the update.
+	db, err := database.NewDbConnection(conn)
+	require.NoError(t, err)
+	defer db.Close()
+
+	r := db.QueryRowContext(context.TODO(), "SHOW CLUSTER SETTING cluster.preserve_downgrade_option")
+	var value string
+	if err := r.Scan(&value); err != nil {
+		t.Fatal(err)
+	}
+
+	if value == "" {
+		t.Errorf("downgrade_option is empty and should be set to %s", version)
+	}
+
+	if value != value {
+		t.Errorf("downgrade_option is not set to %s, but is set to %s", version, value)
+	}
+
+}
+
+func requireDatabaseToFunction(t *testing.T, sb testenv.DiffingSandbox, b testutil.ClusterBuilder) {
+	sb.Mgr.GetConfig()
+	podName := fmt.Sprintf("%s-0.%s", b.Cluster().Name(), b.Cluster().Name())
+	conn := &database.DBConnection{
+		Ctx:    context.TODO(),
+		Client: sb.Mgr.GetClient(),
+		Port:   b.Cluster().Spec().GRPCPort,
+		UseSSL: true,
+
+		RestConfig:   sb.Mgr.GetConfig(),
+		ServiceName:  podName,
+		Namespace:    sb.Namespace,
+		DatabaseName: "system",
+
+		RunningInsideK8s:            false,
+		ClientCertificateSecretName: b.Cluster().ClientTLSSecretName(),
+		RootCertificateSecretName:   b.Cluster().NodeTLSSecretName(),
+	}
+
+	// Create a new database connection for the update.
+	db, err := database.NewDbConnection(conn)
+	require.NoError(t, err)
+	defer db.Close()
+
+	if _, err := db.Exec("CREATE DATABASE test_db"); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := db.Exec("USE test_db"); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create the "accounts" table.
+	if _, err := db.Exec("CREATE TABLE IF NOT EXISTS accounts (id INT PRIMARY KEY, balance INT)"); err != nil {
+		t.Fatal(err)
+	}
+
+	// Insert two rows into the "accounts" table.
+	if _, err := db.Exec(
+		"INSERT INTO accounts (id, balance) VALUES (1, 1000), (2, 250)"); err != nil {
+		t.Fatal(err)
+	}
+
+	// Print out the balances.
+	rows, err := db.Query("SELECT id, balance FROM accounts")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+	t.Log("Initial balances:")
+	for rows.Next() {
+		var id, balance int
+		if err := rows.Scan(&id, &balance); err != nil {
+			t.Fatal(err)
+		}
+		t.Log("balances", id, balance)
+	}
+
+	countRows, err := db.Query("SELECT COUNT(*) as count FROM accounts")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer countRows.Close()
+	count := getCount(t, countRows)
+	if count != 2 {
+		t.Fatal(fmt.Errorf("found incorrect number of rows.  Expected 2 got %i", count))
+	}
+
+}
+
+func getCount(t *testing.T, rows *sql.Rows) (count int) {
+	for rows.Next() {
+		err := rows.Scan(&count)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	return count
 }

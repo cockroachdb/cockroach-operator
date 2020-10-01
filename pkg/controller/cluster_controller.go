@@ -54,6 +54,7 @@ type ClusterReconciler struct {
 // +kubebuilder:rbac:groups=core,resources=configmaps/status,verbs=get
 // +kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch;create;update;patch
 // +kubebuilder:rbac:groups=core,resources=pods/exec,verbs=create
+// +kubebuilder:rbac:groups=core,resources=pods,verbs=get
 // +kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apps,resources=statefulsets/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=apps,resources=statefulsets/finalizers,verbs=get;list;watch
@@ -70,8 +71,10 @@ type ClusterReconciler struct {
 //   - cancel the loop and wait for another event
 //   - if no other errors occurred continue to the next action
 func (r *ClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	// Ensure the loop does not take longer than 20 seconds
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+
+	// TODO should we make this configurable?
+	// Ensure the loop does not take longer than 4 hours
+	ctx, cancel := context.WithTimeout(context.Background(), 4*time.Hour)
 	defer cancel()
 
 	log := r.Log.WithValues("CrdbCluster", req.NamespacedName)

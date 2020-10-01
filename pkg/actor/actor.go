@@ -20,7 +20,9 @@ import (
 	"context"
 
 	api "github.com/cockroachdb/cockroach-operator/api/v1alpha1"
+	"github.com/cockroachdb/cockroach-operator/pkg/features"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
+	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
@@ -50,10 +52,29 @@ type Actor interface {
 	Act(context.Context, *resource.Cluster) error
 }
 
+// NewOperatorActions creates a slice of actors that control the actions or actors for the operator.
+// The order of the slice is critical so that the actors run in order, for instance update has to
+// happen before deploy.
 func NewOperatorActions(scheme *runtime.Scheme, cl client.Client, config *rest.Config) []Actor {
+
+	var update Actor
+
+	// entry point for new PartitionUpdate upgrades
+	// this feature is controlled by a featuregate
+	if utilfeature.DefaultMutableFeatureGate.Enabled(features.PartitionedUpdate) {
+		update = newPartitionedUpdate(scheme, cl, config)
+	} else {
+		update = newUpgrade(scheme, cl, config)
+	}
+
+	// The order of these actors MATTERS.
+	// We need to have update before deploy so that
+	// updates run before the deploy actor, or
+	// deploy will update the STS container and not
+	// deploy.
 	return []Actor{
 		newRequestCert(scheme, cl, config),
-		newUpgrade(scheme, cl, config),
+		update,
 		newDeploy(scheme, cl),
 		newInitialize(scheme, cl, config),
 	}
