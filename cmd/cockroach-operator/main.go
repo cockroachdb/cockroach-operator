@@ -21,6 +21,9 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+
 	"github.com/cockroachdb/cockroach-operator/pkg/controller"
 
 	crdbv1alpha1 "github.com/cockroachdb/cockroach-operator/api/v1alpha1"
@@ -28,7 +31,6 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
 const WatchNamespaceEnvVar = "WATCH_NAMESPACE"
@@ -44,9 +46,10 @@ func init() {
 }
 
 func main() {
-	var metricsAddr string
+	var metricsAddr, featureGatesString string
 	var enableLeaderElection bool
 	flag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
+	flag.StringVar(&featureGatesString, "feature-gates", "", "Feature gate to enable, format is a command separated list enabling features, for instance RunAsNonRoot=false")
 	flag.BoolVar(&enableLeaderElection, "enable-leader-election", false,
 		"Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
 	flag.Parse()
@@ -54,6 +57,14 @@ func main() {
 	ctrl.SetLogger(zap.New(func(o *zap.Options) {
 		o.Development = true
 	}))
+
+	// If features gates are passed to the command line, use it (otherwise use featureGates from configuration)
+	if featureGatesString != "" {
+		if err := utilfeature.DefaultMutableFeatureGate.Set(featureGatesString); err != nil {
+			setupLog.Error(err, "unable to parse feature-gates flag")
+			os.Exit(1)
+		}
+	}
 
 	namespace, err := GetWatchNamespace()
 	if err != nil {
