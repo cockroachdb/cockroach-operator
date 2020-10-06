@@ -168,6 +168,35 @@ func TestCreatesSecureClusterWithGeneratedCert(t *testing.T) {
 	steps.Run(t)
 }
 
+func TestCreatesSecureClusterWithGeneratedCertCRv20(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+
+	testLog := zapr.NewLogger(zaptest.NewLogger(t))
+
+	actor.Log = testLog
+
+	sb := testenv.NewDiffingSandbox(t, env)
+	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
+
+	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
+		WithImage("cockroachdb/cockroach:v20.1.6").
+		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
+
+	create := Step{
+		name: "creates 3-node secure cluster with v20.1.6",
+		test: func(t *testing.T) {
+			require.NoError(t, sb.Create(builder.Cr()))
+			requireClusterToBeReadyEventually(t, sb, builder)
+		},
+	}
+
+	steps := Steps{create}
+
+	steps.Run(t)
+}
+
 func TestUpgradesMinorVersion(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
