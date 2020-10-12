@@ -101,6 +101,7 @@ genrule(
 genrule(
     name = "fetch_kubetest2",
     srcs = select({
+        ":darwin": ["@kubetest2_darwin//file"],
         ":k8": ["@kubetest2_linux//file"],
     }),
     outs = ["kubetest2"],
@@ -111,6 +112,7 @@ genrule(
 genrule(
     name = "fetch_kubetest2_kind",
     srcs = select({
+        ":darwin": ["@kubetest2_kind_darwin//file"],
         ":k8": ["@kubetest2_kind_linux//file"],
     }),
     outs = ["kubetest2-kind"],

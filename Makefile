@@ -18,7 +18,9 @@
 #
 
 # values used in workspace-status.sh
+
 DOCKER_REGISTRY?=us.gcr.io/chris-love-operator-playground
+# DOCKER_REGISTRY?=gcr.io/og-lab-project/alina-playground
 DOCKER_IMAGE_REPOSITORY?=cockroach-operator
 APP_VERSION?=v1.0.0-alpha.1
 
@@ -42,6 +44,12 @@ test/pkg:
 .PHONY: test/verify
 test/verify:
 	bazel test //hack/...
+
+# This target uses kind to start a k8s cluster  and runs the e2e tests
+# against that cluster.
+.PHONY: test/e2e-short
+test/e2e: 
+	bazel test //e2e/... --test_arg=--test.short
 
 # This target uses kind to start a k8s cluster  and runs the e2e tests
 # against that cluster.
@@ -96,3 +104,15 @@ release/image:
 	APP_VERSION=$(APP_VERSION) \
 	bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
 		//:push_operator_image 
+
+#
+# Dev target that
+#
+.PHONY: dev/syncdeps
+dev/syncdeps:
+	bazel run //hack:update-deps \
+	bazel run //hack:update-bazel \
+	bazel run //:gazelle -- update-repos -from_file=go.mod
+
+
+		
