@@ -106,7 +106,7 @@ release/image:
 		//:push_operator_image 
 
 #
-# Dev target that
+# Dev target that updates bazel files and dependecies
 #
 .PHONY: dev/syncdeps
 dev/syncdeps:
