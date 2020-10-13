@@ -250,7 +250,7 @@ def install_kubetest2():
     http_file(
         name = "kubetest2_linux",
         executable = 1,
-        sha256 = "6f1a0e2d67857e761ccde1247452af8ac38c7213f7e000ef08b3d282beb7bfaa",
+        sha256 = "c9c386dd46f3d26f91fc095b9970f57c34e2c54e443958bc097b3ec711e80b58",
         urls = ["https://storage.googleapis.com/crdb-bazel-artifacts/linux/kubetest2"],
     )
 
@@ -268,7 +268,7 @@ def install_kubetest2_kind():
     http_file(
         name = "kubetest2_kind_linux",
         executable = 1,
-        sha256 = "c97f5f05bca4bfee2c9d24bdaeb617c2a2a0b6df5730664814c90033aa7f801b",
+        sha256 = "e1b7ce0eec0c3db97b4fce3659e25f6190188c9c53f81ae3d090da47265a7599",
         urls = ["https://storage.googleapis.com/crdb-bazel-artifacts/linux/kubetest2-kind"],
     )
 
