@@ -20,7 +20,6 @@
 # values used in workspace-status.sh
 
 DOCKER_REGISTRY?=us.gcr.io/chris-love-operator-playground
-# DOCKER_REGISTRY?=gcr.io/og-lab-project/alina-playground
 DOCKER_IMAGE_REPOSITORY?=cockroach-operator
 APP_VERSION?=v1.0.0-alpha.1
 

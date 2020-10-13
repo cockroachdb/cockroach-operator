@@ -87,6 +87,7 @@ workspace_binary(
     cmd = "@go_sdk//:bin/go",
 )
 
+# fetch_kind rules to fetch the kind binary from github
 genrule(
     name = "fetch_kind",
     srcs = select({
@@ -97,7 +98,7 @@ genrule(
     cmd = "cp $(SRCS) $@",
     visibility = ["//visibility:public"],
 )
-
+# fetch_kubetest2 rules to fetch the binary for kubetest2 used on e2e tests that are saved on a google cloud bucket
 genrule(
     name = "fetch_kubetest2",
     srcs = select({
@@ -108,7 +109,7 @@ genrule(
     cmd = "cp $(SRCS) $@",
     visibility = ["//visibility:public"],
 )
-
+# fetch_kubetest2_kind rules to fetch the binary for kubetest2_kind used on e2e tests that are saved on a google cloud bucket 
 genrule(
     name = "fetch_kubetest2_kind",
     srcs = select({
