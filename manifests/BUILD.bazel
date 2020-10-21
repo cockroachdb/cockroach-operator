@@ -4,7 +4,9 @@ load("@io_bazel_rules_k8s//k8s:objects.bzl", "k8s_objects")
 k8s_deploy(
     name = "operator",
     images = {
-        "cockroach-operator:placeholder": "//cmd/cockroach-operator:operator_image",
+	 # TODO how do we do this?
+	 # "{STABLE_DOCKER_REGISTRY}/{STABLE_IMAGE_REPOSITORY}:{STABLE_DOCKER_TAG}"
+	 "us.gcr.io/chris-love-operator-playground/cockroach-operator:v1.0.0-alpha.1" : "//cmd/cockroach-operator:operator_image",
     },
     template = ":operator.yaml",
 )

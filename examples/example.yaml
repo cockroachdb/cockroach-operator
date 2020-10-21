@@ -24,12 +24,12 @@ spec:
         - ReadWriteOnce
         resources:
           requests:
-            # cpu: "4"
-            # memory: "16Gi"
+          #   cpu: "4"
+          #   memory: "16Gi"
+            storage: 60Gi
           # limits:
           #   cpu: "4"
           #   memory: "16Gi"
-          storage: 60Gi
         volumeMode: Filesystem
   tlsEnabled: true
   # nodeTLSSecret: cockroachdb.node

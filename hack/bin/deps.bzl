@@ -240,36 +240,36 @@ def install_kind():
 def install_kubetest2():
     # install kubetest2 binary
     # TODO osx support
-    #http_file(
-    #    name = "kubetest2_darwin",
-    #    executable = 1,
-    #    sha256 = "11b8a7fda7c9d6230f0f28ffe57831a7227c0655dfb8d38e838e8f03db6612de",
-    #    urls = ["https://github.com/kubernetes-sigs/kind/releases/download/v0.7.0/kind-darwin-amd64"],
-    #)
+    http_file(
+       name = "kubetest2_darwin",
+       executable = 1,
+       sha256 = "54b7f35575467b6bea173117f693959635c297ec89fc8011a964da8702cde50f",
+       urls = ["https://storage.googleapis.com/crdb-bazel-artifacts/macos/kubetest2"],
+    )
 
     http_file(
         name = "kubetest2_linux",
         executable = 1,
-        sha256 = "a2617f5c65e8edcc49dcb72ec79c4d21043ef4ee6278e7179fe76ff362192054",
-        urls = ["https://storage.googleapis.com/crdb-bazel-artifacts/kubetest2"],
+        sha256 = "c9c386dd46f3d26f91fc095b9970f57c34e2c54e443958bc097b3ec711e80b58",
+        urls = ["https://storage.googleapis.com/crdb-bazel-artifacts/linux/kubetest2"],
     )
 
 ## Fetch kubetest2-kind binary used during e2e tests
 def install_kubetest2_kind():
-    # install kubetest2 binary
+    # install kubetest2-kind binary
     # TODO osx support
-    #http_file(
-    #    name = "kubetest2_darwin",
-    #    executable = 1,
-    #    sha256 = "11b8a7fda7c9d6230f0f28ffe57831a7227c0655dfb8d38e838e8f03db6612de",
-    #    urls = ["https://github.com/kubernetes-sigs/kind/releases/download/v0.7.0/kind-darwin-amd64"],
-    #)
+    http_file(
+       name = "kubetest2_kind_darwin",
+       executable = 1,
+       sha256 = "d89aa58feaaafcec82f9b5ffb92954dce157d8eb6dea6015fd3da85449840d7c",
+       urls = ["https://storage.googleapis.com/crdb-bazel-artifacts/macos/kubetest2-kind"],
+    )
 
     http_file(
         name = "kubetest2_kind_linux",
         executable = 1,
-        sha256 = "b8d570ce69155beb9f882489b096583676f69afb4cd2a5061106264b45b5d113",
-        urls = ["https://storage.googleapis.com/crdb-bazel-artifacts/kubetest2-kind"],
+        sha256 = "e1b7ce0eec0c3db97b4fce3659e25f6190188c9c53f81ae3d090da47265a7599",
+        urls = ["https://storage.googleapis.com/crdb-bazel-artifacts/linux/kubetest2-kind"],
     )
 
 
