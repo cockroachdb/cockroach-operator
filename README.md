@@ -104,12 +104,12 @@ spec:
         - ReadWriteOnce
         resources:
           requests:
-            # cpu: "4"
-            # memory: "16Gi"
+          #   cpu: "4"
+          #   memory: "16Gi"
+            storage: 60Gi
           # limits:
           #   cpu: "4"
           #   memory: "16Gi"
-          storage: 60Gi
         volumeMode: Filesystem
   tlsEnabled: true
   # nodeTLSSecret: cockroachdb.node
@@ -248,6 +248,12 @@ kubectl apply -f example.yaml
 
 ## Stop the cluster
 
+Remove the Operator:
+
+```
+./hack/delete-operator.sh -c <cluster-name>
+```
+
 Delete the GKE cluster:
 
 ```
@@ -255,15 +261,3 @@ Delete the GKE cluster:
 ```
 
 Note that this script will trigger but will not wait for cluster deletion to complete.
-
-Remove the Operator:
-
-```
-./hack/delete-operator.sh -c <cluster-name>
-```
-
-Clean up any resources associated with the `cockroachdb` label:
-
-```
-kubectl delete pods,statefulsets,services,persistentvolumeclaims,persistentvolumes,poddisruptionbudget,jobs,rolebinding,clusterrolebinding,role,clusterrole,serviceaccount -l app=cockroachdb
-```
