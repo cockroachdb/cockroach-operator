@@ -18,5 +18,5 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 images:
 - name: cockroach-operator
-  newName: us.gcr.io/crdb-testing-282716/cockroach-operator
-  newTag: 80d985b
+  newName: quay.io/alinalion/cockroach-operator
+  newTag: v1.0.0-alpha.3

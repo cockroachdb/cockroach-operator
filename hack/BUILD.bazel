@@ -169,6 +169,14 @@ sh_test(
     ],
 )
 
+sh_binary(
+    name = "update-csv",
+    srcs = ["update-csv.sh"],
+    data = [
+        "@//:all-srcs",
+    ],
+)
+
 filegroup(
     name = "package-srcs",
     srcs = glob(["**"]),

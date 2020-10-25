@@ -21,7 +21,19 @@
 
 DOCKER_REGISTRY?=us.gcr.io/chris-love-operator-playground
 DOCKER_IMAGE_REPOSITORY?=cockroach-operator
-APP_VERSION?=v1.0.0-alpha.2
+VERSION ?= 0.0.1
+# Default bundle image tag
+BUNDLE_IMG ?= cockroach-operator-bundle:$(VERSION)
+APP_VERSION?=v1.0.0-alpha.3
+
+# Options for 'bundle-build'
+ifneq ($(origin CHANNELS), undefined)
+BUNDLE_CHANNELS := --channels=$(CHANNELS)
+endif
+ifneq ($(origin DEFAULT_CHANNEL), undefined)
+BUNDLE_DEFAULT_CHANNEL := --default-channel=$(DEFAULT_CHANNEL)
+endif
+BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
 # 
 # Testing targets
@@ -112,6 +124,64 @@ dev/syncdeps:
 	bazel run //hack:update-deps \
 	bazel run //hack:update-bazel \
 	bazel run //:gazelle -- update-repos -from_file=go.mod
+
+kustomize:
+ifeq (, $(shell which kustomize))
+	@{ \
+	set -e ;\
+	KUSTOMIZE_GEN_TMP_DIR=$$(mktemp -d) ;\
+	cd $$KUSTOMIZE_GEN_TMP_DIR ;\
+	go mod init tmp ;\
+	go get sigs.k8s.io/kustomize/kustomize/v3@v3.5.4 ;\
+	rm -rf $$KUSTOMIZE_GEN_TMP_DIR ;\
+	}
+KUSTOMIZE=$(GOBIN)/kustomize
+else
+KUSTOMIZE=$(shell which kustomize)
+endif
+# Current Operator version
+VERSION ?= 0.0.10
+# Default bundle image tag
+BUNDLE_IMG ?= cockroach-operator:$(VERSION)
+# IMG="us.gcr.io/chris-love-operator-playground/cockroach-operator:v1.0.0-alpha.1"
+IMG="quay.io/alinalion/cockroach-operator:v1.0.0-alpha.3"
+# Generate bundle manifests and metadata, then validate generated files.
+.PHONY: bundle
+bundle: dev/generate
+	operator-sdk generate kustomize manifests -q
+	cd manifests && $(KUSTOMIZE) edit set image cockroach-operator=$(IMG)
+	$(KUSTOMIZE) build config/manifests | operator-sdk generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
+	operator-sdk bundle validate ./bundle
+
+# Build the bundle image.
+.PHONY: bundle-build
+bundle-build:
+	docker build -f bundle.Dockerfile -t quay.io/alinalion/$(BUNDLE_IMG) .
+	docker push quay.io/alinalion/$(BUNDLE_IMG)
+
+# Generate package manifests.
+# Options for "packagemanifests".
+ifneq ($(origin FROM_VERSION), undefined)
+PKG_FROM_VERSION := --from-version=$(FROM_VERSION)
+endif
+ifneq ($(origin CHANNEL), undefined)
+PKG_CHANNELS := --channel=$(CHANNEL)
+endif
+ifeq ($(IS_CHANNEL_DEFAULT), 1)
+PKG_IS_DEFAULT_CHANNEL := --default-channel
+endif
+PKG_MAN_OPTS ?= $(FROM_VERSION) $(PKG_CHANNELS) $(PKG_IS_DEFAULT_CHANNEL)
+
+# Build packagemanifests.
+.PHONY: packagemanifests
+packagemanifests: dev/generate
+	operator-sdk generate kustomize manifests -q
+	cd manifests && $(KUSTOMIZE) edit set image cockroach-operator=$(IMG)
+	$(KUSTOMIZE) build config/manifests | operator-sdk generate packagemanifests -q --version $(VERSION) $(PKG_MAN_OPTS)
+# Build the bundle image.
+.PHONY: gen-csv
+gen-csv:
+	bazel run  //hack:update-csv  $(VERSION) $(BUNDLE_METADATA_OPTS)
 
 
 		

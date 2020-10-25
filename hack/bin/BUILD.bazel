@@ -98,6 +98,7 @@ genrule(
     cmd = "cp $(SRCS) $@",
     visibility = ["//visibility:public"],
 )
+
 # fetch_kubetest2 rules to fetch the binary for kubetest2 used on e2e tests that are saved on a google cloud bucket
 genrule(
     name = "fetch_kubetest2",
@@ -109,7 +110,8 @@ genrule(
     cmd = "cp $(SRCS) $@",
     visibility = ["//visibility:public"],
 )
-# fetch_kubetest2_kind rules to fetch the binary for kubetest2_kind used on e2e tests that are saved on a google cloud bucket 
+
+# fetch_kubetest2_kind rules to fetch the binary for kubetest2_kind used on e2e tests that are saved on a google cloud bucket
 genrule(
     name = "fetch_kubetest2_kind",
     srcs = select({
@@ -128,6 +130,29 @@ genrule(
     cmd = "cp $(SRCS) $@",
     visibility = ["//visibility:public"],
 )
+
+#  fetch_operator-sdk rules to fetch the kind binary from github
+genrule(
+    name = "fetch_operator-sdk",
+    srcs = select({
+        ":darwin": ["@operator_sdk_darwin//file"],
+        ":k8": ["@operator_sdk_linux//file"],
+    }),
+    outs = ["operator-sdk"],
+    cmd = "cp $(SRCS) $@",
+    visibility = ["//visibility:public"],
+)
+# #  fetch_opm rules to fetch the kind binary from github
+# genrule(
+#     name = "fetch_opm",
+#     srcs = select({
+#         ":darwin": ["@opm_darwin//file"],
+#         ":k8": ["@opm_linux//file"],
+#     }),
+#     outs = ["opm"],
+#     cmd = "cp $(SRCS) $@",
+#     visibility = ["//visibility:public"],
+# )
 
 config_setting(
     name = "k8",

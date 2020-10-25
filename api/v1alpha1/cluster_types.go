@@ -18,25 +18,35 @@ package v1alpha1
 
 import (
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 // Important: Run "make" to regenerate code after modifying this file
 
-// CrdblusterSpec defines the desired state of a CockroachDB Cluster
+// CrdbClusterSpec defines the desired state of a CockroachDB Cluster
 // that the operator maintains.
+// +k8s:openapi-gen=true
+// +operator-sdk:csv:customresourcedefinitions:displayName="CoachroachDB Operator",resources={{StatefulSet,v1,cockroach-operator},{Service,v1,cockroach-operator}}
 type CrdbClusterSpec struct {
-	// Important: Run "make" to regenerate code after modifying this file
 	// (Required) Number of nodes (pods) in the cluster
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Number of nodes",xDescriptors="urn:alm:descriptor:com.tectonic.ui:podCount"
+	// +required
 	Nodes int32 `json:"nodes"`
 	// (Required) Container image information
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Pod Image"
+	// +optional
 	Image PodImage `json:"image"`
 	// (Optional) The database port (`--port` CLI parameter when starting the service)
 	// Default: 26257
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="GRPC Port that defaults to 26257", xDescriptors="urn:alm:descriptor:com.tectonic.ui:number"
+	// +optional
 	GRPCPort *int32 `json:"grpcPort,omitempty"`
 	// (Optional)  The web UI port (`--http-port` CLI parameter when starting the service)
 	// Default: 8080
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="HTTP Port that defaults to 8080",xDescriptors="urn:alm:descriptor:com.tectonic.ui:number"
+	// +optional
 	HTTPPort *int32 `json:"httpPort,omitempty"`
 	// (Optional) Whenever to start the cluster in secure or insecure mode. The secure mode
 	// uses certificates from the secrets `NodeTLSSecret` and `ClientTLSSecret`.
@@ -44,36 +54,55 @@ type CrdbClusterSpec struct {
 	// signs them using the cluster Certificate Authority. Such setup is not recommended
 	// for production usage
 	// Default: false
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="TLS Enabled",xDescriptors="urn:alm:descriptor:com.tectonic.ui:booleanSwitch"
+	// +optional
 	TLSEnabled bool `json:"tlsEnabled,omitempty"`
 	// (Optional) The secret with certificates and a private key for the TLS endpoint
 	// on the database port. The standard naming of files is expected (tls.key, tls.crt, ca.crt)
 	// Default: ""
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Node TLS Secret Name",xDescriptors="urn:alm:descriptor:io.kubernetes:Secret"
+	// +optional
 	NodeTLSSecret string `json:"nodeTLSSecret,omitempty"`
 	// (Optional) The secret with a certificate and a private key for root database user
 	// Default: ""
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Client TLS Secret Name",xDescriptors="urn:alm:descriptor:io.kubernetes:Secret"
+	// +optional
 	ClientTLSSecret string `json:"clientTLSSecret,omitempty"`
-	// TODO document on how you need to set the max or the min
 	// The maximum number of pods that can be unavailable during a rolling update.
 	// This number is set in the PodDistruptionBudget and defaults to 1.
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="PDB Max Unavailable Nodes",xDescriptors="urn:alm:descriptor:com.tectonic.ui:number"
+	// +optional
 	MaxUnavailable *int32 `json:"maxUnavailable,omitempty"`
 	// The min number of pods that can be unavailable during a rolling update.
 	// This number is set in the PodDistruptionBudget and defaults to 1.
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="PDB Min Available Nodes",xDescriptors="urn:alm:descriptor:com.tectonic.ui:number"
+	// +optional
 	MinAvailable *int32 `json:"minUnavailable,omitempty"`
 	// (Optional) The total size for caches (`--cache` command line parameter)
 	// Default: "25%"
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Cache Size",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
+	// +optional
 	Cache string `json:"cache,omitempty"`
 	// (Optional) The maximum in-memory storage capacity available to store temporary
 	// data for SQL queries (`--max-sql-memory` parameter)
 	// Default: "25%"
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Max SQL Memory",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
+	// +optional
 	MaxSQLMemory string `json:"maxSQLMemory,omitempty"`
 	// (Optional) Additional command line arguments for the `cockroach` binary
 	// Default: ""
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="List of additional arguments"
+	// +optional
 	AdditionalArgs []string `json:"additionalArgs,omitempty"`
 	// (Optional) Database container resource limits. Any container limits
 	// can be specified.
 	// Default: (not specified)
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Pod Resource Requirements"
+	// +optional
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 	// (Required) Database disk storage configuration
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Storage Volume Configuration"
+	// +required
 	DataStore Volume `json:"dataStore,omitempty"`
 }
 
@@ -83,9 +112,25 @@ type CrdbClusterStatus struct {
 
 	// List of conditions representing the current status of the cluster resource.
 	// Currently, only `NotInitialized` is used
+	// +operator-sdk:csv:customresourcedefinitions:type=status, displayName="Cluster Conditions",xDescriptors="urn:alm:descriptor:io.kubernetes.conditions"
 	Conditions []ClusterCondition `json:"conditions,omitempty"`
 	// Database service version. Not populated and is just a placeholder currently.
+	// +operator-sdk:csv:customresourcedefinitions:type=status, displayName="Database service version"
 	Version string `json:"version,omitempty"`
+}
+
+// ClusterCondition represents cluster status as it is perceived by
+// the operator
+type ClusterCondition struct {
+	// +required
+	// Type/Name of the condition
+	Type ClusterConditionType `json:"type"`
+	// +required
+	// Condition status: True, False or Unknown
+	Status metav1.ConditionStatus `json:"status"`
+	// +required
+	// The time when the condition was updated
+	LastTransitionTime metav1.Time `json:"lastTransitionTime"`
 }
 
 // +genclient
@@ -93,7 +138,6 @@ type CrdbClusterStatus struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:categories=all;cockroachdb
 // +kubebuilder:subresource:status
-
 // CrdbCluster is the Schema for the clusters API
 type CrdbCluster struct {
 	metav1.TypeMeta   `json:",inline"`
@@ -101,6 +145,61 @@ type CrdbCluster struct {
 
 	Spec   CrdbClusterSpec   `json:"spec,omitempty"`
 	Status CrdbClusterStatus `json:"status,omitempty"`
+}
+
+// PodImage represents the image information for a container that is used
+// to build the StatefulSet.
+// +kubebuilder:object:generate=true
+// +k8s:openapi-gen=true
+type PodImage struct {
+	// (Optional) Container image with supported CockroachDB version.
+	// This defaults to the version pinned to the operator and requires a full container and tag/sha name.
+	// For instance: cockroachdb/cockroachdb:v20.1
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Container Name",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
+	// +required
+	Name string `json:"name,omitempty"`
+	// PullPolicy for the image, which defaults to IfNotPresent.
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="PullPolicy Type",xDescriptors="urn:alm:descriptor:com.tectonic.ui:imagePullPolicy"
+	// +required
+	PullPolicyName *v1.PullPolicy `json:"pullPolicy,omitempty"`
+	// Secret name containing the dockerconfig to use for a
+	// registry that requires authentication. The secret
+	// must be configured first by the user.
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Pull Secret Name",xDescriptors="urn:alm:descriptor:io.kubernetes:Secret"
+	// +optional
+	PullSecret *string `json:"pullSecret,omitempty"`
+}
+
+// Volume defined storage configuration for the container with the Database.
+// Only one of the fields should set
+// +k8s:openapi-gen=true
+// +kubebuilder:object:generate=true
+type Volume struct {
+	// Directory from the host node's filesystem
+	// +optional
+	HostPath *corev1.HostPathVolumeSource `json:"hostPath,omitempty"`
+	// Temporary folder on the host node's filesystem
+	// +optional
+	EmptyDir *corev1.EmptyDirVolumeSource `json:"emptyDir,omitempty"`
+	// Persistent volume to use
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Volume Claim"
+	// +optional
+	VolumeClaim *VolumeClaim `json:"pvc,omitempty"`
+}
+
+// VolumeClaim wraps a persistent volume claim (PVC) to use with the container.
+// Only one of the fields should set
+// +kubebuilder:object:generate=true
+// +k8s:openapi-gen=true
+type VolumeClaim struct {
+	// PVC to request a new persistent volume
+	// +operator-sdk:csv:customresourcedefinitions:type=spec, displayName="Persistent Volume Claim Spec"
+	// +required
+	PersistentVolumeClaimSpec corev1.PersistentVolumeClaimSpec `json:"spec,omitempty"`
+	// Existing PVC in the same namespace
+	// +operator-sdk:csv:customresourcedefinitions:type=spec, displayName="Persistent Volume Claim Source"
+	// +required
+	PersistentVolumeSource corev1.PersistentVolumeClaimVolumeSource `json:"source,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

@@ -11,152 +11,216 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: cockroach-operator-role
+rules:
+  - apiGroups:
+      - "*"
+    resources:
+      - "*"
+    verbs:
+      - "*"
+---
 # RBAC Definition (ClutserRole, ServiceAccount, and ClusterRoleBinding):
-
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: cockroach-operator-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: cockroach-operator-role
+subjects:
+  - kind: ServiceAccount
+    name: cockroach-operator-sa
+    namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: cockroach-operator-role-default
+rules:
+  - apiGroups:
+      - security.openshift.io
+    resources:
+      - securitycontextconstraints
+    resourceNames:
+      - anyuid
+    verbs:
+      - use
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: cockroach-operator-role-default-binding
+  labels:
+    app: cockroach-operator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cockroach-operator-role-default
+subjects:
+  - name: cockroach-operator-sa-default
+    namespace: default
+    kind: ServiceAccount
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cockroach-operator-sa-default
+  namespace: default
+  annotations:
+  labels:
+    app: cockroach-operator
+---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   creationTimestamp: null
   name: cockroach-operator-role
 rules:
-- apiGroups:
-  - apps
-  resources:
-  - statefulsets
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - apps
-  resources:
-  - statefulsets/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - certificates.k8s.io
-  resources:
-  - certificatesigningrequests
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - watch
-- apiGroups:
-  - certificates.k8s.io
-  resources:
-  - certificatesigningrequests/approval
-  verbs:
-  - update
-- apiGroups:
-  - certificates.k8s.io
-  resources:
-  - certificatesigningrequests/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - ""
-  resources:
-  - configmaps
-  verbs:
-  - get
-- apiGroups:
-  - ""
-  resources:
-  - configmaps/status
-  verbs:
-  - get
-- apiGroups:
-  - ""
-  resources:
-  - pods/exec
-  verbs:
-  - create
-- apiGroups:
-  - ""
-  resources:
-  - secrets
-  verbs:
-  - create
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - services
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - services/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - crdb.cockroachlabs.com
-  resources:
-  - crdbclusters
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - policy
-  resources:
-  - poddisruptionbudgets
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - crdb.cockroachlabs.com
-  resources:
-  - crdbclusters/status
-  verbs:
-  - get
-  - patch
-  - update
-
+  - apiGroups:
+      - "*"
+    resources:
+      - "*"
+    verbs:
+      - "*"
+  - apiGroups:
+      - rbac.authorization.k8s.io
+    resources:
+      - clusterroles
+    verbs:
+      - get
+      - list
+      - delete
+  - apiGroups:
+      - apps
+    resources:
+      - statefulsets
+    verbs:
+      - "*"
+  - apiGroups:
+      - apps
+    resources:
+      - statefulsets/finalizers
+    verbs:
+      - "*"
+  - apiGroups:
+      - apps
+    resources:
+      - statefulsets/status
+    verbs:
+      - "*"
+  - apiGroups:
+      - certificates.k8s.io
+    resources:
+      - certificatesigningrequests
+    verbs:
+      - "*"
+  - apiGroups:
+      - certificates.k8s.io
+    resources:
+      - certificatesigningrequests/approval
+    verbs:
+      - "*"
+  - apiGroups:
+      - certificates.k8s.io
+    resources:
+      - certificatesigningrequests/status
+    verbs:
+      - "*"
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+    verbs:
+      - "*"
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps/status
+    verbs:
+      - "*"
+  - apiGroups:
+      - ""
+    resources:
+      - pods/exec
+    verbs:
+      - "*"
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    verbs:
+      - "*"
+  - apiGroups:
+      - ""
+    resources:
+      - services
+    verbs:
+      - "*"
+  - apiGroups:
+      - ""
+    resources:
+      - services/finalizers
+    verbs:
+      - "*"
+  - apiGroups:
+      - ""
+    resources:
+      - services/status
+    verbs:
+      - "*"
+  - apiGroups:
+      - crdb.cockroachlabs.com
+    resources:
+      - crdbclusters
+    verbs:
+      - "*"
+  - apiGroups:
+      - crdb.cockroachlabs.com
+    resources:
+      - crdbclusters/status
+    verbs:
+      - "*"
+  - apiGroups:
+      - policy
+    resources:
+      - poddisruptionbudgets
+    verbs:
+      - "*"
+  - apiGroups:
+      - policy
+    resources:
+      - poddisruptionbudgets/finalizers
+    verbs:
+      - "*"
+  - apiGroups:
+      - policy
+    resources:
+      - poddisruptionbudgets/status
+    verbs:
+      - "*"
+  - verbs:
+      - use
+    apiGroups:
+      - security.openshift.io
+    resources:
+      - securitycontextconstraints
+    resourceNames:
+      - anyuid
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: cockroach-operator-default
+  name: cockroach-operator-sa
   namespace: default
   annotations:
   labels:
     app: cockroach-operator
-
 ---
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRoleBinding
@@ -169,7 +233,7 @@ roleRef:
   kind: ClusterRole
   name: cockroach-operator-role
 subjects:
-  - name: cockroach-operator-default
+  - name: cockroach-operator-sa
     namespace: default
     kind: ServiceAccount
 
@@ -191,27 +255,26 @@ spec:
     metadata:
       labels:
         app: cockroach-operator
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: cockroach-operator
-  template:
-    metadata:
-      labels:
-        app: cockroach-operator
     spec:
-      serviceAccountName: cockroach-operator-default
+      serviceAccountName: cockroach-operator-sa
       containers:
         - name: cockroach-operator
-          #image: "cockroach-operator:placeholder"
-          image: "us.gcr.io/chris-love-operator-playground/cockroach-operator:v1.0.0-alpha.1"
+          image: cockroach-operator
+          # image: "us.gcr.io/chris-love-operator-playground/cockroach-operator:v1.0.0-alpha.1"
           imagePullPolicy: IfNotPresent
           env:
-          - name: WATCH_NAMESPACE
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.namespace
+            - name: WATCH_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: OPERATOR_NAME
+              value: cockroachdb
+            - name: RELATED_IMAGE_COCKROACH
+              value: "registry.connect.redhat.com/cockroachdb/cockroach:v20.1.5"
           resources:
             requests:
               cpu: 10m

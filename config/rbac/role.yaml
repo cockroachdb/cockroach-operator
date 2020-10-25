@@ -17,7 +17,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   creationTimestamp: null
-  name: manager-role
+  name: cockroach-operator-role
 rules:
 - apiGroups:
   - apps
@@ -30,6 +30,14 @@ rules:
   - list
   - patch
   - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets/finalizers
+  verbs:
+  - get
+  - list
   - watch
 - apiGroups:
   - apps
@@ -108,6 +116,14 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - services/finalizers
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
   - services/status
   verbs:
   - get
@@ -144,6 +160,14 @@ rules:
   - list
   - patch
   - update
+  - watch
+- apiGroups:
+  - policy
+  resources:
+  - poddisruptionbudgets/finalizers
+  verbs:
+  - get
+  - list
   - watch
 - apiGroups:
   - policy
