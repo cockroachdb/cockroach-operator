@@ -35,5 +35,5 @@ spec:
   # nodeTLSSecret: cockroachdb.node
   # clientTLSSecret: cockroachdb.client.root
   image:
-    name: cockroachdb/cockroach:v20.1.4
+    name: cockroachdb/cockroach:v20.1.6
   nodes: 3
