@@ -103,3 +103,27 @@ kubectl delete pv,pvc --help
 1. Check that the operator has deployed properly
 
 The examples directory contains various examples, for example you can run `kubectl apply -f examples/example.yaml`.  
+
+## Accessing Admin UI
+
+First you need to create a new Kubernetes Custom Resource, in this example we will use the example/example.yaml file.
+
+```bash
+kubectl create -f example/example.yaml
+```
+
+When the database is up and running run the following command to get the first pod that is creasted.
+
+```bash
+kubectl get po -l app.kubernetes.io/instance=crdb-example --no-headers=true | head -n 1 | awk '{ print $1 }'
+```
+
+The command-line above uses "crdb-example" as it is the instance name in example.yaml file.  If you name your database differently then use the appropriate name.  The command in the above example will output the name `crdb-example-0`, and use that name in the next command.
+
+```bash
+kubectl port-forward crdb-example-0 8080
+```
+
+Then point your browser to http://localhost:8080 and you will load the admin UI.
+
+NOTE: If you are installing the database in a namespace other than default, please add the `-n` flag appropriately.
