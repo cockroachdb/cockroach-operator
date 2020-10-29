@@ -21,7 +21,7 @@
 
 DOCKER_REGISTRY?=us.gcr.io/chris-love-operator-playground
 DOCKER_IMAGE_REPOSITORY?=cockroach-operator
-APP_VERSION?=v1.0.0-alpha.1
+APP_VERSION?=v1.0.0-alpha.2
 
 # 
 # Testing targets
