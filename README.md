@@ -16,30 +16,22 @@ The CockroachDB Kubernetes Operator deploys CockroachDB on a Kubernetes cluster.
 
 ## Prerequisites
 
-- Kubernetes 1.8 or higher
+- Kubernetes 1.15 or higher (1.18 is recommended)
 - [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
 - A GKE cluster
 
 ## Install the Operator
 
-Locate the latest release tag [here](https://github.com/cockroachdb/cockroach-operator/tags).
-
-Clone the release tag:
-
-```
-git clone --depth 1 --branch <tag_name> https://github.com/cockroachdb/cockroach-operator
-```
-
 Apply the CustomResourceDefinition (CRD) for the Operator:
 
 ```
-kubectl apply -f config/crd/bases/crdb.cockroachlabs.com_crdbclusters.yaml
+kubectl apply -f https://raw.githubusercontent.com/cockroachdb/cockroach-operator/master/config/crd/bases/crdb.cockroachlabs.com_crdbclusters.yaml
 ```
 
 Apply the Operator manifest:
 
 ```
-kubectl apply -f manifests/operator.yaml
+kubectl apply -f https://raw.githubusercontent.com/cockroachdb/cockroach-operator/master/manifests/operator.yaml
 ```
 
 Validate that the Operator is running:
@@ -70,38 +62,24 @@ spec:
         - ReadWriteOnce
         resources:
           requests:
-          #   cpu: "4"
-          #   memory: "16Gi"
-            storage: 60Gi
-          # limits:
-          #   cpu: "4"
-          #   memory: "16Gi"
+            storage: "60Gi"
         volumeMode: Filesystem
+  resources:
+    requests:
+      cpu: "4"
+      memory: "16Gi"
+    limits:
+      cpu: "4"
+      memory: "16Gi"
   tlsEnabled: true
-  # nodeTLSSecret: cockroachdb.node
-  # clientTLSSecret: cockroachdb.client.root
   image:
-    name: cockroachdb/cockroach:v20.1.4
+    name: cockroachdb/cockroach:v20.1.6
   nodes: 3
 ```
 
 ### Certificate signing
 
 By default, the Operator uses the built-in Kubernetes CA to generate and approve 1 client and 1 node certificate for the cluster.
-
-<!-- If you wish to use a non-Kubernetes CA, additionally enable the following lines in `example.yaml` and fill in the names of the corresponding node and client secrets:
-
-```
-nodeTLSSecret: <node-secret>
-clientTLSSecret: <client-secret>
-```
-
-For example, if you are using [`cockroach cert`](https://www.cockroachlabs.com/docs/stable/cockroach-cert.html) to generate certificates, use these secret names:
-
-```
-nodeTLSSecret: cockroachdb.node
-clientTLSSecret: cockroachdb.client.root
-``` -->
 
 ### Set resource requests and limits
 
@@ -120,7 +98,7 @@ resources:
     memory: "16Gi"
 ```
 
-### Apply the StatefulSet configuration
+### Apply the custom resource
 
 Apply `example.yaml`:
 
@@ -176,7 +154,7 @@ Access the Admin UI at `https://localhost:8080`. Note that [certain Admin UI pag
 GRANT admin TO roach;
 ```
 
-### Scale the cluster
+### Scale the CockroachDB cluster
 
 To scale the cluster up and down, edit `nodes` in `example.yaml`:
 
@@ -194,7 +172,7 @@ Apply the new configuration:
 kubectl apply -f example.yaml
 ```
 
-### Upgrade the cluster
+### Upgrade the CockroachDB cluster
 
 Perform a rolling upgrade by changing the image name in `example.yaml`:
 
@@ -209,7 +187,7 @@ Apply the new configuration:
 kubectl apply -f example.yaml
 ```
 
-## Stop the cluster
+## Stop the CockroachDB cluster
 
 Delete the StatefulSet:
 
@@ -217,8 +195,14 @@ Delete the StatefulSet:
 kubectl delete -f example.yaml
 ```
 
+Delete the persistent volumes and persistent volume claims:
+
+```
+kubectl delete pv,pvc --all
+```
+
 Remove the Operator:
 
 ```
-kubectl delete -f cockroach-operator/manifests/operator.yaml
+kubectl delete -f https://raw.githubusercontent.com/cockroachdb/cockroach-operator/master/manifests/operator.yaml
 ```

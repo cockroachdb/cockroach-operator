@@ -24,16 +24,16 @@ spec:
         - ReadWriteOnce
         resources:
           requests:
-          #   cpu: "4"
-          #   memory: "16Gi"
-            storage: 60Gi
-          # limits:
-          #   cpu: "4"
-          #   memory: "16Gi"
+            storage: "60Gi"
         volumeMode: Filesystem
+  resources:
+    requests:
+      cpu: "4"
+      memory: "16Gi"
+    limits:
+      cpu: "4"
+      memory: "16Gi"
   tlsEnabled: true
-  # nodeTLSSecret: cockroachdb.node
-  # clientTLSSecret: cockroachdb.client.root
   image:
     name: cockroachdb/cockroach:v20.1.6
   nodes: 3
