@@ -15,7 +15,7 @@
 apiVersion: crdb.cockroachlabs.com/v1alpha1
 kind: CrdbCluster
 metadata:
-  name: crdb-example
+  name: cockroachdb
 spec:
   dataStore:
     pvc:
@@ -24,8 +24,15 @@ spec:
         - ReadWriteOnce
         resources:
           requests:
-            storage: 60Gi
+            storage: "60Gi"
         volumeMode: Filesystem
+  resources:
+    requests:
+      cpu: "4"
+      memory: "16Gi"
+    limits:
+      cpu: "4"
+      memory: "16Gi"
   tlsEnabled: true
   image:
     name: cockroachdb/cockroach:v20.1.6
