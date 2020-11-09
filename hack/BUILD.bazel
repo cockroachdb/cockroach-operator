@@ -16,6 +16,12 @@ GOFMT = "@go_sdk//:bin/gofmt"
 
 JQ = "//hack/bin:jq"
 
+OPERATORSDK = "//hack/bin:operator-sdk"
+
+KUSTOMIZE = "//hack/bin:kustomize"
+
+OPM = "//hack/bin:opm"
+
 CONTROLLER_GEN = "@io_k8s_sigs_controller_tools//cmd/controller-gen"
 
 sh_binary(
@@ -172,7 +178,15 @@ sh_test(
 sh_binary(
     name = "update-csv",
     srcs = ["update-csv.sh"],
+    args = [
+        "$(location %s)" % OPERATORSDK,
+        "$(location %s)" % KUSTOMIZE,
+        "$(location %s)" % OPM,
+    ],
     data = [
+        OPERATORSDK,
+        KUSTOMIZE,
+        OPM,
         "@//:all-srcs",
     ],
 )

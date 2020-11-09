@@ -31,17 +31,24 @@ else
   exit 0
 fi
 
-
 # This script should be run via `bazel run //hack:gen-csv`
 REPO_ROOT=${BUILD_WORKSPACE_DIRECTORY}
 cd "${REPO_ROOT}"
+echo ${REPO_ROOT}
 
 echo "+++ Running operator-sdk"
-operatorsdk=$(realpath "$1")
-VERSION="$1"
+
 # BUNDLE_METADATA_OPTS="$2"
-echo VERSION
-# echo BUNDLE_METADATA_OPTS
+VERSION="$4"
+echo $VERSION
+IMG="$5"
+echo $IMG
+BUNDLE_METADATA_OPTS=""
+echo $BUNDLE_METADATA_OPTS
 operator-sdk generate kustomize manifests -q 
+cd manifests && kustomize edit set image cockroach-operator=${IMG} && cd ..
+kustomize build config/manifests | operator-sdk generate bundle -q --overwrite --version ${VERSION} ${BUNDLE_METADATA_OPTS}
+operator-sdk bundle validate ./bundle
+
 
 

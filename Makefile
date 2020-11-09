@@ -21,10 +21,11 @@
 
 DOCKER_REGISTRY?=us.gcr.io/chris-love-operator-playground
 DOCKER_IMAGE_REPOSITORY?=cockroach-operator
-VERSION ?= 0.0.1
+VERSION ?= 0.0.10
 # Default bundle image tag
-BUNDLE_IMG ?= cockroach-operator-bundle:$(VERSION)
 APP_VERSION?=v1.0.0-alpha.3
+DEFAULT_CHANNEL=alpha
+CHANNELS=alpha
 
 # Options for 'bundle-build'
 ifneq ($(origin CHANNELS), undefined)
@@ -140,9 +141,10 @@ else
 KUSTOMIZE=$(shell which kustomize)
 endif
 # Current Operator version
-VERSION ?= 0.0.10
+
+BUNDLE_IMG ?= cockroach-operator-bundle:$(VERSION)
 # Default bundle image tag
-BUNDLE_IMG ?= cockroach-operator:$(VERSION)
+# BUNDLE_IMG ?= cockroach-operator:$(VERSION)
 # IMG="us.gcr.io/chris-love-operator-playground/cockroach-operator:v1.0.0-alpha.1"
 IMG="quay.io/alinalion/cockroach-operator:v1.0.0-alpha.3"
 # Generate bundle manifests and metadata, then validate generated files.
@@ -181,7 +183,7 @@ packagemanifests: dev/generate
 # Build the bundle image.
 .PHONY: gen-csv
 gen-csv:
-	bazel run  //hack:update-csv  $(VERSION) $(BUNDLE_METADATA_OPTS)
+	bazel run  //hack:update-csv  -- $(VERSION) $(IMG) $(BUNDLE_METADATA_OPTS)
 
 
 		

@@ -6,4 +6,4 @@ metadata:
 spec:
   sourceType: grpc
   displayName: Cockroach Test Demo
-  image: quay.io/alinalion/cockroach-operator:my-index
+  image: quay.io/alinalion/cockroach-operator-bundle:my-index
