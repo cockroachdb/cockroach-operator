@@ -182,8 +182,8 @@ packagemanifests: dev/generate
 	$(KUSTOMIZE) build config/manifests | operator-sdk generate packagemanifests -q --version $(VERSION) $(PKG_MAN_OPTS)
 # Build the bundle image.
 .PHONY: gen-csv
-gen-csv:
+gen-csv: dev/generate
 	bazel run  //hack:update-csv  -- $(VERSION) $(IMG) $(BUNDLE_METADATA_OPTS)
-
-
 		
+
+
