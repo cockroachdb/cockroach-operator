@@ -98,6 +98,7 @@ genrule(
     cmd = "cp $(SRCS) $@",
     visibility = ["//visibility:public"],
 )
+
 # fetch_kubetest2 rules to fetch the binary for kubetest2 used on e2e tests that are saved on a google cloud bucket
 genrule(
     name = "fetch_kubetest2",
@@ -109,7 +110,8 @@ genrule(
     cmd = "cp $(SRCS) $@",
     visibility = ["//visibility:public"],
 )
-# fetch_kubetest2_kind rules to fetch the binary for kubetest2_kind used on e2e tests that are saved on a google cloud bucket 
+
+# fetch_kubetest2_kind rules to fetch the binary for kubetest2_kind used on e2e tests that are saved on a google cloud bucket
 genrule(
     name = "fetch_kubetest2_kind",
     srcs = select({

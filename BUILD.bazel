@@ -65,6 +65,7 @@ filegroup(
         "//pkg/labels:all-srcs",
         "//pkg/ptr:all-srcs",
         "//pkg/resource:all-srcs",
+        "//pkg/scale:all-srcs",
         "//pkg/testutil:all-srcs",
         "//pkg/tls:all-srcs",
         "//pkg/update:all-srcs",
