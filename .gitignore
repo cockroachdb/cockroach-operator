@@ -58,3 +58,6 @@ bazel-bin
 bazel-cockroach*
 bazel-out
 bazel-testlogs
+.secrets
+opm
+openshift_automation_draft.txt

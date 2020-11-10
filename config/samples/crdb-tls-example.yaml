@@ -12,11 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-resources:
-- operator.yaml
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-images:
-- name: cockroach-operator
-  newName: quay.io/alinalion/cockroach-operator
-  newTag: v1.0.0-alpha.3
+apiVersion: crdb.cockroachlabs.com/v1alpha1
+kind: CrdbCluster
+metadata:
+  name: crdb-tls-example
+spec:
+  dataStore:
+    pvc:
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 10Gi
+        volumeMode: Filesystem
+  tlsEnabled: true
+  image:
+    name: "cockroachdb/cockroach:v20.1.5"
+    pullPolicy: Always
+  nodes: 3

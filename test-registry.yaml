@@ -11,12 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-resources:
-- operator.yaml
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-images:
-- name: cockroach-operator
-  newName: quay.io/alinalion/cockroach-operator
-  newTag: v1.0.0-alpha.3
+apiVersion: operators.coreos.com/v1alpha1
+kind: CatalogSource
+metadata:
+  name: cockroach-test-alina-demo
+  namespace: openshift-marketplace
+spec:
+  sourceType: grpc
+  displayName: Cockroach Test Demo
+  image: quay.io/alinalion/cockroach-operator-bundle:my-index

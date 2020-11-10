@@ -27,6 +27,9 @@ def install():
     install_kind()
     install_kubetest2()
     install_kubetest2_kind()
+    install_operator_sdk()
+    install_kustomize()
+    install_opm()
 
     # Install golang.org/x/build as kubernetes/repo-infra requires it for the
     # build-tar bazel target.
@@ -271,5 +274,56 @@ def install_kubetest2_kind():
         sha256 = "e1b7ce0eec0c3db97b4fce3659e25f6190188c9c53f81ae3d090da47265a7599",
         urls = ["https://storage.googleapis.com/crdb-bazel-artifacts/linux/kubetest2-kind"],
     )
+
+## Fetch operator-sdk used on generating csv
+def install_operator_sdk():
+    # install kubetest2-kind binary
+    # TODO osx support
+    http_file(
+       name = "operator_sdk_darwin",
+       executable = 1,
+       sha256 = "7e293cd35b99c1949cbb116275bc50d7f3aa0b520fe7e53e57b09e8096e63d4e",
+       urls = ["https://github.com/operator-framework/operator-sdk/releases/download/v1.1.0/operator-sdk-v1.1.0-x86_64-apple-darwin"],
+    )
+
+    http_file(
+        name = "operator_sdk_linux",
+        executable = 1,
+        sha256 = "e0cfd1408ea8849fb32345d7f9954a2751fef7fcf4505f93db8f675d12f137ad",
+        urls = ["https://github.com/operator-framework/operator-sdk/releases/download/v1.1.0/operator-sdk-v1.1.0-x86_64-linux-gnu"],
+    )
+
+     ## Fetch opm used on generating csv
+def install_kustomize():
+    http_file(
+       name = "kustomize_darwin",
+       executable = 1,
+       sha256 = "4b8bd021578f90295dbf1145a2ef66e3e25b4d13a9256923e38ce5f85eba1d7d",
+       urls = ["https://storage.googleapis.com/crdb-bazel-artifacts/macos/kustomize"],
+    )
+
+    http_file(
+        name = "kustomize_linux",
+        executable = 1,
+        sha256 = "e52e8c194b5084301338d8762bf36b81b5254f525b164ba8b010de123110247f",
+        urls = ["https://storage.googleapis.com/crdb-bazel-artifacts/linux/kustomize"],
+    )
+    ## Fetch opm used on generating csv
+def install_opm():
+    http_file(
+       name = "opm_darwin",
+       executable = 1,
+       sha256 = "adbfcdeef14c9a5a8ebfc1e94d57f3c3892c85477873187bfb65ef226d757a9a",
+       urls = ["https://storage.googleapis.com/crdb-bazel-artifacts/macos/opm"],
+    )
+
+    http_file(
+        name = "opm_linux",
+        executable = 1,
+        sha256 = "e3f15fbad17c903c7d69579e934153cb74fbd48ba84e4911d2ecf4e63b9a903d",
+        urls = ["https://storage.googleapis.com/crdb-bazel-artifacts/linux/opm"],
+    )
+
+
 
 
