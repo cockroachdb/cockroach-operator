@@ -57,7 +57,9 @@ bundle/manifests/cockroach-operator-sa_v1_serviceaccount.yaml \
 bundle/manifests/cockroach-operator.clusterserviceversion.yaml \
 bundle/manifests/crdb.cockroachlabs.com_crdbclusters.yaml \
 bundle/metadata/annotations.yaml \
-bundle/tests/scorecard/config.yaml )
+bundle/tests/scorecard/config.yaml \
+config/manifests/bases/cockroach-operator.clusterserviceversion.yaml \
+)
 for YAML in "${FILE_NAMES[@]}"
 do
    :
