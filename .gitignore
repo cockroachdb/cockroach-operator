@@ -61,3 +61,4 @@ bazel-testlogs
 .secrets
 opm
 openshift_automation_draft.txt
+
