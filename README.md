@@ -127,7 +127,7 @@ Each pod should have `READY` status soon after being created.
 Get a shell into one of the pods and start the CockroachDB built-in SQL client:
 
 ```
-kubectl exec -it cockroachdb-2 -- ./cockroach sql --certs-dir=/cockroach-certs
+kubectl exec -it cockroachdb-2 -- ./cockroach sql --certs-dir=/cockroach/cockroach-certs
 ```
 
 If you want to [access the Admin UI](#access-the-admin-ui), create a SQL user with a password while you're here:
