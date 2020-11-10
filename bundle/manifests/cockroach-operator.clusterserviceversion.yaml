@@ -271,5 +271,4 @@ spec:
   provider:
     name: Cockroach Labs
     url: https://www.cockroachlabs.com
-  replaces: cockroach-operator.v0.0.1
   version: 0.0.10
