@@ -17,14 +17,14 @@ limitations under the License.
 package update
 
 import (
-	"context"
+	"errors"
 	"fmt"
 
 	semver "github.com/Masterminds/semver/v3"
-	"github.com/pkg/errors"
-	"go.uber.org/zap"
+	"github.com/go-logr/logr"
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -37,7 +37,9 @@ func makeUpdateCockroachVersionFunction(
 	return func(sts *v1.StatefulSet) (*v1.StatefulSet, error) {
 		for i := range sts.Spec.Template.Spec.Containers {
 			container := &sts.Spec.Template.Spec.Containers[i]
-			if container.Name == "cockroachdb" {
+			// TODO "db" is hardcoded.  Make this a value in statefulset resource
+			// so that we are sharing values here
+			if container.Name == "db" {
 				container.Image = cockroachImage
 				return sts, nil
 			}
@@ -46,39 +48,66 @@ func makeUpdateCockroachVersionFunction(
 	}
 }
 
+// TODO some of these should probably be panics or cancel the update at least
+// If we cannot find the Pod, or if we cannot find the container.
+// We need to return a status and an error instead of just an error.
+
 // makeWaitUntilCRDBPodIsRunningNewVersionFunction takes a cockroachImage and
 // returns a function which takes a Kubernetes clientset, a statefulset, and a
 // pod number within the statefulset. This function checks if the specified
 // pod is running the new cockroachImage version and is in a `ready` state.
 func makeIsCRBPodIsRunningNewVersionFunction(
 	cockroachImage string,
-) func(update *UpdateSts, podNumber int, l *zap.Logger) error {
-	return func(update *UpdateSts, podNumber int, l *zap.Logger) error {
+) func(update *UpdateSts, podNumber int, l logr.Logger) error {
+	return func(update *UpdateSts, podNumber int, l logr.Logger) error {
 		sts := update.sts
 		stsName := sts.Name
 		stsNamespace := sts.Namespace
 		podName := fmt.Sprintf("%s-%d", stsName, podNumber)
 		clientset := update.clientset
-		crdbPod, err := clientset.CoreV1().Pods(stsNamespace).Get(context.TODO(), stsName, metav1.GetOptions{})
-		if err != nil {
-			return errors.Wrapf(err, "error getting cockroach pod")
+
+		crdbPod, err := clientset.CoreV1().Pods(stsNamespace).Get(update.ctx, podName, metav1.GetOptions{})
+		if k8sErrors.IsNotFound(err) { // this is not an error
+			l.Info("cannot find Pod", "podName", podName, "namespace", stsNamespace)
+			return err
+		} else if statusError, isStatus := err.(*k8sErrors.StatusError); isStatus { // this is an error
+			l.Error(statusError, fmt.Sprintf("status error getting pod %v", statusError.ErrStatus.Message))
+			return statusError
+		} else if err != nil { // this is an error
+			l.Error(err, "error getting pod")
+			return err
 		}
+
 		for i := range crdbPod.Spec.Containers {
 			container := &crdbPod.Spec.Containers[i]
-			if container.Name == "cockroachdb" {
+			// TODO this is hard coded and resource statefulset needs to use this
+			if container.Name == "db" {
+
+				// TODO this is not an error but should return a wait status
 				if container.Image != cockroachImage {
+					l.Info("Pod is not updated to current image.")
 					return fmt.Errorf("%s pod is on image %s, expected %s", podName, container.Image, cockroachImage)
 				}
+
+				// TODO this is not an error but should return a wait status
 				// CRDB pod is updated to new Cockroach image. Now check
 				// that the pod is in a ready state before proceeding.
 				if !IsPodReady(crdbPod) {
-					return fmt.Errorf("%s pod not ready yet", podName)
+					l.Info("Pod is not ready yet.", "pod name", crdbPod)
+					return fmt.Errorf("%s pod not ready yet", crdbPod)
 				}
-				l.Sugar().Infof("%s is running new version on %s", podName, stsNamespace)
+
+				l.Info("is running new version on", "podName", podName, "stsName", stsNamespace)
 				return nil
 			}
 		}
-		return fmt.Errorf("cockroachdb container not found within the cockroach pod")
+
+		// TODO how do we even get here??
+		// I am not certain that this code is even used.
+
+		err = fmt.Errorf("cockroachdb container not found within the cockroach pod")
+		l.Error(err, "container not found")
+		return err
 	}
 }
 

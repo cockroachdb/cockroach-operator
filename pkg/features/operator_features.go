@@ -23,23 +23,26 @@ import (
 )
 
 const (
-// Every feature gate should add method here following this template:
-//
-// // owner: @username
-// // alpha: v1.4
-// MyFeature() bool
+	// Every feature gate should add method here following this template:
+	//
+	// // owner: @username
+	// // alpha: v1.4
+	// MyFeature() bool
 
-// owner: @chrislovecnm
-// alpha: v0.1
-// beta: v1.0
-//
+	// owner: @chrislovecnm
+	// alpha: v0.1
+	// beta: v1.0
+	// PartitionedUpdate controls how the statefulset is updated
+	PartitionedUpdate featuregate.Feature = "PartitionedUpdate"
 )
 
 func init() {
-	runtime.Must(utilfeature.DefaultMutableFeatureGate.Add(defaultKubernetesFeatureGates))
+	runtime.Must(utilfeature.DefaultMutableFeatureGate.Add(defaultOperatorFeatureGates))
 }
 
-// defaultKubernetesFeatureGates consists of all known Kubernetes-specific feature keys.
+// defaultKubernetesFeatureGates consists of all known operator-specific feature keys.
 // To add a new feature, define a key for it above and add it here. The features will be
 // available throughout Kubernetes binaries.
-var defaultKubernetesFeatureGates = map[featuregate.Feature]featuregate.FeatureSpec{}
+var defaultOperatorFeatureGates = map[featuregate.Feature]featuregate.FeatureSpec{
+	PartitionedUpdate: {Default: false, PreRelease: featuregate.Alpha},
+}

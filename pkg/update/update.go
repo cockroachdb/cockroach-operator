@@ -22,9 +22,10 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff"
+	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
-	"go.uber.org/zap"
 	v1 "k8s.io/api/apps/v1"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -58,8 +59,10 @@ const (
 // should use partitionedRollingUpdateStrategy (defined in this package).
 type updateFunctionSuite struct {
 	updateFunc         func(sts *v1.StatefulSet) (*v1.StatefulSet, error)
-	updateStrategyFunc func(update *UpdateSts, updateTimer *UpdateTimer, l *zap.Logger) (bool, error)
+	updateStrategyFunc func(update *UpdateSts, updateTimer *UpdateTimer, l logr.Logger) (bool, error)
 }
+
+// TODO consolidate structs. We have structs in update_version that mirror these
 
 // UpdateSts struct encapsultates everything Kubernetes related we need in order to update
 // a StatefulSet
@@ -74,15 +77,16 @@ type UpdateSts struct {
 // UpdateTimer encapsulates everything timer and polling related we need to update
 // a StatefulSet.
 type UpdateTimer struct {
-	podUpdateTimeout          time.Duration
-	podMaxPollingInterval     time.Duration
-	sleeper                   Sleeper
-	waitUntilAllPodsReadyFunc func(context.Context, *zap.Logger) error
+	podUpdateTimeout      time.Duration
+	podMaxPollingInterval time.Duration
+	sleeper               Sleeper
+	// TODO check that this func is actually correct
+	waitUntilAllPodsReadyFunc func(context.Context, logr.Logger) error
 }
 
 func NewUpdateFunctionSuite(
 	updateFunc func(*v1.StatefulSet) (*v1.StatefulSet, error),
-	updateStrategyFunc func(update *UpdateSts, updateTimer *UpdateTimer, l *zap.Logger) (bool, error),
+	updateStrategyFunc func(update *UpdateSts, updateTimer *UpdateTimer, l logr.Logger) (bool, error),
 ) *updateFunctionSuite {
 	return &updateFunctionSuite{
 		updateFunc:         updateFunc,
@@ -91,7 +95,7 @@ func NewUpdateFunctionSuite(
 }
 
 type Sleeper interface { // for testing
-	Sleep(l *zap.Logger, logSuffix string)
+	Sleep(l logr.Logger, logSuffix string)
 }
 
 type sleeperImpl struct {
@@ -102,12 +106,14 @@ func NewSleeper(duration time.Duration) *sleeperImpl {
 	return &sleeperImpl{duration: duration}
 }
 
-func (s *sleeperImpl) Sleep(l *zap.Logger, logSuffix string) {
-	l.Sugar().Infof("sleeping %v %s", s.duration, logSuffix)
+func (s *sleeperImpl) Sleep(l logr.Logger, logSuffix string) {
+	l.Info("sleeping", "duration", string(s.duration), "label", logSuffix)
 	time.Sleep(s.duration)
 }
 
 // TODO rewrite docs
+// TODO too many parmeters, just found a bug where I reversed namespace and sts name
+// Refactor this into a struct
 
 // UpdateClusterRegionStatefulSet is the regional version of
 // updateClusterStatefulSets. See its documentation for more information on the
@@ -118,17 +124,17 @@ func UpdateClusterRegionStatefulSet(
 	name string,
 	namespace string,
 	updateSuite *updateFunctionSuite,
-	waitUntilAllPodsReadyFunc func(context.Context, *zap.Logger) error,
+	waitUntilAllPodsReadyFunc func(context.Context, logr.Logger) error,
 	podUpdateTimeout time.Duration,
 	podMaxPollingInterval time.Duration,
 	sleeper Sleeper,
-	l *zap.Logger,
+	l logr.Logger,
 ) (bool, error) {
-	l = l.With(zap.String("namespace", namespace))
+	l = l.WithName(namespace)
 
 	sts, err := clientset.AppsV1().StatefulSets(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
-		return false, errors.Wrapf(err, "could not find cockroachdb sts for %s %s", name, namespace)
+		return false, handleStsError(err, l, name, namespace)
 	}
 
 	// Run the updateFunc to update the in-memory copy of the Kubernetes
@@ -175,9 +181,9 @@ func UpdateClusterRegionStatefulSet(
 // takes a Kubernetes clientset, the StatefulSet being modified, and the pod
 // number of the Statefulset that has just been updated. If it returns an error,
 // the update is halted.
-func PartitionedRollingUpdateStrategy(perPodVerificationFunc func(*UpdateSts, int, *zap.Logger) error,
-) func(updateSts *UpdateSts, updateTimer *UpdateTimer, l *zap.Logger) (bool, error) {
-	return func(updateSts *UpdateSts, updateTimer *UpdateTimer, l *zap.Logger) (bool, error) {
+func PartitionedRollingUpdateStrategy(perPodVerificationFunc func(*UpdateSts, int, logr.Logger) error,
+) func(updateSts *UpdateSts, updateTimer *UpdateTimer, l logr.Logger) (bool, error) {
+	return func(updateSts *UpdateSts, updateTimer *UpdateTimer, l logr.Logger) (bool, error) {
 		// When a StatefulSet's partition number is set to `n`, only StatefulSet pods
 		// numbered greater or equal to `n` will be updated. The rest will remain untouched.
 		// https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#partitions
@@ -190,7 +196,7 @@ func PartitionedRollingUpdateStrategy(perPodVerificationFunc func(*UpdateSts, in
 			// If pod already updated, we are probably retrying a failed job
 			// attempt. Best not to redo the update in that case, especially the sleeps!!
 			if err := perPodVerificationFunc(updateSts, int(partition), l); err == nil {
-				l.Sugar().Infof("%v already updated, skipping sleep", partition)
+				l.Info("already updated, skipping sleep", "partition", partition)
 				skipSleep = true
 				continue
 			}
@@ -203,13 +209,16 @@ func PartitionedRollingUpdateStrategy(perPodVerificationFunc func(*UpdateSts, in
 			sts.Spec.UpdateStrategy.RollingUpdate = &v1.RollingUpdateStatefulSetStrategy{
 				Partition: &partition,
 			}
-			if _, err := updateSts.clientset.AppsV1().StatefulSets(stsNamespace).Update(context.TODO(), sts, metav1.UpdateOptions{}); err != nil {
-				return false, errors.Wrapf(err, "error updating %s statefulset partition to %d in %s %s", stsName, partition, stsName, sts.Namespace)
+
+			_, err := updateSts.clientset.AppsV1().StatefulSets(stsNamespace).Update(updateSts.ctx, sts, metav1.UpdateOptions{})
+			if err != nil {
+				return false, handleStsError(err, l, stsName, stsNamespace)
 			}
+
 			// Wait until verificationFunction verifies the update, passing in
 			// the current partition so the function knows which pod to check
 			// the status of.
-			l.Sugar().Infof("waiting until %d is done updating", int(partition))
+			l.Info("waiting until partition done updating", "partition number:", partition)
 			if err := waitUntilPerPodVerificationFuncVerifies(updateSts, perPodVerificationFunc, int(partition), updateTimer, l); err != nil {
 				return false, errors.Wrapf(err, "error while running verificationFunc on pod %d", int(partition))
 			}
@@ -218,9 +227,9 @@ func PartitionedRollingUpdateStrategy(perPodVerificationFunc func(*UpdateSts, in
 				// Kubernetes will error out because the object has been updated
 				// since we last read it.
 				var err error
-				sts, err = updateSts.clientset.AppsV1().StatefulSets(stsNamespace).Get(context.TODO(), stsName, metav1.GetOptions{})
+				sts, err = updateSts.clientset.AppsV1().StatefulSets(stsNamespace).Get(updateSts.ctx, stsName, metav1.GetOptions{})
 				if err != nil {
-					return false, errors.Wrapf(err, "could not find %s sts for %s", stsName, stsNamespace)
+					return false, handleStsError(err, l, stsName, stsNamespace)
 				}
 				updateTimer.sleeper.Sleep(l, "between updating pods")
 			}
@@ -231,10 +240,10 @@ func PartitionedRollingUpdateStrategy(perPodVerificationFunc func(*UpdateSts, in
 
 func waitUntilPerPodVerificationFuncVerifies(
 	updateSts *UpdateSts,
-	perPodVerificationFunc func(*UpdateSts, int, *zap.Logger) error,
+	perPodVerificationFunc func(*UpdateSts, int, logr.Logger) error,
 	podNumber int,
 	updateTimer *UpdateTimer,
-	l *zap.Logger,
+	l logr.Logger,
 ) error {
 	f := func() error {
 		err := perPodVerificationFunc(updateSts, podNumber, l)
@@ -246,6 +255,8 @@ func waitUntilPerPodVerificationFuncVerifies(
 	return backoff.Retry(f, b)
 }
 
+// TODO this code might not be used.
+
 // waitUntilAllPodsReadyInAllClusters waits until all pods in all statefulsets are in the
 // ready state. The ready state implies all nodes are passing node liveness.
 func makeWaitUntilAllPodsReadyFuncInAllClusters(
@@ -254,8 +265,8 @@ func makeWaitUntilAllPodsReadyFuncInAllClusters(
 	podUpdateTimeout time.Duration,
 	maxPodPollingInterval time.Duration,
 	stsName string,
-) func(ctx context.Context, l *zap.Logger) error {
-	return func(ctx context.Context, l *zap.Logger) error {
+) func(ctx context.Context, l logr.Logger) error {
+	return func(ctx context.Context, l logr.Logger) error {
 
 		l.Info("waiting until all pods are in the ready state")
 		f := func() error {
@@ -263,15 +274,15 @@ func makeWaitUntilAllPodsReadyFuncInAllClusters(
 			for ns, clientset := range clientsets {
 				sts, err := clientset.AppsV1().StatefulSets(ns).Get(ctx, stsName, metav1.GetOptions{})
 				if err != nil {
-					l.Warn("could not find crdb sts")
-					return errors.Wrapf(err, "could not find crdb sts for %s", stsName)
+					return handleStsError(err, l, stsName, ns)
 				}
 				got += int(sts.Status.ReadyReplicas)
 			}
 
 			if got != numCRDBPods {
-				l.Sugar().Warnf("number of ready replicas is %v, not equal to num CRDB pods %v", got, numCRDBPods)
-				return fmt.Errorf("number of ready replicas is %v, not equal to num CRDB pods %v", got, numCRDBPods)
+				err := fmt.Errorf("number of ready replicas is %v, not equal to num CRDB pods %v", got, numCRDBPods)
+				l.Error(err, "number of ready replicas is,  not equal to num CRDB pods")
+				return err
 			}
 			l.Info("all replicas are ready")
 			return nil
@@ -282,4 +293,18 @@ func makeWaitUntilAllPodsReadyFuncInAllClusters(
 		b.MaxInterval = maxPodPollingInterval
 		return backoff.Retry(f, b)
 	}
+}
+
+// TODO there are ALOT more reason codes in k8sErrors, should we test them all?
+
+func handleStsError(err error, l logr.Logger, stsName string, ns string) error {
+	if k8sErrors.IsNotFound(err) {
+		l.Error(err, "sts is not found", "stsName", stsName, "namespace", ns)
+		return errors.Wrapf(err, "sts is not found: %s ns: %s", stsName, ns)
+	} else if statusError, isStatus := err.(*k8sErrors.StatusError); isStatus {
+		l.Error(statusError, fmt.Sprintf("Error getting statefulset %v", statusError.ErrStatus.Message), "stsName", stsName, "namespace", ns)
+		return statusError
+	}
+	l.Error(err, "error getting statefulset", "stsName", stsName, "namspace", ns)
+	return err
 }

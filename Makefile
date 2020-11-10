@@ -66,7 +66,7 @@ test/e2e-short:
 # against that cluster.
 .PHONY: test/e2e
 test/e2e: 
-	bazel test //e2e/...
+	bazel test --stamp //e2e/...
 
 # 
 # Different dev targets

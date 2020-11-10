@@ -129,6 +129,19 @@ func (up *upgrade) Act(ctx context.Context, cluster *resource.Cluster) error {
 	return nil
 }
 
+// TODO this does not handle sha's
+// TODO we are running into the same problem where the version of
+// CR is parsed from the image tag name, we need to fix this
+
+func getImageNameNoVersion(image string) string {
+	i := strings.LastIndex(image, ":")
+	if i == -1 {
+		return image
+	}
+
+	return image[:i]
+}
+
 func getVersionFromImage(image string) string {
 	i := strings.LastIndex(image, ":")
 	if i == -1 {

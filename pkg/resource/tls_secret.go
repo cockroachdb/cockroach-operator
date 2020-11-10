@@ -94,6 +94,14 @@ func (s *TLSSecret) UpdateCertAndCA(cert, ca []byte, log logr.Logger) error {
 	return err
 }
 
+func (s *TLSSecret) CA() []byte {
+	return s.secret.Data[caKey]
+}
+
 func (s *TLSSecret) Key() []byte {
 	return s.secret.Data[corev1.TLSCertKey]
+}
+
+func (s *TLSSecret) PriveKey() []byte {
+	return s.secret.Data[corev1.TLSPrivateKeyKey]
 }

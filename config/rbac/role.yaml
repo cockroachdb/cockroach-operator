@@ -87,6 +87,12 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - pods
+  verbs:
+  - get
+- apiGroups:
+  - ""
+  resources:
   - pods/exec
   verbs:
   - create

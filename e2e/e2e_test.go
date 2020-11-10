@@ -29,6 +29,7 @@ import (
 	testenv "github.com/cockroachdb/cockroach-operator/pkg/testutil/env"
 	"github.com/cockroachdb/cockroach-operator/pkg/testutil/exec"
 	"github.com/cockroachdb/cockroach-operator/pkg/testutil/paths"
+	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
 	"github.com/go-logr/zapr"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zaptest"
@@ -323,4 +324,99 @@ func TestUpgradesMajorVersion19_1To19_2(t *testing.T) {
 	}
 
 	steps.Run(t)
+}
+
+// this is giving us an error of no inbound stream connection (SQLSTATE XXUUU)
+// intermitently.
+
+// Test the new partioned upgrades
+func TestParitionedUpgradesMajorVersion19to20(t *testing.T) {
+
+	if doNotTestFlakes(t) {
+		t.Log("This test is marked as a flake, not running test")
+		return
+	} else {
+		t.Log("Running this test, although this test is flakey")
+	}
+
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+
+	testLog := zapr.NewLogger(zaptest.NewLogger(t))
+
+	actor.Log = testLog
+
+	require.NoError(t, utilfeature.DefaultMutableFeatureGate.Set("PartitionedUpdate=true"))
+
+	sb := testenv.NewDiffingSandbox(t, env)
+	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
+
+	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
+		WithImage("cockroachdb/cockroach:v19.2.6").
+		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
+
+	steps := Steps{
+		{
+			name: "creates a 3-node secure cluster for partitioned update",
+			test: func(t *testing.T) {
+				require.NoError(t, sb.Create(builder.Cr()))
+
+				requireClusterToBeReadyEventually(t, sb, builder)
+			},
+		},
+		{
+			name: "upgrades the cluster to the next minor version",
+			test: func(t *testing.T) {
+				current := builder.Cr()
+				require.NoError(t, sb.Get(current))
+
+				current.Spec.Image.Name = "cockroachdb/cockroach:v20.1.6"
+				require.NoError(t, sb.Update(current))
+
+				requireClusterToBeReadyEventually(t, sb, builder)
+				requireDbContainersToUseImage(t, sb, current)
+				// This value matches the WithImage value above, without patch
+				requireDownGradeOptionSet(t, sb, builder, "19.2")
+				requireDatabaseToFunction(t, sb, builder)
+			},
+		},
+	}
+
+	steps.Run(t)
+	// Disable the feature flag
+	require.NoError(t, utilfeature.DefaultMutableFeatureGate.Set("PartitionedUpdate=false"))
+}
+
+func TestDatabaseFunctionality(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+	testLog := zapr.NewLogger(zaptest.NewLogger(t))
+	actor.Log = testLog
+	sb := testenv.NewDiffingSandbox(t, env)
+	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
+	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
+		WithImage("cockroachdb/cockroach:v20.1.7").
+		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
+	steps := Steps{
+		{
+			name: "creates a 3-node secure cluster and tests db",
+			test: func(t *testing.T) {
+				require.NoError(t, sb.Create(builder.Cr()))
+				requireClusterToBeReadyEventually(t, sb, builder)
+				requireDatabaseToFunction(t, sb, builder)
+			},
+		},
+	}
+	steps.Run(t)
+}
+
+func doNotTestFlakes(t *testing.T) bool {
+	if os.Getenv("TEST_FLAKES") != "" {
+		t.Log("running flakey tests")
+		return false
+	}
+	t.Log("not running flakey tests")
+	return true
 }

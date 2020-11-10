@@ -6,7 +6,7 @@ k8s_deploy(
     images = {
         # TODO how do we do this?
         # "{STABLE_DOCKER_REGISTRY}/{STABLE_IMAGE_REPOSITORY}:{STABLE_DOCKER_TAG}"
-        "us.gcr.io/chris-love-operator-playground/cockroach-operator:v1.0.0-alpha.1": "//cmd/cockroach-operator:operator_image",
+        "cockroach-operator": "//cmd/cockroach-operator:operator_image",
     },
     template = ":operator.yaml",
 )
