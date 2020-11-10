@@ -23,9 +23,8 @@ DOCKER_REGISTRY?=us.gcr.io/chris-love-operator-playground
 DOCKER_IMAGE_REPOSITORY?=cockroach-operator
 VERSION ?= 0.0.10
 # Default bundle image tag
+BUNDLE_IMG ?= cockroach-operator-bundle:$(VERSION)
 APP_VERSION?=v1.0.0-alpha.3
-DEFAULT_CHANNEL=alpha
-CHANNELS=alpha
 
 # Options for 'bundle-build'
 ifneq ($(origin CHANNELS), undefined)
@@ -60,7 +59,7 @@ test/verify:
 # This target uses kind to start a k8s cluster  and runs the e2e tests
 # against that cluster.
 .PHONY: test/e2e-short
-test/e2e: 
+test/e2e-short: 
 	bazel test //e2e/... --test_arg=--test.short
 
 # This target uses kind to start a k8s cluster  and runs the e2e tests
@@ -141,10 +140,9 @@ else
 KUSTOMIZE=$(shell which kustomize)
 endif
 # Current Operator version
-
-BUNDLE_IMG ?= cockroach-operator-bundle:$(VERSION)
+VERSION ?= 0.0.10
 # Default bundle image tag
-# BUNDLE_IMG ?= cockroach-operator:$(VERSION)
+BUNDLE_IMG ?= cockroach-operator:$(VERSION)
 # IMG="us.gcr.io/chris-love-operator-playground/cockroach-operator:v1.0.0-alpha.1"
 IMG="quay.io/alinalion/cockroach-operator:v1.0.0-alpha.3"
 # Generate bundle manifests and metadata, then validate generated files.
@@ -187,3 +185,4 @@ gen-csv: dev/generate
 		
 
 
+		

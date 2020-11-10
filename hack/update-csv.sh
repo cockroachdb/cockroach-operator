@@ -50,5 +50,27 @@ cd manifests && kustomize edit set image cockroach-operator=${IMG} && cd ..
 kustomize build config/manifests | operator-sdk generate bundle -q --overwrite --version ${VERSION} ${BUNDLE_METADATA_OPTS}
 operator-sdk bundle validate ./bundle
 
+FILE_NAMES=(bundle/manifests/cockroach-operator-role-default-binding_rbac.authorization.k8s.io_v1beta1_clusterrolebinding.yaml \
+bundle/manifests/cockroach-operator-role-default_rbac.authorization.k8s.io_v1_clusterrole.yaml \
+bundle/manifests/cockroach-operator-sa-default_v1_serviceaccount.yaml \
+bundle/manifests/cockroach-operator-sa_v1_serviceaccount.yaml \
+bundle/manifests/cockroach-operator.clusterserviceversion.yaml \
+bundle/manifests/crdb.cockroachlabs.com_crdbclusters.yaml \
+bundle/metadata/annotations.yaml \
+bundle/tests/scorecard/config.yaml )
+for YAML in "${FILE_NAMES[@]}"
+do
+   :
+   cat "${REPO_ROOT}/hack/boilerplate/boilerplate.yaml.txt" "${REPO_ROOT}/${YAML}" > "${REPO_ROOT}/${YAML}.mod"
+   mv "${REPO_ROOT}/${YAML}.mod" "${REPO_ROOT}/${YAML}"
+done 
+
+DOCKER_FILE_NAME="bundle.Dockerfile"
+
+cat "${REPO_ROOT}/hack/boilerplate/boilerplate.Dockerfile.txt" "${REPO_ROOT}/${DOCKER_FILE_NAME}" > "${REPO_ROOT}/${DOCKER_FILE_NAME}.mod"
+mv "${REPO_ROOT}/${DOCKER_FILE_NAME}.mod" "${REPO_ROOT}/${DOCKER_FILE_NAME}"
+ 
+
+
 
 
