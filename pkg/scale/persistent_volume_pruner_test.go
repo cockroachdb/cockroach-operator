@@ -1,3 +1,19 @@
+/*
+Copyright 2020 The Cockroach Authors
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package scale
 
 import (
@@ -16,6 +32,9 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 	k8s_testing "k8s.io/client-go/testing"
 )
+
+// TODO this test is a bit flakey and held together with Sleeps
+// we need to figure out the race conditions and get rid of the Sleeps
 
 func TestPersistentVolumePruner_Prune(t *testing.T) {
 	sts := &appsv1.StatefulSet{
@@ -134,7 +153,7 @@ func TestPersistentVolumePruner_Prune(t *testing.T) {
 				require.NoError(t, err)
 
 				// But we have 5 + 1 (the unexpected pvc) left over
-				pvcs, err := cs.CoreV1().PersistentVolumeClaims("testns").List(metav1.ListOptions{})
+				pvcs, err := cs.CoreV1().PersistentVolumeClaims("testns").List(context.TODO(), metav1.ListOptions{})
 				require.NoError(t, err)
 				require.Len(t, pvcs.Items, 6)
 
@@ -154,13 +173,13 @@ func TestPersistentVolumePruner_Prune(t *testing.T) {
 			PVCs:     7,
 			Setup: func(cs *fake.Clientset) {
 				cs.PrependReactor("delete", "*", func(action k8s_testing.Action) (handled bool, ret runtime.Object, err error) {
-					// Delay deletion for 1 second. This is long enough to
+					// Delay deletion for 500 ms. This is long enough to
 					// fail our tests if we're not waiting for deletion.
 					// Technically, we should set the state to terminating but
 					// our code doesn't actually check the state.
 					go func() {
-						time.Sleep(time.Second)
 						deleteAction := action.(k8s_testing.DeleteActionImpl)
+						time.Sleep(2 * time.Second)
 
 						if err := cs.Tracker().Delete(
 							deleteAction.GetResource(),
@@ -207,7 +226,7 @@ func TestPersistentVolumePruner_Prune(t *testing.T) {
 			// events which leads to flakey tests. A single millisecond appears
 			// to be long enough to ensure success.
 			cs.PrependReactor("*", "*", func(action k8s_testing.Action) (bool, runtime.Object, error) {
-				time.Sleep(1 * time.Millisecond)
+				time.Sleep(3 * time.Second)
 				return false, nil, nil
 			})
 

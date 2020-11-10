@@ -1,3 +1,19 @@
+/*
+Copyright 2020 The Cockroach Authors
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package scale
 
 import (
@@ -94,7 +110,7 @@ func (p *PersistentVolumePruner) watchStatefulset(
 // statefulset but are not currently in use. Use is defined as having an
 // ordinal that is less than the number of expected replica for the given
 // statefulset.
-func (p *PersistentVolumePruner) pvcsToDelete(sts *appsv1.StatefulSet) ([]corev1.PersistentVolumeClaim, error) {
+func (p *PersistentVolumePruner) pvcsToDelete(ctx context.Context, sts *appsv1.StatefulSet) ([]corev1.PersistentVolumeClaim, error) {
 	// K8s doesn't provide a way to tell if a PVC or PV is currently in use by
 	// a pod. However, it is safe to assume that any PVCs with an ordinal great
 	// than or equal to the sts' Replicas is not in use. As only pods with with
@@ -118,7 +134,7 @@ func (p *PersistentVolumePruner) pvcsToDelete(sts *appsv1.StatefulSet) ([]corev1
 		return nil, errors.Wrap(err, "converting statefulset selector to metav1 selector")
 	}
 
-	pvcs, err := p.ClientSet.CoreV1().PersistentVolumeClaims(p.Namespace).List(metav1.ListOptions{
+	pvcs, err := p.ClientSet.CoreV1().PersistentVolumeClaims(p.Namespace).List(ctx, metav1.ListOptions{
 		LabelSelector: selector.String(),
 	})
 	if err != nil {
@@ -193,6 +209,7 @@ func (p *PersistentVolumePruner) Prune(ctx context.Context) error {
 		return errors.New("statefulset had nil .Replicas")
 	}
 
+	// TODO we should pass in the controller context here
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -202,7 +219,7 @@ func (p *PersistentVolumePruner) Prune(ctx context.Context) error {
 		return errors.Wrap(err, "setting up statefulset watcher")
 	}
 
-	pvcs, err := p.pvcsToDelete(sts)
+	pvcs, err := p.pvcsToDelete(ctx, sts)
 	if err != nil {
 		return errors.Wrap(err, "finding pvcs to prune")
 	}

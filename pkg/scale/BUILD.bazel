@@ -30,7 +30,7 @@ go_library(
 
 go_test(
     name = "go_default_test",
-    srcs = ["peristent_volume_pruner_test.go"],
+    srcs = ["persistent_volume_pruner_test.go"],
     embed = [":go_default_library"],
     deps = [
         "@com_github_stretchr_testify//require:go_default_library",

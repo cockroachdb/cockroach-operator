@@ -1,3 +1,19 @@
+/*
+Copyright 2020 The Cockroach Authors
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package scale
 
 import (
@@ -50,8 +66,8 @@ type CockroachNodeDrainer struct {
 }
 
 // Decommission commands the node to start training process and watches for it to complete or fail after timeout
-func (d *CockroachNodeDrainer) Decommission(ctx context.Context, replica uint) error {
-	lastNodeId, err := d.findNodeId(ctx, replica)
+func (d *CockroachNodeDrainer) Decommission(ctx context.Context, replica uint, stsName string) error {
+	lastNodeId, err := d.findNodeId(ctx, replica, stsName)
 	if err != nil {
 		return err
 	}
@@ -186,7 +202,7 @@ func (d *CockroachNodeDrainer) executeDrainCmd(ctx context.Context, id uint) err
 	return nil
 }
 
-func (d *CockroachNodeDrainer) findNodeId(ctx context.Context, replica uint) (uint, error) {
+func (d *CockroachNodeDrainer) findNodeId(ctx context.Context, replica uint, stsName string) (uint, error) {
 	cmd := []string{"./cockroach", "node", "status", "--format=csv"}
 
 	if d.Secure {
@@ -200,8 +216,8 @@ func (d *CockroachNodeDrainer) findNodeId(ctx context.Context, replica uint) (ui
 		return 0, err
 	}
 
-	host := fmt.Sprintf("%s-%d.%s.%s", CockroachStatefulSetName,
-		replica, CockroachStatefulSetName, d.Executor.Namespace)
+	host := fmt.Sprintf("%s-%d.%s.%s", stsName,
+		replica, stsName, d.Executor.Namespace)
 	r := csv.NewReader(strings.NewReader(stdout))
 	for {
 		record, err := r.Read()
