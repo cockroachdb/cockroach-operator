@@ -66,10 +66,10 @@ spec:
         volumeMode: Filesystem
   resources:
     requests:
-      cpu: "4"
+      cpu: "1"
       memory: "16Gi"
     limits:
-      cpu: "4"
+      cpu: "1"
       memory: "16Gi"
   tlsEnabled: true
   image:
@@ -90,11 +90,11 @@ Enable the commented-out lines in the `resources.requests` object and substitute
 ```
 resources:
   requests:
-    cpu: "4"
+    cpu: "1"
     memory: "16Gi"
     storage: 60Gi
   limits:
-    cpu: "4"
+    cpu: "1"
     memory: "16Gi"
 ```
 
