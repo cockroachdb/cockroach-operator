@@ -11,17 +11,15 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-resources:
-- operator.yaml
-patchesStrategicMerge:
-- patches/related_image_coackroach.yaml
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-images:
-- name: cockroach-operator
-  newName: quay.io/alinalion/cockroach-operator
-  newTag: v1.0.0-alpha.3
-- name: cockroachdb/cockroach-operator
-  newName: quay.io/alinalion/cockroach-operator
-  newTag: v1.0.0-alpha.3
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cockroach-operator
+spec:
+  template:
+    spec:
+      containers:
+        - name: cockroach-operator
+          env:
+            - name: RELATED_IMAGE_COCKROACH
+              value: registry.connect.redhat.com/cockroachdb/cockroach:v20.1.5

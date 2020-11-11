@@ -5,6 +5,7 @@ go_library(
     srcs = [
         "actor.go",
         "context.go",
+        "decommission.go",
         "deploy.go",
         "initialize.go",
         "partitioned_update.go",
