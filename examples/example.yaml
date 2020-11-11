@@ -28,11 +28,11 @@ spec:
         volumeMode: Filesystem
   resources:
     requests:
-      cpu: "4"
-      memory: "16Gi"
+      cpu: "2"
+      memory: "8Gi"
     limits:
-      cpu: "4"
-      memory: "16Gi"
+      cpu: "2"
+      memory: "8Gi"
   tlsEnabled: true
   image:
     name: cockroachdb/cockroach:v20.2.0

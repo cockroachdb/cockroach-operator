@@ -90,12 +90,12 @@ Enable the commented-out lines in the `resources.requests` object and substitute
 ```
 resources:
   requests:
-    cpu: "4"
-    memory: "16Gi"
+    cpu: "2"
+    memory: "8Gi"
     storage: 60Gi
   limits:
-    cpu: "4"
-    memory: "16Gi"
+    cpu: "2"
+    memory: "8Gi"
 ```
 
 ### Apply the custom resource
