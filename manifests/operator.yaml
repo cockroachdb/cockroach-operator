@@ -259,7 +259,7 @@ spec:
       serviceAccountName: cockroach-operator-sa
       containers:
         - name: cockroach-operator
-          image: cockroach-operator
+          image: cockroachdb/cockroach-operator
           imagePullPolicy: IfNotPresent
           # uncomment this to enable ParitionedUpdates
           # args: ["-feature-gates","PartitionedUpdate=true"]
@@ -275,7 +275,7 @@ spec:
             - name: OPERATOR_NAME
               value: cockroachdb
             - name: RELATED_IMAGE_COCKROACH
-              value: "registry.connect.redhat.com/cockroachdb/cockroach:v20.1.5"
+              value: "cockroachdb/cockroach:v20.2.0"
           resources:
             requests:
               cpu: 10m
