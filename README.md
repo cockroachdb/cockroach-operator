@@ -18,7 +18,7 @@ The CockroachDB Kubernetes Operator deploys CockroachDB on a Kubernetes cluster.
 
 - Kubernetes 1.15 or higher (1.18 is recommended)
 - [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
-- A GKE cluster
+- A GKE cluster (`n1-standard-4` machines are recommended)
 
 ## Install the Operator
 
@@ -90,12 +90,12 @@ Enable the commented-out lines in the `resources.requests` object and substitute
 ```
 resources:
   requests:
-    cpu: "4"
-    memory: "16Gi"
+    cpu: "2"
+    memory: "8Gi"
     storage: 60Gi
   limits:
-    cpu: "4"
-    memory: "16Gi"
+    cpu: "2"
+    memory: "8Gi"
 ```
 
 ### Apply the custom resource
