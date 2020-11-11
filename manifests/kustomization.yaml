@@ -19,9 +19,6 @@ patchesStrategicMerge:
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 images:
-- name: cockroach-operator
-  newName: quay.io/alinalion/cockroach-operator
-  newTag: v1.0.0-alpha.3
 - name: cockroachdb/cockroach-operator
   newName: quay.io/alinalion/cockroach-operator
   newTag: v1.0.0-alpha.3
