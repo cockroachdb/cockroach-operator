@@ -9,7 +9,7 @@ The CockroachDB Kubernetes Operator deploys CockroachDB on a Kubernetes cluster.
 
 ## Limitations
 
-- This project is in alpha and is not production-ready.
+- This project is in beta and is not production-ready.
 - The Operator currently runs on GKE.
 - Currently the Kubernetes CA is required to deploy a secure cluster.
 - Expansion of persistent volumes is not yet functional.
@@ -18,7 +18,7 @@ The CockroachDB Kubernetes Operator deploys CockroachDB on a Kubernetes cluster.
 
 - Kubernetes 1.15 or higher (1.18 is recommended)
 - [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
-- A GKE cluster
+- A GKE cluster (`n1-standard-4` machines are recommended)
 
 ## Install the Operator
 
