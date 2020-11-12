@@ -66,14 +66,14 @@ spec:
         volumeMode: Filesystem
   resources:
     requests:
-      cpu: "4"
-      memory: "16Gi"
+      cpu: "2"
+      memory: "2Gi"
     limits:
-      cpu: "4"
-      memory: "16Gi"
+      cpu: "2"
+      memory: "2Gi"
   tlsEnabled: true
   image:
-    name: cockroachdb/cockroach:v20.1.6
+    name: cockroachdb/cockroach:v20.2.0
   nodes: 3
 ```
 
@@ -91,11 +91,10 @@ Enable the commented-out lines in the `resources.requests` object and substitute
 resources:
   requests:
     cpu: "2"
-    memory: "8Gi"
-    storage: 60Gi
+    memory: "2Gi"
   limits:
     cpu: "2"
-    memory: "8Gi"
+    memory: "2Gi"
 ```
 
 ### Apply the custom resource

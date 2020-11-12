@@ -46,7 +46,7 @@ echo $IMG
 BUNDLE_METADATA_OPTS=""
 echo $BUNDLE_METADATA_OPTS
 operator-sdk generate kustomize manifests -q 
-cd manifests && kustomize edit set image cockroach-operator=${IMG} && cd ..
+cd manifests && kustomize edit set image cockroachdb/cockroach-operator=${IMG} && cd ..
 kustomize build config/manifests | operator-sdk generate bundle -q --overwrite --version ${VERSION} ${BUNDLE_METADATA_OPTS}
 operator-sdk bundle validate ./bundle
 

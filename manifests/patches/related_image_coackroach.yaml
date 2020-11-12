@@ -11,29 +11,15 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-apiVersion: crdb.cockroachlabs.com/v1alpha1
-kind: CrdbCluster
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-  name: cockroachdb
+  name: cockroach-operator
 spec:
-  dataStore:
-    pvc:
-      spec:
-        accessModes:
-          - ReadWriteOnce
-        resources:
-          requests:
-            storage: "60Gi"
-        volumeMode: Filesystem
-  # resources:
-  #   requests:
-  #     cpu: "2"
-  #     memory: "8Gi"
-  #   limits:
-  #     cpu: "2"
-  #     memory: "8Gi"
-  tlsEnabled: true
-  image:
-    name: cockroachdb/cockroach:v20.2.0
-  nodes: 3
+  template:
+    spec:
+      containers:
+        - name: cockroach-operator
+          env:
+            - name: RELATED_IMAGE_COCKROACH
+              value: registry.connect.redhat.com/cockroachdb/cockroach:v20.1.5
