@@ -6,6 +6,7 @@ go_library(
         "actor.go",
         "context.go",
         "deploy.go",
+        "decommission.go",
         "initialize.go",
         "partitioned_update.go",
         "request_cert.go",

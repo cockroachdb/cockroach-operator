@@ -8,6 +8,7 @@ go_library(
         "persistent_volume_pruner.go",
         "scale.go",
         "timeout.go",
+        "cockroach_statefulset.go"
     ],
     importpath = "github.com/cockroachdb/cockroach-operator/pkg/scale",
     visibility = ["//visibility:public"],

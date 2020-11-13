@@ -3,6 +3,7 @@ module github.com/cockroachdb/cockroach-operator
 go 1.14
 
 require (
+	github.com/DataDog/datadog-go v4.2.0+incompatible // indirect
 	github.com/Masterminds/semver/v3 v3.1.0
 	github.com/banzaicloud/k8s-objectmatcher v1.3.2
 	github.com/cenkalti/backoff v2.2.1+incompatible
@@ -16,11 +17,14 @@ require (
 	github.com/lib/pq v1.3.0
 	github.com/onsi/ginkgo v1.13.0
 	github.com/onsi/gomega v1.10.1
+	github.com/opentracing/opentracing-go v1.2.0 // indirect
+	github.com/philhofer/fwd v1.1.0 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.5.1
 	go.uber.org/zap v1.14.1
 	golang.org/x/net v0.0.0-20200520004742-59133d7f0dd7
+	gopkg.in/DataDog/dd-trace-go.v1 v1.27.1
 	gopkg.in/yaml.v2 v2.3.0
 	k8s.io/api v0.18.5
 	k8s.io/apiextensions-apiserver v0.18.5 // indirect

@@ -40,17 +40,9 @@ var (
 	DecommissioningStalledErr = errors.New("decommissioning has stalled")
 )
 
-func NewCockroachNodeDrainer(logger *zap.Logger, namespace string, config *rest.Config, clientset kubernetes.Interface, secure bool, rangeRelocation time.Duration) *CockroachNodeDrainer {
-	return &CockroachNodeDrainer{
-		Secure:                 secure,
-		Logger:                 logger,
-		RangeRelocationTimeout: rangeRelocation,
-		Executor: &CockroachExecutor{
-			Namespace: namespace,
-			Config:    config,
-			ClientSet: clientset,
-		},
-	}
+//Drainer interface
+type Drainer interface {
+	Decommission(ctx context.Context, replica uint) error
 }
 
 // CockroachNodeDrainer does decommissioning of nodes in the CockroachDB cluster
@@ -65,9 +57,22 @@ type CockroachNodeDrainer struct {
 	RangeRelocationTimeout time.Duration
 }
 
+func NewCockroachNodeDrainer(logger *zap.Logger, namespace string, config *rest.Config, clientset kubernetes.Interface, secure bool, rangeRelocation time.Duration) Drainer {
+	return &CockroachNodeDrainer{
+		Secure:                 secure,
+		Logger:                 logger,
+		RangeRelocationTimeout: rangeRelocation,
+		Executor: &CockroachExecutor{
+			Namespace: namespace,
+			Config:    config,
+			ClientSet: clientset,
+		},
+	}
+}
+
 // Decommission commands the node to start training process and watches for it to complete or fail after timeout
-func (d *CockroachNodeDrainer) Decommission(ctx context.Context, replica uint, stsName string) error {
-	lastNodeId, err := d.findNodeId(ctx, replica, stsName)
+func (d *CockroachNodeDrainer) Decommission(ctx context.Context, replica uint) error {
+	lastNodeId, err := d.findNodeId(ctx, replica, CockroachStatefulSetName)
 	if err != nil {
 		return err
 	}

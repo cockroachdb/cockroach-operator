@@ -74,6 +74,7 @@ func NewOperatorActions(scheme *runtime.Scheme, cl client.Client, config *rest.C
 	// deploy.
 	return []Actor{
 		newRequestCert(scheme, cl, config),
+		newDecommission(scheme, cl, config),
 		update,
 		newDeploy(scheme, cl),
 		newInitialize(scheme, cl, config),

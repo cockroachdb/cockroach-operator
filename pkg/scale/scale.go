@@ -23,20 +23,12 @@ import (
 	"go.uber.org/zap"
 )
 
-type ClusterScaler interface {
-	Replicas(context.Context) (uint, error)
-	SetReplicas(context.Context, uint) error
-	WaitUntilRunning(context.Context) error
-	WaitUntilHealthy(context.Context, uint) error
-}
-
+//PVCPruner interface
 type PVCPruner interface {
 	Prune(ctx context.Context) error
 }
-type Drainer interface {
-	Decommission(ctx context.Context, replica uint) error
-}
 
+//Scaler interface
 type Scaler struct {
 	Logger    *zap.Logger
 	CRDB      ClusterScaler

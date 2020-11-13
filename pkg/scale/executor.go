@@ -30,6 +30,7 @@ import (
 	"k8s.io/client-go/tools/remotecommand"
 )
 
+//CockroachExecutor struct
 type CockroachExecutor struct {
 	Namespace   string
 	StatefulSet string
