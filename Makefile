@@ -145,14 +145,6 @@ VERSION ?= 0.0.10
 BUNDLE_IMG ?= cockroach-operator:$(VERSION)
 # IMG="us.gcr.io/chris-love-operator-playground/cockroach-operator:v1.0.0-alpha.1"
 IMG="quay.io/alinalion/cockroach-operator:v1.0.0-alpha.3"
-# Generate bundle manifests and metadata, then validate generated files.
-.PHONY: bundle
-bundle: dev/generate
-	operator-sdk generate kustomize manifests -q
-	cd manifests && $(KUSTOMIZE) edit set image cockroach-operator=$(IMG)
-	$(KUSTOMIZE) build config/manifests | operator-sdk generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
-	operator-sdk bundle validate ./bundle
-
 # Build the bundle image.
 .PHONY: bundle-build
 bundle-build:

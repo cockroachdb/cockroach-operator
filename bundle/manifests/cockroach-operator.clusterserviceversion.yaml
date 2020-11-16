@@ -214,6 +214,8 @@ spec:
             spec:
               containers:
               - env:
+                - name: RELATED_IMAGE_COCKROACH
+                  value: registry.connect.redhat.com/cockroachdb/cockroach:v20.1.5
                 - name: WATCH_NAMESPACE
                   valueFrom:
                     fieldRef:
@@ -224,8 +226,6 @@ spec:
                       fieldPath: metadata.name
                 - name: OPERATOR_NAME
                   value: cockroachdb
-                - name: RELATED_IMAGE_COCKROACH
-                  value: registry.connect.redhat.com/cockroachdb/cockroach:v20.1.5
                 image: quay.io/alinalion/cockroach-operator:v1.0.0-alpha.3
                 imagePullPolicy: IfNotPresent
                 name: cockroach-operator

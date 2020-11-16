@@ -274,8 +274,6 @@ spec:
                   fieldPath: metadata.name
             - name: OPERATOR_NAME
               value: cockroachdb
-            - name: RELATED_IMAGE_COCKROACH
-              value: "cockroachdb/cockroach:v20.2.0"
           resources:
             requests:
               cpu: 10m
