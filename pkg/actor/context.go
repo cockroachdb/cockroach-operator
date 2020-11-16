@@ -22,7 +22,7 @@ import (
 )
 
 type cancelFuncKey struct{}
-
+//ContextWithCancelFn func
 func ContextWithCancelFn(ctx context.Context, fn context.CancelFunc) context.Context {
 	return context.WithValue(ctx, cancelFuncKey{}, fn)
 }
@@ -38,7 +38,7 @@ func getCancelFn(ctx context.Context) context.CancelFunc {
 
 	return f
 }
-
+//CancelLoop func
 func CancelLoop(ctx context.Context) {
 	getCancelFn(ctx)()
 }

@@ -2,12 +2,17 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "go_default_library",
-    srcs = ["zones.go"],
+    srcs = [
+        "zones.go",
+        "settings.go"],
     importpath = "github.com/cockroachdb/cockroach-operator/pkg/clustersql",
     visibility = ["//visibility:public"],
     deps = [
         "//api/v1alpha1:go_default_library",
+        "@com_github_cockroachdb_errors//:go_default_library",
         "@io_k8s_apimachinery//pkg/apis/meta/v1:go_default_library",
+        "@com_github_dustin_go_humanize//:go_default_library",
+        "@in_gopkg_yaml_v2//:go_default_library",
     ],
 )
 

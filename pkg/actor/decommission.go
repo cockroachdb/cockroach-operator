@@ -142,7 +142,7 @@ func (d decommission) Act(ctx context.Context, cluster *resource.Cluster) error 
 		}
 
 		//we should decommission
-		scaler := scale.Scaler{
+		scaler := scale.Scaler {
 			Logger: zaplogger,
 			CRDB: &scale.CockroachStatefulSet{
 				ClientSet: clientset,
