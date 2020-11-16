@@ -23,7 +23,7 @@ import (
 	"strings"
 
 	"github.com/cockroachdb/errors"
-	"go.uber.org/zap"
+	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -38,7 +38,7 @@ type PersistentVolumePruner struct {
 	Namespace   string
 	StatefulSet string
 	ClientSet   kubernetes.Interface
-	Logger      *zap.Logger
+	Logger      logr.Logger
 }
 
 // watchStatefulset establishing a watch on the given statefulset in a
@@ -60,7 +60,7 @@ func (p *PersistentVolumePruner) watchStatefulset(
 		return errors.Wrapf(err, "establishing watch on statefulset %s.%s", p.Namespace, p.StatefulSet)
 	}
 
-	p.Logger.Info("established statefulset watch", zap.String("name", p.StatefulSet), zap.String("namespace", p.Namespace))
+	p.Logger.Info("established statefulset watch", "name", p.StatefulSet, "namespace", p.Namespace)
 
 	go func() {
 		defer w.Stop()
@@ -96,7 +96,7 @@ func (p *PersistentVolumePruner) watchStatefulset(
 					}
 				default:
 					// cancel on any unexpected events.
-					p.Logger.Warn("saw an unexpected event", zap.Any("event", evt))
+					p.Logger.Info("saw an unexpected event", "event", evt)
 					cancel()
 				}
 			}
@@ -237,7 +237,7 @@ func (p *PersistentVolumePruner) Prune(ctx context.Context) error {
 		default:
 		}
 
-		p.Logger.Info("deleting PVC", zap.String("name", pvc.Name))
+		p.Logger.Info("deleting PVC", "name", pvc.Name)
 		if err := p.ClientSet.CoreV1().PersistentVolumeClaims(p.Namespace).Delete(ctx, pvc.Name, metav1.DeleteOptions{
 			GracePeriodSeconds: &gracePeriod,
 			// Wait for the underlying PV to be deleted before moving on to

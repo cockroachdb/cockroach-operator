@@ -27,7 +27,8 @@ import (
 
 	"github.com/cenkalti/backoff"
 	"github.com/cockroachdb/errors"
-	"go.uber.org/zap"
+	"github.com/go-logr/logr"
+	
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
@@ -48,7 +49,7 @@ type Drainer interface {
 // CockroachNodeDrainer does decommissioning of nodes in the CockroachDB cluster
 type CockroachNodeDrainer struct {
 	Secure   bool
-	Logger   *zap.Logger
+	Logger   logr.Logger
 	Executor *CockroachExecutor
 	// RangeRelocationTimeout is the maximum amount of time to wait
 	// for a range to move. If no ranges have moved from the draining
@@ -57,7 +58,7 @@ type CockroachNodeDrainer struct {
 	RangeRelocationTimeout time.Duration
 }
 
-func NewCockroachNodeDrainer(logger *zap.Logger, namespace string, config *rest.Config, clientset kubernetes.Interface, secure bool, rangeRelocation time.Duration) Drainer {
+func NewCockroachNodeDrainer(logger logr.Logger, namespace string, config *rest.Config, clientset kubernetes.Interface, secure bool, rangeRelocation time.Duration) Drainer {
 	return &CockroachNodeDrainer{
 		Secure:                 secure,
 		Logger:                 logger,
@@ -72,18 +73,18 @@ func NewCockroachNodeDrainer(logger *zap.Logger, namespace string, config *rest.
 
 // Decommission commands the node to start training process and watches for it to complete or fail after timeout
 func (d *CockroachNodeDrainer) Decommission(ctx context.Context, replica uint) error {
-	lastNodeId, err := d.findNodeId(ctx, replica, CockroachStatefulSetName)
+	lastNodeID, err := d.findNodeId(ctx, replica, CockroachStatefulSetName)
 	if err != nil {
 		return err
 	}
 
-	d.Logger.Info("draining node", zap.Uint("id", lastNodeId))
+	d.Logger.Info("draining node", "NodeID", lastNodeID)
 
-	if err := d.executeDrainCmd(ctx, lastNodeId); err != nil {
+	if err := d.executeDrainCmd(ctx, lastNodeID); err != nil {
 		return err
 	}
 
-	check := d.makeDrainStatusChecker(lastNodeId)
+	check := d.makeDrainStatusChecker(lastNodeID)
 
 	lastCheckTime := time.Now()
 	lastCheckReplicas, err := check(ctx)
@@ -124,7 +125,7 @@ func (d *CockroachNodeDrainer) Decommission(ctx context.Context, replica uint) e
 		// MaxElapsedTime for this backoff is infinite, this error should never
 		// be returned to the caller. If you happen to see this error, the
 		// running code is either outdated or something terrible has happened.
-		return fmt.Errorf("node %d has not completed draining yet", lastNodeId)
+		return fmt.Errorf("node %d has not completed draining yet", lastNodeID)
 	}
 
 	b := backoff.NewExponentialBackOff()
@@ -170,10 +171,10 @@ func (d *CockroachNodeDrainer) makeDrainStatusChecker(id uint) func(ctx context.
 
 		d.Logger.Info(
 			"node status",
-			zap.Uint("id", id),
-			zap.String("isLive", isLive),
-			zap.String("replicas", replicasStr),
-			zap.String("isDecommissioning", isDecommissioning),
+			"id", id,
+			"isLive", isLive,
+			"replicas", replicasStr,
+			"isDecommissioning", isDecommissioning,
 		)
 
 		if isLive != "true" || isDecommissioning != "true" {

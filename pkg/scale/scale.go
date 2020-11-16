@@ -20,7 +20,8 @@ import (
 	"context"
 
 	"github.com/cockroachdb/errors"
-	"go.uber.org/zap"
+	"github.com/go-logr/logr"
+	
 )
 
 //PVCPruner interface
@@ -30,7 +31,7 @@ type PVCPruner interface {
 
 //Scaler interface
 type Scaler struct {
-	Logger    *zap.Logger
+	Logger    logr.Logger
 	CRDB      ClusterScaler
 	Drainer   Drainer
 	PVCPruner PVCPruner
@@ -79,7 +80,7 @@ func (s *Scaler) EnsureScale(ctx context.Context, scale uint) error {
 	for crdbScale > scale {
 		oneOff := crdbScale - 1
 
-		s.Logger.Info("scaling down stateful set", zap.Uint("have", crdbScale), zap.Uint("want", oneOff))
+		s.Logger.Info("scaling down stateful set", "have", crdbScale, "want", oneOff)
 
 		// TODO (chrisseto): If decommissioning fails due to a timeout
 		// recommission that node before failing this job.
@@ -129,7 +130,7 @@ func (s *Scaler) EnsureScale(ctx context.Context, scale uint) error {
 	// with cascade = false and recreating them. They will "adopt" the old/existing pods and in theory not
 	// have an affect on the cluster as a whole.
 	for crdbScale < scale {
-		s.Logger.Info("scaling up stateful set", zap.Uint("have", crdbScale), zap.Uint("want", crdbScale+1))
+		s.Logger.Info("scaling up stateful set", "have", crdbScale, "want", (crdbScale+1))
 		if err := s.CRDB.SetReplicas(ctx, crdbScale+1); err != nil {
 			return err
 		}

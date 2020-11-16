@@ -74,7 +74,7 @@ func (r *ClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 	// TODO should we make this configurable?
 	// Ensure the loop does not take longer than 4 hours
-	ctx, cancel := context.WithTimeout(context.Background(), 4*time.Hour)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Hour)
 	defer cancel()
 
 	log := r.Log.WithValues("CrdbCluster", req.NamespacedName)

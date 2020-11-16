@@ -28,7 +28,6 @@ import (
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	"github.com/cockroachdb/cockroach-operator/pkg/scale"
 	"github.com/pkg/errors"
-	"go.uber.org/zap"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	kubetypes "k8s.io/apimachinery/pkg/types"
@@ -76,20 +75,14 @@ func (d decommission) Act(ctx context.Context, cluster *resource.Cluster) error 
 		log.Info("statefulset does not have all replicas up")
 		return NotReadyErr{Err: errors.New("statefulset does not have all replicas up")}
 	}
-
 	cluster.SetFalse(api.DecommissionCondition)
+
 	replicas := uint(status.Replicas)
 	if status.CurrentReplicas > status.Replicas {
-		zaplogger, err := zap.NewDevelopment()
-		if err != nil {
-			log.Error(err, "can't initialize zap logger: %v")
-			return nil
-		}
 		clientset, err := kubernetes.NewForConfig(d.config)
 		if err != nil {
 			return errors.Wrapf(err, "failed to create kubernetes clientset")
 		}
-		defer zaplogger.Sync()
 		// test to see if we are running inside of Kubernetes
 		// If we are running inside of k8s we will not find this file.
 		runningInsideK8s := inK8s("/var/run/secrets/kubernetes.io/serviceaccount/token")
@@ -133,17 +126,16 @@ func (d decommission) Act(ctx context.Context, cluster *resource.Cluster) error 
 			return errors.Wrap(err, "failed to get range move duration")
 		}
 
-		drainer := scale.NewCockroachNodeDrainer(zaplogger, cluster.Namespace(), d.config, clientset, cluster.Spec().TLSEnabled, 3*timeout)
+		drainer := scale.NewCockroachNodeDrainer(d.log, cluster.Namespace(), d.config, clientset, cluster.Spec().TLSEnabled, 3*timeout)
 		pvcPruner := scale.PersistentVolumePruner{
 			Namespace:   cluster.Namespace(),
 			StatefulSet: ss.Name,
 			ClientSet:   clientset,
-			Logger:      zaplogger,
+			Logger:      d.log,
 		}
-
 		//we should decommission
-		scaler := scale.Scaler {
-			Logger: zaplogger,
+		scaler := scale.Scaler{
+			Logger: d.log,
 			CRDB: &scale.CockroachStatefulSet{
 				ClientSet: clientset,
 				Namespace: cluster.Namespace(),
@@ -152,12 +144,13 @@ func (d decommission) Act(ctx context.Context, cluster *resource.Cluster) error 
 			PVCPruner: &pvcPruner,
 		}
 		if err := scaler.EnsureScale(ctx, replicas); err != nil {
+			/// now check if the decommisiionStaleErr and update status
 			log.Error(err, "decomission failed")
 			return nil
 		}
-
 		cluster.SetTrue(api.DecommissionCondition)
 	}
-	log.Info("completed")
+	log.Info("decommission completed")
+	CancelLoop(ctx)
 	return nil
 }
