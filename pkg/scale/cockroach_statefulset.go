@@ -22,7 +22,7 @@ import (
 
 	"github.com/cenkalti/backoff"
 	"github.com/cockroachdb/errors"
-	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/tracer"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 
@@ -102,8 +102,8 @@ func (c *CockroachStatefulSet) WaitUntilHealthy(ctx context.Context, scale uint)
 
 // WaitUntilStatefulSetIsRunning waits until the given statefulset has all pods scheduled and running but not necessarily healthy nor ready
 func WaitUntilStatefulSetIsRunning(ctx context.Context, clientset kubernetes.Interface, namespace string, name string) error {
-	span, _ := tracer.StartSpanFromContext(ctx, "WaitUntilStatefulSetIsRunning")
-	defer span.Finish()
+	// span, _ := tracer.StartSpanFromContext(ctx, "WaitUntilStatefulSetIsRunning")
+	// defer span.Finish()
 
 	f := func() error {
 		return StatefulSetIsRunning(ctx, clientset, namespace, name)
@@ -161,9 +161,9 @@ func WaitUntilStatefulSetIsReadyToServe(
 	namespace string,
 	numReplicas int32) error {
 
-	span, _ := tracer.StartSpanFromContext(ctx, "WaitUntilStatefulSetIsReadyToServe")
-	defer span.Finish()
-	span.SetTag("namespace", namespace)
+	// span, _ := tracer.StartSpanFromContext(ctx, "WaitUntilStatefulSetIsReadyToServe")
+	// defer span.Finish()
+	// span.SetTag("namespace", namespace)
 
 	f := func() error {
 		return IsStatefulSetReadyToServe(ctx, clientset, namespace, numReplicas)
