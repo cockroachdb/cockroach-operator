@@ -165,6 +165,11 @@ type Volume struct {
 	// Persistent volume to use
 	// +optional
 	VolumeClaim *VolumeClaim `json:"pvc,omitempty"`
+	// SupportsAutoResize marks that a PVC will resize without restarting the entire cluster
+	// Default: false
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="PVC Supports Auto Resizing",xDescriptors="urn:alm:descriptor:com.tectonic.ui:booleanSwitch"
+	// +optional
+	SupportsAutoResize bool `json:"supportsAutoResize"`
 }
 
 // VolumeClaim wraps a persistent volume claim (PVC) to use with the container.

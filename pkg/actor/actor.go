@@ -69,16 +69,19 @@ func NewOperatorActions(scheme *runtime.Scheme, cl client.Client, config *rest.C
 		update = newUpgrade(scheme, cl, config)
 	}
 
-	decommission := newDecommission(scheme, cl, config)
 	// The order of these actors MATTERS.
 	// We need to have update before deploy so that
 	// updates run before the deploy actor, or
 	// deploy will update the STS container and not
 	// deploy.
+	// Actors that controlled by featuregates
+	// have the featuregate check above or in there handles
+	// func.
 	return []Actor{
 		newRequestCert(scheme, cl, config),
-		decommission,
+		newDecommission(scheme, cl, config),
 		update,
+		newResizePVC(scheme, cl, config),
 		newDeploy(scheme, cl),
 		newInitialize(scheme, cl, config),
 	}

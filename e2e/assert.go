@@ -23,6 +23,8 @@ import (
 	"testing"
 	"time"
 
+	"k8s.io/client-go/kubernetes"
+
 	api "github.com/cockroachdb/cockroach-operator/api/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/database"
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
@@ -229,7 +231,7 @@ func requireDownGradeOptionSet(t *testing.T, sb testenv.DiffingSandbox, b testut
 func requireDecommissionNode(t *testing.T, sb testenv.DiffingSandbox, b testutil.ClusterBuilder) {
 	cluster := b.Cluster()
 
-	err := wait.Poll(10*time.Second, 150*time.Second, func() (bool, error) {
+	err := wait.Poll(10*time.Second, 600*time.Second, func() (bool, error) {
 		if initialized, err := clusterIsInitialized(t, sb, cluster.Name()); err != nil || !initialized {
 			return false, err
 		}
@@ -326,4 +328,77 @@ func getCount(t *testing.T, rows *sql.Rows) (count int) {
 		}
 	}
 	return count
+}
+
+func requirePVCToResize(t *testing.T, sb testenv.DiffingSandbox, b testutil.ClusterBuilder) {
+	cluster := b.Cluster()
+
+	// TODO rewrite this
+	err := wait.Poll(10*time.Second, 300*time.Second, func() (bool, error) {
+		if initialized, err := clusterIsInitialized(t, sb, cluster.Name()); err != nil || !initialized {
+			return false, err
+		}
+
+		ss, err := fetchStatefulSet(sb, cluster.StatefulSetName())
+		if err != nil {
+			return false, err
+		}
+
+		if ss == nil {
+			t.Logf("stateful set is not found")
+			return false, nil
+		}
+
+		if !statefulSetIsReady(ss) {
+			return false, nil
+		}
+		clientset, err := kubernetes.NewForConfig(sb.Mgr.GetConfig())
+		require.NoError(t, err)
+
+		resized, err := resizedPVCs(context.TODO(), ss, b.Cluster(), clientset)
+		require.NoError(t, err)
+
+		return resized, nil
+	})
+	require.NoError(t, err)
+}
+
+// test to see if all PVCs are resized
+func resizedPVCs(ctx context.Context, sts *appsv1.StatefulSet, cluster *resource.Cluster,
+	clientset *kubernetes.Clientset) (bool, error) {
+
+	prefixes := make([]string, len(sts.Spec.VolumeClaimTemplates))
+	pvcsToKeep := make(map[string]bool, int(*sts.Spec.Replicas)*len(sts.Spec.VolumeClaimTemplates))
+	for j, pvct := range sts.Spec.VolumeClaimTemplates {
+		prefixes[j] = fmt.Sprintf("%s-%s-", pvct.Name, sts.Name)
+
+		for i := int32(0); i < *sts.Spec.Replicas; i++ {
+			name := fmt.Sprintf("%s-%s-%d", pvct.Name, sts.Name, i)
+			pvcsToKeep[name] = true
+		}
+	}
+
+	selector, err := metav1.LabelSelectorAsSelector(sts.Spec.Selector)
+	if err != nil {
+		return false, err
+	}
+
+	pvcs, err := clientset.CoreV1().PersistentVolumeClaims(cluster.Namespace()).List(ctx, metav1.ListOptions{
+		LabelSelector: selector.String(),
+	})
+
+	if err != nil {
+		return false, err
+	}
+	newSize := cluster.Spec().DataStore.VolumeClaim.PersistentVolumeClaimSpec.Resources.Requests.Storage()
+	for _, pvc := range pvcs.Items {
+		// Resize PVCs that are still in use
+		if pvcsToKeep[pvc.Name] {
+			if !pvc.Spec.Resources.Requests.Storage().Equal(*newSize) {
+				return false, nil
+			}
+		}
+	}
+
+	return true, nil
 }

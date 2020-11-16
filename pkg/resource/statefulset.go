@@ -35,8 +35,8 @@ const (
 	httpPortName = "http"
 	grpcPortName = "grpc"
 
-	dataDirName      = "datadir"
-	dataDirMountPath = "/cockroach/cockroach-data/"
+	DataDirName      = "datadir"
+	DataDirMountPath = "/cockroach/cockroach-data/"
 
 	certsDirName = "certs"
 
@@ -73,10 +73,10 @@ func (b StatefulSetBuilder) Build(obj runtime.Object) error {
 		Template: b.makePodTemplate(),
 	}
 
-	if err := b.Spec().DataStore.Apply(dataDirName, DbContainerName, dataDirMountPath, &ss.Spec,
+	if err := b.Spec().DataStore.Apply(DataDirName, DbContainerName, DataDirMountPath, &ss.Spec,
 		func(name string) metav1.ObjectMeta {
 			return metav1.ObjectMeta{
-				Name: dataDirName,
+				Name: DataDirName,
 			}
 		}); err != nil {
 		return err
