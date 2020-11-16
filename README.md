@@ -79,7 +79,7 @@ spec:
 
 ### Certificate signing
 
-By default, the Operator uses the built-in Kubernetes CA to generate and approve 1 client and 1 node certificate for the cluster.
+By default, the Operator uses the built-in Kubernetes CA to generate and approve 1 root and 1 node certificate for the cluster.
 
 ### Set resource requests and limits
 
