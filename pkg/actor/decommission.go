@@ -57,6 +57,7 @@ func (d decommission) Handles(conds []api.ClusterCondition) bool {
 }
 
 func (d decommission) Act(ctx context.Context, cluster *resource.Cluster) error {
+
 	log := d.log.WithValues("CrdbCluster", cluster.ObjectKey())
 	log.Info("check decommission oportunities")
 

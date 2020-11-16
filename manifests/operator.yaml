@@ -257,10 +257,12 @@ spec:
       serviceAccountName: cockroach-operator-sa
       containers:
         - name: cockroach-operator
+          # uncomment this to get bazel k8s deploying working
+          #image: cockroach-operator:bazel
           image: cockroachdb/cockroach-operator:v1.6.12-rc.2
           imagePullPolicy: IfNotPresent
           # uncomment this to enable ParitionedUpdates
-          # args: ["-feature-gates","PartitionedUpdate=true,UseDecommission=true,Upgrade=false"]
+          # args: ["-feature-gates","PartitionedUpdate=true,UseDecommission=true,Upgrade=false,ResizePVC=true"]
           args: ["-feature-gates","Upgrade=false"]
           env:
             - name: WATCH_NAMESPACE

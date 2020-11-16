@@ -257,6 +257,10 @@ spec:
                           type: string
                       type: object
                   type: object
+                supportsAutoResize:
+                  description: 'SupportsAutoResize marks that a PVC will resize without
+                    restarting the entire cluster Default: false'
+                  type: boolean
               type: object
             grpcPort:
               description: '(Optional) The database port (`--port` CLI parameter when

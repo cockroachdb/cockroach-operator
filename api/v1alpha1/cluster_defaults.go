@@ -16,7 +16,9 @@ limitations under the License.
 
 package v1alpha1
 
-import v1 "k8s.io/api/core/v1"
+import (
+	v1 "k8s.io/api/core/v1"
+)
 
 var (
 	DefaultGRPCPort       int32 = 26257
@@ -51,5 +53,4 @@ func SetClusterSpecDefaults(cs *CrdbClusterSpec) {
 		policy := v1.PullIfNotPresent
 		cs.Image.PullPolicyName = &policy
 	}
-
 }

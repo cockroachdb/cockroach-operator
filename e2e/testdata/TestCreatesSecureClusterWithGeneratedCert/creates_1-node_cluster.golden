@@ -6,6 +6,7 @@ metadata:
 spec:
   dataStore:
     emptyDir: {}
+    supportsAutoResize: false
   image:
     name: cockroachdb/cockroach:v19.2.6
   nodeTLSSecret: GENERATED

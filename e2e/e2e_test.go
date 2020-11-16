@@ -393,6 +393,7 @@ func TestDatabaseFunctionality(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
 	}
+
 	testLog := zapr.NewLogger(zaptest.NewLogger(t))
 	actor.Log = testLog
 	sb := testenv.NewDiffingSandbox(t, env)
@@ -459,6 +460,45 @@ func TestDecommissionFunctionality(t *testing.T) {
 	steps.Run(t)
 	//Disable decommission feature gate
 	require.NoError(t, utilfeature.DefaultMutableFeatureGate.Set("UseDecommission=false"))
+}
+
+func TestPVCResize(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+	require.NoError(t, utilfeature.DefaultMutableFeatureGate.Set("ResizePVC=true"))
+	testLog := zapr.NewLogger(zaptest.NewLogger(t))
+	actor.Log = testLog
+	sb := testenv.NewDiffingSandbox(t, env)
+	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
+	builder := testutil.NewBuilder("crdb").WithNodeCount(1).WithTLS().
+		WithImage("cockroachdb/cockroach:v20.1.7").
+		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
+	steps := Steps{
+		{
+			name: "creates a 3-node secure cluster db",
+			test: func(t *testing.T) {
+				require.NoError(t, sb.Create(builder.Cr()))
+				requireClusterToBeReadyEventually(t, sb, builder)
+			},
+		},
+		{
+			name: "resize PVC",
+			test: func(t *testing.T) {
+				current := builder.Cr()
+				require.NoError(t, sb.Get(current))
+				current.Spec.DataStore.VolumeClaim.PersistentVolumeClaimSpec.Resources.Limits.Storage().Set(2048)
+
+				require.NoError(t, sb.Update(current))
+				requireClusterToBeReadyEventually(t, sb, builder)
+
+				requirePVCToResize(t, sb, builder)
+
+			},
+		},
+	}
+	steps.Run(t)
+	require.NoError(t, utilfeature.DefaultMutableFeatureGate.Set("ResizePVC=false"))
 }
 
 func doNotTestFlakes(t *testing.T) bool {
