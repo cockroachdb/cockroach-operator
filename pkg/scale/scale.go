@@ -42,9 +42,8 @@ type Scaler struct {
 // before being removed from the CRDB cluster and their matching PVCs and PVs
 // will be removed as well.
 // In some cases, it may not be possible to full drain a node. In such cases a
-// kubecommon.DecommissioningStalledErr will be returned (if using kubecommon's
-// drainer implementation) and the node will be left in a decommissioning
-// state.
+// ErrDecommissioningStalled will be returned  and the node will be left in a 
+// decommissioning  state.
 func (s *Scaler) EnsureScale(ctx context.Context, scale uint) error {
 	// Before doing any scaling, prune any PVCs that are not currently in use.
 	// This only needs to be done when scaling up but the operation is a noop

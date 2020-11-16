@@ -26,18 +26,18 @@ import (
 	"github.com/dustin/go-humanize"
 	"gopkg.in/yaml.v2"
 )
-
+//GarbageCollectionConfig struct
 type GarbageCollectionConfig struct {
 	TTLSeconds uint `yaml:"ttlseconds"`
 }
-
+//ZoneConfig struct
 type ZoneConfig struct {
 	RangeMinBytes     uint64                  `yaml:"range_min_bytes"`
 	RangeMaxBytes     uint64                  `yaml:"range_max_bytes"`
 	Replicas          uint                    `yaml:"num_replicas"`
 	GarbageCollection GarbageCollectionConfig `yaml:"gc"`
 }
-
+//Scan func
 func (c *ZoneConfig) Scan(value interface{}) error {
 	bytes, ok := value.(string)
 	if !ok {
@@ -46,12 +46,12 @@ func (c *ZoneConfig) Scan(value interface{}) error {
 
 	return yaml.Unmarshal([]byte(bytes), c)
 }
-
+//Zone struct
 type Zone struct {
 	Target string
 	Config ZoneConfig
 }
-
+//ZoneConfigs func
 func ZoneConfigs(ctx context.Context, db *sql.DB) ([]Zone, error) {
 	// TODO (chrisseto): Will we ever need additional fields??
 	rows, err := db.QueryContext(ctx, `SELECT target, full_config_yaml FROM crdb_internal.zones`)
@@ -73,7 +73,7 @@ func ZoneConfigs(ctx context.Context, db *sql.DB) ([]Zone, error) {
 
 	return zones, nil
 }
-
+//GetClusterSetting func
 func GetClusterSetting(ctx context.Context, db *sql.DB, name string) (string, error) {
 	r := db.QueryRowContext(ctx, fmt.Sprintf("SHOW CLUSTER SETTING %s", name))
 	var value string
@@ -82,7 +82,7 @@ func GetClusterSetting(ctx context.Context, db *sql.DB, name string) (string, er
 	}
 	return value, nil
 }
-
+//SetClusterSetting func
 func SetClusterSetting(ctx context.Context, db *sql.DB, name, value string) error {
 	sql := fmt.Sprintf("SET CLUSTER SETTING %s = $1", name)
 	if _, err := db.Exec(sql, value); err != nil {

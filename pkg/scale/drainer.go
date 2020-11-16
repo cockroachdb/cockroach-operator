@@ -34,11 +34,11 @@ import (
 )
 
 var (
-	// DecommissioningStalledErr indicates that the decommissioning process of
+	// ErrDecommissioningStalled indicates that the decommissioning process of
 	// a node has stalled due to the KV allocator being unable to relocate ranges
 	// to another node. This could happen if no nodes have available disk space
 	// or if ZONE CONFIGURATION constraints can not be satisfied.
-	DecommissioningStalledErr = errors.New("decommissioning has stalled")
+	ErrDecommissioningStalled = errors.New("decommissioning has stalled")
 )
 
 //Drainer interface
@@ -54,10 +54,10 @@ type CockroachNodeDrainer struct {
 	// RangeRelocationTimeout is the maximum amount of time to wait
 	// for a range to move. If no ranges have moved from the draining
 	// node in the given durration Decommission will fail with
-	// DecommissioningStalledErr
+	// ErrDecommissioningStalled
 	RangeRelocationTimeout time.Duration
 }
-
+//NewCockroachNodeDrainer ctor
 func NewCockroachNodeDrainer(logger logr.Logger, namespace string, config *rest.Config, clientset kubernetes.Interface, secure bool, rangeRelocation time.Duration) Drainer {
 	return &CockroachNodeDrainer{
 		Secure:                 secure,
@@ -73,7 +73,7 @@ func NewCockroachNodeDrainer(logger logr.Logger, namespace string, config *rest.
 
 // Decommission commands the node to start training process and watches for it to complete or fail after timeout
 func (d *CockroachNodeDrainer) Decommission(ctx context.Context, replica uint) error {
-	lastNodeID, err := d.findNodeId(ctx, replica, CockroachStatefulSetName)
+	lastNodeID, err := d.findNodeID(ctx, replica, CockroachStatefulSetName)
 	if err != nil {
 		return err
 	}
@@ -108,7 +108,7 @@ func (d *CockroachNodeDrainer) Decommission(ctx context.Context, replica uint) e
 		// namely disk space constraints or constraints due to ZONE CONFIGURATIONS.
 		if lastCheckReplicas == replicas && time.Since(lastCheckTime) > d.RangeRelocationTimeout {
 			return backoff.Permanent(errors.Wrapf(
-				DecommissioningStalledErr,
+				ErrDecommissioningStalled,
 				"no ranges moved in %s",
 				d.RangeRelocationTimeout,
 			))
@@ -208,7 +208,7 @@ func (d *CockroachNodeDrainer) executeDrainCmd(ctx context.Context, id uint) err
 	return nil
 }
 
-func (d *CockroachNodeDrainer) findNodeId(ctx context.Context, replica uint, stsName string) (uint, error) {
+func (d *CockroachNodeDrainer) findNodeID(ctx context.Context, replica uint, stsName string) (uint, error) {
 	cmd := []string{"./cockroach", "node", "status", "--format=csv"}
 
 	if d.Secure {

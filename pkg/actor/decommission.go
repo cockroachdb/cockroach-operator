@@ -75,7 +75,6 @@ func (d decommission) Act(ctx context.Context, cluster *resource.Cluster) error 
 		log.Info("statefulset does not have all replicas up")
 		return NotReadyErr{Err: errors.New("statefulset does not have all replicas up")}
 	}
-	cluster.SetFalse(api.DecommissionCondition)
 
 	replicas := uint(status.Replicas)
 	if status.CurrentReplicas > status.Replicas {
@@ -146,6 +145,7 @@ func (d decommission) Act(ctx context.Context, cluster *resource.Cluster) error 
 		if err := scaler.EnsureScale(ctx, replicas); err != nil {
 			/// now check if the decommisiionStaleErr and update status
 			log.Error(err, "decomission failed")
+			cluster.SetFalse(api.DecommissionCondition)
 			return nil
 		}
 		cluster.SetTrue(api.DecommissionCondition)

@@ -434,7 +434,13 @@ func TestDecommissionFunctionality(t *testing.T) {
 		{
 			name: "decommsission a node",
 			test: func(t *testing.T) {
-				// requireDecommissionNode(t, sb, builder))
+				current := builder.Cr()
+				require.NoError(t, sb.Get(current))
+
+				current.Spec.Nodes = 3
+				require.NoError(t, sb.Update(current))
+				requireGetRangeMoveDurationFromDB(t, sb, builder)
+				requireDecommissionNode(t, sb, builder)
 				requireDatabaseToFunction(t, sb, builder)
 			},
 		},

@@ -117,6 +117,35 @@ func clusterIsInitialized(t *testing.T, sb testenv.DiffingSandbox, name string) 
 	return true, nil
 }
 
+func clusterIsDecommissioned(t *testing.T, sb testenv.DiffingSandbox, name string) (bool, error) {
+	expectedConditions := []api.ClusterCondition{
+		{
+			Type:   api.DecommissionCondition,
+			Status: metav1.ConditionFalse,
+		},
+	}
+
+	actual := resource.ClusterPlaceholder(name)
+	if err := sb.Get(actual); err != nil {
+		t.Logf("failed to fetch current cluster status :(")
+		return false, err
+	}
+
+	actualConditions := actual.Status.DeepCopy().Conditions
+
+	// Reset condition time as it is not significant for the assertion
+	var emptyTime metav1.Time
+	for i := range actualConditions {
+		actualConditions[i].LastTransitionTime = emptyTime
+	}
+
+	if !cmp.Equal(expectedConditions, actualConditions) {
+		return false, nil
+	}
+
+	return true, nil
+}
+
 func fetchStatefulSet(sb testenv.DiffingSandbox, name string) (*appsv1.StatefulSet, error) {
 	ss := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
@@ -197,6 +226,69 @@ func requireDownGradeOptionSet(t *testing.T, sb testenv.DiffingSandbox, b testut
 		t.Errorf("downgrade_option is not set to %s, but is set to %s", version, value)
 	}
 
+}
+func requireDecommissionNode(t *testing.T, sb testenv.DiffingSandbox, b testutil.ClusterBuilder) {
+	cluster := b.Cluster()
+
+	err := wait.Poll(10*time.Second, 150*time.Second, func() (bool, error) {
+		if decommissioned, err := clusterIsDecommissioned(t, sb, cluster.Name()); err != nil || !decommissioned {
+			return false, err
+		}
+
+		ss, err := fetchStatefulSet(sb, cluster.StatefulSetName())
+		if err != nil {
+			return false, err
+		}
+
+		if ss == nil {
+			t.Logf("stateful set is not found")
+			return false, nil
+		}
+
+		return statefulSetIsReady(ss), nil
+	})
+	require.NoError(t, err)
+}
+func requireGetRangeMoveDurationFromDB(t *testing.T, sb testenv.DiffingSandbox, b testutil.ClusterBuilder) {
+	sb.Mgr.GetConfig()
+	podName := fmt.Sprintf("%s-0.%s", b.Cluster().Name(), b.Cluster().Name())
+	conn := &database.DBConnection{
+		Ctx:    context.TODO(),
+		Client: sb.Mgr.GetClient(),
+		Port:   b.Cluster().Spec().GRPCPort,
+		UseSSL: true,
+
+		RestConfig:   sb.Mgr.GetConfig(),
+		ServiceName:  podName,
+		Namespace:    sb.Namespace,
+		DatabaseName: "system",
+
+		RunningInsideK8s:            false,
+		ClientCertificateSecretName: b.Cluster().ClientTLSSecretName(),
+		RootCertificateSecretName:   b.Cluster().NodeTLSSecretName(),
+	}
+
+	// Create a new database connection for the update.
+	db, err := database.NewDbConnection(conn)
+	require.NoError(t, err)
+	defer db.Close()
+
+	r := db.QueryRowContext(context.TODO(), "SHOW CLUSTER SETTING kv.snapshot_rebalance.max_rate")
+	var value string
+	if err := r.Scan(&value); err != nil {
+		t.Fatal(err)
+	}
+	r = db.QueryRowContext(context.TODO(), "SHOW CLUSTER SETTING kv.snapshot_recovery.max_rate")
+
+	if err := r.Scan(&value); err != nil {
+		t.Fatal(err)
+	}
+	r = db.QueryRowContext(context.TODO(), "SELECT target, full_config_yaml FROM crdb_internal.zones")
+
+	if err := r.Scan(&value); err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
 }
 
 func requireDatabaseToFunction(t *testing.T, sb testenv.DiffingSandbox, b testutil.ClusterBuilder) {
