@@ -68,7 +68,25 @@ func NewOperatorActions(scheme *runtime.Scheme, cl client.Client, config *rest.C
 	} else {
 		update = newUpgrade(scheme, cl, config)
 	}
+	var decommission Actor
 
+	// entry point for new PartitionUpdate upgrades
+	// this feature is controlled by a featuregate
+	if utilfeature.DefaultMutableFeatureGate.Enabled(features.Decommission) {
+		decommission = newDecommission(scheme, cl, config)
+		// The order of these actors MATTERS.
+		// We need to have update before deploy so that
+		// updates run before the deploy actor, or
+		// deploy will update the STS container and not
+		// deploy.
+		return []Actor{
+			newRequestCert(scheme, cl, config),
+			decommission,
+			update,
+			newDeploy(scheme, cl),
+			newInitialize(scheme, cl, config),
+		}
+	}
 	// The order of these actors MATTERS.
 	// We need to have update before deploy so that
 	// updates run before the deploy actor, or
@@ -76,7 +94,6 @@ func NewOperatorActions(scheme *runtime.Scheme, cl client.Client, config *rest.C
 	// deploy.
 	return []Actor{
 		newRequestCert(scheme, cl, config),
-		newDecommission(scheme, cl, config),
 		update,
 		newDeploy(scheme, cl),
 		newInitialize(scheme, cl, config),

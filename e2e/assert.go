@@ -121,7 +121,7 @@ func clusterIsDecommissioned(t *testing.T, sb testenv.DiffingSandbox, name strin
 	expectedConditions := []api.ClusterCondition{
 		{
 			Type:   api.DecommissionCondition,
-			Status: metav1.ConditionFalse,
+			Status: metav1.ConditionTrue,
 		},
 	}
 

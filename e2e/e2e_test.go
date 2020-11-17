@@ -418,6 +418,7 @@ func TestDecommissionFunctionality(t *testing.T) {
 	}
 	testLog := zapr.NewLogger(zaptest.NewLogger(t))
 	actor.Log = testLog
+	require.NoError(t, utilfeature.DefaultMutableFeatureGate.Set("UseDecommission=true"))
 	sb := testenv.NewDiffingSandbox(t, env)
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
 	builder := testutil.NewBuilder("crdb").WithNodeCount(4).WithTLS().

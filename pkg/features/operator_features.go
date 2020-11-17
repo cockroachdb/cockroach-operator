@@ -34,6 +34,11 @@ const (
 	// beta: v1.0
 	// PartitionedUpdate controls how the statefulset is updated
 	PartitionedUpdate featuregate.Feature = "PartitionedUpdate"
+	// owner: @alina
+	// alpha: v0.1
+	// beta: v1.0
+	// Decommission controls how the statefulset scales down
+	Decommission featuregate.Feature = "UseDecommission"
 )
 
 func init() {
@@ -45,4 +50,5 @@ func init() {
 // available throughout Kubernetes binaries.
 var defaultOperatorFeatureGates = map[featuregate.Feature]featuregate.FeatureSpec{
 	PartitionedUpdate: {Default: false, PreRelease: featuregate.Alpha},
+	Decommission:      {Default: false, PreRelease: featuregate.Alpha},
 }
