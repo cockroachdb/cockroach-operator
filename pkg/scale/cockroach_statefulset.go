@@ -30,9 +30,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-//CockroachStatefulSetName cost
-const CockroachStatefulSetName = "cockroachdb"
-
 //  backoffFactory is a replacable global for backoff creation. It may be
 // replaced with shorter times to allow testing of Wait___ functions without
 // waiting the entire default period
@@ -48,6 +45,7 @@ type ClusterScaler interface {
 
 // CockroachStatefulSet represents the CRDB statefulset running in a kubernetes cluster
 type CockroachStatefulSet struct {
+	Name      string
 	Namespace string
 	ClientSet kubernetes.Interface
 }
@@ -62,7 +60,7 @@ func defaultBackoffFactory(maxTime time.Duration) backoff.BackOff {
 func (c *CockroachStatefulSet) Replicas(ctx context.Context) (uint, error) {
 	// Note: GetScale would be better here but k8s fake client set doesn't play nice with it...
 	// This is effectively the same operation.
-	sst, err := c.ClientSet.AppsV1().StatefulSets(c.Namespace).Get(ctx, CockroachStatefulSetName, metav1.GetOptions{})
+	sst, err := c.ClientSet.AppsV1().StatefulSets(c.Namespace).Get(ctx, c.Name, metav1.GetOptions{})
 	if err != nil {
 		return 0, err
 	}
@@ -77,9 +75,9 @@ func (c *CockroachStatefulSet) Replicas(ctx context.Context) (uint, error) {
 // SetReplicas sets the desired replicas for CRDB's statefulset without waiting for
 // new pods to be created or to become healthy.
 func (c *CockroachStatefulSet) SetReplicas(ctx context.Context, scale uint) error {
-	_, err := c.ClientSet.AppsV1().StatefulSets(c.Namespace).UpdateScale(ctx, CockroachStatefulSetName, &autoscaling.Scale{
+	_, err := c.ClientSet.AppsV1().StatefulSets(c.Namespace).UpdateScale(ctx, c.Name, &autoscaling.Scale{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      CockroachStatefulSetName,
+			Name:      c.Name,
 			Namespace: c.Namespace,
 		},
 		Spec: autoscaling.ScaleSpec{
@@ -92,12 +90,12 @@ func (c *CockroachStatefulSet) SetReplicas(ctx context.Context, scale uint) erro
 
 // WaitUntilRunning blocks until the target statefulset has the expected number of pods running but not necessarily ready
 func (c *CockroachStatefulSet) WaitUntilRunning(ctx context.Context) error {
-	return WaitUntilStatefulSetIsRunning(ctx, c.ClientSet, c.Namespace, CockroachStatefulSetName)
+	return WaitUntilStatefulSetIsRunning(ctx, c.ClientSet, c.Namespace, c.Name)
 }
 
 // WaitUntilHealthy blocks until the target stateful set has exactly `scale` healthy replicas.
 func (c *CockroachStatefulSet) WaitUntilHealthy(ctx context.Context, scale uint) error {
-	return WaitUntilStatefulSetIsReadyToServe(ctx, c.ClientSet, c.Namespace, int32(scale))
+	return WaitUntilStatefulSetIsReadyToServe(ctx, c.ClientSet, c.Namespace, c.Name, int32(scale))
 }
 
 // WaitUntilStatefulSetIsRunning waits until the given statefulset has all pods scheduled and running but not necessarily healthy nor ready
@@ -158,7 +156,7 @@ func StatefulSetIsRunning(ctx context.Context, clientset kubernetes.Interface, n
 func WaitUntilStatefulSetIsReadyToServe(
 	ctx context.Context,
 	clientset kubernetes.Interface,
-	namespace string,
+	namespace, name string,
 	numReplicas int32) error {
 
 	// span, _ := tracer.StartSpanFromContext(ctx, "WaitUntilStatefulSetIsReadyToServe")
@@ -166,7 +164,7 @@ func WaitUntilStatefulSetIsReadyToServe(
 	// span.SetTag("namespace", namespace)
 
 	f := func() error {
-		return IsStatefulSetReadyToServe(ctx, clientset, namespace, numReplicas)
+		return IsStatefulSetReadyToServe(ctx, clientset, namespace, name, numReplicas)
 	}
 
 	b := backoffFactory(5 * time.Minute)
@@ -177,10 +175,10 @@ func WaitUntilStatefulSetIsReadyToServe(
 func IsStatefulSetReadyToServe(
 	ctx context.Context,
 	clientset kubernetes.Interface,
-	namespace string,
+	namespace, name string,
 	numReplicas int32,
 ) error {
-	ss, err := clientset.AppsV1().StatefulSets(namespace).Get(ctx, CockroachStatefulSetName, metav1.GetOptions{})
+	ss, err := clientset.AppsV1().StatefulSets(namespace).Get(ctx, name, metav1.GetOptions{})
 	if err != nil {
 		return errors.Wrap(err, "fetching cockroachdb statefulset")
 	}

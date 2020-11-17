@@ -138,7 +138,6 @@ func clusterIsDecommissioned(t *testing.T, sb testenv.DiffingSandbox, name strin
 	for i := range actualConditions {
 		actualConditions[i].LastTransitionTime = emptyTime
 	}
-
 	if !cmp.Equal(expectedConditions, actualConditions) {
 		return false, nil
 	}
@@ -231,7 +230,7 @@ func requireDecommissionNode(t *testing.T, sb testenv.DiffingSandbox, b testutil
 	cluster := b.Cluster()
 
 	err := wait.Poll(10*time.Second, 150*time.Second, func() (bool, error) {
-		if decommissioned, err := clusterIsDecommissioned(t, sb, cluster.Name()); err != nil || !decommissioned {
+		if initialized, err := clusterIsInitialized(t, sb, cluster.Name()); err != nil || !initialized {
 			return false, err
 		}
 
@@ -244,51 +243,9 @@ func requireDecommissionNode(t *testing.T, sb testenv.DiffingSandbox, b testutil
 			t.Logf("stateful set is not found")
 			return false, nil
 		}
-
-		return statefulSetIsReady(ss), nil
+		return statefulSetIsReady(ss) && b.Cr().Spec.Nodes == ss.Status.Replicas, nil
 	})
 	require.NoError(t, err)
-}
-func requireGetRangeMoveDurationFromDB(t *testing.T, sb testenv.DiffingSandbox, b testutil.ClusterBuilder) {
-	sb.Mgr.GetConfig()
-	podName := fmt.Sprintf("%s-0.%s", b.Cluster().Name(), b.Cluster().Name())
-	conn := &database.DBConnection{
-		Ctx:    context.TODO(),
-		Client: sb.Mgr.GetClient(),
-		Port:   b.Cluster().Spec().GRPCPort,
-		UseSSL: true,
-
-		RestConfig:   sb.Mgr.GetConfig(),
-		ServiceName:  podName,
-		Namespace:    sb.Namespace,
-		DatabaseName: "system",
-
-		RunningInsideK8s:            false,
-		ClientCertificateSecretName: b.Cluster().ClientTLSSecretName(),
-		RootCertificateSecretName:   b.Cluster().NodeTLSSecretName(),
-	}
-
-	// Create a new database connection for the update.
-	db, err := database.NewDbConnection(conn)
-	require.NoError(t, err)
-	defer db.Close()
-
-	r := db.QueryRowContext(context.TODO(), "SHOW CLUSTER SETTING kv.snapshot_rebalance.max_rate")
-	var value string
-	if err := r.Scan(&value); err != nil {
-		t.Fatal(err)
-	}
-	r = db.QueryRowContext(context.TODO(), "SHOW CLUSTER SETTING kv.snapshot_recovery.max_rate")
-
-	if err := r.Scan(&value); err != nil {
-		t.Fatal(err)
-	}
-	r = db.QueryRowContext(context.TODO(), "SELECT target, full_config_yaml FROM crdb_internal.zones")
-
-	if err := r.Scan(&value); err != nil {
-		t.Fatal(err)
-	}
-	defer db.Close()
 }
 
 func requireDatabaseToFunction(t *testing.T, sb testenv.DiffingSandbox, b testutil.ClusterBuilder) {

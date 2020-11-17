@@ -418,6 +418,7 @@ func TestDecommissionFunctionality(t *testing.T) {
 	}
 	testLog := zapr.NewLogger(zaptest.NewLogger(t))
 	actor.Log = testLog
+	//Enable decommission
 	require.NoError(t, utilfeature.DefaultMutableFeatureGate.Set("UseDecommission=true"))
 	sb := testenv.NewDiffingSandbox(t, env)
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
@@ -440,13 +441,15 @@ func TestDecommissionFunctionality(t *testing.T) {
 
 				current.Spec.Nodes = 3
 				require.NoError(t, sb.Update(current))
-				//requireGetRangeMoveDurationFromDB(t, sb, builder)
+				requireClusterToBeReadyEventually(t, sb, builder)
 				requireDecommissionNode(t, sb, builder)
 				requireDatabaseToFunction(t, sb, builder)
 			},
 		},
 	}
 	steps.Run(t)
+	//Disable decommission
+	require.NoError(t, utilfeature.DefaultMutableFeatureGate.Set("UseDecommission=false"))
 }
 
 func doNotTestFlakes(t *testing.T) bool {

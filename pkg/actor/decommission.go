@@ -24,9 +24,11 @@ import (
 	"github.com/cockroachdb/cockroach-operator/pkg/clustersql"
 	"github.com/cockroachdb/cockroach-operator/pkg/condition"
 	"github.com/cockroachdb/cockroach-operator/pkg/database"
+	"github.com/cockroachdb/cockroach-operator/pkg/features"
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	"github.com/cockroachdb/cockroach-operator/pkg/scale"
+	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -51,7 +53,7 @@ type decommission struct {
 }
 
 func (d decommission) Handles(conds []api.ClusterCondition) bool {
-	return condition.True(api.DecommissionCondition, conds)
+	return condition.False(api.NotInitializedCondition, conds) && utilfeature.DefaultMutableFeatureGate.Enabled(features.Decommission)
 }
 
 func (d decommission) Act(ctx context.Context, cluster *resource.Cluster) error {
@@ -66,21 +68,23 @@ func (d decommission) Act(ctx context.Context, cluster *resource.Cluster) error 
 	}
 	ss := &appsv1.StatefulSet{}
 	if err := d.client.Get(ctx, key, ss); err != nil {
-		log.Info("failed to fetch statefulset")
+		log.Info("decommission failed to fetch statefulset")
 		return kube.IgnoreNotFound(err)
 	}
 	status := &ss.Status
 
 	if status.CurrentReplicas == 0 || status.CurrentReplicas < status.Replicas {
-		log.Info("statefulset does not have all replicas up")
-		return NotReadyErr{Err: errors.New("statefulset does not have all replicas up")}
+		log.Info(" decommission statefulset does not have all replicas up")
+		return NotReadyErr{Err: errors.New("decommission statefulset does not have all replicas up")}
 	}
 
-	replicas := uint(status.Replicas)
-	if status.CurrentReplicas > status.Replicas {
+	replicas := uint(cluster.Spec().Nodes)
+
+	log.Info("replicas decommisioning", "status.CurrentReplicas", status.CurrentReplicas, "expected", cluster.Spec().Nodes)
+	if status.CurrentReplicas > cluster.Spec().Nodes {
 		clientset, err := kubernetes.NewForConfig(d.config)
 		if err != nil {
-			return errors.Wrapf(err, "failed to create kubernetes clientset")
+			return errors.Wrapf(err, "decommission failed to create kubernetes clientset")
 		}
 		// test to see if we are running inside of Kubernetes
 		// If we are running inside of k8s we will not find this file.
@@ -125,7 +129,7 @@ func (d decommission) Act(ctx context.Context, cluster *resource.Cluster) error 
 			return errors.Wrap(err, "failed to get range move duration")
 		}
 
-		drainer := scale.NewCockroachNodeDrainer(d.log, cluster.Namespace(), d.config, clientset, cluster.Spec().TLSEnabled, 3*timeout)
+		drainer := scale.NewCockroachNodeDrainer(d.log, cluster.Namespace(), ss.Name, d.config, clientset, cluster.Spec().TLSEnabled, 3*timeout)
 		pvcPruner := scale.PersistentVolumePruner{
 			Namespace:   cluster.Namespace(),
 			StatefulSet: ss.Name,
@@ -138,6 +142,7 @@ func (d decommission) Act(ctx context.Context, cluster *resource.Cluster) error 
 			CRDB: &scale.CockroachStatefulSet{
 				ClientSet: clientset,
 				Namespace: cluster.Namespace(),
+				Name:      ss.Name,
 			},
 			Drainer:   drainer,
 			PVCPruner: &pvcPruner,
@@ -149,8 +154,10 @@ func (d decommission) Act(ctx context.Context, cluster *resource.Cluster) error 
 			return nil
 		}
 		cluster.SetTrue(api.DecommissionCondition)
+
+		log.Info("decommission completed", "cond", ss.Status.Conditions)
+		CancelLoop(ctx)
 	}
-	log.Info("decommission completed")
-	CancelLoop(ctx)
+	log.Info("nothing to do")
 	return nil
 }

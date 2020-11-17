@@ -59,22 +59,23 @@ type CockroachNodeDrainer struct {
 }
 
 //NewCockroachNodeDrainer ctor
-func NewCockroachNodeDrainer(logger logr.Logger, namespace string, config *rest.Config, clientset kubernetes.Interface, secure bool, rangeRelocation time.Duration) Drainer {
+func NewCockroachNodeDrainer(logger logr.Logger, namespace, ssname string, config *rest.Config, clientset kubernetes.Interface, secure bool, rangeRelocation time.Duration) Drainer {
 	return &CockroachNodeDrainer{
 		Secure:                 secure,
 		Logger:                 logger,
 		RangeRelocationTimeout: rangeRelocation,
 		Executor: &CockroachExecutor{
-			Namespace: namespace,
-			Config:    config,
-			ClientSet: clientset,
+			Namespace:   namespace,
+			StatefulSet: ssname,
+			Config:      config,
+			ClientSet:   clientset,
 		},
 	}
 }
 
 // Decommission commands the node to start training process and watches for it to complete or fail after timeout
 func (d *CockroachNodeDrainer) Decommission(ctx context.Context, replica uint) error {
-	lastNodeID, err := d.findNodeID(ctx, replica, CockroachStatefulSetName)
+	lastNodeID, err := d.findNodeID(ctx, replica, d.Executor.StatefulSet)
 	if err != nil {
 		return err
 	}
