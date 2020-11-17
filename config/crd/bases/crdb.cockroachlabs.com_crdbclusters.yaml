@@ -308,6 +308,7 @@ spec:
             nodes:
               description: (Required) Number of nodes (pods) in the cluster
               format: int32
+              minimum: 3
               type: integer
             resources:
               description: '(Optional) Database container resource limits. Any container
