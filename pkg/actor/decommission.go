@@ -80,7 +80,7 @@ func (d decommission) Act(ctx context.Context, cluster *resource.Cluster) error 
 
 	replicas := uint(cluster.Spec().Nodes)
 	if replicas < 3 {
-		log.Info("We cannot decommision if there are less than 3 nodes", "nodes", replicas)
+		log.Info("We cannot decommission if there are less than 3 nodes", "nodes", replicas)
 		return errors.New("decommission with less than 3 nodes is not supported")
 	}
 	log.Info("replicas decommisioning", "status.CurrentReplicas", status.CurrentReplicas, "expected", cluster.Spec().Nodes)
