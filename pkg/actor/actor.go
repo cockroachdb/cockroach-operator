@@ -29,6 +29,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
+
 //NotReadyErr strut
 type NotReadyErr struct {
 	Err error
@@ -37,6 +38,7 @@ type NotReadyErr struct {
 func (e NotReadyErr) Error() string {
 	return e.Err.Error()
 }
+
 //PermanentErr struct
 type PermanentErr struct {
 	Err error
@@ -80,7 +82,8 @@ func NewOperatorActions(scheme *runtime.Scheme, cl client.Client, config *rest.C
 		newInitialize(scheme, cl, config),
 	}
 }
-//Log var 
+
+//Log var
 var Log = logf.Log.WithName("action")
 
 func newAction(atype string, scheme *runtime.Scheme, cl client.Client) action {

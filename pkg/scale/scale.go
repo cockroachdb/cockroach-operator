@@ -21,7 +21,6 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
-	
 )
 
 //PVCPruner interface
@@ -42,7 +41,7 @@ type Scaler struct {
 // before being removed from the CRDB cluster and their matching PVCs and PVs
 // will be removed as well.
 // In some cases, it may not be possible to full drain a node. In such cases a
-// ErrDecommissioningStalled will be returned  and the node will be left in a 
+// ErrDecommissioningStalled will be returned  and the node will be left in a
 // decommissioning  state.
 func (s *Scaler) EnsureScale(ctx context.Context, scale uint) error {
 	// Before doing any scaling, prune any PVCs that are not currently in use.
@@ -129,7 +128,7 @@ func (s *Scaler) EnsureScale(ctx context.Context, scale uint) error {
 	// with cascade = false and recreating them. They will "adopt" the old/existing pods and in theory not
 	// have an affect on the cluster as a whole.
 	for crdbScale < scale {
-		s.Logger.Info("scaling up stateful set", "have", crdbScale, "want", (crdbScale+1))
+		s.Logger.Info("scaling up stateful set", "have", crdbScale, "want", (crdbScale + 1))
 		if err := s.CRDB.SetReplicas(ctx, crdbScale+1); err != nil {
 			return err
 		}

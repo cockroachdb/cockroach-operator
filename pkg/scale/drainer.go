@@ -28,7 +28,7 @@ import (
 	"github.com/cenkalti/backoff"
 	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
-	
+
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
@@ -57,6 +57,7 @@ type CockroachNodeDrainer struct {
 	// ErrDecommissioningStalled
 	RangeRelocationTimeout time.Duration
 }
+
 //NewCockroachNodeDrainer ctor
 func NewCockroachNodeDrainer(logger logr.Logger, namespace string, config *rest.Config, clientset kubernetes.Interface, secure bool, rangeRelocation time.Duration) Drainer {
 	return &CockroachNodeDrainer{

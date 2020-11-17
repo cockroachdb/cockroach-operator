@@ -356,7 +356,7 @@ func requireDatabaseToFunction(t *testing.T, sb testenv.DiffingSandbox, b testut
 	defer countRows.Close()
 	count := getCount(t, countRows)
 	if count != 2 {
-		t.Fatal(fmt.Errorf("found incorrect number of rows.  Expected 2 got %i", count))
+		t.Fatal(fmt.Errorf("found incorrect number of rows.  Expected 2 got %v", count))
 	}
 
 }
