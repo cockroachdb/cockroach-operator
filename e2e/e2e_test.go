@@ -36,7 +36,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-var updateOpt = flag.Bool("update", false, "update the golden files of this test")
+var updateOpt = flag.Bool("update", true, "update the golden files of this test")
 
 var env *testenv.ActiveEnv
 
