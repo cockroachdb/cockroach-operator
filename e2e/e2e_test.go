@@ -145,10 +145,10 @@ func TestCreatesSecureClusterWithGeneratedCert(t *testing.T) {
 	sb := testenv.NewDiffingSandbox(t, env)
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
 
-	b := testutil.NewBuilder("crdb").WithNodeCount(1).WithTLS().WithEmptyDirDataStore()
+	b := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().WithEmptyDirDataStore()
 
 	create := Step{
-		name: "creates 1-node secure cluster",
+		name: "creates 3-node secure cluster",
 		test: func(t *testing.T) {
 			require.NoError(t, sb.Create(b.Cr()))
 
@@ -209,13 +209,13 @@ func TestUpgradesMinorVersion(t *testing.T) {
 	sb := testenv.NewDiffingSandbox(t, env)
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
 
-	builder := testutil.NewBuilder("crdb").WithNodeCount(1).WithTLS().
+	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
 		WithImage("cockroachdb/cockroach:v19.2.5").
 		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
 
 	steps := Steps{
 		{
-			name: "creates a 1-node secure cluster",
+			name: "creates a 3-node secure cluster",
 			test: func(t *testing.T) {
 				require.NoError(t, sb.Create(builder.Cr()))
 
@@ -252,13 +252,13 @@ func TestUpgradesMajorVersion19to20(t *testing.T) {
 	sb := testenv.NewDiffingSandbox(t, env)
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
 
-	builder := testutil.NewBuilder("crdb").WithNodeCount(1).WithTLS().
+	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
 		WithImage("cockroachdb/cockroach:v19.2.6").
 		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
 
 	steps := Steps{
 		{
-			name: "creates a 1-node secure cluster",
+			name: "creates a 3-node secure cluster",
 			test: func(t *testing.T) {
 				require.NoError(t, sb.Create(builder.Cr()))
 
@@ -295,13 +295,13 @@ func TestUpgradesMajorVersion19_1To19_2(t *testing.T) {
 	sb := testenv.NewDiffingSandbox(t, env)
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
 
-	builder := testutil.NewBuilder("crdb").WithNodeCount(1).WithTLS().
+	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
 		WithImage("cockroachdb/cockroach:v19.1.4").
 		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
 
 	steps := Steps{
 		{
-			name: "creates a 1-node secure cluster",
+			name: "creates a 3-node secure cluster",
 			test: func(t *testing.T) {
 				require.NoError(t, sb.Create(builder.Cr()))
 

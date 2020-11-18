@@ -60,7 +60,7 @@ var _ = Describe("CrdbCluster", func() {
 					Name:      "foo",
 					Namespace: "default",
 				},
-				Spec: CrdbClusterSpec{},
+				Spec: CrdbClusterSpec{Nodes: 3},
 			}
 
 			By("creating an API object")
