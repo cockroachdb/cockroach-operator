@@ -36,7 +36,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-var updateOpt = flag.Bool("update", true, "update the golden files of this test")
+var updateOpt = flag.Bool("update", false, "update the golden files of this test")
 
 var env *testenv.ActiveEnv
 
@@ -113,7 +113,7 @@ func TestCreatesInsecureCluster(t *testing.T) {
 	b := testutil.NewBuilder("crdb").WithNodeCount(3).WithEmptyDirDataStore()
 
 	create := Step{
-		name: "creates 3-node insecure cluster",
+		name: "creates 1-node insecure cluster",
 		test: func(t *testing.T) {
 			require.NoError(t, sb.Create(b.Cr()))
 
@@ -148,7 +148,7 @@ func TestCreatesSecureClusterWithGeneratedCert(t *testing.T) {
 	b := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().WithEmptyDirDataStore()
 
 	create := Step{
-		name: "creates 3-node secure cluster",
+		name: "creates 1-node secure cluster",
 		test: func(t *testing.T) {
 			require.NoError(t, sb.Create(b.Cr()))
 
