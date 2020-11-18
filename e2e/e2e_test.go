@@ -418,7 +418,7 @@ func TestDecommissionFunctionality(t *testing.T) {
 	}
 	testLog := zapr.NewLogger(zaptest.NewLogger(t))
 	actor.Log = testLog
-	//Enable decommission
+	//Enable decommission feature gate
 	require.NoError(t, utilfeature.DefaultMutableFeatureGate.Set("UseDecommission=true"))
 	sb := testenv.NewDiffingSandbox(t, env)
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
@@ -448,7 +448,7 @@ func TestDecommissionFunctionality(t *testing.T) {
 		},
 	}
 	steps.Run(t)
-	//Disable decommission
+	//Disable decommission feature gate
 	require.NoError(t, utilfeature.DefaultMutableFeatureGate.Set("UseDecommission=false"))
 }
 
