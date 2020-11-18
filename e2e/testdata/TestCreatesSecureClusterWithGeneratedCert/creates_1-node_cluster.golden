@@ -308,3 +308,4 @@ spec:
     rollingUpdate:
       partition: 0
     type: RollingUpdate
+
