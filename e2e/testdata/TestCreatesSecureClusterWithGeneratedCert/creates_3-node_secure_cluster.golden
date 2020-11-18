@@ -355,6 +355,25 @@ spec:
           name: crdb-root
 
 ---
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  labels:
+    app.kubernetes.io/component: database
+    app.kubernetes.io/instance: crdb
+    app.kubernetes.io/managed-by: cockroach-operator
+    app.kubernetes.io/name: cockroachdb
+    app.kubernetes.io/part-of: cockroachdb
+  name: crdb
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: database
+      app.kubernetes.io/instance: crdb
+      app.kubernetes.io/name: cockroachdb
+
+---
 apiVersion: v1
 data:
   ca.crt: '[replaced]'
