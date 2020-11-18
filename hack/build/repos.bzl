@@ -4889,35 +4889,3 @@ def go_repositories():
         sum = "h1:RlWgLqCMMIYYEVcAR5MDsuHlVkaIPDAF+5Dehzg8L5A=",
         version = "v2.0.0-20180818164646-67afb5ed74ec",
     )
-    go_repository(
-        name = "com_github_datadog_datadog_go",
-        build_file_generation = "on",
-        build_file_proto_mode = "disable",
-        importpath = "github.com/DataDog/datadog-go",
-        sum = "h1:Q73jzyKHwyA04Gf4SSukRF+KR4wJEimU6tAuU0B8Y4Y=",
-        version = "v4.2.0+incompatible",
-    )
-    go_repository(
-        name = "com_github_opentracing_opentracing_go",
-        build_file_generation = "on",
-        build_file_proto_mode = "disable",
-        importpath = "github.com/opentracing/opentracing-go",
-        sum = "h1:uEJPy/1a5RIPAJ0Ov+OIO8OxWu77jEv+1B0VhjKrZUs=",
-        version = "v1.2.0",
-    )
-    go_repository(
-        name = "com_github_philhofer_fwd",
-        build_file_generation = "on",
-        build_file_proto_mode = "disable",
-        importpath = "github.com/philhofer/fwd",
-        sum = "h1:PAdZw9+/BCf4gc/kA2L/PbGPkFe72Kl2GLZXTG8HpU8=",
-        version = "v1.1.0",
-    )
-    go_repository(
-        name = "com_github_tinylib_msgp",
-        build_file_generation = "on",
-        build_file_proto_mode = "disable",
-        importpath = "github.com/tinylib/msgp",
-        sum = "h1:gWmO7n0Ys2RBEb7GPYB9Ujq8Mk5p2U08lRnmMcGy6BQ=",
-        version = "v1.1.2",
-    )
