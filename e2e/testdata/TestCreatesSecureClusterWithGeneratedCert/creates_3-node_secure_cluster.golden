@@ -8,7 +8,7 @@ spec:
     emptyDir: {}
   image:
     name: cockroachdb/cockroach:v19.2.6
-  nodes: 1
+  nodes: 3
   resources: {}
   tlsEnabled: true
 

@@ -9,7 +9,7 @@ spec:
   image:
     name: cockroachdb/cockroach:v19.2.6
   nodeTLSSecret: GENERATED
-  nodes: 1
+  nodes: 3
   tlsEnabled: true
 
 ---
