@@ -27,7 +27,7 @@ spec:
   containers:
   - args:
     - start
-    - --join=crdb-0.crdb.[sandbox_namespace]:26257
+    - --join=crdb-0.crdb.[sandbox_namespace]:26257,crdb-1.crdb.[sandbox_namespace]:26257,crdb-2.crdb.[sandbox_namespace]:26257
     - --advertise-host=$(POD_NAME).crdb.[sandbox_namespace]
     - --logtostderr=INFO
     - --certs-dir=/cockroach/cockroach-certs/
@@ -244,7 +244,7 @@ spec:
       containers:
       - args:
         - start
-        - --join=crdb-0.crdb.[sandbox_namespace]:26257
+        - --join=crdb-0.crdb.[sandbox_namespace]:26257,crdb-1.crdb.[sandbox_namespace]:26257,crdb-2.crdb.[sandbox_namespace]:26257
         - --advertise-host=$(POD_NAME).crdb.[sandbox_namespace]
         - --logtostderr=INFO
         - --certs-dir=/cockroach/cockroach-certs/
