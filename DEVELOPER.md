@@ -72,22 +72,13 @@ bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
                  //manifests:install_operator.apply
 ```
 
-There are various examples that can be installed.  The files are located in the examples directory. You can also use:
+There are various examples that can be installed.  The files are located in the examples directory.
 
-```
-# install a basic example
-./hack/apply-crdb-example.sh -c $CLUSTER
- ```
+## Delete the cluster
 
-Delete the cluster
+When you have removed your example and the persitent volumes you can use the following command to delete your cluster.
 
-```
-# delete the example
-./hack/delete-crdb-example.sh -c $CLUSTER
-
-# If you're still using the gke cluster, you can delete persistent volumes and persistent volume claims. It is not recommended to do this in production. Use --help for details.
-kubectl delete pv,pvc --help
-
+```bash
 # delete the cluster
 # note this is async, and the script will complete without waiting the entire time
 ./hack/delete-gke-cluster.sh -c $CLUSTER
