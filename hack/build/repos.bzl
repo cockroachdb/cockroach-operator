@@ -4921,11 +4921,3 @@ def go_repositories():
         sum = "h1:gWmO7n0Ys2RBEb7GPYB9Ujq8Mk5p2U08lRnmMcGy6BQ=",
         version = "v1.1.2",
     )
-    go_repository(
-        name = "in_gopkg_datadog_dd_trace_go_v1",
-        build_file_generation = "on",
-        build_file_proto_mode = "disable",
-        importpath = "gopkg.in/DataDog/dd-trace-go.v1",
-        sum = "h1:9BJfwtuCUrUiNB3WCTXHuaP5E/J/zfMPUUaRJoEQfdc=",
-        version = "v1.27.1",
-    )

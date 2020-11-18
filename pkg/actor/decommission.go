@@ -82,7 +82,7 @@ func (d decommission) Act(ctx context.Context, cluster *resource.Cluster) error 
 	//We do not scale down if the nodes field is less than 3, we scale down  to 3 but not less
 	//TODO @alina add validation webhook (see https://github.com/cockroachdb/cockroach-operator/issues/245)
 	if nodes < 3 {
-		log.Info("We cannot decommission if there are less than 3 nodes", "nodes", replicas)
+		log.Info("We cannot decommission if there are less than 3 nodes", "nodes", nodes)
 		return errors.New("decommission with less than 3 nodes is not supported")
 	}
 	log.Info("replicas decommisioning", "status.CurrentReplicas", status.CurrentReplicas, "expected", cluster.Spec().Nodes)
