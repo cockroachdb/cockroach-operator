@@ -9,7 +9,7 @@ spec:
   image:
     name: cockroachdb/cockroach:v19.2.6
   nodeTLSSecret: GENERATED
-  nodes: 3
+  nodes: 1
   tlsEnabled: true
 
 ---
@@ -27,7 +27,7 @@ spec:
   - args:
     - shell
     - -ecx
-    - '>- exec /cockroach/cockroach start --join=crdb-0.crdb.[sandbox_namespace]:26257,crdb-1.crdb.[sandbox_namespace]:26257,crdb-2.crdb.[sandbox_namespace]:26257
+    - '>- exec /cockroach/cockroach start --join=crdb-0.crdb.[sandbox_namespace]:26257
       --advertise-host=$(hostname -f) --logtostderr=INFO --certs-dir=/cockroach/cockroach-certs/
       --http-port=8080 --port=26257 --cache=25% --max-sql-memory=25%'
     env:
@@ -212,7 +212,7 @@ metadata:
   name: crdb
 spec:
   podManagementPolicy: OrderedReady
-  replicas: 3
+  replicas: 1
   revisionHistoryLimit: 10
   selector:
     matchLabels:
@@ -232,7 +232,7 @@ spec:
       - args:
         - shell
         - -ecx
-        - '>- exec /cockroach/cockroach start --join=crdb-0.crdb.[sandbox_namespace]:26257,crdb-1.crdb.[sandbox_namespace]:26257,crdb-2.crdb.[sandbox_namespace]:26257
+        - '>- exec /cockroach/cockroach start --join=crdb-0.crdb.[sandbox_namespace]:26257
           --advertise-host=$(hostname -f) --logtostderr=INFO --certs-dir=/cockroach/cockroach-certs/
           --http-port=8080 --port=26257 --cache=25% --max-sql-memory=25%'
         env:
@@ -308,4 +308,3 @@ spec:
     rollingUpdate:
       partition: 0
     type: RollingUpdate
-

@@ -8,7 +8,7 @@ spec:
     emptyDir: {}
   image:
     name: cockroachdb/cockroach:v19.2.6
-  nodes: 3
+  nodes: 1
   resources: {}
   tlsEnabled: true
 
@@ -27,7 +27,7 @@ spec:
   containers:
   - args:
     - start
-    - --join=crdb-0.crdb.[sandbox_namespace]:26257,crdb-1.crdb.[sandbox_namespace]:26257,crdb-2.crdb.[sandbox_namespace]:26257
+    - --join=crdb-0.crdb.[sandbox_namespace]:26257
     - --advertise-host=$(POD_NAME).crdb.[sandbox_namespace]
     - --logtostderr=INFO
     - --certs-dir=/cockroach/cockroach-certs/
@@ -125,253 +125,6 @@ spec:
           - key: tls.key
             path: client.root.key
           name: crdb-root
-
----
-apiVersion: v1
-kind: Pod
-metadata:
-  labels:
-    app.kubernetes.io/component: database
-    app.kubernetes.io/instance: crdb
-    app.kubernetes.io/name: cockroachdb
-    statefulset.kubernetes.io/pod-name: crdb-1
-  name: crdb-1
-spec:
-  automountServiceAccountToken: false
-  containers:
-  - args:
-    - start
-    - --join=crdb-0.crdb.[sandbox_namespace]:26257,crdb-1.crdb.[sandbox_namespace]:26257,crdb-2.crdb.[sandbox_namespace]:26257
-    - --advertise-host=$(POD_NAME).crdb.[sandbox_namespace]
-    - --logtostderr=INFO
-    - --certs-dir=/cockroach/cockroach-certs/
-    - --http-port=8080
-    - --port=26257
-    - --cache=25%
-    - --max-sql-memory=25%
-    command:
-    - /cockroach/cockroach
-    env:
-    - name: COCKROACH_CHANNEL
-      value: kubernetes-operator
-    - name: POD_NAME
-      valueFrom:
-        fieldRef:
-          apiVersion: v1
-          fieldPath: metadata.name
-    image: cockroachdb/cockroach:v19.2.6
-    imagePullPolicy: IfNotPresent
-    livenessProbe:
-      failureThreshold: 3
-      httpGet:
-        path: /health
-        port: http
-        scheme: HTTPS
-      initialDelaySeconds: 30
-      periodSeconds: 5
-      successThreshold: 1
-      timeoutSeconds: 1
-    name: db
-    ports:
-    - containerPort: 26257
-      name: grpc
-      protocol: TCP
-    - containerPort: 8080
-      name: http
-      protocol: TCP
-    readinessProbe:
-      failureThreshold: 2
-      httpGet:
-        path: /health?ready=1
-        port: http
-        scheme: HTTPS
-      initialDelaySeconds: 10
-      periodSeconds: 5
-      successThreshold: 1
-      timeoutSeconds: 1
-    resources: {}
-    terminationMessagePath: /dev/termination-log
-    terminationMessagePolicy: File
-    volumeMounts:
-    - mountPath: /cockroach/cockroach-data/
-      name: datadir
-    - mountPath: /cockroach/cockroach-certs/
-      name: certs
-  dnsPolicy: ClusterFirst
-  enableServiceLinks: true
-  priority: 0
-  restartPolicy: Always
-  schedulerName: default-scheduler
-  securityContext: {}
-  serviceAccount: default
-  serviceAccountName: default
-  subdomain: crdb
-  terminationGracePeriodSeconds: 60
-  tolerations:
-  - effect: NoExecute
-    key: node.kubernetes.io/not-ready
-    operator: Exists
-    tolerationSeconds: 300
-  - effect: NoExecute
-    key: node.kubernetes.io/unreachable
-    operator: Exists
-    tolerationSeconds: 300
-  volumes:
-  - emptyDir: {}
-    name: datadir
-  - name: certs
-    projected:
-      defaultMode: 256
-      sources:
-      - secret:
-          items:
-          - key: ca.crt
-            path: ca.crt
-          - key: tls.crt
-            path: node.crt
-          - key: tls.key
-            path: node.key
-          name: crdb-node
-      - secret:
-          items:
-          - key: tls.crt
-            path: client.root.crt
-          - key: tls.key
-            path: client.root.key
-          name: crdb-root
-
----
-apiVersion: v1
-kind: Pod
-metadata:
-  labels:
-    app.kubernetes.io/component: database
-    app.kubernetes.io/instance: crdb
-    app.kubernetes.io/name: cockroachdb
-    statefulset.kubernetes.io/pod-name: crdb-2
-  name: crdb-2
-spec:
-  automountServiceAccountToken: false
-  containers:
-  - args:
-    - start
-    - --join=crdb-0.crdb.[sandbox_namespace]:26257,crdb-1.crdb.[sandbox_namespace]:26257,crdb-2.crdb.[sandbox_namespace]:26257
-    - --advertise-host=$(POD_NAME).crdb.[sandbox_namespace]
-    - --logtostderr=INFO
-    - --certs-dir=/cockroach/cockroach-certs/
-    - --http-port=8080
-    - --port=26257
-    - --cache=25%
-    - --max-sql-memory=25%
-    command:
-    - /cockroach/cockroach
-    env:
-    - name: COCKROACH_CHANNEL
-      value: kubernetes-operator
-    - name: POD_NAME
-      valueFrom:
-        fieldRef:
-          apiVersion: v1
-          fieldPath: metadata.name
-    image: cockroachdb/cockroach:v19.2.6
-    imagePullPolicy: IfNotPresent
-    livenessProbe:
-      failureThreshold: 3
-      httpGet:
-        path: /health
-        port: http
-        scheme: HTTPS
-      initialDelaySeconds: 30
-      periodSeconds: 5
-      successThreshold: 1
-      timeoutSeconds: 1
-    name: db
-    ports:
-    - containerPort: 26257
-      name: grpc
-      protocol: TCP
-    - containerPort: 8080
-      name: http
-      protocol: TCP
-    readinessProbe:
-      failureThreshold: 2
-      httpGet:
-        path: /health?ready=1
-        port: http
-        scheme: HTTPS
-      initialDelaySeconds: 10
-      periodSeconds: 5
-      successThreshold: 1
-      timeoutSeconds: 1
-    resources: {}
-    terminationMessagePath: /dev/termination-log
-    terminationMessagePolicy: File
-    volumeMounts:
-    - mountPath: /cockroach/cockroach-data/
-      name: datadir
-    - mountPath: /cockroach/cockroach-certs/
-      name: certs
-  dnsPolicy: ClusterFirst
-  enableServiceLinks: true
-  priority: 0
-  restartPolicy: Always
-  schedulerName: default-scheduler
-  securityContext: {}
-  serviceAccount: default
-  serviceAccountName: default
-  subdomain: crdb
-  terminationGracePeriodSeconds: 60
-  tolerations:
-  - effect: NoExecute
-    key: node.kubernetes.io/not-ready
-    operator: Exists
-    tolerationSeconds: 300
-  - effect: NoExecute
-    key: node.kubernetes.io/unreachable
-    operator: Exists
-    tolerationSeconds: 300
-  volumes:
-  - emptyDir: {}
-    name: datadir
-  - name: certs
-    projected:
-      defaultMode: 256
-      sources:
-      - secret:
-          items:
-          - key: ca.crt
-            path: ca.crt
-          - key: tls.crt
-            path: node.crt
-          - key: tls.key
-            path: node.key
-          name: crdb-node
-      - secret:
-          items:
-          - key: tls.crt
-            path: client.root.crt
-          - key: tls.key
-            path: client.root.key
-          name: crdb-root
-
----
-apiVersion: policy/v1beta1
-kind: PodDisruptionBudget
-metadata:
-  labels:
-    app.kubernetes.io/component: database
-    app.kubernetes.io/instance: crdb
-    app.kubernetes.io/managed-by: cockroach-operator
-    app.kubernetes.io/name: cockroachdb
-    app.kubernetes.io/part-of: cockroachdb
-  name: crdb
-spec:
-  maxUnavailable: 1
-  selector:
-    matchLabels:
-      app.kubernetes.io/component: database
-      app.kubernetes.io/instance: crdb
-      app.kubernetes.io/name: cockroachdb
 
 ---
 apiVersion: v1
@@ -471,7 +224,7 @@ metadata:
   name: crdb
 spec:
   podManagementPolicy: OrderedReady
-  replicas: 3
+  replicas: 1
   revisionHistoryLimit: 10
   selector:
     matchLabels:
@@ -491,7 +244,7 @@ spec:
       containers:
       - args:
         - start
-        - --join=crdb-0.crdb.[sandbox_namespace]:26257,crdb-1.crdb.[sandbox_namespace]:26257,crdb-2.crdb.[sandbox_namespace]:26257
+        - --join=crdb-0.crdb.[sandbox_namespace]:26257
         - --advertise-host=$(POD_NAME).crdb.[sandbox_namespace]
         - --logtostderr=INFO
         - --certs-dir=/cockroach/cockroach-certs/
@@ -579,4 +332,3 @@ spec:
     rollingUpdate:
       partition: 0
     type: RollingUpdate
-

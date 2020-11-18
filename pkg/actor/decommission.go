@@ -78,8 +78,10 @@ func (d decommission) Act(ctx context.Context, cluster *resource.Cluster) error 
 		return NotReadyErr{Err: errors.New("decommission statefulset does not have all replicas up")}
 	}
 
-	replicas := uint(cluster.Spec().Nodes)
-	if replicas < 3 {
+	nodes := uint(cluster.Spec().Nodes)
+	//We do not scale down if the nodes field is less than 3, we scale down  to 3 but not less
+	//TODO @alina add validation webhook (see https://github.com/cockroachdb/cockroach-operator/issues/245)
+	if nodes < 3 {
 		log.Info("We cannot decommission if there are less than 3 nodes", "nodes", replicas)
 		return errors.New("decommission with less than 3 nodes is not supported")
 	}
@@ -150,7 +152,7 @@ func (d decommission) Act(ctx context.Context, cluster *resource.Cluster) error 
 			Drainer:   drainer,
 			PVCPruner: &pvcPruner,
 		}
-		if err := scaler.EnsureScale(ctx, replicas); err != nil {
+		if err := scaler.EnsureScale(ctx, nodes); err != nil {
 			/// now check if the decommisiionStaleErr and update status
 			log.Error(err, "decomission failed")
 			cluster.SetFalse(api.DecommissionCondition)

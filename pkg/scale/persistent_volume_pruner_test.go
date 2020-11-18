@@ -201,7 +201,6 @@ func TestPersistentVolumePruner_Prune(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.Name, func(t *testing.T) {
 			ctx := context.Background()
-			//logger := zaptest.NewLogger(t)
 			logger := NewFakeLogger(t)
 
 			sts := sts.DeepCopy()
