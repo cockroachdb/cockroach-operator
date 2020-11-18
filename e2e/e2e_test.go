@@ -134,9 +134,9 @@ func TestCreatesInsecureCluster(t *testing.T) {
 }
 
 func TestCreatesSecureClusterWithGeneratedCert(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping test in short mode.")
-	}
+	// if testing.Short() {
+	// 	t.Skip("skipping test in short mode.")
+	// }
 
 	testLog := zapr.NewLogger(zaptest.NewLogger(t))
 
