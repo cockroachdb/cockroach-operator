@@ -79,90 +79,90 @@ func (d decommission) Act(ctx context.Context, cluster *resource.Cluster) error 
 	}
 
 	nodes := uint(cluster.Spec().Nodes)
-	//We do not scale down if the nodes field is less than 3, we scale down  to 3 but not less
+	//We do not scale down if the nodes field is less than 3
 	//TODO @alina add validation webhook (see https://github.com/cockroachdb/cockroach-operator/issues/245)
 	if nodes < 3 {
 		log.Info("We cannot decommission if there are less than 3 nodes", "nodes", nodes)
 		return errors.New("decommission with less than 3 nodes is not supported")
 	}
 	log.Info("replicas decommisioning", "status.CurrentReplicas", status.CurrentReplicas, "expected", cluster.Spec().Nodes)
-	if status.CurrentReplicas > cluster.Spec().Nodes {
-		clientset, err := kubernetes.NewForConfig(d.config)
-		if err != nil {
-			return errors.Wrapf(err, "decommission failed to create kubernetes clientset")
-		}
-		// test to see if we are running inside of Kubernetes
-		// If we are running inside of k8s we will not find this file.
-		runningInsideK8s := inK8s("/var/run/secrets/kubernetes.io/serviceaccount/token")
-
-		serviceName := cluster.PublicServiceName()
-		if runningInsideK8s {
-			log.Info("operator is running inside of kubernetes, connecting to service for db connection")
-		} else {
-			serviceName = fmt.Sprintf("%s-0.%s.%s", cluster.Name(), cluster.Name(), cluster.Namespace())
-			log.Info("operator is NOT inside of kubernetes, connnecting to pod ordinal zero for db connection")
-		}
-
-		// The connection needs to use the discovery service name because of the
-		// hostnames in the SSL certificates
-		conn := &database.DBConnection{
-			Ctx:              ctx,
-			Client:           d.client,
-			RestConfig:       d.config,
-			ServiceName:      serviceName,
-			Namespace:        cluster.Namespace(),
-			DatabaseName:     "system", // TODO we need to use variable instead of string
-			Port:             cluster.Spec().GRPCPort,
-			RunningInsideK8s: runningInsideK8s,
-		}
-
-		// see https://github.com/cockroachdb/cockroach-operator/issues/204 for above TODO
-		if cluster.Spec().TLSEnabled {
-			conn.UseSSL = true
-			conn.ClientCertificateSecretName = cluster.ClientTLSSecretName()
-			conn.RootCertificateSecretName = cluster.NodeTLSSecretName()
-		}
-		db, err := database.NewDbConnection(conn)
-		if err != nil {
-			return errors.Wrapf(err, "failed to create database connection")
-		}
-		log.Info("opened db connection")
-		defer db.Close()
-
-		timeout, err := clustersql.RangeMoveDuration(ctx, db)
-		if err != nil {
-			return errors.Wrap(err, "failed to get range move duration")
-		}
-
-		drainer := scale.NewCockroachNodeDrainer(d.log, cluster.Namespace(), ss.Name, d.config, clientset, cluster.Spec().TLSEnabled, 3*timeout)
-		pvcPruner := scale.PersistentVolumePruner{
-			Namespace:   cluster.Namespace(),
-			StatefulSet: ss.Name,
-			ClientSet:   clientset,
-			Logger:      d.log,
-		}
-		//we should decommission
-		scaler := scale.Scaler{
-			Logger: d.log,
-			CRDB: &scale.CockroachStatefulSet{
-				ClientSet: clientset,
-				Namespace: cluster.Namespace(),
-				Name:      ss.Name,
-			},
-			Drainer:   drainer,
-			PVCPruner: &pvcPruner,
-		}
-		if err := scaler.EnsureScale(ctx, nodes); err != nil {
-			/// now check if the decommisiionStaleErr and update status
-			log.Error(err, "decomission failed")
-			cluster.SetFalse(api.DecommissionCondition)
-			return nil
-		}
-		cluster.SetTrue(api.DecommissionCondition)
-
-		log.Info("decommission completed", "cond", ss.Status.Conditions)
-		CancelLoop(ctx)
+	if status.CurrentReplicas <= cluster.Spec().Nodes {
+		return nil
 	}
-	log.Info("nothing to do")
+	clientset, err := kubernetes.NewForConfig(d.config)
+	if err != nil {
+		return errors.Wrapf(err, "decommission failed to create kubernetes clientset")
+	}
+	// test to see if we are running inside of Kubernetes
+	// If we are running inside of k8s we will not find this file.
+	runningInsideK8s := inK8s("/var/run/secrets/kubernetes.io/serviceaccount/token")
+
+	serviceName := cluster.PublicServiceName()
+	if runningInsideK8s {
+		log.Info("operator is running inside of kubernetes, connecting to service for db connection")
+	} else {
+		serviceName = fmt.Sprintf("%s-0.%s.%s", cluster.Name(), cluster.Name(), cluster.Namespace())
+		log.Info("operator is NOT inside of kubernetes, connnecting to pod ordinal zero for db connection")
+	}
+
+	// The connection needs to use the discovery service name because of the
+	// hostnames in the SSL certificates
+	conn := &database.DBConnection{
+		Ctx:              ctx,
+		Client:           d.client,
+		RestConfig:       d.config,
+		ServiceName:      serviceName,
+		Namespace:        cluster.Namespace(),
+		DatabaseName:     "system", // TODO we need to use variable instead of string
+		Port:             cluster.Spec().GRPCPort,
+		RunningInsideK8s: runningInsideK8s,
+	}
+
+	// see https://github.com/cockroachdb/cockroach-operator/issues/204 for above TODO
+	if cluster.Spec().TLSEnabled {
+		conn.UseSSL = true
+		conn.ClientCertificateSecretName = cluster.ClientTLSSecretName()
+		conn.RootCertificateSecretName = cluster.NodeTLSSecretName()
+	}
+	db, err := database.NewDbConnection(conn)
+	if err != nil {
+		return errors.Wrapf(err, "failed to create database connection")
+	}
+	log.Info("opened db connection")
+	defer db.Close()
+
+	timeout, err := clustersql.RangeMoveDuration(ctx, db)
+	if err != nil {
+		return errors.Wrap(err, "failed to get range move duration")
+	}
+
+	drainer := scale.NewCockroachNodeDrainer(d.log, cluster.Namespace(), ss.Name, d.config, clientset, cluster.Spec().TLSEnabled, 3*timeout)
+	pvcPruner := scale.PersistentVolumePruner{
+		Namespace:   cluster.Namespace(),
+		StatefulSet: ss.Name,
+		ClientSet:   clientset,
+		Logger:      d.log,
+	}
+	//we should start scale down
+	scaler := scale.Scaler{
+		Logger: d.log,
+		CRDB: &scale.CockroachStatefulSet{
+			ClientSet: clientset,
+			Namespace: cluster.Namespace(),
+			Name:      ss.Name,
+		},
+		Drainer:   drainer,
+		PVCPruner: &pvcPruner,
+	}
+	if err := scaler.EnsureScale(ctx, nodes); err != nil {
+		/// now check if the decommisiionStaleErr and update status
+		log.Error(err, "decomission failed")
+		cluster.SetFalse(api.DecommissionCondition)
+		return nil
+	}
+	// TO DO @alina we will need to save the status foreach action
+	cluster.SetTrue(api.DecommissionCondition)
+	log.Info("decommission completed", "cond", ss.Status.Conditions)
+	CancelLoop(ctx)
 	return nil
 }
