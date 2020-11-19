@@ -412,6 +412,46 @@ func TestDatabaseFunctionality(t *testing.T) {
 	steps.Run(t)
 }
 
+func TestDecommissionFunctionality(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+	testLog := zapr.NewLogger(zaptest.NewLogger(t))
+	actor.Log = testLog
+	//Enable decommission feature gate
+	require.NoError(t, utilfeature.DefaultMutableFeatureGate.Set("UseDecommission=true"))
+	sb := testenv.NewDiffingSandbox(t, env)
+	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
+	builder := testutil.NewBuilder("crdb").WithNodeCount(4).WithTLS().
+		WithImage("cockroachdb/cockroach:v20.1.7").
+		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
+	steps := Steps{
+		{
+			name: "creates a 4-node secure cluster and tests db",
+			test: func(t *testing.T) {
+				require.NoError(t, sb.Create(builder.Cr()))
+				requireClusterToBeReadyEventually(t, sb, builder)
+			},
+		},
+		{
+			name: "decommission a node",
+			test: func(t *testing.T) {
+				current := builder.Cr()
+				require.NoError(t, sb.Get(current))
+
+				current.Spec.Nodes = 3
+				require.NoError(t, sb.Update(current))
+				requireClusterToBeReadyEventually(t, sb, builder)
+				requireDecommissionNode(t, sb, builder)
+				requireDatabaseToFunction(t, sb, builder)
+			},
+		},
+	}
+	steps.Run(t)
+	//Disable decommission feature gate
+	require.NoError(t, utilfeature.DefaultMutableFeatureGate.Set("UseDecommission=false"))
+}
+
 func doNotTestFlakes(t *testing.T) bool {
 	if os.Getenv("TEST_FLAKES") != "" {
 		t.Log("running flakey tests")

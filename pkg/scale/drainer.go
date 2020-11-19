@@ -27,58 +27,66 @@ import (
 
 	"github.com/cenkalti/backoff"
 	"github.com/cockroachdb/errors"
-	"go.uber.org/zap"
+	"github.com/go-logr/logr"
+
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
 
 var (
-	// DecommissioningStalledErr indicates that the decommissioning process of
+	// ErrDecommissioningStalled indicates that the decommissioning process of
 	// a node has stalled due to the KV allocator being unable to relocate ranges
 	// to another node. This could happen if no nodes have available disk space
 	// or if ZONE CONFIGURATION constraints can not be satisfied.
-	DecommissioningStalledErr = errors.New("decommissioning has stalled")
+	ErrDecommissioningStalled = errors.New("decommissioning has stalled")
 )
 
-func NewCockroachNodeDrainer(logger *zap.Logger, namespace string, config *rest.Config, clientset kubernetes.Interface, secure bool, rangeRelocation time.Duration) *CockroachNodeDrainer {
-	return &CockroachNodeDrainer{
-		Secure:                 secure,
-		Logger:                 logger,
-		RangeRelocationTimeout: rangeRelocation,
-		Executor: &CockroachExecutor{
-			Namespace: namespace,
-			Config:    config,
-			ClientSet: clientset,
-		},
-	}
+//Drainer interface
+type Drainer interface {
+	Decommission(ctx context.Context, replica uint) error
 }
 
 // CockroachNodeDrainer does decommissioning of nodes in the CockroachDB cluster
 type CockroachNodeDrainer struct {
 	Secure   bool
-	Logger   *zap.Logger
+	Logger   logr.Logger
 	Executor *CockroachExecutor
 	// RangeRelocationTimeout is the maximum amount of time to wait
 	// for a range to move. If no ranges have moved from the draining
 	// node in the given durration Decommission will fail with
-	// DecommissioningStalledErr
+	// ErrDecommissioningStalled
 	RangeRelocationTimeout time.Duration
 }
 
+//NewCockroachNodeDrainer ctor
+func NewCockroachNodeDrainer(logger logr.Logger, namespace, ssname string, config *rest.Config, clientset kubernetes.Interface, secure bool, rangeRelocation time.Duration) Drainer {
+	return &CockroachNodeDrainer{
+		Secure:                 secure,
+		Logger:                 logger,
+		RangeRelocationTimeout: rangeRelocation,
+		Executor: &CockroachExecutor{
+			Namespace:   namespace,
+			StatefulSet: ssname,
+			Config:      config,
+			ClientSet:   clientset,
+		},
+	}
+}
+
 // Decommission commands the node to start training process and watches for it to complete or fail after timeout
-func (d *CockroachNodeDrainer) Decommission(ctx context.Context, replica uint, stsName string) error {
-	lastNodeId, err := d.findNodeId(ctx, replica, stsName)
+func (d *CockroachNodeDrainer) Decommission(ctx context.Context, replica uint) error {
+	lastNodeID, err := d.findNodeID(ctx, replica, d.Executor.StatefulSet)
 	if err != nil {
 		return err
 	}
 
-	d.Logger.Info("draining node", zap.Uint("id", lastNodeId))
+	d.Logger.Info("draining node", "NodeID", lastNodeID)
 
-	if err := d.executeDrainCmd(ctx, lastNodeId); err != nil {
+	if err := d.executeDrainCmd(ctx, lastNodeID); err != nil {
 		return err
 	}
 
-	check := d.makeDrainStatusChecker(lastNodeId)
+	check := d.makeDrainStatusChecker(lastNodeID)
 
 	lastCheckTime := time.Now()
 	lastCheckReplicas, err := check(ctx)
@@ -102,7 +110,7 @@ func (d *CockroachNodeDrainer) Decommission(ctx context.Context, replica uint, s
 		// namely disk space constraints or constraints due to ZONE CONFIGURATIONS.
 		if lastCheckReplicas == replicas && time.Since(lastCheckTime) > d.RangeRelocationTimeout {
 			return backoff.Permanent(errors.Wrapf(
-				DecommissioningStalledErr,
+				ErrDecommissioningStalled,
 				"no ranges moved in %s",
 				d.RangeRelocationTimeout,
 			))
@@ -119,7 +127,7 @@ func (d *CockroachNodeDrainer) Decommission(ctx context.Context, replica uint, s
 		// MaxElapsedTime for this backoff is infinite, this error should never
 		// be returned to the caller. If you happen to see this error, the
 		// running code is either outdated or something terrible has happened.
-		return fmt.Errorf("node %d has not completed draining yet", lastNodeId)
+		return fmt.Errorf("node %d has not completed draining yet", lastNodeID)
 	}
 
 	b := backoff.NewExponentialBackOff()
@@ -165,10 +173,10 @@ func (d *CockroachNodeDrainer) makeDrainStatusChecker(id uint) func(ctx context.
 
 		d.Logger.Info(
 			"node status",
-			zap.Uint("id", id),
-			zap.String("isLive", isLive),
-			zap.String("replicas", replicasStr),
-			zap.String("isDecommissioning", isDecommissioning),
+			"id", id,
+			"isLive", isLive,
+			"replicas", replicasStr,
+			"isDecommissioning", isDecommissioning,
 		)
 
 		if isLive != "true" || isDecommissioning != "true" {
@@ -202,7 +210,7 @@ func (d *CockroachNodeDrainer) executeDrainCmd(ctx context.Context, id uint) err
 	return nil
 }
 
-func (d *CockroachNodeDrainer) findNodeId(ctx context.Context, replica uint, stsName string) (uint, error) {
+func (d *CockroachNodeDrainer) findNodeID(ctx context.Context, replica uint, stsName string) (uint, error) {
 	cmd := []string{"./cockroach", "node", "status", "--format=csv"}
 
 	if d.Secure {

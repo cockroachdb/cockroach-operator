@@ -117,6 +117,34 @@ func clusterIsInitialized(t *testing.T, sb testenv.DiffingSandbox, name string) 
 	return true, nil
 }
 
+func clusterIsDecommissioned(t *testing.T, sb testenv.DiffingSandbox, name string) (bool, error) {
+	expectedConditions := []api.ClusterCondition{
+		{
+			Type:   api.DecommissionCondition,
+			Status: metav1.ConditionTrue,
+		},
+	}
+
+	actual := resource.ClusterPlaceholder(name)
+	if err := sb.Get(actual); err != nil {
+		t.Logf("failed to fetch current cluster status :(")
+		return false, err
+	}
+
+	actualConditions := actual.Status.DeepCopy().Conditions
+
+	// Reset condition time as it is not significant for the assertion
+	var emptyTime metav1.Time
+	for i := range actualConditions {
+		actualConditions[i].LastTransitionTime = emptyTime
+	}
+	if !cmp.Equal(expectedConditions, actualConditions) {
+		return false, nil
+	}
+
+	return true, nil
+}
+
 func fetchStatefulSet(sb testenv.DiffingSandbox, name string) (*appsv1.StatefulSet, error) {
 	ss := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
@@ -198,6 +226,27 @@ func requireDownGradeOptionSet(t *testing.T, sb testenv.DiffingSandbox, b testut
 	}
 
 }
+func requireDecommissionNode(t *testing.T, sb testenv.DiffingSandbox, b testutil.ClusterBuilder) {
+	cluster := b.Cluster()
+
+	err := wait.Poll(10*time.Second, 150*time.Second, func() (bool, error) {
+		if initialized, err := clusterIsInitialized(t, sb, cluster.Name()); err != nil || !initialized {
+			return false, err
+		}
+
+		ss, err := fetchStatefulSet(sb, cluster.StatefulSetName())
+		if err != nil {
+			return false, err
+		}
+
+		if ss == nil {
+			t.Logf("stateful set is not found")
+			return false, nil
+		}
+		return statefulSetIsReady(ss) && b.Cr().Spec.Nodes == ss.Status.Replicas, nil
+	})
+	require.NoError(t, err)
+}
 
 func requireDatabaseToFunction(t *testing.T, sb testenv.DiffingSandbox, b testutil.ClusterBuilder) {
 	sb.Mgr.GetConfig()
@@ -264,7 +313,7 @@ func requireDatabaseToFunction(t *testing.T, sb testenv.DiffingSandbox, b testut
 	defer countRows.Close()
 	count := getCount(t, countRows)
 	if count != 2 {
-		t.Fatal(fmt.Errorf("found incorrect number of rows.  Expected 2 got %i", count))
+		t.Fatal(fmt.Errorf("found incorrect number of rows.  Expected 2 got %v", count))
 	}
 
 }

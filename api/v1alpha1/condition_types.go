@@ -16,8 +16,18 @@ limitations under the License.
 
 package v1alpha1
 
+//ClusterConditionType type alias
 type ClusterConditionType string
 
 const (
+	//NotInitializedCondition string
 	NotInitializedCondition ClusterConditionType = "NotInitialized"
+	//DecommissionCondition string
+	DecommissionCondition ClusterConditionType = "Decommission"
+	//InitializeCondition string
+	InitializeCondition ClusterConditionType = "Initialize"
+	//RequestCertCondition string
+	RequestCertCondition ClusterConditionType = "RequestCert"
+	//UpgradeCondition string
+	UpgradeCondition ClusterConditionType = "Upgrade"
 )

@@ -14,67 +14,37 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package scale
+package clustersql
 
 import (
 	"context"
 	"database/sql"
 	"fmt"
+	"regexp"
 	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/dustin/go-humanize"
-	"gopkg.in/yaml.v2"
 )
 
-type GarbageCollectionConfig struct {
-	TTLSeconds uint `yaml:"ttlseconds"`
-}
+// Cluster names have letters, underscores, and periods. See here for more:
+// https://www.cockroachlabs.com/docs/stable/cluster-settings.html
+var validClusterSettingNameRE = regexp.MustCompile(`^[a-z_.\d]+$`)
 
-type ZoneConfig struct {
-	RangeMinBytes     uint64                  `yaml:"range_min_bytes"`
-	RangeMaxBytes     uint64                  `yaml:"range_max_bytes"`
-	Replicas          uint                    `yaml:"num_replicas"`
-	GarbageCollection GarbageCollectionConfig `yaml:"gc"`
-}
-
-func (c *ZoneConfig) Scan(value interface{}) error {
-	bytes, ok := value.(string)
-	if !ok {
-		return errors.Errorf("expected string got %T", value)
+//IsValidClusterSettingName func
+func IsValidClusterSettingName(name string) error {
+	if !validClusterSettingNameRE.MatchString(name) {
+		return fmt.Errorf("%s not a valid cluster setting, only letters, underscores, and periods allowed", name)
 	}
-
-	return yaml.Unmarshal([]byte(bytes), c)
+	return nil
 }
 
-type Zone struct {
-	Target string
-	Config ZoneConfig
-}
-
-func ZoneConfigs(ctx context.Context, db *sql.DB) ([]Zone, error) {
-	// TODO (chrisseto): Will we ever need additional fields??
-	rows, err := db.QueryContext(ctx, `SELECT target, full_config_yaml FROM crdb_internal.zones`)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to select from crdb_internal.zones")
-	}
-
-	var zones []Zone
-
-	for rows.Next() {
-		var zone Zone
-
-		if err := rows.Scan(&zone.Target, &zone.Config); err != nil {
-			return nil, errors.Wrap(err, "failed to scan rows")
-		}
-
-		zones = append(zones, zone)
-	}
-
-	return zones, nil
-}
-
+//GetClusterSetting func
 func GetClusterSetting(ctx context.Context, db *sql.DB, name string) (string, error) {
+	if err := IsValidClusterSettingName(name); err != nil {
+		return "", err
+	}
+
 	r := db.QueryRowContext(ctx, fmt.Sprintf("SHOW CLUSTER SETTING %s", name))
 	var value string
 	if err := r.Scan(&value); err != nil {
@@ -83,7 +53,12 @@ func GetClusterSetting(ctx context.Context, db *sql.DB, name string) (string, er
 	return value, nil
 }
 
+// SetClusterSetting func
 func SetClusterSetting(ctx context.Context, db *sql.DB, name, value string) error {
+	if err := IsValidClusterSettingName(name); err != nil {
+		return err
+	}
+
 	sql := fmt.Sprintf("SET CLUSTER SETTING %s = $1", name)
 	if _, err := db.Exec(sql, value); err != nil {
 		return errors.Wrapf(err, "failed to set %s to %s", name, value)
@@ -142,4 +117,21 @@ func RangeMoveDuration(ctx context.Context, db *sql.DB) (time.Duration, error) {
 	// Calculate the kindest (values wise, not respecting cluster load) possible duration
 	// that it should take for a range to move from one node to another
 	return time.Duration(maxRangeSize/minMoveSpeed) * time.Second, nil
+}
+
+func getClusterSetting(ctx context.Context, db *sql.DB, name string) (string, error) {
+	r := db.QueryRowContext(ctx, fmt.Sprintf("SHOW CLUSTER SETTING %s", name))
+	var value string
+	if err := r.Scan(&value); err != nil {
+		return "", errors.Wrapf(err, "failed to get %s", name)
+	}
+	return value, nil
+}
+
+func setClusterSetting(ctx context.Context, db *sql.DB, name string, value string) error {
+	sqlStr := fmt.Sprintf("SET CLUSTER SETTING %s = $1", name)
+	if _, err := db.Exec(sqlStr, value); err != nil {
+		return errors.Wrapf(err, "failed to set %s to %s", name, value)
+	}
+	return nil
 }

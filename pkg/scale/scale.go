@@ -20,25 +20,17 @@ import (
 	"context"
 
 	"github.com/cockroachdb/errors"
-	"go.uber.org/zap"
+	"github.com/go-logr/logr"
 )
 
-type ClusterScaler interface {
-	Replicas(context.Context) (uint, error)
-	SetReplicas(context.Context, uint) error
-	WaitUntilRunning(context.Context) error
-	WaitUntilHealthy(context.Context, uint) error
-}
-
+//PVCPruner interface
 type PVCPruner interface {
 	Prune(ctx context.Context) error
 }
-type Drainer interface {
-	Decommission(ctx context.Context, replica uint) error
-}
 
+//Scaler interface
 type Scaler struct {
-	Logger    *zap.Logger
+	Logger    logr.Logger
 	CRDB      ClusterScaler
 	Drainer   Drainer
 	PVCPruner PVCPruner
@@ -49,9 +41,8 @@ type Scaler struct {
 // before being removed from the CRDB cluster and their matching PVCs and PVs
 // will be removed as well.
 // In some cases, it may not be possible to full drain a node. In such cases a
-// kubecommon.DecommissioningStalledErr will be returned (if using kubecommon's
-// drainer implementation) and the node will be left in a decommissioning
-// state.
+// ErrDecommissioningStalled will be returned  and the node will be left in a
+// decommissioning  state.
 func (s *Scaler) EnsureScale(ctx context.Context, scale uint) error {
 	// Before doing any scaling, prune any PVCs that are not currently in use.
 	// This only needs to be done when scaling up but the operation is a noop
@@ -87,7 +78,7 @@ func (s *Scaler) EnsureScale(ctx context.Context, scale uint) error {
 	for crdbScale > scale {
 		oneOff := crdbScale - 1
 
-		s.Logger.Info("scaling down stateful set", zap.Uint("have", crdbScale), zap.Uint("want", oneOff))
+		s.Logger.Info("scaling down stateful set", "have", crdbScale, "want", oneOff)
 
 		// TODO (chrisseto): If decommissioning fails due to a timeout
 		// recommission that node before failing this job.
@@ -137,7 +128,7 @@ func (s *Scaler) EnsureScale(ctx context.Context, scale uint) error {
 	// with cascade = false and recreating them. They will "adopt" the old/existing pods and in theory not
 	// have an affect on the cluster as a whole.
 	for crdbScale < scale {
-		s.Logger.Info("scaling up stateful set", zap.Uint("have", crdbScale), zap.Uint("want", crdbScale+1))
+		s.Logger.Info("scaling up stateful set", "have", crdbScale, "want", (crdbScale + 1))
 		if err := s.CRDB.SetReplicas(ctx, crdbScale+1); err != nil {
 			return err
 		}

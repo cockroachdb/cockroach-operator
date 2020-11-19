@@ -30,6 +30,7 @@ import (
 	"k8s.io/client-go/tools/remotecommand"
 )
 
+//CockroachExecutor struct
 type CockroachExecutor struct {
 	Namespace   string
 	StatefulSet string
@@ -39,6 +40,7 @@ type CockroachExecutor struct {
 	TTY         bool
 }
 
+//Exec func
 func (e CockroachExecutor) Exec(ctx context.Context, podIdx uint, cmd []string) (string, string, error) {
 	var stdout, stderr bytes.Buffer
 
@@ -58,11 +60,13 @@ func (e CockroachExecutor) Exec(ctx context.Context, podIdx uint, cmd []string) 
 	return stdout.String(), stderr.String(), nil
 }
 
+//Executor struct
 type Executor struct {
 	Namespace string
 	Config    *rest.Config
 }
 
+//ExecutorOptions struct
 type ExecutorOptions struct {
 	Pod       string
 	Container string
@@ -73,6 +77,7 @@ type ExecutorOptions struct {
 	TTY       bool
 }
 
+//Exec func
 func (e Executor) Exec(ctx context.Context, o ExecutorOptions) error {
 	cs, err := kubernetes.NewForConfig(e.Config)
 	if err != nil {

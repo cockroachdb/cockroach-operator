@@ -30,6 +30,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
+//NotReadyErr strut
 type NotReadyErr struct {
 	Err error
 }
@@ -38,6 +39,7 @@ func (e NotReadyErr) Error() string {
 	return e.Err.Error()
 }
 
+//PermanentErr struct
 type PermanentErr struct {
 	Err error
 }
@@ -67,6 +69,7 @@ func NewOperatorActions(scheme *runtime.Scheme, cl client.Client, config *rest.C
 		update = newUpgrade(scheme, cl, config)
 	}
 
+	decommission := newDecommission(scheme, cl, config)
 	// The order of these actors MATTERS.
 	// We need to have update before deploy so that
 	// updates run before the deploy actor, or
@@ -74,12 +77,15 @@ func NewOperatorActions(scheme *runtime.Scheme, cl client.Client, config *rest.C
 	// deploy.
 	return []Actor{
 		newRequestCert(scheme, cl, config),
+		decommission,
 		update,
 		newDeploy(scheme, cl),
 		newInitialize(scheme, cl, config),
 	}
+
 }
 
+//Log var
 var Log = logf.Log.WithName("action")
 
 func newAction(atype string, scheme *runtime.Scheme, cl client.Client) action {

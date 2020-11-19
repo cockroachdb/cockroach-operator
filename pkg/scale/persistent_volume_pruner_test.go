@@ -22,8 +22,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-logr/logr"
+	log "github.com/go-logr/logr/testing"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap/zaptest"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -200,7 +201,7 @@ func TestPersistentVolumePruner_Prune(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.Name, func(t *testing.T) {
 			ctx := context.Background()
-			logger := zaptest.NewLogger(t)
+			logger := NewFakeLogger(t)
 
 			sts := sts.DeepCopy()
 			sts.Spec.Replicas = &tc.Replicas
@@ -254,4 +255,9 @@ func TestPersistentVolumePruner_Prune(t *testing.T) {
 			require.Len(t, pvcs.Items, int(tc.Replicas))
 		})
 	}
+}
+
+//NewFakeLogger ctor
+func NewFakeLogger(t *testing.T) logr.Logger {
+	return log.TestLogger{T: t}
 }
