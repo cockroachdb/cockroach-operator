@@ -43,17 +43,14 @@ VERSION="$4"
 echo $VERSION
 IMG="$5"
 echo $IMG
-BUNDLE_METADATA_OPTS=""
+BUNDLE_METADATA_OPTS="$6"
 echo $BUNDLE_METADATA_OPTS
 operator-sdk generate kustomize manifests -q 
 cd manifests && kustomize edit set image cockroachdb/cockroach-operator=${IMG} && cd ..
 kustomize build config/manifests | operator-sdk generate bundle -q --overwrite --version ${VERSION} ${BUNDLE_METADATA_OPTS}
 operator-sdk bundle validate ./bundle
 
-FILE_NAMES=(bundle/manifests/cockroach-operator-role-default-binding_rbac.authorization.k8s.io_v1beta1_clusterrolebinding.yaml \
-bundle/manifests/cockroach-operator-role-default_rbac.authorization.k8s.io_v1_clusterrole.yaml \
-bundle/manifests/cockroach-operator-sa-default_v1_serviceaccount.yaml \
-bundle/manifests/cockroach-operator-sa_v1_serviceaccount.yaml \
+FILE_NAMES=(bundle/manifests/cockroach-operator-sa_v1_serviceaccount.yaml \
 bundle/manifests/cockroach-operator.clusterserviceversion.yaml \
 bundle/manifests/crdb.cockroachlabs.com_crdbclusters.yaml \
 bundle/metadata/annotations.yaml \

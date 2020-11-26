@@ -19,13 +19,15 @@
 
 # values used in workspace-status.sh
 
-DOCKER_REGISTRY?=us.gcr.io/chris-love-operator-playground
+DOCKER_REGISTRY?=quay.io/alinalion
 DOCKER_IMAGE_REPOSITORY?=cockroach-operator
-VERSION ?= 0.0.10
+VERSION ?= 0.0.19
 # Default bundle image tag
-BUNDLE_IMG ?= cockroach-operator-bundle:$(VERSION)
-APP_VERSION?=v1.0.0-alpha.3
+APP_VERSION?=v1.0.5-alpha.3
 
+IMG=$(DOCKER_REGISTRY)/$(DOCKER_IMAGE_REPOSITORY):$(APP_VERSION)
+CHANNELS?=alpha,stable
+DEFAULT_CHANNEL?=stable
 # Options for 'bundle-build'
 ifneq ($(origin CHANNELS), undefined)
 BUNDLE_CHANNELS := --channels=$(CHANNELS)
@@ -139,12 +141,9 @@ KUSTOMIZE=$(GOBIN)/kustomize
 else
 KUSTOMIZE=$(shell which kustomize)
 endif
-# Current Operator version
-VERSION ?= 0.0.10
 # Default bundle image tag
 BUNDLE_IMG ?= cockroach-operator:$(VERSION)
-# IMG="us.gcr.io/chris-love-operator-playground/cockroach-operator:v1.0.0-alpha.1"
-IMG="quay.io/alinalion/cockroach-operator:v1.0.0-alpha.3"
+
 # Build the bundle image.
 .PHONY: bundle-build
 bundle-build:
