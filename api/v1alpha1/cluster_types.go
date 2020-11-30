@@ -136,7 +136,7 @@ type ClusterCondition struct {
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +kubebuilder:object:root=true
-// +kubebuilder:resource:categories=all;cockroachdb,shortName=cdb
+// +kubebuilder:resource:categories=all;cockroachdb,shortName=crdb
 // +kubebuilder:subresource:status
 // CrdbCluster is the Schema for the clusters API
 type CrdbCluster struct {
