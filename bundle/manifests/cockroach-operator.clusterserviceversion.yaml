@@ -40,7 +40,7 @@ metadata:
               }
             },
             "image": {
-              "name": "cockroachdb/cockroach:v20.2.1",
+              "name": "cockroachdb/cockroach:v20.1.8",
               "pullPolicy": "Always"
             },
             "nodes": 3,
@@ -51,7 +51,7 @@ metadata:
     capabilities: Basic Install
     operators.operatorframework.io/builder: operator-sdk-v1.1.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
-  name: cockroach-operator.v0.0.19
+  name: cockroach-operator.v0.0.21
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -215,7 +215,7 @@ spec:
               containers:
               - env:
                 - name: RELATED_IMAGE_COCKROACH
-                  value: registry.connect.redhat.com/cockroachdb/cockroach:v20.2.1
+                  value: registry.connect.redhat.com/cockroachdb/cockroach:v20.1.8
                 - name: WATCH_NAMESPACE
                   valueFrom:
                     fieldRef:
@@ -271,4 +271,4 @@ spec:
   provider:
     name: Cockroach Labs
     url: https://www.cockroachlabs.com
-  version: 0.0.19
+  version: 0.0.21

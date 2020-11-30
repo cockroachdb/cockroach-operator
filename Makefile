@@ -21,7 +21,7 @@
 
 DOCKER_REGISTRY?=quay.io/alinalion
 DOCKER_IMAGE_REPOSITORY?=cockroach-operator
-VERSION ?= 0.0.19
+VERSION ?= 0.0.21
 # Default bundle image tag
 APP_VERSION?=v1.0.5-alpha.3
 

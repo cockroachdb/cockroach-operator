@@ -89,8 +89,8 @@ spec:
   restartPolicy: Always
   schedulerName: default-scheduler
   securityContext: {}
-  serviceAccount: default
-  serviceAccountName: default
+  serviceAccount: cockroach-operator-sa
+  serviceAccountName: cockroach-operator-sa
   subdomain: crdb
   terminationGracePeriodSeconds: 60
   tolerations:

@@ -27,6 +27,8 @@ spec:
     kind: CrdbCluster
     listKind: CrdbClusterList
     plural: crdbclusters
+    shortNames:
+    - cdb
     singular: crdbcluster
   scope: Namespaced
   subresources:
