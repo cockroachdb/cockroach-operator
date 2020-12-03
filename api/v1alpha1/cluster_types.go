@@ -138,7 +138,7 @@ type ClusterCondition struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:categories=all;cockroachdb,shortName=crdb
 // +kubebuilder:subresource:status
-// CrdbCluster is the Schema for the clusters API
+// CrdbCluster is the Schema for the cockroachDB clusters API
 type CrdbCluster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

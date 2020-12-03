@@ -28,6 +28,6 @@ spec:
         volumeMode: Filesystem
   tlsEnabled: true
   image:
-    name: "cockroachdb/cockroach:v20.1.8"
+    name: "registry.connect.redhat.com/cockroachdb/cockroach:v20.1.5"
     pullPolicy: Always
   nodes: 3

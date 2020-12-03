@@ -191,6 +191,22 @@ sh_binary(
     ],
 )
 
+sh_binary(
+    name = "update-pkg",
+    srcs = ["update-pkg.sh"],
+    args = [
+        "$(location %s)" % OPERATORSDK,
+        "$(location %s)" % KUSTOMIZE,
+        "$(location %s)" % OPM,
+    ],
+    data = [
+        OPERATORSDK,
+        KUSTOMIZE,
+        OPM,
+        "@//:all-srcs",
+    ],
+)
+
 filegroup(
     name = "package-srcs",
     srcs = glob(["**"]),
