@@ -18,14 +18,11 @@ LABEL operators.operatorframework.io.bundle.manifests.v1=manifests/
 LABEL operators.operatorframework.io.bundle.metadata.v1=metadata/
 LABEL operators.operatorframework.io.bundle.package.v1=cockroachdb-certified
 LABEL operators.operatorframework.io.bundle.channels.v1=beta,stable
-LABEL operators.operatorframework.io.metrics.builder=operator-sdk-v1.1.0
-LABEL operators.operatorframework.io.metrics.mediatype.v1=metrics+v1
-LABEL operators.operatorframework.io.metrics.project_layout=go.kubebuilder.io/v2
+LABEL operators.operatorframework.io.bundle.channel.default.v1=stable
 
 LABEL com.redhat.openshift.versions="v4.5,v4.6"
 LABEL com.redhat.delivery.backport=true
 LABEL com.redhat.delivery.operator.bundle=true
 
-COPY bundle/manifests /manifests/
-COPY bundle/metadata /metadata/
-
+COPY 0.0.27/manifests /manifests/
+COPY 0.0.27/metadata /metadata/

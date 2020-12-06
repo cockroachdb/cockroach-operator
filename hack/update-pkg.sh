@@ -26,7 +26,7 @@ elif ! command -v bazel &>/dev/null; then
 else
   (
     set -o xtrace
-    bazel run //hack:generate-csv
+    bazel run //hack:update-pkg
   )
   exit 0
 fi
@@ -37,19 +37,46 @@ cd "${REPO_ROOT}"
 echo ${REPO_ROOT}
 
 echo "+++ Running operator-sdk"
-
-# BUNDLE_METADATA_OPTS="$2"
 VERSION="$4"
-echo $VERSION
+echo "VERSION:$VERSION"
 IMG="$5"
 echo $IMG
 PKG_MAN_OPTS="$6"
 echo "bla: $PKG_MAN_OPTS"
+DEPLOY_PATH="deploy/certified-metadata-bundle/cockroach-operator/"
+DEPLOY_CERTIFICATION_PATH="deploy/certified-metadata-bundle"
+
+if [ -d "${DEPLOY_PATH}/${VERSION}" ] 
+then
+    echo "Folder ${DEPLOY_PATH}/${VERSION} already exists. Please increase the version or remove the folder manually." 
+    exit 9999 # die with error code 9999
+fi
 
 operator-sdk generate kustomize manifests -q
 cd manifests && kustomize edit set image cockroachdb/cockroach-operator=${IMG} && cd ..
-kustomize build config/manifests | operator-sdk generate packagemanifests -q --version ${VERSION} ${PKG_MAN_OPTS}
+kustomize build config/manifests | operator-sdk generate packagemanifests -q --version ${VERSION} ${PKG_MAN_OPTS} --output-dir ${DEPLOY_PATH} --input-dir ${DEPLOY_PATH}
+mv ${DEPLOY_PATH}/${VERSION}/cockroach-operator.clusterserviceversion.yaml ${DEPLOY_PATH}/${VERSION}/cockroach-operator.v${VERSION}.clusterserviceversion.yaml
+[ ! -d ${DEPLOY_PATH}/${VERSION}/manifests ] && mkdir ${DEPLOY_PATH}/${VERSION}/manifests
+mv ${DEPLOY_PATH}/${VERSION}/*.* ${DEPLOY_PATH}/${VERSION}/manifests
+[ ! -d ${DEPLOY_PATH}/${VERSION}/metadata ] && mkdir  ${DEPLOY_PATH}/${VERSION}/metadata
+cp ${DEPLOY_CERTIFICATION_PATH}/annotations.yaml ${DEPLOY_PATH}/${VERSION}/metadata
+sed "s/VERSION/${VERSION}/g" ${DEPLOY_CERTIFICATION_PATH}/bundle.Dockerfile > ${DEPLOY_PATH}/bundle.v${VERSION}.Dockerfile
+cp ${DEPLOY_PATH}/bundle.v${VERSION}.Dockerfile ${DEPLOY_PATH}/bundle.Dockerfile
 
+
+FILE_NAMES=(${DEPLOY_PATH}/${VERSION}/manifests/cockroach-operator-sa_v1_serviceaccount.yaml \
+${DEPLOY_PATH}/${VERSION}/manifests/cockroach-operator.v${VERSION}.clusterserviceversion.yaml \
+${DEPLOY_PATH}/${VERSION}/manifests/crdb.cockroachlabs.com_crdbclusters.yaml \
+config/manifests/bases/cockroach-operator.clusterserviceversion.yaml \
+)
+for YAML in "${FILE_NAMES[@]}"
+do
+   :
+   cat "${REPO_ROOT}/hack/boilerplate/boilerplate.yaml.txt" "${REPO_ROOT}/${YAML}" > "${REPO_ROOT}/${YAML}.mod"
+   mv "${REPO_ROOT}/${YAML}.mod" "${REPO_ROOT}/${YAML}"
+done 
+
+ 
 
 
 

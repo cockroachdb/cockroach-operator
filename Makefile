@@ -152,8 +152,9 @@ bundle-build:
 
 # Generate package manifests.
 # Options for "packagemanifests".
-CHANNEL?=stable
+CHANNEL?=beta
 FROM_VERSION?=0.0.26
+IS_CHANNEL_DEFAULT?=0
 
 ifneq ($(origin FROM_VERSION), undefined)
 PKG_FROM_VERSION := --from-version=$(FROM_VERSION)
@@ -164,7 +165,7 @@ endif
 ifeq ($(IS_CHANNEL_DEFAULT), 1)
 PKG_IS_DEFAULT_CHANNEL := --default-channel
 endif
-PKG_MAN_OPTS ?= $(PKG_FROM_VERSION) $(PKG_CHANNELS) $(PKG_IS_DEFAULT_CHANNEL)
+PKG_MAN_OPTS ?= "$(PKG_FROM_VERSION) $(PKG_CHANNELS) $(PKG_IS_DEFAULT_CHANNEL)"
 
 
 # Build the packagemanifests

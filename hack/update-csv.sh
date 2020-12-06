@@ -26,7 +26,7 @@ elif ! command -v bazel &>/dev/null; then
 else
   (
     set -o xtrace
-    bazel run //hack:generate-csv
+    bazel run //hack:update-csv
   )
   exit 0
 fi
