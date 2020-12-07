@@ -42,14 +42,13 @@ echo "VERSION:$VERSION"
 IMG="$5"
 echo $IMG
 PKG_MAN_OPTS="$6"
-echo "bla: $PKG_MAN_OPTS"
+echo "PKG_MAN_OPTS: $PKG_MAN_OPTS"
 DEPLOY_PATH="deploy/certified-metadata-bundle/cockroach-operator/"
 DEPLOY_CERTIFICATION_PATH="deploy/certified-metadata-bundle"
 
 if [ -d "${DEPLOY_PATH}/${VERSION}" ] 
 then
     echo "Folder ${DEPLOY_PATH}/${VERSION} already exists. Please increase the version or remove the folder manually." 
-    exit 9999 # die with error code 9999
 fi
 
 operator-sdk generate kustomize manifests -q

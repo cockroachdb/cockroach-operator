@@ -42,6 +42,12 @@ STABLE_DOCKER_TAG ${APP_VERSION:-${KUBE_GIT_VERSION/+/-}}
 STABLE_DOCKER_REGISTRY ${DOCKER_REGISTRY:-us.gcr.io/chris-love-operator-playground}
 STABLE_DOCKER_PUSH_REGISTRY ${DOCKER_PUSH_REGISTRY:-${DOCKER_REGISTRY:-us.gcr.io/chris-love-operator-playground}}
 STABLE_IMAGE_REPOSITORY ${DOCKER_IMAGE_REPOSITORY:-cockroach-operator}
+
+RH_BUNDLE_REGISTRY ${RH_BUNDLE_REGISTRY:-quay.io/alinalion}
+RH_BUNDLE_IMAGE_REPOSITORY ${RH_BUNDLE_IMAGE_REPOSITORY:-cockroach-operator-bundle}
+RH_BUNDLE_VERSION ${RH_BUNDLE_VERSION:-1.0.2}
+RH_DEPLOY_PATH ${RH_DEPLOY_PATH:-deploy/certified-metadata-bundle/cockroach-operator}
+  
 IMAGE_REGISTRY ${DEV_REGISTRY:-us.gcr.io/chris-love-operator-playground}
 
 CLUSTER ${K8S_CLUSTER:-gke_chris-love-operator-playground_us-central1-a_test}

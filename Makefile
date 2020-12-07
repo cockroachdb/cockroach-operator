@@ -21,22 +21,10 @@
 
 DOCKER_REGISTRY?=quay.io/alinalion
 DOCKER_IMAGE_REPOSITORY?=cockroach-operator
-VERSION ?= 0.0.27
 # Default bundle image tag
 APP_VERSION?=v1.0.5-alpha.3
 
 IMG=$(DOCKER_REGISTRY)/$(DOCKER_IMAGE_REPOSITORY):$(APP_VERSION)
-CHANNELS?=beta,stable
-DEFAULT_CHANNEL?=stable
-# Options for 'bundle-build'
-ifneq ($(origin CHANNELS), undefined)
-BUNDLE_CHANNELS := --channels=$(CHANNELS)
-endif
-ifneq ($(origin DEFAULT_CHANNEL), undefined)
-BUNDLE_DEFAULT_CHANNEL := --default-channel=$(DEFAULT_CHANNEL)
-endif
-BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
-
 # 
 # Testing targets
 # 
@@ -127,37 +115,21 @@ dev/syncdeps:
 	bazel run //hack:update-bazel \
 	bazel run //:gazelle -- update-repos -from_file=go.mod
 
-kustomize:
-ifeq (, $(shell which kustomize))
-	@{ \
-	set -e ;\
-	KUSTOMIZE_GEN_TMP_DIR=$$(mktemp -d) ;\
-	cd $$KUSTOMIZE_GEN_TMP_DIR ;\
-	go mod init tmp ;\
-	go get sigs.k8s.io/kustomize/kustomize/v3@v3.5.4 ;\
-	rm -rf $$KUSTOMIZE_GEN_TMP_DIR ;\
-	}
-KUSTOMIZE=$(GOBIN)/kustomize
-else
-KUSTOMIZE=$(shell which kustomize)
-endif
-# Default bundle image tag
-BUNDLE_IMG ?= cockroach-operator:$(VERSION)
-
-# Build the bundle image.
-.PHONY: bundle-build
-bundle-build:
-	docker build -f bundle.Dockerfile -t quay.io/alinalion/$(BUNDLE_IMG) .
-	docker push quay.io/alinalion/$(BUNDLE_IMG)
+#RED HAT IMAGE BUNDLE
+RH_BUNDLE_REGISTRY?=quay.io/alinalion
+RH_BUNDLE_IMAGE_REPOSITORY?=cockroach-operator-bundle
+RH_BUNDLE_VERSION?=1.0.2
+RH_DEPLOY_PATH="deploy/certified-metadata-bundle"
+RH_DEPLOY_FULL_PATH="$(DEPLOY_CERTIFICATION_PATH)/cockroach-operator/"
 
 # Generate package manifests.
 # Options for "packagemanifests".
 CHANNEL?=beta
-FROM_VERSION?=0.0.26
+FROM_BUNDLE_VERSION?=1.0.1
 IS_CHANNEL_DEFAULT?=0
 
-ifneq ($(origin FROM_VERSION), undefined)
-PKG_FROM_VERSION := --from-version=$(FROM_VERSION)
+ifneq ($(origin FROM_BUNDLE_VERSION), undefined)
+PKG_FROM_VERSION := --from-version=$(FROM_BUNDLE_VERSION)
 endif
 ifneq ($(origin CHANNEL), undefined)
 PKG_CHANNELS := --channel=$(CHANNEL)
@@ -167,48 +139,38 @@ PKG_IS_DEFAULT_CHANNEL := --default-channel
 endif
 PKG_MAN_OPTS ?= "$(PKG_FROM_VERSION) $(PKG_CHANNELS) $(PKG_IS_DEFAULT_CHANNEL)"
 
-
 # Build the packagemanifests
 .PHONY: update-pkg
 update-pkg:
-	bazel run  //hack:update-pkg  -- $(VERSION) $(IMG) $(PKG_MAN_OPTS)
+	bazel run  //hack:update-pkg  -- $(RH_BUNDLE_VERSION) $(IMG) $(PKG_MAN_OPTS)
 
-# Build the bundle image.
-.PHONY: gen-csv
-gen-csv: dev/generate
-	bazel run  //hack:update-csv  -- $(VERSION) $(IMG) $(BUNDLE_METADATA_OPTS)
+#
+# Release bundle image
+#
+.PHONY: release/bundle-image
+release/bundle-image:
+	RH_BUNDLE_REGISTRY=$(RH_BUNDLE_REGISTRY) \
+	RH_BUNDLE_IMAGE_REPOSITORY=$(RH_BUNDLE_IMAGE_REPOSITORY) \
+	RH_BUNDLE_VERSION=$(RH_BUNDLE_VERSION) \
+	RH_DEPLOY_PATH=$(RH_DEPLOY_FULL_PATH) \
+	bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
+		//:push_operator_bundle_image 
 
+# CHANNELS?=beta,stable
+# DEFAULT_CHANNEL?=stable
+# # Options for 'bundle-build'
+# ifneq ($(origin CHANNELS), undefined)
+# BUNDLE_CHANNELS := --channels=$(CHANNELS)
+# endif
+# ifneq ($(origin DEFAULT_CHANNEL), undefined)
+# BUNDLE_DEFAULT_CHANNEL := --default-channel=$(DEFAULT_CHANNEL)
+# endif
+# BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
-##@ OPM
-
-OLM_REPO ?= quay.io/alinalion/cockroach-operator-manifest
-OLM_BUNDLE_REPO ?= quay.io/alinalion/cockroach-operator-bundle
-OLM_PACKAGE_NAME ?= cockroach-operator
-TAG ?= $(VERSION)
-
-# opm-bundle-all: # used to bundle all the versions available
-# 	./scripts/opm_bundle_all.sh $(OLM_REPO) $(OLM_PACKAGE_NAME) $(VERSION)
-# opm-bundle-last-beta: ## Bundle latest for beta
-# 	# $(operator-sdk) bundle create -g --directory "./deploy/olm-catalog/redhat-marketplace-operator/manifests" -c stable,beta --default-channel stable --package $(OLM_PACKAGE_NAME)
-# 	$(docker) build -f custom-bundle.Dockerfile -t "$(OLM_REPO):$(TAG)" --build-arg channels=beta .
-# 	$(docker) tag "$(OLM_REPO):$(TAG)" "$(OLM_REPO):$(VERSION)"
-# 	$(docker) push "$(OLM_REPO):$(TAG)"
-# 	$(docker) push "$(OLM_REPO):$(VERSION)"
-
-# opm-bundle-last-stable: ## Bundle latest for stable
-# 	$(operator-sdk) bundle create -g --directory "./deploy/olm-catalog/redhat-marketplace-operator/manifests" -c stable,beta --default-channel stable --package $(OLM_PACKAGE_NAME)
-# 	$(docker) build -f custom-bundle.Dockerfile -t "$(OLM_REPO):$(TAG)" --build-arg channels=stable,beta .
-# 	$(docker) tag "$(OLM_REPO):$(TAG)" "$(OLM_REPO):$(VERSION)"
-# 	$(docker) push "$(OLM_REPO):$(TAG)"
-# 	$(docker) push "$(OLM_REPO):$(VERSION)"
-
-# opm-index-base: ## Create an index base
-# 	git fetch --tags
-# 	./scripts/opm_build_index.sh $(OLM_REPO) $(OLM_BUNDLE_REPO) $(TAG) $(VERSION)
-
-# install-test-registry: ## Install the test registry
-# 	kubectl apply -f ./deploy/olm-catalog/test-registry.yaml
-
+# # Build the bundle image.
+# .PHONY: gen-csv
+# gen-csv: dev/generate
+# 	bazel run  //hack:update-csv  -- $(BUNDLE_VERSION) $(IMG) $(BUNDLE_METADATA_OPTS)
 		
 
 
