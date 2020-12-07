@@ -153,8 +153,26 @@ release/bundle-image:
 	RH_BUNDLE_IMAGE_REPOSITORY=$(RH_BUNDLE_IMAGE_REPOSITORY) \
 	RH_BUNDLE_VERSION=$(RH_BUNDLE_VERSION) \
 	RH_DEPLOY_PATH=$(RH_DEPLOY_FULL_PATH) \
+	RH_BUNDLE_IMAGE_TAG=$(RH_BUNDLE_VERSION) \
 	bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
 		//:push_operator_bundle_image 
+
+
+OLM_REPO ?= quay.io/alinalion/cockroach-operator-bundle
+OLM_BUNDLE_REPO ?= quay.io/alinalion/cockroach-operator-bundle
+OLM_PACKAGE_NAME ?= cockroachdb-certified
+TAG ?= $(RH_BUNDLE_VERSION)
+#
+# Release bundle image
+#
+.PHONY: release/opm-build-index
+release/opm-build-index:
+	RH_BUNDLE_REGISTRY=$(RH_BUNDLE_REGISTRY) \
+	RH_BUNDLE_IMAGE_REPOSITORY=$(RH_BUNDLE_IMAGE_REPOSITORY) \
+	RH_BUNDLE_VERSION=$(RH_BUNDLE_VERSION) \
+	RH_DEPLOY_PATH=$(RH_DEPLOY_FULL_PATH) \
+	bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
+		//hack:opm-build-index $(OLM_REPO) $(OLM_BUNDLE_REPO) $(TAG) $(RH_BUNDLE_VERSION)
 
 # CHANNELS?=beta,stable
 # DEFAULT_CHANNEL?=stable
