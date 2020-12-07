@@ -19,10 +19,10 @@
 
 # values used in workspace-status.sh
 
-DOCKER_REGISTRY?=quay.io/alinalion
+DOCKER_REGISTRY?=us.gcr.io/chris-love-operator-playground
 DOCKER_IMAGE_REPOSITORY?=cockroach-operator
 # Default bundle image tag
-APP_VERSION?=v1.0.5-alpha.3
+APP_VERSION?=v1.1.5-alpha.3
 
 IMG=$(DOCKER_REGISTRY)/$(DOCKER_IMAGE_REPOSITORY):$(APP_VERSION)
 # 
