@@ -140,8 +140,8 @@ endif
 PKG_MAN_OPTS ?= "$(PKG_FROM_VERSION) $(PKG_CHANNELS) $(PKG_IS_DEFAULT_CHANNEL)"
 
 # Build the packagemanifests
-.PHONY: update-pkg
-update-pkg:
+.PHONY: release/update-pkg
+release/update-pkg:
 	bazel run  //hack:update-pkg  -- $(RH_BUNDLE_VERSION) $(IMG) $(PKG_MAN_OPTS)
 
 #
