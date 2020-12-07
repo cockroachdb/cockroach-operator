@@ -159,7 +159,7 @@ release/bundle-image:
 
 
 OLM_REPO ?= quay.io/alinalion/cockroach-operator-bundle
-OLM_BUNDLE_REPO ?= quay.io/alinalion/cockroach-operator-bundle
+OLM_BUNDLE_REPO ?= cockroach-operator-bundle
 OLM_PACKAGE_NAME ?= cockroachdb-certified
 TAG ?= $(RH_BUNDLE_VERSION)
 #

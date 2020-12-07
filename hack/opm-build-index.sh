@@ -48,8 +48,8 @@ echo "Running with $2 $3 $4 $5"
 # VERSIONS=$(git tag | xargs)
 
 VERSIONS_LIST="$OLM_REPO:1.0.1"
-
-VERSIONS_LIST="$OLM_REPO:$TAG,$VERSIONS_LIST"
+# VERSIONS_LIST="$OLM_REPO:$TAG,$VERSIONS_LIST"
+VERSIONS_LIST="$OLM_REPO:$TAG"
 
 echo "Using tag ${OLM_BUNDLE_REPO}:${TAG}"
 echo "Building index with $VERSIONS_LIST"
@@ -64,8 +64,8 @@ fi
     RH_BUNDLE_REGISTRY=${RH_BUNDLE_REGISTRY} \
 	RH_BUNDLE_IMAGE_REPOSITORY=${RH_BUNDLE_IMAGE_REPOSITORY} \
 	RH_BUNDLE_VERSION=${RH_BUNDLE_VERSION} \
-	RH_DEPLOY_PATH=${RH_DEPLOY_FULL_PATH} \
-	RH_BUNDLE_IMAGE_TAG=${OLM_BUNDLE_REPO}:${TAG} \
+	RH_DEPLOY_PATH=${RH_DEPLOY_PATH} \
+	RH_BUNDLE_IMAGE_TAG=${TAG} \
 	bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
 		//:push_operator_bundle_image 
 # docker build -f custom-index.Dockerfile -t "${OLM_BUNDLE_REPO}:${TAG}" .
