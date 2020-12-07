@@ -40,7 +40,7 @@ metadata:
               }
             },
             "image": {
-              "name": "registry.connect.redhat.com/cockroachdb/cockroach:v20.1.5",
+              "name": "registry.connect.redhat.com/cockroachdb/cockroach:v20.2.2",
               "pullPolicy": "Always"
             },
             "nodes": 3,
@@ -54,15 +54,15 @@ metadata:
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
     repository: https://github.com/cockroachdb/cockroach-operator
     support: Cockroach Labs
-  name: cockroach-operator.v0.0.27
+  name: cockroach-operator.v1.1.0
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
-      - kind: CrdbCluster
-        name: crdbclusters.crdb.cockroachlabs.com
-        version: v1alpha1
+    - kind: CrdbCluster
+      name: crdbclusters.crdb.cockroachlabs.com
+      version: v1alpha1
   description: This operator launches and manages a 3+ node cluster of CockroachDB.
   displayName: Cockroach Operator
   icon:
@@ -219,7 +219,7 @@ spec:
               containers:
               - env:
                 - name: RELATED_IMAGE_COCKROACH
-                  value: registry.connect.redhat.com/cockroachdb/cockroach:v20.1.5
+                  value: registry.connect.redhat.com/cockroachdb/cockroach:v20.2.2
                 - name: WATCH_NAMESPACE
                   valueFrom:
                     fieldRef:
@@ -274,4 +274,4 @@ spec:
   provider:
     name: Cockroach Labs
     url: https://www.cockroachlabs.com
-  version: 0.0.27
+  version: 1.1.0

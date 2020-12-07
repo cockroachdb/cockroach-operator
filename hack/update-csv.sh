@@ -42,9 +42,9 @@ echo "+++ Running operator-sdk"
 VERSION="$4"
 echo $VERSION
 IMG="$5"
-echo $IMG
+echo "img=$IMG"
 BUNDLE_METADATA_OPTS="$6"
-echo $BUNDLE_METADATA_OPTS
+echo "bundle opts:$BUNDLE_METADATA_OPTS"
 operator-sdk generate kustomize manifests -q 
 cd manifests && kustomize edit set image cockroachdb/cockroach-operator=${IMG} && cd ..
 kustomize build config/manifests | operator-sdk generate bundle -q --overwrite --version ${VERSION} ${BUNDLE_METADATA_OPTS}

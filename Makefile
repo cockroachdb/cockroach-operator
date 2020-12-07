@@ -159,7 +159,7 @@ release/bundle-image:
 
 
 OLM_REPO ?= quay.io/alinalion/cockroach-operator-bundle
-OLM_BUNDLE_REPO ?= cockroach-operator-bundle
+OLM_BUNDLE_REPO ?= cockroachdb-operator-index
 OLM_PACKAGE_NAME ?= cockroachdb-certified
 TAG ?= $(RH_BUNDLE_VERSION)
 #
@@ -174,21 +174,21 @@ release/opm-build-index:
 	bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
 		//hack:opm-build-index $(OLM_REPO) $(OLM_BUNDLE_REPO) $(TAG) $(RH_BUNDLE_VERSION)
 
-# CHANNELS?=beta,stable
-# DEFAULT_CHANNEL?=stable
-# # Options for 'bundle-build'
-# ifneq ($(origin CHANNELS), undefined)
-# BUNDLE_CHANNELS := --channels=$(CHANNELS)
-# endif
-# ifneq ($(origin DEFAULT_CHANNEL), undefined)
-# BUNDLE_DEFAULT_CHANNEL := --default-channel=$(DEFAULT_CHANNEL)
-# endif
-# BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
+CHANNELS?=beta,stable
+DEFAULT_CHANNEL?=stable
+# Options for 'bundle-build'
+ifneq ($(origin CHANNELS), undefined)
+BUNDLE_CHANNELS := --channels=$(CHANNELS)
+endif
+ifneq ($(origin DEFAULT_CHANNEL), undefined)
+BUNDLE_DEFAULT_CHANNEL := --default-channel=$(DEFAULT_CHANNEL)
+endif
+BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 
-# # Build the bundle image.
-# .PHONY: gen-csv
-# gen-csv: dev/generate
-# 	bazel run  //hack:update-csv  -- $(BUNDLE_VERSION) $(IMG) $(BUNDLE_METADATA_OPTS)
+# Build the bundle image.
+.PHONY: gen-csv
+gen-csv: dev/generate
+	bazel run  //hack:update-csv  -- $(RH_BUNDLE_VERSION) $(IMG) $(BUNDLE_METADATA_OPTS)
 		
 
 

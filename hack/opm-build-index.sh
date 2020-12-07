@@ -55,14 +55,14 @@ echo "Using tag ${OLM_BUNDLE_REPO}:${TAG}"
 echo "Building index with $VERSIONS_LIST"
 echo ""
 ./opm index add -u docker --generate --bundles "$VERSIONS_LIST" --tag "${OLM_BUNDLE_REPO}:${TAG}"
-
+# ./opm index add --bundles "$OLM_REPO:$TAG" --from-index quay.io/my-container-registry-namespace/my-index:1.0.0 --tag quay.io/my-container-registry-namespace/my-index:1.0.1
 if [ $? -ne 0 ]; then
     echo "fail to build opm"
     exit 1
 fi
 
     RH_BUNDLE_REGISTRY=${RH_BUNDLE_REGISTRY} \
-	RH_BUNDLE_IMAGE_REPOSITORY=${RH_BUNDLE_IMAGE_REPOSITORY} \
+	RH_BUNDLE_IMAGE_REPOSITORY=${OLM_BUNDLE_REPO} \
 	RH_BUNDLE_VERSION=${RH_BUNDLE_VERSION} \
 	RH_DEPLOY_PATH=${RH_DEPLOY_PATH} \
 	RH_BUNDLE_IMAGE_TAG=${TAG} \

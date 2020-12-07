@@ -61,6 +61,8 @@ filegroup(
         "//api/v1alpha1:all-srcs",
         "//cmd/cockroach-operator:all-srcs",
         "//config:all-srcs",
+        "//deploy/certified-metadata-bundle/cockroach-operator/latest/manifests:all-srcs",
+        "//deploy/certified-metadata-bundle/cockroach-operator/latest/metadata:all-srcs",
         "//e2e:all-srcs",
         "//examples:all-srcs",
         "//hack:all-srcs",
