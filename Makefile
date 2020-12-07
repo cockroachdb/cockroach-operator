@@ -120,7 +120,7 @@ RH_BUNDLE_REGISTRY?=quay.io/alinalion
 RH_BUNDLE_IMAGE_REPOSITORY?=cockroach-operator-bundle
 RH_BUNDLE_VERSION?=1.0.2
 RH_DEPLOY_PATH="deploy/certified-metadata-bundle"
-RH_DEPLOY_FULL_PATH="$(DEPLOY_CERTIFICATION_PATH)/cockroach-operator/"
+RH_DEPLOY_FULL_PATH="$(RH_DEPLOY_PATH)/cockroach-operator/"
 
 # Generate package manifests.
 # Options for "packagemanifests".

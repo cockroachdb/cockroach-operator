@@ -50,13 +50,13 @@ container_image(
 )
 pkg_tar(
     name = "manifests-tar",
-    srcs = ["//{RH_DEPLOY_PATH}/{RH_BUNDLE_VERSION}:manifests"],
+    srcs = ["//deploy/certified-metadata-bundle/cockroach-operator/latest/manifests:manifests"],
     mode = "0755",
     package_dir = "/manifests",
 )
 pkg_tar(
     name = "metadata-tar",
-    srcs = ["//{RH_DEPLOY_PATH}/{RH_BUNDLE_VERSION}:metadata"],
+    srcs = ["//deploy/certified-metadata-bundle/cockroach-operator/latest/metadata:metadata"],
     mode = "0755",
     package_dir = "/metadata",
 )
@@ -78,24 +78,6 @@ container_image(
     },
     stamp = True,
     tars = [":manifests-tar",":metadata-tar"],
-)
-filegroup(
-    name = "metadata",
-    srcs = ["//{RH_DEPLOY_PATH}/{RH_BUNDLE_VERSION}/metadata/annotations.yaml"],
-    visibility = ["//visibility:public"],
-)
-
-filegroup(
-    name = "manifests-srcs",
-    srcs = glob(["**"]),
-    tags = ["automanaged"],
-    visibility = ["//visibility:private"],
-)
-
-filegroup(
-    name = "manifests",
-    srcs = ["//{RH_DEPLOY_PATH}/{RH_BUNDLE_VERSION}/manifests:manifests-srcs"],
-    tags = ["automanaged"],
     visibility = ["//visibility:public"],
 )
 

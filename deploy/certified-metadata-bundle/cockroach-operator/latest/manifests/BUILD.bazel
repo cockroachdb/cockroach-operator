@@ -1,0 +1,14 @@
+
+filegroup(
+    name = "manifests-srcs",
+    srcs = glob(["**"]),
+    tags = ["automanaged"],
+    visibility = ["//visibility:private"],
+)
+
+filegroup(
+    name = "manifests",
+    srcs = [":manifests-srcs"],
+    tags = ["automanaged"],
+    visibility = ["//visibility:public"],
+)

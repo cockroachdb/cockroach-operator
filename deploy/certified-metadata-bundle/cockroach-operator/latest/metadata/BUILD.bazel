@@ -1,0 +1,5 @@
+filegroup(
+    name = "metadata",
+    srcs = ["annotations.yaml"],
+    visibility = ["//visibility:public"],
+)
