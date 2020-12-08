@@ -49,6 +49,7 @@ DEPLOY_CERTIFICATION_PATH="deploy/certified-metadata-bundle"
 if [ -d "${DEPLOY_PATH}/${VERSION}" ] 
 then
     echo "Folder ${DEPLOY_PATH}/${VERSION} already exists. Please increase the version or remove the folder manually." 
+    exit 1
 fi
 
 operator-sdk generate kustomize manifests -q
