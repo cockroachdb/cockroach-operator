@@ -11,14 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-resources:
-- operator.yaml
-patchesStrategicMerge:
-- patches/related_image_coackroach.yaml
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-images:
-- name: cockroachdb/cockroach-operator
-  newName: us.gcr.io/chris-love-operator-playground/cockroach-operator
-  newTag: v1.1.5-alpha.3
+annotations:
+  operators.operatorframework.io.bundle.channel.default.v1: stable
+  operators.operatorframework.io.bundle.channels.v1: beta,stable
+  operators.operatorframework.io.bundle.manifests.v1: manifests/
+  operators.operatorframework.io.bundle.mediatype.v1: registry+v1
+  operators.operatorframework.io.bundle.metadata.v1: metadata/
+  operators.operatorframework.io.bundle.package.v1: cockroachdb-certified

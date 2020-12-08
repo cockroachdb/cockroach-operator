@@ -52,14 +52,14 @@ container_image(
 pkg_tar(
     name = "manifests-tar",
     srcs = ["//deploy/certified-metadata-bundle/cockroach-operator/latest/manifests"],
-    mode = "0777",
+    mode = "0755",
     package_dir = "/manifests",
 )
 
 pkg_tar(
     name = "metadata-tar",
     srcs = ["//deploy/certified-metadata-bundle/cockroach-operator/latest/metadata"],
-    mode = "0777",
+    mode = "0755",
     package_dir = "/metadata",
 )
 
