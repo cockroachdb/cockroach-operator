@@ -36,8 +36,12 @@ metadata:
         }
       ]
     capabilities: Full Lifecycle
+    categories: Database
+    certified: "true"
+    containerImage: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v1.1.0
+    createdAt: "2020-12-09T19:29:26Z"
     description: CockroachDB Operator
-    operators.operatorframework.io/builder: operator-sdk-v1.1.0
+    operators.operatorframework.io/builder: operator-sdk-v1.2.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
     repository: https://github.com/cockroachdb/cockroach-operator
     support: Cockroach Labs

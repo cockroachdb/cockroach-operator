@@ -35,17 +35,14 @@ type CrdbClusterSpec struct {
 	// +required
 	Nodes int32 `json:"nodes"`
 	// (Required) Container image information
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Pod Image"
 	// +optional
 	Image PodImage `json:"image"`
 	// (Optional) The database port (`--port` CLI parameter when starting the service)
 	// Default: 26257
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="GRPC Port that defaults to 26257", xDescriptors="urn:alm:descriptor:com.tectonic.ui:number"
 	// +optional
 	GRPCPort *int32 `json:"grpcPort,omitempty"`
 	// (Optional)  The web UI port (`--http-port` CLI parameter when starting the service)
 	// Default: 8080
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="HTTP Port that defaults to 8080",xDescriptors="urn:alm:descriptor:com.tectonic.ui:number"
 	// +optional
 	HTTPPort *int32 `json:"httpPort,omitempty"`
 	// (Optional) Whenever to start the cluster in secure or insecure mode. The secure mode
@@ -60,44 +57,36 @@ type CrdbClusterSpec struct {
 	// (Optional) The secret with certificates and a private key for the TLS endpoint
 	// on the database port. The standard naming of files is expected (tls.key, tls.crt, ca.crt)
 	// Default: ""
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Node TLS Secret Name",xDescriptors="urn:alm:descriptor:io.kubernetes:Secret"
 	// +optional
 	NodeTLSSecret string `json:"nodeTLSSecret,omitempty"`
 	// (Optional) The secret with a certificate and a private key for root database user
 	// Default: ""
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Client TLS Secret Name",xDescriptors="urn:alm:descriptor:io.kubernetes:Secret"
 	// +optional
 	ClientTLSSecret string `json:"clientTLSSecret,omitempty"`
 	// The maximum number of pods that can be unavailable during a rolling update.
 	// This number is set in the PodDistruptionBudget and defaults to 1.
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="PDB Max Unavailable Nodes",xDescriptors="urn:alm:descriptor:com.tectonic.ui:number"
 	// +optional
 	MaxUnavailable *int32 `json:"maxUnavailable,omitempty"`
 	// The min number of pods that can be unavailable during a rolling update.
 	// This number is set in the PodDistruptionBudget and defaults to 1.
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="PDB Min Available Nodes",xDescriptors="urn:alm:descriptor:com.tectonic.ui:number"
 	// +optional
 	MinAvailable *int32 `json:"minUnavailable,omitempty"`
 	// (Optional) The total size for caches (`--cache` command line parameter)
 	// Default: "25%"
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Cache Size",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	// +optional
 	Cache string `json:"cache,omitempty"`
 	// (Optional) The maximum in-memory storage capacity available to store temporary
 	// data for SQL queries (`--max-sql-memory` parameter)
 	// Default: "25%"
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Max SQL Memory",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	// +optional
 	MaxSQLMemory string `json:"maxSQLMemory,omitempty"`
 	// (Optional) Additional command line arguments for the `cockroach` binary
 	// Default: ""
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="List of additional arguments"
 	// +optional
 	AdditionalArgs []string `json:"additionalArgs,omitempty"`
 	// (Optional) Database container resource limits. Any container limits
 	// can be specified.
 	// Default: (not specified)
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Pod Resource Requirements"
 	// +optional
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 	// (Required) Database disk storage configuration
@@ -152,7 +141,7 @@ type CrdbCluster struct {
 // +kubebuilder:object:generate=true
 // +k8s:openapi-gen=true
 type PodImage struct {
-	// (Optional) Container image with supported CockroachDB version.
+	// Container image with supported CockroachDB version.
 	// This defaults to the version pinned to the operator and requires a full container and tag/sha name.
 	// For instance: cockroachdb/cockroachdb:v20.1
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Container Name",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
@@ -165,7 +154,6 @@ type PodImage struct {
 	// Secret name containing the dockerconfig to use for a
 	// registry that requires authentication. The secret
 	// must be configured first by the user.
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Pull Secret Name",xDescriptors="urn:alm:descriptor:io.kubernetes:Secret"
 	// +optional
 	PullSecret *string `json:"pullSecret,omitempty"`
 }

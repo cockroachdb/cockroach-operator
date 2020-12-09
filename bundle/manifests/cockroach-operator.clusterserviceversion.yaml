@@ -49,6 +49,10 @@ metadata:
         }
       ]
     capabilities: Full Lifecycle
+    categories: Database
+    certified: "true"
+    containerImage: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v1.1.0
+    createdAt: "2020-12-09T19:29:26Z"
     description: CockroachDB Operator
     operators.operatorframework.io/builder: operator-sdk-v1.1.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
@@ -230,7 +234,7 @@ spec:
                       fieldPath: metadata.name
                 - name: OPERATOR_NAME
                   value: cockroachdb
-                image: quay.io/alinalion/cockroach-operator:v1.0.5-alpha.3
+                image: us.gcr.io/chris-love-operator-playground/cockroach-operator:v1.1.5-alpha.3
                 imagePullPolicy: IfNotPresent
                 name: cockroach-operator
                 resources:

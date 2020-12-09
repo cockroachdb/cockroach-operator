@@ -52,9 +52,9 @@ then
     exit 1
 fi
 
-operator-sdk generate kustomize manifests -q
+operator-sdk generate kustomize manifests -q --verbose
 cd manifests && kustomize edit set image cockroachdb/cockroach-operator=${IMG} && cd ..
-kustomize build config/manifests | operator-sdk generate packagemanifests -q --version ${VERSION} ${PKG_MAN_OPTS} --output-dir ${DEPLOY_PATH} --input-dir ${DEPLOY_PATH}
+kustomize build config/manifests | operator-sdk generate packagemanifests -q  --version ${VERSION} ${PKG_MAN_OPTS} --output-dir ${DEPLOY_PATH} --input-dir ${DEPLOY_PATH} --verbose
 
 mv ${DEPLOY_PATH}/${VERSION}/cockroach-operator.clusterserviceversion.yaml ${DEPLOY_PATH}/${VERSION}/cockroach-operator.v${VERSION}.clusterserviceversion.yaml
 

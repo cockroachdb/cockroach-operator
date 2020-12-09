@@ -163,10 +163,10 @@ OLM_BUNDLE_REPO ?= cockroachdb-operator-index
 OLM_PACKAGE_NAME ?= cockroachdb-certified
 TAG ?= $(RH_BUNDLE_VERSION)
 #
-# Release bundle image
+# dev opm index build for quay repo
 #
-.PHONY: release/opm-build-index
-release/opm-build-index:
+.PHONY: dev/opm-build-index
+dev/opm-build-index:
 	RH_BUNDLE_REGISTRY=$(RH_BUNDLE_REGISTRY) \
 	RH_BUNDLE_IMAGE_REPOSITORY=$(RH_BUNDLE_IMAGE_REPOSITORY) \
 	RH_BUNDLE_VERSION=$(RH_BUNDLE_VERSION) \
