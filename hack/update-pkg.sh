@@ -49,14 +49,15 @@ DEPLOY_CERTIFICATION_PATH="deploy/certified-metadata-bundle"
 if [ -d "${DEPLOY_PATH}/${VERSION}" ] 
 then
     echo "Folder ${DEPLOY_PATH}/${VERSION} already exists. Please increase the version or remove the folder manually." 
-    exit 1
+    # exit 1
 fi
-
+rm -rf ${DEPLOY_PATH}/${VERSION}
 operator-sdk generate kustomize manifests -q --verbose
 cd manifests && kustomize edit set image cockroachdb/cockroach-operator=${IMG} && cd ..
-kustomize build config/manifests | operator-sdk generate packagemanifests -q  --version ${VERSION} ${PKG_MAN_OPTS} --output-dir ${DEPLOY_PATH} --input-dir ${DEPLOY_PATH} --verbose
+kustomize build config/manifests | operator-sdk generate packagemanifests -q --version ${VERSION} ${PKG_MAN_OPTS} --output-dir ${DEPLOY_PATH} --input-dir ${DEPLOY_PATH} --verbose
 
 mv ${DEPLOY_PATH}/${VERSION}/cockroach-operator.clusterserviceversion.yaml ${DEPLOY_PATH}/${VERSION}/cockroach-operator.v${VERSION}.clusterserviceversion.yaml
+rm -rf ${DEPLOY_PATH}/${VERSION}/cockroach-operator-sa_v1_serviceaccount.yaml
 
 cp ./opm ${DEPLOY_PATH}
 cd ${DEPLOY_PATH} &&  ./opm alpha bundle generate -d ./${VERSION}/ -u ./${VERSION}/ -c beta,stable -e stable
