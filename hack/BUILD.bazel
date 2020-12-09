@@ -218,6 +218,17 @@ sh_binary(
         "@//:all-srcs",
     ],
 )
+sh_binary(
+    name = "opm-build-bundle",
+    srcs = ["opm-build-bundle.sh"],
+    args = [
+        "$(location %s)" % OPM,
+    ],
+    data = [
+        OPM,
+        "@//:all-srcs",
+    ],
+)
 
 filegroup(
     name = "package-srcs",

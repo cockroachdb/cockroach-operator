@@ -36,7 +36,7 @@ REPO_ROOT=${BUILD_WORKSPACE_DIRECTORY}
 cd "${REPO_ROOT}"
 echo ${REPO_ROOT}
 
-echo "+++ Running operator-sdk"
+echo "+++ Running update package manifest "
 VERSION="$4"
 echo "VERSION:$VERSION"
 IMG="$5"
@@ -59,21 +59,21 @@ kustomize build config/manifests | operator-sdk generate packagemanifests -q --v
 mv ${DEPLOY_PATH}/${VERSION}/cockroach-operator.clusterserviceversion.yaml ${DEPLOY_PATH}/${VERSION}/cockroach-operator.v${VERSION}.clusterserviceversion.yaml
 rm -rf ${DEPLOY_PATH}/${VERSION}/cockroach-operator-sa_v1_serviceaccount.yaml
 
-cp ./opm ${DEPLOY_PATH}
-cd ${DEPLOY_PATH} &&  ./opm alpha bundle generate -d ./${VERSION}/ -u ./${VERSION}/ -c beta,stable -e stable
+# cp ./opm ${DEPLOY_PATH}
+# cd ${DEPLOY_PATH} &&  ./opm alpha bundle generate -d ./${VERSION}/ -u ./${VERSION}/ -c beta,stable -e stable
 
 
-cp ../annotations.yaml ./${VERSION}/metadata
-sed "s/VERSION/${VERSION}/g" ../bundle.Dockerfile > ./bundle-${VERSION}.Dockerfile
-cp ./bundle-${VERSION}.Dockerfile ./bundle.Dockerfile
+# cp ../annotations.yaml ./${VERSION}/metadata
+# sed "s/VERSION/${VERSION}/g" ../bundle.Dockerfile > ./bundle-${VERSION}.Dockerfile
+# cp ./bundle-${VERSION}.Dockerfile ./bundle.Dockerfile
 
 
-# Move to latest folder for release -> I need a fixed folder name for the docker image that runs from bazel
-rm -rf ./latest/*/*.yaml
-rm -rf ./latest/*.yaml
-cp -R ./${VERSION}/manifests/*.yaml ./latest/manifests
-cp -R ./${VERSION}/manifests/*.yaml ./latest
-cp -R ./${VERSION}/metadata/*.yaml ./latest/metadata
+# # Move to latest folder for release -> I need a fixed folder name for the docker image that runs from bazel
+# rm -rf ./latest/*/*.yaml
+# rm -rf ./latest/*.yaml
+# cp -R ./${VERSION}/manifests/*.yaml ./latest/manifests
+# cp -R ./${VERSION}/manifests/*.yaml ./latest
+# cp -R ./${VERSION}/metadata/*.yaml ./latest/metadata
 
 
 

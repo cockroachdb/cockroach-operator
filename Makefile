@@ -144,6 +144,12 @@ PKG_MAN_OPTS ?= "$(PKG_FROM_VERSION) $(PKG_CHANNELS) $(PKG_IS_DEFAULT_CHANNEL)"
 release/update-pkg:
 	bazel run  //hack:update-pkg  -- $(RH_BUNDLE_VERSION) $(IMG) $(PKG_MAN_OPTS)
 
+
+#  Build the packagemanifests
+.PHONY: release/opm-build-bundle
+release/opm-build-bundle:
+	bazel run  //hack:opm-build-bundle  -- $(RH_BUNDLE_VERSION) $(IMG) $(PKG_MAN_OPTS)
+
 #
 # Release bundle image
 #
