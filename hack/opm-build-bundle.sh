@@ -32,8 +32,7 @@ else
 fi
 opm=$(realpath "$1")
 export PATH=$(dirname "$opm"):$PATH
-
-# This script should be run via `bazel run //hack:gen-csv`
+# This script should be run via `bazel //hack:opm-build-bundle`
 REPO_ROOT=${BUILD_WORKSPACE_DIRECTORY}
 cd "${REPO_ROOT}"
 echo ${REPO_ROOT}
@@ -47,16 +46,10 @@ PKG_MAN_OPTS="$4"
 echo "PKG_MAN_OPTS: $PKG_MAN_OPTS"
 DEPLOY_PATH="deploy/certified-metadata-bundle/cockroach-operator"
 DEPLOY_CERTIFICATION_PATH="deploy/certified-metadata-bundle"
-
-
 cd ${DEPLOY_PATH} &&  "$opm" alpha bundle generate -d ./${VERSION}/ -u ./${VERSION}/ -c beta,stable -e stable
-
-
 cp ../annotations.yaml ./${VERSION}/metadata
 sed "s/VERSION/${VERSION}/g" ../bundle.Dockerfile > ./bundle-${VERSION}.Dockerfile
 cp ./bundle-${VERSION}.Dockerfile ./bundle.Dockerfile
-
-
 # Move to latest folder for release -> I need a fixed folder name for the docker image that runs from bazel
 rm -rf ./latest/*/*.yaml
 rm -rf ./latest/*.yaml

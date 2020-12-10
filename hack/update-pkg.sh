@@ -35,12 +35,10 @@ opsdk=$(realpath "$1")
 kstomize="$(realpath "$2")"
 opm=$(realpath "$3")
 export PATH=$(dirname "$opsdk"):$PATH
-
-# This script should be run via `bazel run //hack:gen-csv`
+# This script should be run via `bazel run //hack:update-pkg
 REPO_ROOT=${BUILD_WORKSPACE_DIRECTORY}
 cd "${REPO_ROOT}"
 echo ${REPO_ROOT}
-
 echo "+++ Running update package manifest "
 VERSION="$4"
 echo "VERSION:$VERSION"
@@ -50,44 +48,17 @@ PKG_MAN_OPTS="$6"
 echo "PKG_MAN_OPTS: $PKG_MAN_OPTS"
 DEPLOY_PATH="deploy/certified-metadata-bundle/cockroach-operator"
 DEPLOY_CERTIFICATION_PATH="deploy/certified-metadata-bundle"
-
 if [ -d "${DEPLOY_PATH}/${VERSION}" ] 
 then
     echo "Folder ${DEPLOY_PATH}/${VERSION} already exists. Please increase the version or remove the folder manually." 
-    # exit 1
+    exit 1
 fi
 rm -rf ${DEPLOY_PATH}/${VERSION}
 "$opsdk" generate kustomize manifests -q --verbose
 cd manifests && "$kstomize" edit set image cockroachdb/cockroach-operator=${IMG} && cd ..
 "$kstomize" build config/manifests | "$opsdk" generate packagemanifests -q --version ${VERSION} ${PKG_MAN_OPTS} --output-dir ${DEPLOY_PATH} --input-dir ${DEPLOY_PATH} --verbose
-
 mv ${DEPLOY_PATH}/${VERSION}/cockroach-operator.clusterserviceversion.yaml ${DEPLOY_PATH}/${VERSION}/cockroach-operator.v${VERSION}.clusterserviceversion.yaml
 rm -rf ${DEPLOY_PATH}/${VERSION}/cockroach-operator-sa_v1_serviceaccount.yaml
-
-# cp ./opm ${DEPLOY_PATH}
-# cd ${DEPLOY_PATH} &&  ./opm alpha bundle generate -d ./${VERSION}/ -u ./${VERSION}/ -c beta,stable -e stable
-
-
-# cp ../annotations.yaml ./${VERSION}/metadata
-# sed "s/VERSION/${VERSION}/g" ../bundle.Dockerfile > ./bundle-${VERSION}.Dockerfile
-# cp ./bundle-${VERSION}.Dockerfile ./bundle.Dockerfile
-
-
-# # Move to latest folder for release -> I need a fixed folder name for the docker image that runs from bazel
-# rm -rf ./latest/*/*.yaml
-# rm -rf ./latest/*.yaml
-# cp -R ./${VERSION}/manifests/*.yaml ./latest/manifests
-# cp -R ./${VERSION}/manifests/*.yaml ./latest
-# cp -R ./${VERSION}/metadata/*.yaml ./latest/metadata
-
-
-
-
-
-
-
-
- 
 
 
 

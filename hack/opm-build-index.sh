@@ -32,8 +32,7 @@ else
 fi
 opm=$(realpath "$1")
 export PATH=$(dirname "$opm"):$PATH
-
-# This script should be run via `bazel run //hack:gen-csv`
+# This script should be run via `bazel run //opm-build-index`
 REPO_ROOT=${BUILD_WORKSPACE_DIRECTORY}
 cd "${REPO_ROOT}"
 echo ${REPO_ROOT}
@@ -42,33 +41,20 @@ OLM_REPO=$2
 OLM_BUNDLE_REPO=$3
 TAG=$4
 VERSION=$5
-
 echo "Running with $2 $3 $4 $5"
-
-# TO DO-Hard coded for now
-# echo "Calculator Versions"
-# VERSIONS=$(git tag | xargs)
-
 VERSIONS_LIST="$OLM_REPO:1.0.1"
-# VERSIONS_LIST="$OLM_REPO:$TAG,$VERSIONS_LIST"
 VERSIONS_LIST="$OLM_REPO:$TAG"
-
 echo "Using tag ${OLM_BUNDLE_REPO}:${TAG}"
 echo "Building index with $VERSIONS_LIST"
-echo ""
 "$opm" index add -u docker --generate --bundles "$VERSIONS_LIST" --tag "${OLM_BUNDLE_REPO}:${TAG}"
-# ./opm index add --bundles "$OLM_REPO:$TAG" --from-index quay.io/my-container-registry-namespace/my-index:1.0.0 --tag quay.io/my-container-registry-namespace/my-index:1.0.1
 if [ $? -ne 0 ]; then
     echo "fail to build opm"
     exit 1
 fi
-
-    RH_BUNDLE_REGISTRY=${RH_BUNDLE_REGISTRY} \
+  RH_BUNDLE_REGISTRY=${RH_BUNDLE_REGISTRY} \
 	RH_BUNDLE_IMAGE_REPOSITORY=${OLM_BUNDLE_REPO} \
 	RH_BUNDLE_VERSION=${RH_BUNDLE_VERSION} \
 	RH_DEPLOY_PATH=${RH_DEPLOY_PATH} \
 	RH_BUNDLE_IMAGE_TAG=${TAG} \
 	bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
 		//:push_operator_bundle_image 
-# docker build -f custom-index.Dockerfile -t "${OLM_BUNDLE_REPO}:${TAG}" .
-# docker push "${OLM_BUNDLE_REPO}:${TAG}"

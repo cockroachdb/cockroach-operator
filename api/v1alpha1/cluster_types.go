@@ -33,10 +33,10 @@ type CrdbClusterSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Number of nodes",xDescriptors="urn:alm:descriptor:com.tectonic.ui:podCount"
 	// +required
 	Nodes int32 `json:"nodes"`
-	// Container image information
+	// (Optional) Container image information
 	// +optional
 	Image PodImage `json:"image"`
-	// The database port (`--port` CLI parameter when starting the service)
+	// (Optional) The database port (`--port` CLI parameter when starting the service)
 	// Default: 26257
 	// +optional
 	GRPCPort *int32 `json:"grpcPort,omitempty"`
@@ -44,24 +44,24 @@ type CrdbClusterSpec struct {
 	// Default: 8080
 	// +optional
 	HTTPPort *int32 `json:"httpPort,omitempty"`
-	// TLSEnabled determines if TLS is enabled for your CockroachDB Cluster
+	// (Optional) TLSEnabled determines if TLS is enabled for your CockroachDB Cluster
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="TLS Enabled",xDescriptors="urn:alm:descriptor:com.tectonic.ui:booleanSwitch"
 	// +optional
 	TLSEnabled bool `json:"tlsEnabled,omitempty"`
-	// The secret with certificates and a private key for the TLS endpoint
+	// (Optional) The secret with certificates and a private key for the TLS endpoint
 	// on the database port. The standard naming of files is expected (tls.key, tls.crt, ca.crt)
 	// Default: ""
 	// +optional
 	NodeTLSSecret string `json:"nodeTLSSecret,omitempty"`
-	// The secret with a certificate and a private key for root database user
+	// (Optional) The secret with a certificate and a private key for root database user
 	// Default: ""
 	// +optional
 	ClientTLSSecret string `json:"clientTLSSecret,omitempty"`
-	// The maximum number of pods that can be unavailable during a rolling update.
+	// (Optional) The maximum number of pods that can be unavailable during a rolling update.
 	// This number is set in the PodDistruptionBudget and defaults to 1.
 	// +optional
 	MaxUnavailable *int32 `json:"maxUnavailable,omitempty"`
-	// The min number of pods that can be unavailable during a rolling update.
+	// (Optional) The min number of pods that can be unavailable during a rolling update.
 	// This number is set in the PodDistruptionBudget and defaults to 1.
 	// +optional
 	MinAvailable *int32 `json:"minUnavailable,omitempty"`
