@@ -36,7 +36,6 @@ export PATH=$(dirname "$opm"):$PATH
 REPO_ROOT=${BUILD_WORKSPACE_DIRECTORY}
 cd "${REPO_ROOT}"
 echo ${REPO_ROOT}
-
 echo "+++ Running opm to create bundle"
 VERSION="$2"
 echo "VERSION:$VERSION"

@@ -36,13 +36,13 @@ export PATH=$(dirname "$opm"):$PATH
 REPO_ROOT=${BUILD_WORKSPACE_DIRECTORY}
 cd "${REPO_ROOT}"
 echo ${REPO_ROOT}
-
 OLM_REPO=$2
 OLM_BUNDLE_REPO=$3
 TAG=$4
 VERSION=$5
-echo "Running with $2 $3 $4 $5"
-VERSIONS_LIST="$OLM_REPO:1.0.1"
+echo "Running with args OLM_REPO=$2 OLM_BUNDLE_REPO=$3 TAG=$4 VERSION=$5"
+[[ -z "$OLM_REPO" ]] && { echo "Error: OLM_REPO not set"; exit 1; }
+[[ -z "$RH_BUNDLE_REGISTRY" ]] && { echo "Error: RH_BUNDLE_REGISTRY not set"; exit 1; }
 VERSIONS_LIST="$OLM_REPO:$TAG"
 echo "Using tag ${OLM_BUNDLE_REPO}:${TAG}"
 echo "Building index with $VERSIONS_LIST"

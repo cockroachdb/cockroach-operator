@@ -116,7 +116,7 @@ dev/syncdeps:
 	bazel run //:gazelle -- update-repos -from_file=go.mod
 
 #RED HAT IMAGE BUNDLE
-RH_BUNDLE_REGISTRY?=quay.io/cockroachDB
+RH_BUNDLE_REGISTRY?=""
 RH_BUNDLE_IMAGE_REPOSITORY?=cockroachdb-operator-bundle
 RH_BUNDLE_VERSION?=1.1.0
 RH_DEPLOY_PATH="deploy/certified-metadata-bundle"
@@ -164,7 +164,7 @@ release/bundle-image:
 		//:push_operator_bundle_image 
 
 
-OLM_REPO ?= quay.io/cockroachDB/cockroachdb-operator-bundle
+OLM_REPO ?= quay.io/alinalion/cockroachdb-operator-bundle
 OLM_BUNDLE_REPO ?= cockroachdb-operator-index
 OLM_PACKAGE_NAME ?= cockroachdb-certified
 TAG ?= $(RH_BUNDLE_VERSION)
