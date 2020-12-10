@@ -27,7 +27,4 @@ spec:
             storage: 10Gi
         volumeMode: Filesystem
   tlsEnabled: true
-  image:
-    name: "registry.connect.redhat.com/cockroachdb/cockroach:v20.2.2"
-    pullPolicy: Always
   nodes: 3

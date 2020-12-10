@@ -31,30 +31,32 @@ else
   exit 0
 fi
 
+opsdk=$(realpath "$1")
+kstomize="$(realpath "$2")"
+export PATH=$(dirname "$opsdk"):$PATH
+
 # This script should be run via `bazel run //hack:gen-csv`
 REPO_ROOT=${BUILD_WORKSPACE_DIRECTORY}
 cd "${REPO_ROOT}"
 echo ${REPO_ROOT}
 
-echo "+++ Running operator-sdk"
+echo "+++ Running gen csv"
 
-# BUNDLE_METADATA_OPTS="$2"
 VERSION="$4"
 echo $VERSION
 IMG="$5"
 echo "img=$IMG"
 BUNDLE_METADATA_OPTS="$6"
 echo "bundle opts:$BUNDLE_METADATA_OPTS"
-operator-sdk generate kustomize manifests -q 
+"$opsdk" generate kustomize manifests -q 
 cd manifests && kustomize edit set image cockroachdb/cockroach-operator=${IMG} && cd ..
-kustomize build config/manifests | operator-sdk generate bundle -q --overwrite --version ${VERSION} ${BUNDLE_METADATA_OPTS}
-operator-sdk bundle validate ./bundle
+"$kstomize" build config/manifests | "$opsdk" generate bundle -q --overwrite --version ${VERSION} ${BUNDLE_METADATA_OPTS}
+"$opsdk" bundle validate ./bundle
 
 FILE_NAMES=(bundle/manifests/cockroach-operator-sa_v1_serviceaccount.yaml \
 bundle/manifests/cockroach-operator.clusterserviceversion.yaml \
 bundle/manifests/crdb.cockroachlabs.com_crdbclusters.yaml \
 bundle/metadata/annotations.yaml \
-# bundle/tests/scorecard/config.yaml \
 config/manifests/bases/cockroach-operator.clusterserviceversion.yaml \
 )
 for YAML in "${FILE_NAMES[@]}"

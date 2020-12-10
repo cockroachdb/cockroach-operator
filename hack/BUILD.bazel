@@ -218,6 +218,7 @@ sh_binary(
         "@//:all-srcs",
     ],
 )
+
 sh_binary(
     name = "opm-build-bundle",
     srcs = ["opm-build-bundle.sh"],

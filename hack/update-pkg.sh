@@ -31,6 +31,11 @@ else
   exit 0
 fi
 
+opsdk=$(realpath "$1")
+kstomize="$(realpath "$2")"
+opm=$(realpath "$3")
+export PATH=$(dirname "$opsdk"):$PATH
+
 # This script should be run via `bazel run //hack:gen-csv`
 REPO_ROOT=${BUILD_WORKSPACE_DIRECTORY}
 cd "${REPO_ROOT}"
@@ -52,9 +57,9 @@ then
     # exit 1
 fi
 rm -rf ${DEPLOY_PATH}/${VERSION}
-operator-sdk generate kustomize manifests -q --verbose
-cd manifests && kustomize edit set image cockroachdb/cockroach-operator=${IMG} && cd ..
-kustomize build config/manifests | operator-sdk generate packagemanifests -q --version ${VERSION} ${PKG_MAN_OPTS} --output-dir ${DEPLOY_PATH} --input-dir ${DEPLOY_PATH} --verbose
+"$opsdk" generate kustomize manifests -q --verbose
+cd manifests && "$kstomize" edit set image cockroachdb/cockroach-operator=${IMG} && cd ..
+"$kstomize" build config/manifests | "$opsdk" generate packagemanifests -q --version ${VERSION} ${PKG_MAN_OPTS} --output-dir ${DEPLOY_PATH} --input-dir ${DEPLOY_PATH} --verbose
 
 mv ${DEPLOY_PATH}/${VERSION}/cockroach-operator.clusterserviceversion.yaml ${DEPLOY_PATH}/${VERSION}/cockroach-operator.v${VERSION}.clusterserviceversion.yaml
 rm -rf ${DEPLOY_PATH}/${VERSION}/cockroach-operator-sa_v1_serviceaccount.yaml

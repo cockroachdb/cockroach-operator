@@ -28,38 +28,32 @@ import (
 // CrdbClusterSpec defines the desired state of a CockroachDB Cluster
 // that the operator maintains.
 // +k8s:openapi-gen=true
-// +operator-sdk:csv:customresourcedefinitions:displayName="CoachroachDB Operator",resources={{StatefulSet,v1,cockroach-operator},{Service,v1,cockroach-operator}}
 type CrdbClusterSpec struct {
-	// (Required) Number of nodes (pods) in the cluster
+	// Number of nodes (pods) in the cluster
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Number of nodes",xDescriptors="urn:alm:descriptor:com.tectonic.ui:podCount"
 	// +required
 	Nodes int32 `json:"nodes"`
-	// (Required) Container image information
+	// Container image information
 	// +optional
 	Image PodImage `json:"image"`
-	// (Optional) The database port (`--port` CLI parameter when starting the service)
+	// The database port (`--port` CLI parameter when starting the service)
 	// Default: 26257
 	// +optional
 	GRPCPort *int32 `json:"grpcPort,omitempty"`
-	// (Optional)  The web UI port (`--http-port` CLI parameter when starting the service)
+	// The web UI port (`--http-port` CLI parameter when starting the service)
 	// Default: 8080
 	// +optional
 	HTTPPort *int32 `json:"httpPort,omitempty"`
-	// (Optional) Whenever to start the cluster in secure or insecure mode. The secure mode
-	// uses certificates from the secrets `NodeTLSSecret` and `ClientTLSSecret`.
-	// If those are not specified, the operator generates certificates and
-	// signs them using the cluster Certificate Authority. Such setup is not recommended
-	// for production usage
-	// Default: false
+	// TLSEnabled determines if TLS is enabled for your CockroachDB Cluster
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="TLS Enabled",xDescriptors="urn:alm:descriptor:com.tectonic.ui:booleanSwitch"
 	// +optional
 	TLSEnabled bool `json:"tlsEnabled,omitempty"`
-	// (Optional) The secret with certificates and a private key for the TLS endpoint
+	// The secret with certificates and a private key for the TLS endpoint
 	// on the database port. The standard naming of files is expected (tls.key, tls.crt, ca.crt)
 	// Default: ""
 	// +optional
 	NodeTLSSecret string `json:"nodeTLSSecret,omitempty"`
-	// (Optional) The secret with a certificate and a private key for root database user
+	// The secret with a certificate and a private key for root database user
 	// Default: ""
 	// +optional
 	ClientTLSSecret string `json:"clientTLSSecret,omitempty"`
@@ -90,21 +84,16 @@ type CrdbClusterSpec struct {
 	// +optional
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 	// (Required) Database disk storage configuration
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Storage Volume Configuration"
 	// +required
 	DataStore Volume `json:"dataStore,omitempty"`
 }
 
 // CrdbClusterStatus defines the observed state of Cluster
 type CrdbClusterStatus struct {
-	// Important: Run "make" to regenerate code after modifying this file
-
 	// List of conditions representing the current status of the cluster resource.
-	// Currently, only `NotInitialized` is used
 	// +operator-sdk:csv:customresourcedefinitions:type=status, displayName="Cluster Conditions",xDescriptors="urn:alm:descriptor:io.kubernetes.conditions"
 	Conditions []ClusterCondition `json:"conditions,omitempty"`
 	// Database service version. Not populated and is just a placeholder currently.
-	// +operator-sdk:csv:customresourcedefinitions:type=status, displayName="Database service version"
 	Version string `json:"version,omitempty"`
 }
 
@@ -127,7 +116,8 @@ type ClusterCondition struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:categories=all;cockroachdb,shortName=crdb
 // +kubebuilder:subresource:status
-// CrdbCluster is the Schema for the cockroachDB clusters API
+// CrdbCluster is the CRD for the cockroachDB clusters API
+// +operator-sdk:csv:customresourcedefinitions:displayName="CoachroachDB Operator",resources={{StatefulSet,v1,cockroach-operator},{Service,v1,cockroach-operator}}
 type CrdbCluster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -144,11 +134,9 @@ type PodImage struct {
 	// Container image with supported CockroachDB version.
 	// This defaults to the version pinned to the operator and requires a full container and tag/sha name.
 	// For instance: cockroachdb/cockroachdb:v20.1
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Container Name",xDescriptors="urn:alm:descriptor:com.tectonic.ui:text"
 	// +required
 	Name string `json:"name,omitempty"`
 	// PullPolicy for the image, which defaults to IfNotPresent.
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="PullPolicy Type",xDescriptors="urn:alm:descriptor:com.tectonic.ui:imagePullPolicy"
 	// +required
 	PullPolicyName *v1.PullPolicy `json:"pullPolicy,omitempty"`
 	// Secret name containing the dockerconfig to use for a
@@ -170,7 +158,6 @@ type Volume struct {
 	// +optional
 	EmptyDir *corev1.EmptyDirVolumeSource `json:"emptyDir,omitempty"`
 	// Persistent volume to use
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Volume Claim"
 	// +optional
 	VolumeClaim *VolumeClaim `json:"pvc,omitempty"`
 }
@@ -181,11 +168,9 @@ type Volume struct {
 // +k8s:openapi-gen=true
 type VolumeClaim struct {
 	// PVC to request a new persistent volume
-	// +operator-sdk:csv:customresourcedefinitions:type=spec, displayName="Persistent Volume Claim Spec"
 	// +required
 	PersistentVolumeClaimSpec corev1.PersistentVolumeClaimSpec `json:"spec,omitempty"`
 	// Existing PVC in the same namespace
-	// +operator-sdk:csv:customresourcedefinitions:type=spec, displayName="Persistent Volume Claim Source"
 	// +required
 	PersistentVolumeSource corev1.PersistentVolumeClaimVolumeSource `json:"source,omitempty"`
 }

@@ -30,6 +30,8 @@ else
   )
   exit 0
 fi
+opm=$(realpath "$1")
+export PATH=$(dirname "$opm"):$PATH
 
 # This script should be run via `bazel run //hack:gen-csv`
 REPO_ROOT=${BUILD_WORKSPACE_DIRECTORY}
@@ -47,8 +49,7 @@ DEPLOY_PATH="deploy/certified-metadata-bundle/cockroach-operator"
 DEPLOY_CERTIFICATION_PATH="deploy/certified-metadata-bundle"
 
 
-cp ./opm ${DEPLOY_PATH}
-cd ${DEPLOY_PATH} &&  ./opm alpha bundle generate -d ./${VERSION}/ -u ./${VERSION}/ -c beta,stable -e stable
+cd ${DEPLOY_PATH} &&  "$opm" alpha bundle generate -d ./${VERSION}/ -u ./${VERSION}/ -c beta,stable -e stable
 
 
 cp ../annotations.yaml ./${VERSION}/metadata

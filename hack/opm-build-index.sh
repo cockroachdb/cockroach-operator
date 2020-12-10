@@ -30,6 +30,8 @@ else
   )
   exit 0
 fi
+opm=$(realpath "$1")
+export PATH=$(dirname "$opm"):$PATH
 
 # This script should be run via `bazel run //hack:gen-csv`
 REPO_ROOT=${BUILD_WORKSPACE_DIRECTORY}
@@ -54,7 +56,7 @@ VERSIONS_LIST="$OLM_REPO:$TAG"
 echo "Using tag ${OLM_BUNDLE_REPO}:${TAG}"
 echo "Building index with $VERSIONS_LIST"
 echo ""
-./opm index add -u docker --generate --bundles "$VERSIONS_LIST" --tag "${OLM_BUNDLE_REPO}:${TAG}"
+"$opm" index add -u docker --generate --bundles "$VERSIONS_LIST" --tag "${OLM_BUNDLE_REPO}:${TAG}"
 # ./opm index add --bundles "$OLM_REPO:$TAG" --from-index quay.io/my-container-registry-namespace/my-index:1.0.0 --tag quay.io/my-container-registry-namespace/my-index:1.0.1
 if [ $? -ne 0 ]; then
     echo "fail to build opm"
