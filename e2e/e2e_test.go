@@ -413,14 +413,14 @@ func TestDatabaseFunctionality(t *testing.T) {
 }
 
 func TestDecommissionFunctionality(t *testing.T) {
-	
+
 	if doNotTestFlakes(t) {
 		t.Log("This test is marked as a flake, not running test")
 		return
 	} else {
 		t.Log("Running this test, although this test is flakey")
 	}
-	
+
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
 	}
