@@ -30,7 +30,7 @@ IMG=$(DOCKER_REGISTRY)/$(DOCKER_IMAGE_REPOSITORY):$(APP_VERSION)
 # 
 .PHONY: test/all
 test/all:
-	bazel test //api/... //pkg/...
+	bazel test //api/... //pkg/... --test_arg=--test.v
 
 .PHONY: test/api
 test/api:
@@ -116,7 +116,7 @@ dev/syncdeps:
 	bazel run //:gazelle -- update-repos -from_file=go.mod
 
 #RED HAT IMAGE BUNDLE
-RH_BUNDLE_REGISTRY?=""
+RH_BUNDLE_REGISTRY?=
 RH_BUNDLE_IMAGE_REPOSITORY?=cockroachdb-operator-bundle
 RH_BUNDLE_VERSION?=1.1.0
 RH_DEPLOY_PATH="deploy/certified-metadata-bundle"
@@ -164,7 +164,7 @@ release/bundle-image:
 		//:push_operator_bundle_image 
 
 
-OLM_REPO ?= quay.io/alinalion/cockroachdb-operator-bundle
+OLM_REPO ?= 
 OLM_BUNDLE_REPO ?= cockroachdb-operator-index
 OLM_PACKAGE_NAME ?= cockroachdb-certified
 TAG ?= $(RH_BUNDLE_VERSION)
