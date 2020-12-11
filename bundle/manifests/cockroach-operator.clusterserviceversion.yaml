@@ -60,8 +60,34 @@ spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
-    - kind: CrdbCluster
+    - description: CrdbCluster is the CRD for the cockroachDB clusters API
+      displayName: CoachroachDB Operator
+      kind: CrdbCluster
       name: crdbclusters.crdb.cockroachlabs.com
+      resources:
+      - kind: Service
+        name: cockroach-operator
+        version: v1
+      - kind: StatefulSet
+        name: cockroach-operator
+        version: v1
+      specDescriptors:
+      - description: Number of nodes (pods) in the cluster
+        displayName: Number of nodes
+        path: nodes
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:podCount
+      - description: (Optional) TLSEnabled determines if TLS is enabled for your CockroachDB Cluster
+        displayName: TLS Enabled
+        path: tlsEnabled
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+      statusDescriptors:
+      - description: List of conditions representing the current status of the cluster resource.
+        displayName: Cluster Conditions
+        path: conditions
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes.conditions
       version: v1alpha1
   description: This operator launches and manages a 3+ node cluster of CockroachDB.
   displayName: CockroachDB Operator

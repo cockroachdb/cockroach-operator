@@ -44,7 +44,7 @@ cd "${REPO_ROOT}"
   rbac:roleName=cockroach-operator-role  webhook \
   paths="./..." output:crd:artifacts:config=config/crd/bases
 
-FILE_NAMES=(config/rbac/role.yaml config/rbac/role_binding.yaml config/crd/bases/crdb.cockroachlabs.com_crdbclusters.yaml)
+FILE_NAMES=(config/rbac/role.yaml config/crd/bases/crdb.cockroachlabs.com_crdbclusters.yaml)
 
 for YAML in "${FILE_NAMES[@]}"
 do

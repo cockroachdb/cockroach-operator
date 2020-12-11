@@ -16,4 +16,3 @@
 # It should be run by config/default
 resources:
   - role.yaml
-  - role_binding.yaml

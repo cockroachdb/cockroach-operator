@@ -116,7 +116,7 @@ dev/syncdeps:
 	bazel run //:gazelle -- update-repos -from_file=go.mod
 
 #RED HAT IMAGE BUNDLE
-RH_BUNDLE_REGISTRY?=
+RH_BUNDLE_REGISTRY?="quay.io/alinalion"
 RH_BUNDLE_IMAGE_REPOSITORY?=cockroachdb-operator-bundle
 RH_BUNDLE_VERSION?=1.1.0
 RH_DEPLOY_PATH="deploy/certified-metadata-bundle"
@@ -141,7 +141,7 @@ PKG_MAN_OPTS ?= "$(PKG_FROM_VERSION) $(PKG_CHANNELS) $(PKG_IS_DEFAULT_CHANNEL)"
 
 # Build the packagemanifests
 .PHONY: release/update-pkg
-release/update-pkg:
+release/update-pkg:dev/generate
 	bazel run  //hack:update-pkg  -- $(RH_BUNDLE_VERSION) $(IMG) $(PKG_MAN_OPTS)
 
 
@@ -164,7 +164,7 @@ release/bundle-image:
 		//:push_operator_bundle_image 
 
 
-OLM_REPO ?= 
+OLM_REPO ?= "quay.io/alinalion/"
 OLM_BUNDLE_REPO ?= cockroachdb-operator-index
 OLM_PACKAGE_NAME ?= cockroachdb-certified
 TAG ?= $(RH_BUNDLE_VERSION)

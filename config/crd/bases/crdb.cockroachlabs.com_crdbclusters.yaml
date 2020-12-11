@@ -37,7 +37,7 @@ spec:
     status: {}
   validation:
     openAPIV3Schema:
-      description: CrdbCluster is the Schema for the clusters API
+      description: CrdbCluster is the CRD for the cockroachDB clusters API
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
@@ -264,17 +264,17 @@ spec:
               format: int32
               type: integer
             httpPort:
-              description: '(Optional)  The web UI port (`--http-port` CLI parameter
-                when starting the service) Default: 8080'
+              description: 'The web UI port (`--http-port` CLI parameter when starting
+                the service) Default: 8080'
               format: int32
               type: integer
             image:
-              description: (Required) Container image information
+              description: (Optional) Container image information
               properties:
                 name:
-                  description: '(Optional) Container image with supported CockroachDB
-                    version. This defaults to the version pinned to the operator and
-                    requires a full container and tag/sha name. For instance: cockroachdb/cockroachdb:v20.1'
+                  description: 'Container image with supported CockroachDB version.
+                    This defaults to the version pinned to the operator and requires
+                    a full container and tag/sha name. For instance: cockroachdb/cockroachdb:v20.1'
                   type: string
                 pullPolicy:
                   description: PullPolicy for the image, which defaults to IfNotPresent.
@@ -291,15 +291,15 @@ spec:
                 Default: "25%"'
               type: string
             maxUnavailable:
-              description: The maximum number of pods that can be unavailable during
-                a rolling update. This number is set in the PodDistruptionBudget and
-                defaults to 1.
+              description: (Optional) The maximum number of pods that can be unavailable
+                during a rolling update. This number is set in the PodDistruptionBudget
+                and defaults to 1.
               format: int32
               type: integer
             minUnavailable:
-              description: The min number of pods that can be unavailable during a
-                rolling update. This number is set in the PodDistruptionBudget and
-                defaults to 1.
+              description: (Optional) The min number of pods that can be unavailable
+                during a rolling update. This number is set in the PodDistruptionBudget
+                and defaults to 1.
               format: int32
               type: integer
             nodeTLSSecret:
@@ -308,7 +308,7 @@ spec:
                 of files is expected (tls.key, tls.crt, ca.crt) Default: ""'
               type: string
             nodes:
-              description: (Required) Number of nodes (pods) in the cluster
+              description: Number of nodes (pods) in the cluster
               format: int32
               type: integer
             resources:
@@ -339,12 +339,8 @@ spec:
                   type: object
               type: object
             tlsEnabled:
-              description: '(Optional) Whenever to start the cluster in secure or
-                insecure mode. The secure mode uses certificates from the secrets
-                `NodeTLSSecret` and `ClientTLSSecret`. If those are not specified,
-                the operator generates certificates and signs them using the cluster
-                Certificate Authority. Such setup is not recommended for production
-                usage Default: false'
+              description: (Optional) TLSEnabled determines if TLS is enabled for
+                your CockroachDB Cluster
               type: boolean
           required:
           - nodes
@@ -354,7 +350,7 @@ spec:
           properties:
             conditions:
               description: List of conditions representing the current status of the
-                cluster resource. Currently, only `NotInitialized` is used
+                cluster resource.
               items:
                 description: ClusterCondition represents cluster status as it is perceived
                   by the operator
