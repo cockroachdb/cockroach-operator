@@ -54,6 +54,7 @@ cd manifests && kustomize edit set image cockroachdb/cockroach-operator=${IMG} &
 "$opsdk" bundle validate ./bundle
 
 FILE_NAMES=(bundle/manifests/cockroach-operator-sa_v1_serviceaccount.yaml \
+bundle/tests/scorecard/config.yaml \
 bundle/manifests/cockroach-operator.clusterserviceversion.yaml \
 bundle/manifests/crdb.cockroachlabs.com_crdbclusters.yaml \
 bundle/metadata/annotations.yaml \
