@@ -24,7 +24,6 @@ DOCKER_IMAGE_REPOSITORY?=cockroach-operator
 # Default bundle image tag
 APP_VERSION?=v1.1.5-alpha.3
 
-IMG=$(DOCKER_REGISTRY)/$(DOCKER_IMAGE_REPOSITORY):$(APP_VERSION)
 # 
 # Testing targets
 # 
@@ -121,6 +120,8 @@ RH_BUNDLE_IMAGE_REPOSITORY?=cockroachdb-operator-bundle
 RH_BUNDLE_VERSION?=1.1.0
 RH_DEPLOY_PATH="deploy/certified-metadata-bundle"
 RH_DEPLOY_FULL_PATH="$(RH_DEPLOY_PATH)/cockroach-operator/"
+RH_COCKROACH_DATABASE_IMAGE=registry.connect.redhat.com/cockroachdb/cockroach:v20.2.2
+RH_OPERATOR_IMAGE?="us.gcr.io/chris-love-operator-playground/cockroach-operator:v1.1.5-alpha.3"
 
 # Generate package manifests.
 # Options for "packagemanifests".
@@ -142,7 +143,7 @@ PKG_MAN_OPTS ?= "$(PKG_FROM_VERSION) $(PKG_CHANNELS) $(PKG_IS_DEFAULT_CHANNEL)"
 # Build the packagemanifests
 .PHONY: release/update-pkg
 release/update-pkg:dev/generate
-	bazel run  //hack:update-pkg  -- $(RH_BUNDLE_VERSION) $(IMG) $(PKG_MAN_OPTS)
+	bazel run  //hack:update-pkg  -- $(RH_BUNDLE_VERSION) $(RH_OPERATOR_IMAGE) $(PKG_MAN_OPTS) $(RH_COCKROACH_DATABASE_IMAGE)
 
 
 #  Build the packagemanifests
@@ -194,7 +195,7 @@ BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 # Build the bundle image.
 .PHONY: gen-csv
 gen-csv: dev/generate
-	bazel run  //hack:update-csv  -- $(RH_BUNDLE_VERSION) $(IMG) $(BUNDLE_METADATA_OPTS)
+	bazel run  //hack:update-csv  -- $(RH_BUNDLE_VERSION) $(RH_OPERATOR_IMAGE) $(BUNDLE_METADATA_OPTS) $(RH_COCKROACH_DATABASE_IMAGE)
 		
 
 

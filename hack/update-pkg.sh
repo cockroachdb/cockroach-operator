@@ -40,26 +40,31 @@ REPO_ROOT=${BUILD_WORKSPACE_DIRECTORY}
 cd "${REPO_ROOT}"
 echo ${REPO_ROOT}
 echo "+++ Running update package manifest "
-VERSION="$4"
-echo "VERSION:$VERSION"
-IMG="$5"
-echo $IMG
-PKG_MAN_OPTS="$6"
-echo "PKG_MAN_OPTS: $PKG_MAN_OPTS"
+RH_BUNDLE_VERSION="$4"
+[[ -z "$RH_BUNDLE_VERSION" ]] && { echo "Error: RH_BUNDLE_VERSION not set"; exit 1; }
+echo "RH_BUNDLE_VERSION=$RH_BUNDLE_VERSION"
+RH_COCKROACH_OP_IMG="$5"
+echo "RH_COCKROACH_OP_IMG=$RH_COCKROACH_OP_IMG"
+[[ -z "$RH_COCKROACH_OP_IMG" ]] && { echo "Error: RH_COCKROACH_OP_IMG not set"; exit 1; }
+RH_PKG_MAN_OPTS="$6"
+echo "RH_PKG_MAN_OPTS=$RH_PKG_MAN_OPTS"
+[[ -z "$RH_PKG_MAN_OPTS" ]] && { echo "Error: RH_PKG_MAN_OPTS not set"; exit 1; }
+RH_COCKROACH_DATABASE_IMAGE="$7"
+echo "RH_COCKROACH_DATABASE_IMAGE=$RH_COCKROACH_DATABASE_IMAGE"
+[[ -z "$RH_COCKROACH_DATABASE_IMAGE" ]] && { echo "Error: RH_COCKROACH_DATABASE_IMAGE not set"; exit 1; }
 DEPLOY_PATH="deploy/certified-metadata-bundle/cockroach-operator"
 DEPLOY_CERTIFICATION_PATH="deploy/certified-metadata-bundle"
-if [ -d "${DEPLOY_PATH}/${VERSION}" ] 
+if [ -d "${DEPLOY_PATH}/${RH_BUNDLE_VERSION}" ] 
 then
-    echo "Folder ${DEPLOY_PATH}/${VERSION} already exists. Please increase the version or remove the folder manually." 
+    echo "Folder ${DEPLOY_PATH}/${RH_BUNDLE_VERSION} already exists. Please increase the version or remove the folder manually." 
     exit 1
 fi
-rm -rf ${DEPLOY_PATH}/${VERSION}
+rm -rf ${DEPLOY_PATH}/${RH_BUNDLE_VERSION}
 "$opsdk" generate kustomize manifests -q --verbose
-cd manifests && "$kstomize" edit set image cockroachdb/cockroach-operator=${IMG} && cd ..
-"$kstomize" build config/manifests | "$opsdk" generate packagemanifests -q --version ${VERSION} ${PKG_MAN_OPTS} --output-dir ${DEPLOY_PATH} --input-dir ${DEPLOY_PATH} --verbose
-mv ${DEPLOY_PATH}/${VERSION}/cockroach-operator.clusterserviceversion.yaml ${DEPLOY_PATH}/${VERSION}/cockroach-operator.v${VERSION}.clusterserviceversion.yaml
-rm -rf ${DEPLOY_PATH}/${VERSION}/cockroach-operator-sa_v1_serviceaccount.yaml
-
+"$kstomize" build config/manifests | "$opsdk" generate packagemanifests -q --version ${RH_BUNDLE_VERSION} ${RH_PKG_MAN_OPTS} --output-dir ${DEPLOY_PATH} --input-dir ${DEPLOY_PATH} --verbose
+rm -rf ${DEPLOY_PATH}/${RH_BUNDLE_VERSION}/cockroach-operator-sa_v1_serviceaccount.yaml
+cat ${DEPLOY_PATH}/${RH_BUNDLE_VERSION}/cockroach-operator.clusterserviceversion.yaml | sed -e "s+RH_COCKROACH_OP_IMAGE_PLACEHOLDER+${RH_COCKROACH_OP_IMG}+g" -e "s+RH_COCKROACH_DB_IMAGE_PLACEHOLDER+${RH_COCKROACH_DATABASE_IMAGE}+g" -e "s+CREATED_AT_PLACEHOLDER+"$(date +"%FT%H:%M:%SZ")"+g"> ${DEPLOY_PATH}/${RH_BUNDLE_VERSION}/cockroach-operator.v${RH_BUNDLE_VERSION}.clusterserviceversion.yaml
+rm -rf ${DEPLOY_PATH}/${RH_BUNDLE_VERSION}/cockroach-operator.clusterserviceversion.yaml
 
 
 

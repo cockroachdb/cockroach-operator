@@ -22,4 +22,5 @@ spec:
         - name: cockroach-operator
           env:
             - name: RELATED_IMAGE_COCKROACH
-              value: registry.connect.redhat.com/cockroachdb/cockroach:v20.2.2
+              value: RH_COCKROACH_DB_IMAGE_PLACEHOLDER
+          image: RH_COCKROACH_OP_IMAGE_PLACEHOLDER

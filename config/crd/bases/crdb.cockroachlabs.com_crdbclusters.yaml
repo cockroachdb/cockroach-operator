@@ -269,7 +269,7 @@ spec:
               format: int32
               type: integer
             image:
-              description: (Optional) Container image information
+              description: (Required) Container image information
               properties:
                 name:
                   description: 'Container image with supported CockroachDB version.
@@ -343,6 +343,7 @@ spec:
                 your CockroachDB Cluster
               type: boolean
           required:
+          - image
           - nodes
           type: object
         status:

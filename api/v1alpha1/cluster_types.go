@@ -33,8 +33,8 @@ type CrdbClusterSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Number of nodes",xDescriptors="urn:alm:descriptor:com.tectonic.ui:podCount"
 	// +required
 	Nodes int32 `json:"nodes"`
-	// (Optional) Container image information
-	// +optional
+	// (Required) Container image information
+	// +required
 	Image PodImage `json:"image"`
 	// (Optional) The database port (`--port` CLI parameter when starting the service)
 	// Default: 26257

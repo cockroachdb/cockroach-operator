@@ -51,10 +51,10 @@ if [ $? -ne 0 ]; then
     echo "fail to build opm"
     exit 1
 fi
-  RH_BUNDLE_REGISTRY=${RH_BUNDLE_REGISTRY} \
-	RH_BUNDLE_IMAGE_REPOSITORY=${OLM_BUNDLE_REPO} \
-	RH_BUNDLE_VERSION=${RH_BUNDLE_VERSION} \
-	RH_DEPLOY_PATH=${RH_DEPLOY_PATH} \
-	RH_BUNDLE_IMAGE_TAG=${TAG} \
-	bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
-		//:push_operator_bundle_image 
+  # RH_BUNDLE_REGISTRY=${RH_BUNDLE_REGISTRY} \
+	# RH_BUNDLE_IMAGE_REPOSITORY=${OLM_BUNDLE_REPO} \
+	# RH_BUNDLE_VERSION=${RH_BUNDLE_VERSION} \
+	# RH_DEPLOY_PATH=${RH_DEPLOY_PATH} \
+	# RH_BUNDLE_IMAGE_TAG=${TAG} \
+	# bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
+	# 	//:push_operator_bundle_image 
