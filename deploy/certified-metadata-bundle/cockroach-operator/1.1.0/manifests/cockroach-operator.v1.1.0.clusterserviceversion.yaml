@@ -27,7 +27,7 @@ metadata:
               }
             },
             "image": {
-              "name": "quay.io/alinalion/cockroach-operator:v1.1.5-alpha.3",
+              "name": "registry.connect.redhat.com/cockroachdb/cockroach:v20.2.2",
               "pullPolicy": "Always"
             },
             "nodes": 3,
@@ -38,14 +38,14 @@ metadata:
     capabilities: Full Lifecycle
     categories: Database
     certified: "true"
-    containerImage: quay.io/alinalion/cockroach-operator:v1.1.5-alpha.3
-    createdAt: 2020-12-13T12:05:05Z
+    containerImage: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v1.1.0-rc.1
+    createdAt: 2020-12-13T20:10:16Z
     description: CockroachDB Operator
     operators.operatorframework.io/builder: operator-sdk-v1.1.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
     repository: https://github.com/cockroachdb/cockroach-operator
     support: Cockroach Labs
-  name: cockroach-operator.v1.1.2
+  name: cockroach-operator.v1.1.0
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -236,7 +236,7 @@ spec:
               containers:
               - env:
                 - name: RELATED_IMAGE_COCKROACH
-                  value: registry.connect.redhat.com/cockroachdb/cockroach:v20.2.1
+                  value: registry.connect.redhat.com/cockroachdb/cockroach:v20.2.2
                 - name: WATCH_NAMESPACE
                   valueFrom:
                     fieldRef:
@@ -247,7 +247,7 @@ spec:
                       fieldPath: metadata.name
                 - name: OPERATOR_NAME
                   value: cockroachdb
-                image: quay.io/alinalion/cockroach-operator:v1.1.5-alpha.3
+                image: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v1.1.0-rc.1
                 imagePullPolicy: IfNotPresent
                 name: cockroach-operator
                 resources:
@@ -291,4 +291,4 @@ spec:
   provider:
     name: Cockroach Labs
     url: https://www.cockroachlabs.com
-  version: 1.1.2
+  version: 1.1.0

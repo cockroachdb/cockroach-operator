@@ -223,7 +223,7 @@ spec:
           image: cockroachdb/cockroach-operator
           imagePullPolicy: IfNotPresent
           # uncomment this to enable ParitionedUpdates
-          # args: ["-feature-gates","PartitionedUpdate=true"]
+          # args: ["-feature-gates","PartitionedUpdate=true,UseDecommission=true"]
           env:
             - name: WATCH_NAMESPACE
               valueFrom:

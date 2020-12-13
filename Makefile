@@ -22,7 +22,7 @@
 DOCKER_REGISTRY?=us.gcr.io/chris-love-operator-playground
 DOCKER_IMAGE_REPOSITORY?=cockroach-operator
 # Default bundle image tag
-APP_VERSION?=v1.1.5-alpha.3
+APP_VERSION?=v1.1.6-alpha.3
 
 # 
 # Testing targets
@@ -115,13 +115,13 @@ dev/syncdeps:
 	bazel run //:gazelle -- update-repos -from_file=go.mod
 
 #RED HAT IMAGE BUNDLE
-RH_BUNDLE_REGISTRY?=
+RH_BUNDLE_REGISTRY?=registry.connect.redhat.com/cockroachdb
 RH_BUNDLE_IMAGE_REPOSITORY?=cockroachdb-operator-bundle
 RH_BUNDLE_VERSION?=1.1.0
 RH_DEPLOY_PATH="deploy/certified-metadata-bundle"
 RH_DEPLOY_FULL_PATH="$(RH_DEPLOY_PATH)/cockroach-operator/"
 RH_COCKROACH_DATABASE_IMAGE=registry.connect.redhat.com/cockroachdb/cockroach:v20.2.2
-RH_OPERATOR_IMAGE?="us.gcr.io/chris-love-operator-playground/cockroach-operator:v1.1.5-alpha.3"
+RH_OPERATOR_IMAGE?=registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v1.1.0-rc.1
 
 # Generate package manifests.
 # Options for "packagemanifests".
@@ -149,7 +149,7 @@ release/update-pkg:dev/generate
 #  Build the packagemanifests
 .PHONY: release/opm-build-bundle
 release/opm-build-bundle:
-	bazel run  //hack:opm-build-bundle  -- $(RH_BUNDLE_VERSION) $(IMG) $(PKG_MAN_OPTS)
+	bazel run  //hack:opm-build-bundle  -- $(RH_BUNDLE_VERSION) $(RH_OPERATOR_IMAGE) $(PKG_MAN_OPTS)
 
 #
 # Release bundle image
@@ -179,7 +179,7 @@ dev/opm-build-index:
 	RH_BUNDLE_VERSION=$(RH_BUNDLE_VERSION) \
 	RH_DEPLOY_PATH=$(RH_DEPLOY_FULL_PATH) \
 	bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
-		//hack:opm-build-index $(OLM_REPO) $(OLM_BUNDLE_REPO) $(TAG) $(RH_BUNDLE_VERSION)
+		//hack:opm-build-index $(OLM_REPO) $(OLM_BUNDLE_REPO) $(TAG) $(RH_BUNDLE_VERSION) $(RH_COCKROACH_DATABASE_IMAGE)
 
 CHANNELS?=beta,stable
 DEFAULT_CHANNEL?=stable

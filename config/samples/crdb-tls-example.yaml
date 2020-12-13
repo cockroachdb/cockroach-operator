@@ -27,6 +27,6 @@ spec:
         volumeMode: Filesystem
   tlsEnabled: true
   image:
-    name: RH_COCKROACH_OP_IMAGE_PLACEHOLDER
+    name: RH_COCKROACH_DB_IMAGE_PLACEHOLDER
     pullPolicy: Always
   nodes: 3
