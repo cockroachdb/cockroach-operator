@@ -314,8 +314,8 @@ func (l objList) Less(i, j int) bool {
 }
 
 func ignoreObject(u *unstructured.Unstructured) bool {
-	// Default account secret
-	if u.GetKind() == "Secret" && strings.HasPrefix(u.GetName(), "default-token-") {
+	// Default account secret && cockroach-operator-sa secret
+	if u.GetKind() == "Secret" && (strings.HasPrefix(u.GetName(), "default-token-") || strings.HasPrefix(u.GetName(), "cockroach-operator-sa-token-")) {
 		return true
 	}
 
