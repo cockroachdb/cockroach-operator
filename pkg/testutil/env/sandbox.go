@@ -66,6 +66,9 @@ func NewSandbox(t *testing.T, env *ActiveEnv) Sandbox {
 	if err := createNamespace(s); err != nil {
 		t.Fatal(err)
 	}
+	if err := createServiceAccount(s); err != nil {
+		t.Fatal(err)
+	}
 
 	t.Cleanup(s.Cleanup)
 
@@ -149,6 +152,21 @@ func createNamespace(s Sandbox) error {
 
 	if _, err := s.env.Clientset.CoreV1().Namespaces().Create(context.TODO(), ns, metav1.CreateOptions{}); err != nil {
 		return errors.Wrapf(err, "failed to create namespace: %s", s.Namespace)
+	}
+
+	return nil
+}
+
+func createServiceAccount(s Sandbox) error {
+	sa := &corev1.ServiceAccount{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: s.Namespace,
+			Name:      "cockroach-operator-sa",
+		},
+	}
+
+	if _, err := s.env.Clientset.CoreV1().ServiceAccounts(s.Namespace).Create(context.TODO(), sa, metav1.CreateOptions{}); err != nil {
+		return errors.Wrapf(err, "failed to create service account cockroach-operator-sa in namespace %s", s.Namespace)
 	}
 
 	return nil

@@ -84,7 +84,8 @@ func TestMain(m *testing.M) {
 	// TODO verify success of cluster start? Does kind do it?
 
 	e := testenv.NewEnv(runtime.NewSchemeBuilder(api.AddToScheme),
-		filepath.Join("..", "config", "crd", "bases"))
+		filepath.Join("..", "config", "crd", "bases"),
+		filepath.Join("..", "config", "rbac", "bases"))
 
 	env = e.Start()
 	code := m.Run()

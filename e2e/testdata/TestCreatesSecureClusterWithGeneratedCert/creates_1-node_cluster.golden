@@ -279,6 +279,8 @@ spec:
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       schedulerName: default-scheduler
+      serviceAccount: cockroach-operator-sa
+      serviceAccountName: cockroach-operator-sa
       securityContext: {}
       terminationGracePeriodSeconds: 60
       volumes:

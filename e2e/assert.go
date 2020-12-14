@@ -42,7 +42,7 @@ import (
 func requireClusterToBeReadyEventually(t *testing.T, sb testenv.DiffingSandbox, b testutil.ClusterBuilder) {
 	cluster := b.Cluster()
 
-	err := wait.Poll(10*time.Second, 150*time.Second, func() (bool, error) {
+	err := wait.Poll(10*time.Second, 600*time.Second, func() (bool, error) {
 		if initialized, err := clusterIsInitialized(t, sb, cluster.Name()); err != nil || !initialized {
 			return false, err
 		}
