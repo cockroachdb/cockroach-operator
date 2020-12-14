@@ -33,6 +33,8 @@ fi
 opm=$(realpath "$1")
 export PATH=$(dirname "$opm"):$PATH
 # This script should be run via `bazel run //opm-build-index`
+# This script is DEV only and will be added in a DEV target
+# TO DO: fix image bundle to simulate or use scratch
 REPO_ROOT=${BUILD_WORKSPACE_DIRECTORY}
 cd "${REPO_ROOT}"
 echo ${REPO_ROOT}
@@ -51,10 +53,11 @@ if [ $? -ne 0 ]; then
     echo "fail to build opm"
     exit 1
 fi
-  # RH_BUNDLE_REGISTRY=${RH_BUNDLE_REGISTRY} \
-	# RH_BUNDLE_IMAGE_REPOSITORY=${OLM_BUNDLE_REPO} \
-	# RH_BUNDLE_VERSION=${RH_BUNDLE_VERSION} \
-	# RH_DEPLOY_PATH=${RH_DEPLOY_PATH} \
-	# RH_BUNDLE_IMAGE_TAG=${TAG} \
-	# bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
-	# 	//:push_operator_bundle_image 
+#build and push to the quay.io registry the image taged with the index
+RH_BUNDLE_REGISTRY=${RH_BUNDLE_REGISTRY} \
+RH_BUNDLE_IMAGE_REPOSITORY=${OLM_BUNDLE_REPO} \
+RH_BUNDLE_VERSION=${RH_BUNDLE_VERSION} \
+RH_DEPLOY_PATH=${RH_DEPLOY_PATH} \
+RH_BUNDLE_IMAGE_TAG=${TAG} \
+bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
+  //:push_operator_bundle_image 

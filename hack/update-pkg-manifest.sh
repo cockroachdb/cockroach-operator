@@ -26,7 +26,7 @@ elif ! command -v bazel &>/dev/null; then
 else
   (
     set -o xtrace
-    bazel run //hack:update-pkg
+    bazel run //hack:update-pkg-manifest
   )
   exit 0
 fi
@@ -35,11 +35,14 @@ opsdk=$(realpath "$1")
 kstomize="$(realpath "$2")"
 opm=$(realpath "$3")
 export PATH=$(dirname "$opsdk"):$PATH
-# This script should be run via `bazel run //hack:update-pkg
+# This script should be run via `bazel run //hack:update-pkg-manifest
+# It will be used on Openshift certification image bundle releases.
+# It created a bundle in the package manifests format. 
+# We are keeping the format that was initially used.
 REPO_ROOT=${BUILD_WORKSPACE_DIRECTORY}
 cd "${REPO_ROOT}"
 echo ${REPO_ROOT}
-echo "+++ Running update package manifest "
+echo "+++ Running update package manifest for certification"
 RH_BUNDLE_VERSION="$4"
 [[ -z "$RH_BUNDLE_VERSION" ]] && { echo "Error: RH_BUNDLE_VERSION not set"; exit 1; }
 echo "RH_BUNDLE_VERSION=$RH_BUNDLE_VERSION"
@@ -65,7 +68,7 @@ rm -rf ${DEPLOY_PATH}/${RH_BUNDLE_VERSION}
 rm -rf ${DEPLOY_PATH}/${RH_BUNDLE_VERSION}/cockroach-operator-sa_v1_serviceaccount.yaml
 cat ${DEPLOY_PATH}/${RH_BUNDLE_VERSION}/cockroach-operator.clusterserviceversion.yaml | sed -e "s+RH_COCKROACH_OP_IMAGE_PLACEHOLDER+${RH_COCKROACH_OP_IMG}+g" -e "s+RH_COCKROACH_DB_IMAGE_PLACEHOLDER+${RH_COCKROACH_DATABASE_IMAGE}+g" -e "s+CREATED_AT_PLACEHOLDER+"$(date +"%FT%H:%M:%SZ")"+g"> ${DEPLOY_PATH}/${RH_BUNDLE_VERSION}/cockroach-operator.v${RH_BUNDLE_VERSION}.clusterserviceversion.yaml
 rm -rf ${DEPLOY_PATH}/${RH_BUNDLE_VERSION}/cockroach-operator.clusterserviceversion.yaml
-# this is needed after csv generation
+# This is needed after csv generation
 cd ${REPO_ROOT}
 FILE_NAMES=(
   config/manifests/bases/cockroach-operator.clusterserviceversion.yaml \

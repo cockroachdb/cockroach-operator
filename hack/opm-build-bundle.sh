@@ -33,6 +33,8 @@ fi
 opm=$(realpath "$1")
 export PATH=$(dirname "$opm"):$PATH
 # This script should be run via `bazel //hack:opm-build-bundle`
+# TO DO: this will be merged in one script that will release the OpenShift bundle 
+# This script validates the bundle in the OpenShift format
 REPO_ROOT=${BUILD_WORKSPACE_DIRECTORY}
 cd "${REPO_ROOT}"
 echo ${REPO_ROOT}
