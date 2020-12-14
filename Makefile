@@ -141,9 +141,9 @@ endif
 PKG_MAN_OPTS ?= "$(PKG_FROM_VERSION) $(PKG_CHANNELS) $(PKG_IS_DEFAULT_CHANNEL)"
 
 # Build the packagemanifests
-.PHONY: release/update-pkg
-release/update-pkg:dev/generate
-	bazel run  //hack:update-pkg  -- $(RH_BUNDLE_VERSION) $(RH_OPERATOR_IMAGE) $(PKG_MAN_OPTS) $(RH_COCKROACH_DATABASE_IMAGE)
+.PHONY: release/update-pkg-manifest
+release/update-pkg-manifest:dev/generate
+	bazel run  //hack:update-pkg-manifest  -- $(RH_BUNDLE_VERSION) $(RH_OPERATOR_IMAGE) $(PKG_MAN_OPTS) $(RH_COCKROACH_DATABASE_IMAGE)
 
 
 #  Build the packagemanifests

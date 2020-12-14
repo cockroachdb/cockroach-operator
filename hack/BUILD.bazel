@@ -192,8 +192,8 @@ sh_binary(
 )
 
 sh_binary(
-    name = "update-pkg",
-    srcs = ["update-pkg.sh"],
+    name = "update-pkg-manifest",
+    srcs = ["update-pkg-manifest.sh"],
     args = [
         "$(location %s)" % OPERATORSDK,
         "$(location %s)" % KUSTOMIZE,
