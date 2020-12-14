@@ -65,6 +65,17 @@ rm -rf ${DEPLOY_PATH}/${RH_BUNDLE_VERSION}
 rm -rf ${DEPLOY_PATH}/${RH_BUNDLE_VERSION}/cockroach-operator-sa_v1_serviceaccount.yaml
 cat ${DEPLOY_PATH}/${RH_BUNDLE_VERSION}/cockroach-operator.clusterserviceversion.yaml | sed -e "s+RH_COCKROACH_OP_IMAGE_PLACEHOLDER+${RH_COCKROACH_OP_IMG}+g" -e "s+RH_COCKROACH_DB_IMAGE_PLACEHOLDER+${RH_COCKROACH_DATABASE_IMAGE}+g" -e "s+CREATED_AT_PLACEHOLDER+"$(date +"%FT%H:%M:%SZ")"+g"> ${DEPLOY_PATH}/${RH_BUNDLE_VERSION}/cockroach-operator.v${RH_BUNDLE_VERSION}.clusterserviceversion.yaml
 rm -rf ${DEPLOY_PATH}/${RH_BUNDLE_VERSION}/cockroach-operator.clusterserviceversion.yaml
+# this is needed after csv generation
+cd ${REPO_ROOT}
+FILE_NAMES=(
+  config/manifests/bases/cockroach-operator.clusterserviceversion.yaml \
+)
+for YAML in "${FILE_NAMES[@]}"
+do
+   :
+   cat "${REPO_ROOT}/hack/boilerplate/boilerplate.yaml.txt" "${REPO_ROOT}/${YAML}" > "${REPO_ROOT}/${YAML}.mod"
+   mv "${REPO_ROOT}/${YAML}.mod" "${REPO_ROOT}/${YAML}"
+done 
 
 
 
