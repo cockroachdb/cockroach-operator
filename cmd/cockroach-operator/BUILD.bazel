@@ -49,6 +49,43 @@ container_image(
     tars = [":licenses"],
 )
 
+pkg_tar(
+    name = "manifests-tar",
+    srcs = ["//deploy/certified-metadata-bundle/cockroach-operator/latest/manifests"],
+    mode = "0755",
+    package_dir = "/manifests",
+)
+
+pkg_tar(
+    name = "metadata-tar",
+    srcs = ["//deploy/certified-metadata-bundle/cockroach-operator/latest/metadata"],
+    mode = "0755",
+    package_dir = "/metadata",
+)
+
+container_image(
+    name = "operator_bundle_image",
+    # References container_pull from WORKSPACE
+    # base = "@redhat_ubi_minimal//image",
+    labels = {
+        "operators.operatorframework.io.bundle.mediatype.v1": "registry+v1",
+        "operators.operatorframework.io.bundle.manifests.v1": "manifests/",
+        "operators.operatorframework.io.bundle.metadata.v1": "metadata/",
+        "operators.operatorframework.io.bundle.package.v1": "cockroachdb-certified",
+        "operators.operatorframework.io.bundle.channels.v1": "beta,stable",
+        "operators.operatorframework.io.bundle.channel.default.v1": "stable",
+        "com.redhat.openshift.versions": "v4.5,v4.6",
+        "com.redhat.delivery.backport": "true",
+        "com.redhat.delivery.operator.bundle": "true",
+    },
+    stamp = True,
+    tars = [
+        ":manifests-tar",
+        ":metadata-tar",
+    ],
+    visibility = ["//visibility:public"],
+)
+
 go_image(
     name = "operator_image",
     # using the ubi image instead of the go base image

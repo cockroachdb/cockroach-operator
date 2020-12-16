@@ -11,18 +11,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-apiVersion: rbac.authorization.k8s.io/v1beta1
-kind: ClusterRoleBinding
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-  creationTimestamp: null
-  labels:
-    app: cockroach-operator
-  name: cockroach-operator-role-default-binding
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: cockroach-operator-role-default
-subjects:
-- kind: ServiceAccount
-  name: cockroach-operator-sa-default
-  namespace: default
+  name: cockroach-operator
+spec:
+  template:
+    spec:
+      containers:
+        - name: cockroach-operator
+          env:
+            - name: RELATED_IMAGE_COCKROACH
+              value: RH_COCKROACH_DB_IMAGE_PLACEHOLDER
+          image: RH_COCKROACH_OP_IMAGE_PLACEHOLDER

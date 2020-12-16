@@ -3,7 +3,7 @@ layout: go.kubebuilder.io/v2
 projectName: cockroach-operator
 repo: github.com/cockroach-operator
 resources:
-- group: crdb.cockroachlabs.com
+- group: crdb
   kind: CrdbCluster
   version: v1alpha1
 version: 3-alpha

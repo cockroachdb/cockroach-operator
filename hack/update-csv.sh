@@ -26,38 +26,44 @@ elif ! command -v bazel &>/dev/null; then
 else
   (
     set -o xtrace
-    bazel run //hack:generate-csv
+    bazel run //hack:update-csv
   )
   exit 0
 fi
+
+opsdk=$(realpath "$1")
+kstomize="$(realpath "$2")"
+opm="$(realpath "$3")"
+export PATH=$(dirname "$opsdk"):$PATH
 
 # This script should be run via `bazel run //hack:gen-csv`
 REPO_ROOT=${BUILD_WORKSPACE_DIRECTORY}
 cd "${REPO_ROOT}"
 echo ${REPO_ROOT}
+echo "+++ Running gen csv"
 
-echo "+++ Running operator-sdk"
-
-# BUNDLE_METADATA_OPTS="$2"
-VERSION="$4"
-echo $VERSION
-IMG="$5"
-echo $IMG
-BUNDLE_METADATA_OPTS=""
-echo $BUNDLE_METADATA_OPTS
-operator-sdk generate kustomize manifests -q 
-cd manifests && kustomize edit set image cockroachdb/cockroach-operator=${IMG} && cd ..
-kustomize build config/manifests | operator-sdk generate bundle -q --overwrite --version ${VERSION} ${BUNDLE_METADATA_OPTS}
-operator-sdk bundle validate ./bundle
-
-FILE_NAMES=(bundle/manifests/cockroach-operator-role-default-binding_rbac.authorization.k8s.io_v1beta1_clusterrolebinding.yaml \
-bundle/manifests/cockroach-operator-role-default_rbac.authorization.k8s.io_v1_clusterrole.yaml \
-bundle/manifests/cockroach-operator-sa-default_v1_serviceaccount.yaml \
-bundle/manifests/cockroach-operator-sa_v1_serviceaccount.yaml \
+RH_BUNDLE_VERSION="$4"
+[[ -z "$RH_BUNDLE_VERSION" ]] && { echo "Error: RH_BUNDLE_VERSION not set"; exit 1; }
+echo "RH_BUNDLE_VERSION=$RH_BUNDLE_VERSION"
+RH_COCKROACH_OP_IMG="$5"
+echo "RH_COCKROACH_OP_IMG=$RH_COCKROACH_OP_IMG"
+[[ -z "$RH_COCKROACH_OP_IMG" ]] && { echo "Error: RH_COCKROACH_OP_IMG not set"; exit 1; }
+RH_BUNDLE_METADATA_OPTS="$6"
+echo "RH_BUNDLE_METADATA_OPTS=$RH_BUNDLE_METADATA_OPTS"
+[[ -z "$RH_BUNDLE_METADATA_OPTS" ]] && { echo "Error: RH_BUNDLE_METADATA_OPTS not set"; exit 1; }
+RH_COCKROACH_DATABASE_IMAGE="$8"
+echo "RH_COCKROACH_DATABASE_IMAGE=$RH_COCKROACH_DATABASE_IMAGE"
+[[ -z "$RH_COCKROACH_DATABASE_IMAGE" ]] && { echo "Error: RH_COCKROACH_DATABASE_IMAGE not set"; exit 1; }
+"$opsdk" generate kustomize manifests -q 
+"$kstomize" build config/manifests | "$opsdk" generate bundle -q --overwrite --version ${RH_BUNDLE_VERSION} ${RH_BUNDLE_METADATA_OPTS}
+"$opsdk" bundle validate ./bundle
+cat bundle/manifests/cockroach-operator.clusterserviceversion.yaml | sed -e "s+RH_COCKROACH_OP_IMAGE_PLACEHOLDER+${RH_COCKROACH_OP_IMG}+g" -e "s+RH_COCKROACH_DB_IMAGE_PLACEHOLDER+${RH_COCKROACH_DATABASE_IMAGE}+g" -e "s+CREATED_AT_PLACEHOLDER+"$(date +"%FT%H:%M:%SZ")"+g"> bundle/manifests/cockroach-operator.clusterserviceversion.yaml 
+cd ${REPO_ROOT}
+FILE_NAMES=(bundle/manifests/cockroach-operator-sa_v1_serviceaccount.yaml \
+bundle/tests/scorecard/config.yaml \
 bundle/manifests/cockroach-operator.clusterserviceversion.yaml \
 bundle/manifests/crdb.cockroachlabs.com_crdbclusters.yaml \
 bundle/metadata/annotations.yaml \
-bundle/tests/scorecard/config.yaml \
 config/manifests/bases/cockroach-operator.clusterserviceversion.yaml \
 )
 for YAML in "${FILE_NAMES[@]}"

@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 apiVersion: crdb.cockroachlabs.com/v1alpha1
 kind: CrdbCluster
 metadata:
@@ -28,6 +27,6 @@ spec:
         volumeMode: Filesystem
   tlsEnabled: true
   image:
-    name: "cockroachdb/cockroach:v20.1.5"
+    name: RH_COCKROACH_DB_IMAGE_PLACEHOLDER
     pullPolicy: Always
   nodes: 3

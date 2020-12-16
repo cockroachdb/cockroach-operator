@@ -14,9 +14,9 @@
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
-  name: cockroach-test-alina-demo
+  name: cockroach-test
   namespace: openshift-marketplace
 spec:
   sourceType: grpc
   displayName: Cockroach Test Demo
-  image: quay.io/alinalion/cockroach-operator-bundle:my-index
+  image: PLACEHOLDER

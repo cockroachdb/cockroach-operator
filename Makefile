@@ -21,26 +21,15 @@
 
 DOCKER_REGISTRY?=us.gcr.io/chris-love-operator-playground
 DOCKER_IMAGE_REPOSITORY?=cockroach-operator
-VERSION ?= 0.0.10
 # Default bundle image tag
-BUNDLE_IMG ?= cockroach-operator-bundle:$(VERSION)
-APP_VERSION?=v1.0.0-alpha.3
-
-# Options for 'bundle-build'
-ifneq ($(origin CHANNELS), undefined)
-BUNDLE_CHANNELS := --channels=$(CHANNELS)
-endif
-ifneq ($(origin DEFAULT_CHANNEL), undefined)
-BUNDLE_DEFAULT_CHANNEL := --default-channel=$(DEFAULT_CHANNEL)
-endif
-BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
+APP_VERSION?=v1.1.6-alpha.3
 
 # 
 # Testing targets
 # 
 .PHONY: test/all
 test/all:
-	bazel test //api/... //pkg/...
+	bazel test //api/... //pkg/... --test_arg=--test.v
 
 .PHONY: test/api
 test/api:
@@ -125,36 +114,23 @@ dev/syncdeps:
 	bazel run //hack:update-bazel \
 	bazel run //:gazelle -- update-repos -from_file=go.mod
 
-kustomize:
-ifeq (, $(shell which kustomize))
-	@{ \
-	set -e ;\
-	KUSTOMIZE_GEN_TMP_DIR=$$(mktemp -d) ;\
-	cd $$KUSTOMIZE_GEN_TMP_DIR ;\
-	go mod init tmp ;\
-	go get sigs.k8s.io/kustomize/kustomize/v3@v3.5.4 ;\
-	rm -rf $$KUSTOMIZE_GEN_TMP_DIR ;\
-	}
-KUSTOMIZE=$(GOBIN)/kustomize
-else
-KUSTOMIZE=$(shell which kustomize)
-endif
-# Current Operator version
-VERSION ?= 0.0.10
-# Default bundle image tag
-BUNDLE_IMG ?= cockroach-operator:$(VERSION)
-# IMG="us.gcr.io/chris-love-operator-playground/cockroach-operator:v1.0.0-alpha.1"
-IMG="quay.io/alinalion/cockroach-operator:v1.0.0-alpha.3"
-# Build the bundle image.
-.PHONY: bundle-build
-bundle-build:
-	docker build -f bundle.Dockerfile -t quay.io/alinalion/$(BUNDLE_IMG) .
-	docker push quay.io/alinalion/$(BUNDLE_IMG)
+#RED HAT IMAGE BUNDLE
+RH_BUNDLE_REGISTRY?=registry.connect.redhat.com/cockroachdb
+RH_BUNDLE_IMAGE_REPOSITORY?=cockroachdb-operator-bundle
+RH_BUNDLE_VERSION?=1.1.0
+RH_DEPLOY_PATH="deploy/certified-metadata-bundle"
+RH_DEPLOY_FULL_PATH="$(RH_DEPLOY_PATH)/cockroach-operator/"
+RH_COCKROACH_DATABASE_IMAGE=registry.connect.redhat.com/cockroachdb/cockroach:v20.2.2
+RH_OPERATOR_IMAGE?=registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v1.1.0-rc.1
 
 # Generate package manifests.
 # Options for "packagemanifests".
-ifneq ($(origin FROM_VERSION), undefined)
-PKG_FROM_VERSION := --from-version=$(FROM_VERSION)
+CHANNEL?=beta
+FROM_BUNDLE_VERSION?=1.0.1
+IS_CHANNEL_DEFAULT?=0
+
+ifneq ($(origin FROM_BUNDLE_VERSION), undefined)
+PKG_FROM_VERSION := --from-version=$(FROM_BUNDLE_VERSION)
 endif
 ifneq ($(origin CHANNEL), undefined)
 PKG_CHANNELS := --channel=$(CHANNEL)
@@ -162,18 +138,64 @@ endif
 ifeq ($(IS_CHANNEL_DEFAULT), 1)
 PKG_IS_DEFAULT_CHANNEL := --default-channel
 endif
-PKG_MAN_OPTS ?= $(FROM_VERSION) $(PKG_CHANNELS) $(PKG_IS_DEFAULT_CHANNEL)
+PKG_MAN_OPTS ?= "$(PKG_FROM_VERSION) $(PKG_CHANNELS) $(PKG_IS_DEFAULT_CHANNEL)"
 
-# Build packagemanifests.
-.PHONY: packagemanifests
-packagemanifests: dev/generate
-	operator-sdk generate kustomize manifests -q
-	cd manifests && $(KUSTOMIZE) edit set image cockroach-operator=$(IMG)
-	$(KUSTOMIZE) build config/manifests | operator-sdk generate packagemanifests -q --version $(VERSION) $(PKG_MAN_OPTS)
+# Build the packagemanifests
+.PHONY: release/update-pkg-manifest
+release/update-pkg-manifest:dev/generate
+	bazel run  //hack:update-pkg-manifest  -- $(RH_BUNDLE_VERSION) $(RH_OPERATOR_IMAGE) $(PKG_MAN_OPTS) $(RH_COCKROACH_DATABASE_IMAGE)
+
+
+#  Build the packagemanifests
+.PHONY: release/opm-build-bundle
+release/opm-build-bundle:
+	bazel run  //hack:opm-build-bundle  -- $(RH_BUNDLE_VERSION) $(RH_OPERATOR_IMAGE) $(PKG_MAN_OPTS)
+
+#
+# Release bundle image
+#
+.PHONY: release/bundle-image
+release/bundle-image:
+	RH_BUNDLE_REGISTRY=$(RH_BUNDLE_REGISTRY) \
+	RH_BUNDLE_IMAGE_REPOSITORY=$(RH_BUNDLE_IMAGE_REPOSITORY) \
+	RH_BUNDLE_VERSION=$(RH_BUNDLE_VERSION) \
+	RH_DEPLOY_PATH=$(RH_DEPLOY_FULL_PATH) \
+	RH_BUNDLE_IMAGE_TAG=$(RH_BUNDLE_VERSION) \
+	bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
+		//:push_operator_bundle_image 
+
+
+OLM_REPO ?= 
+OLM_BUNDLE_REPO ?= cockroachdb-operator-index
+OLM_PACKAGE_NAME ?= cockroachdb-certified
+TAG ?= $(RH_BUNDLE_VERSION)
+#
+# dev opm index build for quay repo
+#
+.PHONY: dev/opm-build-index
+dev/opm-build-index:
+	RH_BUNDLE_REGISTRY=$(RH_BUNDLE_REGISTRY) \
+	RH_BUNDLE_IMAGE_REPOSITORY=$(RH_BUNDLE_IMAGE_REPOSITORY) \
+	RH_BUNDLE_VERSION=$(RH_BUNDLE_VERSION) \
+	RH_DEPLOY_PATH=$(RH_DEPLOY_FULL_PATH) \
+	bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
+		//hack:opm-build-index $(OLM_REPO) $(OLM_BUNDLE_REPO) $(TAG) $(RH_BUNDLE_VERSION) $(RH_COCKROACH_DATABASE_IMAGE)
+
+CHANNELS?=beta,stable
+DEFAULT_CHANNEL?=stable
+# Options for 'bundle-build'
+ifneq ($(origin CHANNELS), undefined)
+BUNDLE_CHANNELS := --channels=$(CHANNELS)
+endif
+ifneq ($(origin DEFAULT_CHANNEL), undefined)
+BUNDLE_DEFAULT_CHANNEL := --default-channel=$(DEFAULT_CHANNEL)
+endif
+BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
+
 # Build the bundle image.
 .PHONY: gen-csv
 gen-csv: dev/generate
-	bazel run  //hack:update-csv  -- $(VERSION) $(IMG) $(BUNDLE_METADATA_OPTS)
+	bazel run  //hack:update-csv  -- $(RH_BUNDLE_VERSION) $(RH_OPERATOR_IMAGE) $(BUNDLE_METADATA_OPTS) $(RH_COCKROACH_DATABASE_IMAGE)
 		
 
 

@@ -26,6 +26,15 @@ container_push(
     tag = "{STABLE_DOCKER_TAG}",
 )
 
+container_push(
+    name = "push_operator_bundle_image",
+    format = "Docker",
+    image = "//cmd/cockroach-operator:operator_bundle_image",
+    registry = "{RH_BUNDLE_REGISTRY}",
+    repository = "{RH_BUNDLE_IMAGE_REPOSITORY}",
+    tag = "{RH_BUNDLE_IMAGE_TAG}",
+)
+
 filegroup(
     name = "license",
     srcs = ["LICENSE"],
@@ -52,6 +61,8 @@ filegroup(
         "//api/v1alpha1:all-srcs",
         "//cmd/cockroach-operator:all-srcs",
         "//config:all-srcs",
+        "//deploy/certified-metadata-bundle/cockroach-operator/latest/manifests:all-srcs",
+        "//deploy/certified-metadata-bundle/cockroach-operator/latest/metadata:all-srcs",
         "//e2e:all-srcs",
         "//examples:all-srcs",
         "//hack:all-srcs",

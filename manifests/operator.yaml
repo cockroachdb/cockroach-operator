@@ -41,45 +41,6 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   creationTimestamp: null
-  name: cockroach-operator-role-default
-rules:
-  - apiGroups:
-      - security.openshift.io
-    resources:
-      - securitycontextconstraints
-    resourceNames:
-      - anyuid
-    verbs:
-      - use
----
-apiVersion: rbac.authorization.k8s.io/v1beta1
-kind: ClusterRoleBinding
-metadata:
-  name: cockroach-operator-role-default-binding
-  labels:
-    app: cockroach-operator
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: cockroach-operator-role-default
-subjects:
-  - name: cockroach-operator-sa-default
-    namespace: default
-    kind: ServiceAccount
----
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: cockroach-operator-sa-default
-  namespace: default
-  annotations:
-  labels:
-    app: cockroach-operator
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  creationTimestamp: null
   name: cockroach-operator-role
 rules:
   - apiGroups:
@@ -262,7 +223,7 @@ spec:
           image: cockroachdb/cockroach-operator
           imagePullPolicy: IfNotPresent
           # uncomment this to enable ParitionedUpdates
-          # args: ["-feature-gates","PartitionedUpdate=true"]
+          # args: ["-feature-gates","PartitionedUpdate=true,UseDecommission=true"]
           env:
             - name: WATCH_NAMESPACE
               valueFrom:

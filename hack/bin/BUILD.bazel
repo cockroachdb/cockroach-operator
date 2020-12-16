@@ -155,7 +155,7 @@ genrule(
     visibility = ["//visibility:public"],
 )
 
-#  fetch_opm rules to fetch the kind binary from github
+#  fetch_kustomize rules to fetch the kind binary from github
 genrule(
     name = "fetch_kustomize",
     srcs = select({

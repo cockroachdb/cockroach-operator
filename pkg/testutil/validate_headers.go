@@ -62,6 +62,7 @@ var SkippedPaths = map[string]bool{
 	"vendor":      true,
 	"external":    true,
 	"3rdparty":    true,
+	"deploy":      true,
 }
 
 // NewValidateHeaders creates a new struct used to validate a project.

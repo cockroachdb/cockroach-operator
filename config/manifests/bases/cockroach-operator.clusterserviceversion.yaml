@@ -16,117 +16,82 @@ kind: ClusterServiceVersion
 metadata:
   annotations:
     alm-examples: '[]'
-    capabilities: Basic Install
+    capabilities: Full Lifecycle
+    categories: Database
+    certified: "true"
+    containerImage: RH_COCKROACH_OP_IMAGE_PLACEHOLDER
+    createdAt: CREATED_AT_PLACEHOLDER
+    description: CockroachDB Operator
     operators.operatorframework.io/builder: operator-sdk-v1.1.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
+    repository: https://github.com/cockroachdb/cockroach-operator
+    support: Cockroach Labs
   name: cockroach-operator.vX.Y.Z
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
-    - description: CrdbCluster is the Schema for the clusters API
-      displayName: Crdb Cluster
+    - description: CrdbCluster is the CRD for the cockroachDB clusters API
+      displayName: CoachroachDB Operator
       kind: CrdbCluster
-      name: crdbclusters.crdb.cockroachlabs.com.cockroachlabs.com
+      name: crdbclusters.crdb.cockroachlabs.com
+      resources:
+      - kind: Service
+        name: cockroach-operator
+        version: v1
+      - kind: StatefulSet
+        name: cockroach-operator
+        version: v1
       specDescriptors:
-      - description: '(Optional) Additional command line arguments for the `cockroach` binary Default: ""'
-        displayName: List of additional arguments
-        path: additionalArgs
-      - description: '(Optional) The total size for caches (`--cache` command line parameter) Default: "25%"'
-        displayName: Cache Size
-        path: cache
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: '(Optional) The secret with a certificate and a private key for root database user Default: ""'
-        displayName: Client TLS Secret Name
-        path: clientTLSSecret
-        x-descriptors:
-        - urn:alm:descriptor:io.kubernetes:Secret
-      - description: (Required) Database disk storage configuration
-        displayName: Storage Volume Configuration
-        path: dataStore
-      - description: Persistent volume to use
-        displayName: Volume Claim
-        path: dataStore.pvc
-      - description: Existing PVC in the same namespace
-        displayName: Persistent Volume Claim Source
-        path: dataStore.pvc.source
-      - description: PVC to request a new persistent volume
-        displayName: Persistent Volume Claim Spec
-        path: dataStore.pvc.spec
-      - description: '(Optional) The database port (`--port` CLI parameter when starting the service) Default: 26257'
-        displayName: GRPC Port that defaults to 26257
-        path: grpcPort
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:number
-      - description: '(Optional)  The web UI port (`--http-port` CLI parameter when starting the service) Default: 8080'
-        displayName: HTTP Port that defaults to 8080
-        path: httpPort
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:number
-      - description: (Required) Container image information
-        displayName: Pod Image
-        path: image
-      - description: '(Optional) Container image with supported CockroachDB version. This defaults to the version pinned to the operator and requires a full container and tag/sha name. For instance: cockroachdb/cockroachdb:v20.1'
-        displayName: Container Name
-        path: image.name
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: PullPolicy for the image, which defaults to IfNotPresent.
-        displayName: PullPolicy Type
-        path: image.pullPolicy
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:imagePullPolicy
-      - description: Secret name containing the dockerconfig to use for a registry that requires authentication. The secret must be configured first by the user.
-        displayName: Pull Secret Name
-        path: image.pullSecret
-        x-descriptors:
-        - urn:alm:descriptor:io.kubernetes:Secret
-      - description: '(Optional) The maximum in-memory storage capacity available to store temporary data for SQL queries (`--max-sql-memory` parameter) Default: "25%"'
-        displayName: Max SQL Memory
-        path: maxSQLMemory
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:text
-      - description: The maximum number of pods that can be unavailable during a rolling update. This number is set in the PodDistruptionBudget and defaults to 1.
-        displayName: PDB Max Unavailable Nodes
-        path: maxUnavailable
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:number
-      - description: The min number of pods that can be unavailable during a rolling update. This number is set in the PodDistruptionBudget and defaults to 1.
-        displayName: PDB Min Available Nodes
-        path: minUnavailable
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:number
-      - description: '(Optional) The secret with certificates and a private key for the TLS endpoint on the database port. The standard naming of files is expected (tls.key, tls.crt, ca.crt) Default: ""'
-        displayName: Node TLS Secret Name
-        path: nodeTLSSecret
-        x-descriptors:
-        - urn:alm:descriptor:io.kubernetes:Secret
-      - description: (Required) Number of nodes (pods) in the cluster
+      - description: Number of nodes (pods) in the cluster
         displayName: Number of nodes
         path: nodes
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:podCount
-      - description: '(Optional) Database container resource limits. Any container limits can be specified. Default: (not specified)'
-        displayName: Pod Resource Requirements
-        path: resources
-      - description: '(Optional) Whenever to start the cluster in secure or insecure mode. The secure mode uses certificates from the secrets `NodeTLSSecret` and `ClientTLSSecret`. If those are not specified, the operator generates certificates and signs them using the cluster Certificate Authority. Such setup is not recommended for production usage Default: false'
+      - description: (Optional) TLSEnabled determines if TLS is enabled for your CockroachDB Cluster
         displayName: TLS Enabled
         path: tlsEnabled
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
       statusDescriptors:
-      - description: List of conditions representing the current status of the cluster resource. Currently, only `NotInitialized` is used
+      - description: List of conditions representing the current status of the cluster resource.
         displayName: Cluster Conditions
         path: conditions
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes.conditions
-      - description: Database service version. Not populated and is just a placeholder currently.
-        displayName: Database service version
-        path: version
       version: v1alpha1
-  displayName: Cockroach Operator Alina Demo
+    - description: CrdbCluster is the CRD for the cockroachDB clusters API
+      displayName: CoachroachDB Operator
+      kind: CrdbCluster
+      name: crdbclusters.crdb.cockroachlabs.com.cockroachlabs.com
+      resources:
+      - kind: Service
+        name: cockroach-operator
+        version: v1
+      - kind: StatefulSet
+        name: cockroach-operator
+        version: v1
+      specDescriptors:
+      - description: Number of nodes (pods) in the cluster
+        displayName: Number of nodes
+        path: nodes
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:podCount
+      - description: (Optional) TLSEnabled determines if TLS is enabled for your CockroachDB Cluster
+        displayName: TLS Enabled
+        path: tlsEnabled
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+      statusDescriptors:
+      - description: List of conditions representing the current status of the cluster resource.
+        displayName: Cluster Conditions
+        path: conditions
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes.conditions
+      version: v1alpha1
+  description: This operator launches and manages a 3+ node cluster of CockroachDB.
+  displayName: CockroachDB Operator
   icon:
   - base64data: PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMS44MiAzMiIgd2lkdGg9IjI0ODYiIGhlaWdodD0iMjUwMCI+PHRpdGxlPkNMPC90aXRsZT48cGF0aCBkPSJNMTkuNDIgOS4xN2ExNS4zOSAxNS4zOSAwIDAgMS0zLjUxLjQgMTUuNDYgMTUuNDYgMCAwIDEtMy41MS0uNCAxNS42MyAxNS42MyAwIDAgMSAzLjUxLTMuOTEgMTUuNzEgMTUuNzEgMCAwIDEgMy41MSAzLjkxek0zMCAuNTdBMTcuMjIgMTcuMjIgMCAwIDAgMjUuNTkgMGExNy40IDE3LjQgMCAwIDAtOS42OCAyLjkzQTE3LjM4IDE3LjM4IDAgMCAwIDYuMjMgMGExNy4yMiAxNy4yMiAwIDAgMC00LjQ0LjU3QTE2LjIyIDE2LjIyIDAgMCAwIDAgMS4xM2EuMDcuMDcgMCAwIDAgMCAuMDkgMTcuMzIgMTcuMzIgMCAwIDAgLjgzIDEuNTcuMDcuMDcgMCAwIDAgLjA4IDAgMTYuMzkgMTYuMzkgMCAwIDEgMS44MS0uNTQgMTUuNjUgMTUuNjUgMCAwIDEgMTEuNTkgMS44OCAxNy41MiAxNy41MiAwIDAgMC0zLjc4IDQuNDhjLS4yLjMyLS4zNy42NS0uNTUgMXMtLjIyLjQ1LS4zMy42OS0uMzEuNzItLjQ0IDEuMDhhMTcuNDYgMTcuNDYgMCAwIDAgNC4yOSAxOC43Yy4yNi4yNS41My40OS44MS43M3MuNDQuMzcuNjcuNTQuNTkuNDQuODkuNjRhLjA3LjA3IDAgMCAwIC4wOCAwYy4zLS4yMS42LS40Mi44OS0uNjRzLjQ1LS4zNS42Ny0uNTQuNTUtLjQ4LjgxLS43M2ExNy40NSAxNy40NSAwIDAgMCA1LjM4LTEyLjYxIDE3LjM5IDE3LjM5IDAgMCAwLTEuMDktNi4wOWMtLjE0LS4zNy0uMjktLjczLS40NS0xLjA5cy0uMjItLjQ3LS4zMy0uNjktLjM1LS42Ni0uNTUtMWExNy42MSAxNy42MSAwIDAgMC0zLjc4LTQuNDggMTUuNjUgMTUuNjUgMCAwIDEgMTEuNi0xLjg0IDE2LjEzIDE2LjEzIDAgMCAxIDEuODEuNTQuMDcuMDcgMCAwIDAgLjA4IDBxLjQ0LS43Ni44Mi0xLjU2YS4wNy4wNyAwIDAgMCAwLS4wOUExNi44OSAxNi44OSAwIDAgMCAzMCAuNTd6IiBmaWxsPSIjMTUxZjM0Ii8+PHBhdGggZD0iTTIxLjgyIDE3LjQ3YTE1LjUxIDE1LjUxIDAgMCAxLTQuMjUgMTAuNjkgMTUuNjYgMTUuNjYgMCAwIDEtLjcyLTQuNjggMTUuNSAxNS41IDAgMCAxIDQuMjUtMTAuNjkgMTUuNjIgMTUuNjIgMCAwIDEgLjcyIDQuNjgiIGZpbGw9IiMzNDg1NDAiLz48cGF0aCBkPSJNMTUgMjMuNDhhMTUuNTUgMTUuNTUgMCAwIDEtLjcyIDQuNjggMTUuNTQgMTUuNTQgMCAwIDEtMy41My0xNS4zN0ExNS41IDE1LjUgMCAwIDEgMTUgMjMuNDgiIGZpbGw9IiM3ZGJjNDIiLz48L3N2Zz4=
     mediatype: image/svg+xml
@@ -144,9 +109,8 @@ spec:
   - supported: false
     type: AllNamespaces
   keywords:
-  - operator
-  - demo
-  - cockroach
+  - database
+  - cockroachDB
   links:
   - name: Documentation
     url: https://docs.cockroachlabs.com
@@ -157,7 +121,7 @@ spec:
   maintainers:
   - email: support@cockroachlabs.com
     name: Cockroach Labs Support
-  maturity: alpha
+  maturity: beta
   provider:
     name: Cockroach Labs
     url: https://www.cockroachlabs.com

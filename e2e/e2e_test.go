@@ -84,7 +84,8 @@ func TestMain(m *testing.M) {
 	// TODO verify success of cluster start? Does kind do it?
 
 	e := testenv.NewEnv(runtime.NewSchemeBuilder(api.AddToScheme),
-		filepath.Join("..", "config", "crd", "bases"))
+		filepath.Join("..", "config", "crd", "bases"),
+		filepath.Join("..", "config", "rbac", "bases"))
 
 	env = e.Start()
 	code := m.Run()
@@ -413,6 +414,14 @@ func TestDatabaseFunctionality(t *testing.T) {
 }
 
 func TestDecommissionFunctionality(t *testing.T) {
+
+	if doNotTestFlakes(t) {
+		t.Log("This test is marked as a flake, not running test")
+		return
+	} else {
+		t.Log("Running this test, although this test is flakey")
+	}
+
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
 	}

@@ -15,10 +15,10 @@
 resources:
 - operator.yaml
 patchesStrategicMerge:
-- patches/related_image_coackroach.yaml
+- patches/deployment_patch.yaml
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 images:
 - name: cockroachdb/cockroach-operator
   newName: quay.io/alinalion/cockroach-operator
-  newTag: v1.0.0-alpha.3
+  newTag: v1.1.5-alpha.3
