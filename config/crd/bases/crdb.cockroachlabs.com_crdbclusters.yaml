@@ -61,6 +61,11 @@ spec:
               items:
                 type: string
               type: array
+            annotations:
+              additionalProperties:
+                type: string
+              description: (Optional) Additional custom resource annotations
+              type: object
             cache:
               description: '(Optional) The total size for caches (`--cache` command
                 line parameter) Default: "25%"'
@@ -284,6 +289,11 @@ spec:
                     a registry that requires authentication. The secret must be configured
                     first by the user.
                   type: string
+              type: object
+            labels:
+              additionalProperties:
+                type: string
+              description: (Optional) Additional custom resource labels
               type: object
             maxSQLMemory:
               description: '(Optional) The maximum in-memory storage capacity available

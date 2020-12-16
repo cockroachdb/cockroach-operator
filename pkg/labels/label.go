@@ -43,6 +43,9 @@ var managed = []string{NameKey, InstanceKey, VersionKey, ComponentKey, PartOfKey
 
 func Common(cluster *api.CrdbCluster) Labels {
 	ll := Labels{}
+
+	Update(ll, cluster.Spec.Labels)
+
 	ll.Merge(makeCommonLabels(cluster.Labels, cluster.Name, cluster.Status.Version))
 
 	return ll
