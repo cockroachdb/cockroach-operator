@@ -174,6 +174,7 @@ sh_test(
         "@//:all-srcs",
     ],
 )
+
 # update-csv generates bundle format for DEV only
 sh_binary(
     name = "update-csv",
@@ -190,6 +191,7 @@ sh_binary(
         "@//:all-srcs",
     ],
 )
+
 # update-pkg-manifest script generates manifests and metadata for OpenShift certification release
 # in the package manifests format
 sh_binary(
@@ -207,6 +209,7 @@ sh_binary(
         "@//:all-srcs",
     ],
 )
+
 # opm-build-index is used on DEV only-> quay.io registry to add a new version iof the operator in the catalogsource
 sh_binary(
     name = "opm-build-index",
@@ -219,6 +222,7 @@ sh_binary(
         "@//:all-srcs",
     ],
 )
+
 # opm-build-bundle is used in the certification release for OpenShift to create the bundle.Dockerfile and validate the packagemanifest format
 sh_binary(
     name = "opm-build-bundle",

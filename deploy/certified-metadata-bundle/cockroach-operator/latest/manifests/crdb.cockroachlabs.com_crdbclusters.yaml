@@ -206,7 +206,7 @@ spec:
               description: (Optional) The maximum number of pods that can be unavailable during a rolling update. This number is set in the PodDistruptionBudget and defaults to 1.
               format: int32
               type: integer
-            minUnavailable:
+            minAvailable:
               description: (Optional) The min number of pods that can be unavailable during a rolling update. This number is set in the PodDistruptionBudget and defaults to 1.
               format: int32
               type: integer

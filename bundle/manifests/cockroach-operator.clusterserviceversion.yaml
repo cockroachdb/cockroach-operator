@@ -52,7 +52,7 @@ metadata:
     categories: Database
     certified: "true"
     containerImage: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v1.1.0-rc.1
-    createdAt: 2020-12-14T15:44:29Z
+    createdAt: 2020-12-16T16:12:32Z
     description: CockroachDB Operator
     operators.operatorframework.io/builder: operator-sdk-v1.1.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
@@ -304,5 +304,4 @@ spec:
   provider:
     name: Cockroach Labs
     url: https://www.cockroachlabs.com
-  replaces: cockroach-operator.v1.1.2
   version: 1.1.0
