@@ -64,7 +64,7 @@ type CrdbClusterSpec struct {
 	// (Optional) The min number of pods that can be unavailable during a rolling update.
 	// This number is set in the PodDistruptionBudget and defaults to 1.
 	// +optional
-	MinAvailable *int32 `json:"minUnavailable,omitempty"`
+	MinAvailable *int32 `json:"minAvailable,omitempty"`
 	// (Optional) The total size for caches (`--cache` command line parameter)
 	// Default: "25%"
 	// +optional
