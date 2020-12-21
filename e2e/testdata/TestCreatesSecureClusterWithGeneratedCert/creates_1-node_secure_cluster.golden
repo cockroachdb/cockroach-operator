@@ -89,8 +89,8 @@ spec:
   restartPolicy: Always
   schedulerName: default-scheduler
   securityContext: {}
-  serviceAccount: cockroach-operator-sa
-  serviceAccountName: cockroach-operator-sa
+  serviceAccount: cockroach-database-sa
+  serviceAccountName: cockroach-database-sa
   subdomain: crdb
   terminationGracePeriodSeconds: 60
   tolerations:
@@ -304,8 +304,8 @@ spec:
       restartPolicy: Always
       schedulerName: default-scheduler
       securityContext: {}
-      serviceAccount: cockroach-operator-sa
-      serviceAccountName: cockroach-operator-sa
+      serviceAccount: cockroach-database-sa
+      serviceAccountName: cockroach-database-sa
       terminationGracePeriodSeconds: 60
       volumes:
       - emptyDir: {}

@@ -161,12 +161,12 @@ func createServiceAccount(s Sandbox) error {
 	sa := &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: s.Namespace,
-			Name:      "cockroach-operator-sa",
+			Name:      "cockroach-database-sa",
 		},
 	}
 
 	if _, err := s.env.Clientset.CoreV1().ServiceAccounts(s.Namespace).Create(context.TODO(), sa, metav1.CreateOptions{}); err != nil {
-		return errors.Wrapf(err, "failed to create service account cockroach-operator-sa in namespace %s", s.Namespace)
+		return errors.Wrapf(err, "failed to create service account cockroach-database-sa in namespace %s", s.Namespace)
 	}
 
 	return nil
@@ -315,7 +315,7 @@ func (l objList) Less(i, j int) bool {
 
 func ignoreObject(u *unstructured.Unstructured) bool {
 	// Default account secret && cockroach-operator-sa secret
-	if u.GetKind() == "Secret" && (strings.HasPrefix(u.GetName(), "default-token-") || strings.HasPrefix(u.GetName(), "cockroach-operator-sa-token-")) {
+	if u.GetKind() == "Secret" && (strings.HasPrefix(u.GetName(), "default-token-") || strings.HasPrefix(u.GetName(), "cockroach-database-sa-token-")) {
 		return true
 	}
 
