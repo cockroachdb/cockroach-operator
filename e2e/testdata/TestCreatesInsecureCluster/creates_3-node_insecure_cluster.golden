@@ -5,11 +5,99 @@ metadata:
   name: crdb
 spec:
   dataStore:
-    emptyDir: {}
+    pvc:
+      source:
+        claimName: ""
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi
+        storageClassName: standard
+        volumeMode: Filesystem
   image:
     name: cockroachdb/cockroach:v19.2.6
   nodes: 3
   resources: {}
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  annotations:
+    pv.kubernetes.io/bind-completed: "yes"
+    pv.kubernetes.io/bound-by-controller: "yes"
+    volume.beta.kubernetes.io/storage-provisioner: rancher.io/local-path
+    volume.kubernetes.io/selected-node: test-control-plane
+  finalizers:
+  - kubernetes.io/pvc-protection
+  labels:
+    app.kubernetes.io/component: database
+    app.kubernetes.io/instance: crdb
+    app.kubernetes.io/name: cockroachdb
+  name: datadir-crdb-0
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: standard
+  volumeMode: Filesystem
+  volumeName: pvc-8007da2f-7747-4295-a032-88d02e5e6e1e
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  annotations:
+    pv.kubernetes.io/bind-completed: "yes"
+    pv.kubernetes.io/bound-by-controller: "yes"
+    volume.beta.kubernetes.io/storage-provisioner: rancher.io/local-path
+    volume.kubernetes.io/selected-node: test-control-plane
+  finalizers:
+  - kubernetes.io/pvc-protection
+  labels:
+    app.kubernetes.io/component: database
+    app.kubernetes.io/instance: crdb
+    app.kubernetes.io/name: cockroachdb
+  name: datadir-crdb-1
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: standard
+  volumeMode: Filesystem
+  volumeName: pvc-244020d2-9b7f-43f7-a3d5-a197faf8e190
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  annotations:
+    pv.kubernetes.io/bind-completed: "yes"
+    pv.kubernetes.io/bound-by-controller: "yes"
+    volume.beta.kubernetes.io/storage-provisioner: rancher.io/local-path
+    volume.kubernetes.io/selected-node: test-control-plane
+  finalizers:
+  - kubernetes.io/pvc-protection
+  labels:
+    app.kubernetes.io/component: database
+    app.kubernetes.io/instance: crdb
+    app.kubernetes.io/name: cockroachdb
+  name: datadir-crdb-2
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: standard
+  volumeMode: Filesystem
+  volumeName: pvc-c88d1f7f-45e0-4ed5-ad21-32ec35ab65c8
 
 ---
 apiVersion: v1
@@ -29,7 +117,7 @@ spec:
     - --join=crdb-0.crdb.[sandbox_namespace]:26257,crdb-1.crdb.[sandbox_namespace]:26257,crdb-2.crdb.[sandbox_namespace]:26257
     - --advertise-host=$(POD_NAME).crdb.[sandbox_namespace]
     - --logtostderr=INFO
-    - --insecure
+    - --certs-dir=/cockroach/cockroach-certs/
     - --http-port=8080
     - --port=26257
     - --cache=25%
@@ -51,7 +139,7 @@ spec:
       httpGet:
         path: /health
         port: http
-        scheme: HTTP
+        scheme: HTTPS
       initialDelaySeconds: 30
       periodSeconds: 5
       successThreshold: 1
@@ -69,7 +157,7 @@ spec:
       httpGet:
         path: /health?ready=1
         port: http
-        scheme: HTTP
+        scheme: HTTPS
       initialDelaySeconds: 10
       periodSeconds: 5
       successThreshold: 1
@@ -80,6 +168,8 @@ spec:
     volumeMounts:
     - mountPath: /cockroach/cockroach-data/
       name: datadir
+    - mountPath: /cockroach/cockroach-certs/
+      name: certs
   dnsPolicy: ClusterFirst
   enableServiceLinks: true
   priority: 0
@@ -100,8 +190,29 @@ spec:
     operator: Exists
     tolerationSeconds: 300
   volumes:
-  - emptyDir: {}
-    name: datadir
+  - name: datadir
+    persistentVolumeClaim:
+      claimName: datadir-crdb-0
+  - name: certs
+    projected:
+      defaultMode: 256
+      sources:
+      - secret:
+          items:
+          - key: ca.crt
+            path: ca.crt
+          - key: tls.crt
+            path: node.crt
+          - key: tls.key
+            path: node.key
+          name: crdb-node
+      - secret:
+          items:
+          - key: tls.crt
+            path: client.root.crt
+          - key: tls.key
+            path: client.root.key
+          name: crdb-root
 
 ---
 apiVersion: v1
@@ -121,7 +232,7 @@ spec:
     - --join=crdb-0.crdb.[sandbox_namespace]:26257,crdb-1.crdb.[sandbox_namespace]:26257,crdb-2.crdb.[sandbox_namespace]:26257
     - --advertise-host=$(POD_NAME).crdb.[sandbox_namespace]
     - --logtostderr=INFO
-    - --insecure
+    - --certs-dir=/cockroach/cockroach-certs/
     - --http-port=8080
     - --port=26257
     - --cache=25%
@@ -143,7 +254,7 @@ spec:
       httpGet:
         path: /health
         port: http
-        scheme: HTTP
+        scheme: HTTPS
       initialDelaySeconds: 30
       periodSeconds: 5
       successThreshold: 1
@@ -161,7 +272,7 @@ spec:
       httpGet:
         path: /health?ready=1
         port: http
-        scheme: HTTP
+        scheme: HTTPS
       initialDelaySeconds: 10
       periodSeconds: 5
       successThreshold: 1
@@ -172,6 +283,8 @@ spec:
     volumeMounts:
     - mountPath: /cockroach/cockroach-data/
       name: datadir
+    - mountPath: /cockroach/cockroach-certs/
+      name: certs
   dnsPolicy: ClusterFirst
   enableServiceLinks: true
   priority: 0
@@ -192,8 +305,29 @@ spec:
     operator: Exists
     tolerationSeconds: 300
   volumes:
-  - emptyDir: {}
-    name: datadir
+  - name: datadir
+    persistentVolumeClaim:
+      claimName: datadir-crdb-1
+  - name: certs
+    projected:
+      defaultMode: 256
+      sources:
+      - secret:
+          items:
+          - key: ca.crt
+            path: ca.crt
+          - key: tls.crt
+            path: node.crt
+          - key: tls.key
+            path: node.key
+          name: crdb-node
+      - secret:
+          items:
+          - key: tls.crt
+            path: client.root.crt
+          - key: tls.key
+            path: client.root.key
+          name: crdb-root
 
 ---
 apiVersion: v1
@@ -213,7 +347,7 @@ spec:
     - --join=crdb-0.crdb.[sandbox_namespace]:26257,crdb-1.crdb.[sandbox_namespace]:26257,crdb-2.crdb.[sandbox_namespace]:26257
     - --advertise-host=$(POD_NAME).crdb.[sandbox_namespace]
     - --logtostderr=INFO
-    - --insecure
+    - --certs-dir=/cockroach/cockroach-certs/
     - --http-port=8080
     - --port=26257
     - --cache=25%
@@ -235,7 +369,7 @@ spec:
       httpGet:
         path: /health
         port: http
-        scheme: HTTP
+        scheme: HTTPS
       initialDelaySeconds: 30
       periodSeconds: 5
       successThreshold: 1
@@ -253,7 +387,7 @@ spec:
       httpGet:
         path: /health?ready=1
         port: http
-        scheme: HTTP
+        scheme: HTTPS
       initialDelaySeconds: 10
       periodSeconds: 5
       successThreshold: 1
@@ -264,6 +398,8 @@ spec:
     volumeMounts:
     - mountPath: /cockroach/cockroach-data/
       name: datadir
+    - mountPath: /cockroach/cockroach-certs/
+      name: certs
   dnsPolicy: ClusterFirst
   enableServiceLinks: true
   priority: 0
@@ -284,8 +420,29 @@ spec:
     operator: Exists
     tolerationSeconds: 300
   volumes:
-  - emptyDir: {}
-    name: datadir
+  - name: datadir
+    persistentVolumeClaim:
+      claimName: datadir-crdb-2
+  - name: certs
+    projected:
+      defaultMode: 256
+      sources:
+      - secret:
+          items:
+          - key: ca.crt
+            path: ca.crt
+          - key: tls.crt
+            path: node.crt
+          - key: tls.key
+            path: node.key
+          name: crdb-node
+      - secret:
+          items:
+          - key: tls.crt
+            path: client.root.crt
+          - key: tls.key
+            path: client.root.key
+          name: crdb-root
 
 ---
 apiVersion: policy/v1beta1
@@ -305,6 +462,28 @@ spec:
       app.kubernetes.io/component: database
       app.kubernetes.io/instance: crdb
       app.kubernetes.io/name: cockroachdb
+
+---
+apiVersion: v1
+data:
+  ca.crt: '[replaced]'
+  tls.crt: '[replaced]'
+  tls.key: '[replaced]'
+kind: Secret
+metadata:
+  name: crdb-node
+type: Opaque
+
+---
+apiVersion: v1
+data:
+  ca.crt: '[replaced]'
+  tls.crt: '[replaced]'
+  tls.key: '[replaced]'
+kind: Secret
+metadata:
+  name: crdb-root
+type: Opaque
 
 ---
 apiVersion: v1
@@ -405,7 +584,7 @@ spec:
         - --join=crdb-0.crdb.[sandbox_namespace]:26257,crdb-1.crdb.[sandbox_namespace]:26257,crdb-2.crdb.[sandbox_namespace]:26257
         - --advertise-host=$(POD_NAME).crdb.[sandbox_namespace]
         - --logtostderr=INFO
-        - --insecure
+        - --certs-dir=/cockroach/cockroach-certs/
         - --http-port=8080
         - --port=26257
         - --cache=25%
@@ -427,7 +606,7 @@ spec:
           httpGet:
             path: /health
             port: http
-            scheme: HTTP
+            scheme: HTTPS
           initialDelaySeconds: 30
           periodSeconds: 5
           successThreshold: 1
@@ -445,7 +624,7 @@ spec:
           httpGet:
             path: /health?ready=1
             port: http
-            scheme: HTTP
+            scheme: HTTPS
           initialDelaySeconds: 10
           periodSeconds: 5
           successThreshold: 1
@@ -456,6 +635,8 @@ spec:
         volumeMounts:
         - mountPath: /cockroach/cockroach-data/
           name: datadir
+        - mountPath: /cockroach/cockroach-certs/
+          name: certs
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       schedulerName: default-scheduler
@@ -464,10 +645,45 @@ spec:
       serviceAccountName: cockroach-database-sa
       terminationGracePeriodSeconds: 60
       volumes:
-      - emptyDir: {}
-        name: datadir
+      - name: datadir
+        persistentVolumeClaim:
+          claimName: ""
+      - name: certs
+        projected:
+          defaultMode: 256
+          sources:
+          - secret:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              - key: tls.crt
+                path: node.crt
+              - key: tls.key
+                path: node.key
+              name: crdb-node
+          - secret:
+              items:
+              - key: tls.crt
+                path: client.root.crt
+              - key: tls.key
+                path: client.root.key
+              name: crdb-root
   updateStrategy:
     rollingUpdate:
       partition: 0
     type: RollingUpdate
+  volumeClaimTemplates:
+  - metadata:
+      creationTimestamp: null
+      name: datadir
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1Gi
+      storageClassName: standard
+      volumeMode: Filesystem
+    status:
+      phase: Pending
 

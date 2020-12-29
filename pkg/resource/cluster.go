@@ -118,11 +118,7 @@ func (cluster Cluster) Domain() string {
 }
 
 func (cluster Cluster) SecureMode() string {
-	if cluster.Spec().TLSEnabled {
-		return "--certs-dir=/cockroach/cockroach-certs/"
-	}
-
-	return "--insecure"
+	return "--certs-dir=/cockroach/cockroach-certs/"
 }
 
 func (cluster Cluster) IsFresh(fetcher Fetcher) (bool, error) {

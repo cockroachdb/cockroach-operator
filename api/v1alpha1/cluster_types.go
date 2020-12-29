@@ -45,10 +45,6 @@ type CrdbClusterSpec struct {
 	// Default: 8080
 	// +optional
 	HTTPPort *int32 `json:"httpPort,omitempty"`
-	// (Optional) TLSEnabled determines if TLS is enabled for your CockroachDB Cluster
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="TLS Enabled",xDescriptors="urn:alm:descriptor:com.tectonic.ui:booleanSwitch"
-	// +optional
-	TLSEnabled bool `json:"tlsEnabled,omitempty"`
 	// (Optional) The secret with certificates and a private key for the TLS endpoint
 	// on the database port. The standard naming of files is expected (tls.key, tls.crt, ca.crt)
 	// Default: ""
@@ -159,9 +155,6 @@ type Volume struct {
 	// Directory from the host node's filesystem
 	// +optional
 	HostPath *corev1.HostPathVolumeSource `json:"hostPath,omitempty"`
-	// Temporary folder on the host node's filesystem
-	// +optional
-	EmptyDir *corev1.EmptyDirVolumeSource `json:"emptyDir,omitempty"`
 	// Persistent volume to use
 	// +optional
 	VolumeClaim *VolumeClaim `json:"pvc,omitempty"`

@@ -63,11 +63,6 @@ func (b ClusterBuilder) WithNodeCount(c int32) ClusterBuilder {
 	return b
 }
 
-func (b ClusterBuilder) WithEmptyDirDataStore() ClusterBuilder {
-	b.cluster.Spec.DataStore = api.Volume{EmptyDir: &corev1.EmptyDirVolumeSource{}}
-	return b
-}
-
 func (b ClusterBuilder) WithPVDataStore(size, storageClass string) ClusterBuilder {
 	quantity, _ := apiresource.ParseQuantity(size)
 
@@ -92,11 +87,6 @@ func (b ClusterBuilder) WithPVDataStore(size, storageClass string) ClusterBuilde
 
 func (b ClusterBuilder) WithHTTPPort(port int32) ClusterBuilder {
 	b.cluster.Spec.HTTPPort = &port
-	return b
-}
-
-func (b ClusterBuilder) WithTLS() ClusterBuilder {
-	b.cluster.Spec.TLSEnabled = true
 	return b
 }
 

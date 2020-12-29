@@ -118,12 +118,10 @@ func (d decommission) Act(ctx context.Context, cluster *resource.Cluster) error 
 		RunningInsideK8s: runningInsideK8s,
 	}
 
-	// see https://github.com/cockroachdb/cockroach-operator/issues/204 for above TODO
-	if cluster.Spec().TLSEnabled {
-		conn.UseSSL = true
-		conn.ClientCertificateSecretName = cluster.ClientTLSSecretName()
-		conn.RootCertificateSecretName = cluster.NodeTLSSecretName()
-	}
+	conn.UseSSL = true
+	conn.ClientCertificateSecretName = cluster.ClientTLSSecretName()
+	conn.RootCertificateSecretName = cluster.NodeTLSSecretName()
+
 	db, err := database.NewDbConnection(conn)
 	if err != nil {
 		return errors.Wrapf(err, "failed to create database connection")
@@ -136,7 +134,7 @@ func (d decommission) Act(ctx context.Context, cluster *resource.Cluster) error 
 		return errors.Wrap(err, "failed to get range move duration")
 	}
 
-	drainer := scale.NewCockroachNodeDrainer(d.log, cluster.Namespace(), ss.Name, d.config, clientset, cluster.Spec().TLSEnabled, 3*timeout)
+	drainer := scale.NewCockroachNodeDrainer(d.log, cluster.Namespace(), ss.Name, d.config, clientset, true, 3*timeout)
 	pvcPruner := scale.PersistentVolumePruner{
 		Namespace:   cluster.Namespace(),
 		StatefulSet: ss.Name,

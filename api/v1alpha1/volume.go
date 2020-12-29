@@ -89,10 +89,6 @@ func (v *Volume) applyToPod(name string, container string, path string, spec *co
 		volume.VolumeSource = corev1.VolumeSource{
 			HostPath: v.HostPath,
 		}
-	} else if v.EmptyDir != nil {
-		volume.VolumeSource = corev1.VolumeSource{
-			EmptyDir: v.EmptyDir,
-		}
 	} else if v.VolumeClaim != nil {
 		volume.VolumeSource = corev1.VolumeSource{
 			PersistentVolumeClaim: &v.VolumeClaim.PersistentVolumeSource,
@@ -112,10 +108,6 @@ func sourcesSet(v *Volume) int {
 	set := 0
 
 	if v.HostPath != nil {
-		set += 1
-	}
-
-	if v.EmptyDir != nil {
 		set += 1
 	}
 

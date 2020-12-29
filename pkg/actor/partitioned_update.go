@@ -162,11 +162,9 @@ func (up *partitionedUpdate) Act(ctx context.Context, cluster *resource.Cluster)
 
 	// see https://github.com/cockroachdb/cockroach-operator/issues/204 for above TODO
 
-	if cluster.Spec().TLSEnabled {
-		conn.UseSSL = true
-		conn.ClientCertificateSecretName = cluster.ClientTLSSecretName()
-		conn.RootCertificateSecretName = cluster.NodeTLSSecretName()
-	}
+	conn.UseSSL = true
+	conn.ClientCertificateSecretName = cluster.ClientTLSSecretName()
+	conn.RootCertificateSecretName = cluster.NodeTLSSecretName()
 
 	// TODO we may have an error case where the operator will not finish an update, but will
 	// still try to make a database connection.

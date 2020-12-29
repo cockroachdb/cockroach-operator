@@ -20,7 +20,14 @@ metadata:
   namespace: test-ns
 spec:
   dataStore:
-    emptyDir: {}
+    pvc:
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: "1Gi"
+        volumeMode: Filesystem
   grpcPort: 26257
   httpPort: 8080
   image:

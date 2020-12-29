@@ -55,8 +55,8 @@ func (rc *requestCert) Handles(conds []api.ClusterCondition) bool {
 func (rc *requestCert) Act(ctx context.Context, cluster *resource.Cluster) error {
 	log := rc.log.WithValues("CrdbCluster", cluster.ObjectKey())
 
-	if !cluster.Spec().TLSEnabled || cluster.Spec().NodeTLSSecret != "" {
-		log.Info("Skipping TLS cert generation", "enabled", cluster.Spec().TLSEnabled, "secret", cluster.Spec().NodeTLSSecret)
+	if cluster.Spec().NodeTLSSecret != "" {
+		log.Info("Skipping TLS cert generation", "secret", cluster.Spec().NodeTLSSecret)
 		return nil
 	}
 

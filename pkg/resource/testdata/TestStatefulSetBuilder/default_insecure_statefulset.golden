@@ -28,7 +28,7 @@ spec:
         - --join=test-cluster-0.test-cluster.test-ns:26257
         - --advertise-host=$(POD_NAME).test-cluster.test-ns
         - --logtostderr=INFO
-        - --insecure
+        - --certs-dir=/cockroach/cockroach-certs/
         - --http-port=8080
         - --port=26257
         - --cache=25%
@@ -48,7 +48,7 @@ spec:
           httpGet:
             path: /health
             port: http
-            scheme: HTTP
+            scheme: HTTPS
           initialDelaySeconds: 30
           periodSeconds: 5
         name: db
@@ -64,18 +64,54 @@ spec:
           httpGet:
             path: /health?ready=1
             port: http
-            scheme: HTTP
+            scheme: HTTPS
           initialDelaySeconds: 10
           periodSeconds: 5
         resources: {}
         volumeMounts:
         - mountPath: /cockroach/cockroach-data/
           name: datadir
+        - mountPath: /cockroach/cockroach-certs/
+          name: certs
+      serviceAccountName: cockroach-operator-sa
       terminationGracePeriodSeconds: 60
       volumes:
-      - emptyDir: {}
-        name: datadir
+      - name: datadir
+        persistentVolumeClaim:
+          claimName: ""
+      - name: certs
+        projected:
+          defaultMode: 256
+          sources:
+          - secret:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              - key: tls.crt
+                path: node.crt
+              - key: tls.key
+                path: node.key
+              name: test-cluster-node
+          - secret:
+              items:
+              - key: tls.crt
+                path: client.root.crt
+              - key: tls.key
+                path: client.root.key
+              name: test-cluster-root
   updateStrategy:
     rollingUpdate: {}
+  volumeClaimTemplates:
+  - metadata:
+      creationTimestamp: null
+      name: datadir
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1Gi
+      volumeMode: Filesystem
+    status: {}
 status:
   replicas: 0

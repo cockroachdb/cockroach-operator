@@ -198,11 +198,6 @@ func (in *Volume) DeepCopyInto(out *Volume) {
 		*out = new(v1.HostPathVolumeSource)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.EmptyDir != nil {
-		in, out := &in.EmptyDir, &out.EmptyDir
-		*out = new(v1.EmptyDirVolumeSource)
-		(*in).DeepCopyInto(*out)
-	}
 	if in.VolumeClaim != nil {
 		in, out := &in.VolumeClaim, &out.VolumeClaim
 		*out = new(VolumeClaim)

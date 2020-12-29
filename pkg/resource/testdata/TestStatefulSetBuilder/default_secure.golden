@@ -73,10 +73,12 @@ spec:
           name: datadir
         - mountPath: /cockroach/cockroach-certs/
           name: certs
+      serviceAccountName: cockroach-operator-sa
       terminationGracePeriodSeconds: 60
       volumes:
-      - emptyDir: {}
-        name: datadir
+      - name: datadir
+        persistentVolumeClaim:
+          claimName: ""
       - name: certs
         projected:
           defaultMode: 256
@@ -99,5 +101,17 @@ spec:
               name: test-cluster-root
   updateStrategy:
     rollingUpdate: {}
+  volumeClaimTemplates:
+  - metadata:
+      creationTimestamp: null
+      name: datadir
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1Gi
+      volumeMode: Filesystem
+    status: {}
 status:
   replicas: 0

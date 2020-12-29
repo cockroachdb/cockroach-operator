@@ -69,7 +69,7 @@ func TestDeploysNotInitalizedCluster(t *testing.T) {
 	cluster := testutil.NewBuilder("cockroachdb").
 		Namespaced("default").
 		WithUID("cockroachdb-uid").
-		WithEmptyDirDataStore().
+		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */).
 		WithNodeCount(1).Cluster()
 
 	deploy := actor.NewDeploy(scheme, client)

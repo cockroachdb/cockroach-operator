@@ -82,60 +82,58 @@ func (b StatefulSetBuilder) Build(obj runtime.Object) error {
 		return err
 	}
 
-	if b.Spec().TLSEnabled {
-		if err := addCertsVolumeMount(DbContainerName, &ss.Spec.Template.Spec); err != nil {
-			return err
-		}
+	if err := addCertsVolumeMount(DbContainerName, &ss.Spec.Template.Spec); err != nil {
+		return err
+	}
 
-		ss.Spec.Template.Spec.Volumes = append(ss.Spec.Template.Spec.Volumes, corev1.Volume{
-			Name: certsDirName,
-			VolumeSource: corev1.VolumeSource{
-				Projected: &corev1.ProjectedVolumeSource{
-					DefaultMode: ptr.Int32(0400),
-					Sources: []corev1.VolumeProjection{
-						{
-							Secret: &corev1.SecretProjection{
-								LocalObjectReference: corev1.LocalObjectReference{
-									Name: b.nodeTLSSecretName(),
+	ss.Spec.Template.Spec.Volumes = append(ss.Spec.Template.Spec.Volumes, corev1.Volume{
+		Name: certsDirName,
+		VolumeSource: corev1.VolumeSource{
+			Projected: &corev1.ProjectedVolumeSource{
+				DefaultMode: ptr.Int32(0400),
+				Sources: []corev1.VolumeProjection{
+					{
+						Secret: &corev1.SecretProjection{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: b.nodeTLSSecretName(),
+							},
+							Items: []corev1.KeyToPath{
+								{
+									Key:  "ca.crt",
+									Path: "ca.crt",
 								},
-								Items: []corev1.KeyToPath{
-									{
-										Key:  "ca.crt",
-										Path: "ca.crt",
-									},
-									{
-										Key:  corev1.TLSCertKey,
-										Path: "node.crt",
-									},
-									{
-										Key:  corev1.TLSPrivateKeyKey,
-										Path: "node.key",
-									},
+								{
+									Key:  corev1.TLSCertKey,
+									Path: "node.crt",
+								},
+								{
+									Key:  corev1.TLSPrivateKeyKey,
+									Path: "node.key",
 								},
 							},
 						},
-						{
-							Secret: &corev1.SecretProjection{
-								LocalObjectReference: corev1.LocalObjectReference{
-									Name: b.clientTLSSecretName(),
+					},
+					{
+						Secret: &corev1.SecretProjection{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: b.clientTLSSecretName(),
+							},
+							Items: []corev1.KeyToPath{
+								{
+									Key:  corev1.TLSCertKey,
+									Path: "client.root.crt",
 								},
-								Items: []corev1.KeyToPath{
-									{
-										Key:  corev1.TLSCertKey,
-										Path: "client.root.crt",
-									},
-									{
-										Key:  corev1.TLSPrivateKeyKey,
-										Path: "client.root.key",
-									},
+								{
+									Key:  corev1.TLSPrivateKeyKey,
+									Path: "client.root.key",
 								},
 							},
 						},
 					},
 				},
 			},
-		})
-	}
+		},
+	})
 
 	return nil
 }
@@ -249,19 +247,11 @@ func (b StatefulSetBuilder) MakeContainers() []corev1.Container {
 }
 
 func (b StatefulSetBuilder) secureMode() string {
-	if b.Spec().TLSEnabled {
-		return " --certs-dir=/cockroach/cockroach-certs/"
-	}
-
-	return " --insecure"
+	return " --certs-dir=/cockroach/cockroach-certs/"
 }
 
 func (b StatefulSetBuilder) probeScheme() corev1.URIScheme {
-	if b.Spec().TLSEnabled {
-		return corev1.URISchemeHTTPS
-	}
-
-	return corev1.URISchemeHTTP
+	return corev1.URISchemeHTTPS
 }
 
 func (b StatefulSetBuilder) nodeTLSSecretName() string {
