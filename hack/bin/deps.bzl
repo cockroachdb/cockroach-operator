@@ -87,6 +87,19 @@ def install_misc():
         sha256 = "386e92c982a56fe4851468d7a931dfca29560cee306a0e66c6a1bd4065d3dac5",
         urls = ["https://github.com/stedolan/jq/releases/download/jq-1.5/jq-osx-amd64"],
     )
+    http_file(
+        name = "faq_linux",
+        executable = 1,
+        sha256 = "53360a0d22b0608d5e29f8e84450f2fdc94573246fb552896afedbf8f1687981",
+        urls = ["https://github.com/jzelinskie/faq/releases/download/0.0.6/faq-linux-amd64"],
+    )
+
+    http_file(
+        name = "faq_osx",
+        executable = 1,
+        sha256 = "bfcd6f527d1ba74db6bdd6bfb551a4db9c2c72f01baebf8069e9849b93dceef9",
+        urls = ["https://github.com/jzelinskie/faq/releases/download/0.0.6/faq-darwin-amd64"],
+    )
 
 # Install dependencies used by the controller-runtime integration test framework
 def install_integration_test_dependencies():
