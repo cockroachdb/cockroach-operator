@@ -38,8 +38,8 @@ metadata:
     capabilities: Full Lifecycle
     categories: Database
     certified: "true"
-    containerImage: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v1.1.0-rc.1
-    createdAt: 2020-12-16T16:10:40Z
+    containerImage: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v1.6.6-rc.1
+    createdAt: "2020-12-30T18:45:52Z"
     description: CockroachDB Operator
     operators.operatorframework.io/builder: operator-sdk-v1.1.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
@@ -68,13 +68,15 @@ spec:
         path: nodes
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:podCount
-      - description: (Optional) TLSEnabled determines if TLS is enabled for your CockroachDB Cluster
+      - description: (Optional) TLSEnabled determines if TLS is enabled for your CockroachDB
+          Cluster
         displayName: TLS Enabled
         path: tlsEnabled
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
       statusDescriptors:
-      - description: List of conditions representing the current status of the cluster resource.
+      - description: List of conditions representing the current status of the cluster
+          resource.
         displayName: Cluster Conditions
         path: conditions
         x-descriptors:
@@ -247,7 +249,7 @@ spec:
                       fieldPath: metadata.name
                 - name: OPERATOR_NAME
                   value: cockroachdb
-                image: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v1.1.0-rc.1
+                image: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v1.6.6-rc.1
                 imagePullPolicy: IfNotPresent
                 name: cockroach-operator
                 resources:
@@ -264,6 +266,16 @@ spec:
           verbs:
           - '*'
         serviceAccountName: cockroach-operator-sa
+      - rules:
+        - apiGroups:
+          - security.openshift.io
+          resourceNames:
+          - anyuid
+          resources:
+          - securitycontextconstraints
+          verbs:
+          - use
+        serviceAccountName: cockroach-database-sa
     strategy: deployment
   installModes:
   - supported: true

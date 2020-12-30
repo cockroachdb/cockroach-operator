@@ -41,20 +41,19 @@ export PATH=$(dirname "$opsdk"):$PATH
 REPO_ROOT=${BUILD_WORKSPACE_DIRECTORY}
 cd "${REPO_ROOT}"
 echo ${REPO_ROOT}
-echo "+++ Running gen csv"
-
+echo "+++ Running gen csv for development mode"
+[[ -z "$5" ]] && { echo "Error: RH_BUNDLE_VERSION not set"; exit 1; }
 RH_BUNDLE_VERSION="$5"
-[[ -z "$RH_BUNDLE_VERSION" ]] && { echo "Error: RH_BUNDLE_VERSION not set"; exit 1; }
 echo "RH_BUNDLE_VERSION=$RH_BUNDLE_VERSION"
+[[ -z "$6" ]] && { echo "Error: RH_COCKROACH_OP_IMG not set"; exit 1; }
 RH_COCKROACH_OP_IMG="$6"
 echo "RH_COCKROACH_OP_IMG=$RH_COCKROACH_OP_IMG"
-[[ -z "$RH_COCKROACH_OP_IMG" ]] && { echo "Error: RH_COCKROACH_OP_IMG not set"; exit 1; }
+[[ -z "$7" ]] && { echo "Error: RH_BUNDLE_METADATA_OPTS not set"; exit 1; }
 RH_BUNDLE_METADATA_OPTS="$7"
 echo "RH_BUNDLE_METADATA_OPTS=$RH_BUNDLE_METADATA_OPTS"
-[[ -z "$RH_BUNDLE_METADATA_OPTS" ]] && { echo "Error: RH_BUNDLE_METADATA_OPTS not set"; exit 1; }
+[[ -z "$9" ]] && { echo "Error: RH_COCKROACH_DATABASE_IMAGE not set"; exit 1; }
 RH_COCKROACH_DATABASE_IMAGE="$9"
 echo "RH_COCKROACH_DATABASE_IMAGE=$RH_COCKROACH_DATABASE_IMAGE"
-[[ -z "$RH_COCKROACH_DATABASE_IMAGE" ]] && { echo "Error: RH_COCKROACH_DATABASE_IMAGE not set"; exit 1; }
 "$opsdk" generate kustomize manifests -q 
 "$kstomize" build config/manifests | "$opsdk" generate bundle -q --overwrite --version ${RH_BUNDLE_VERSION} ${RH_BUNDLE_METADATA_OPTS}
 "$opsdk" bundle validate ./bundle
