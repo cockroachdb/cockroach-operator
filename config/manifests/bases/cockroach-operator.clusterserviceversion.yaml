@@ -124,5 +124,4 @@ spec:
   maturity: beta
   provider:
     name: Cockroach Labs
-    url: https://www.cockroachlabs.com
   version: 0.0.0
