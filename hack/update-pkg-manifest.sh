@@ -66,13 +66,8 @@ fi
 rm -rf ${DEPLOY_PATH}/${RH_BUNDLE_VERSION}
 "$opsdk" generate kustomize manifests -q --verbose
 "$kstomize" build config/manifests | "$opsdk" generate packagemanifests -q --version ${RH_BUNDLE_VERSION} ${RH_PKG_MAN_OPTS} --output-dir ${DEPLOY_PATH} --input-dir ${DEPLOY_PATH} --verbose
-# rm -rf ${DEPLOY_PATH}/${RH_BUNDLE_VERSION}/cockroach-operator-sa_v1_serviceaccount.yaml
 cat ${DEPLOY_PATH}/${RH_BUNDLE_VERSION}/cockroach-operator.clusterserviceversion.yaml | sed -e "s+RH_COCKROACH_OP_IMAGE_PLACEHOLDER+${RH_COCKROACH_OP_IMG}+g" -e "s+RH_COCKROACH_DB_IMAGE_PLACEHOLDER+${RH_COCKROACH_DATABASE_IMAGE}+g" -e "s+CREATED_AT_PLACEHOLDER+"$(date +"%FT%H:%M:%SZ")"+g"> ${DEPLOY_PATH}/${RH_BUNDLE_VERSION}/csv.yaml
-# rm -rf ${DEPLOY_PATH}/${RH_BUNDLE_VERSION}/cockroach-operator.clusterserviceversion.yaml
-
-# cat ${DEPLOY_PATH}/${RH_BUNDLE_VERSION}/cockroach-operator.clusterserviceversion.yaml | sed -e "s+RH_COCKROACH_OP_IMAGE_PLACEHOLDER+${RH_COCKROACH_OP_IMG}+g" -e "s+RH_COCKROACH_DB_IMAGE_PLACEHOLDER+${RH_COCKROACH_DATABASE_IMAGE}+g" -e "s+CREATED_AT_PLACEHOLDER+"$(date +"%FT%H:%M:%SZ")"+g"> ${DEPLOY_PATH}/${RH_BUNDLE_VERSION}/csv.yaml
-
-cd  ${DEPLOY_PATH}/${RH_BUNDLE_VERSION} && "$faq" -f yaml -o yaml --slurp '.[0].spec.install.spec.permissions+= [{serviceAccountName: .[2].metadata.name, rules: .[1].rules }] | .[0]' csv.yaml cockroach-database-role_rbac.authorization.k8s.io_v1_role.yaml cockroach-database-sa_v1_serviceaccount.yaml > cockroach-operator.v${RH_BUNDLE_VERSION}.clusterserviceversion.yaml
+cd  ${DEPLOY_PATH}/${RH_BUNDLE_VERSION} && "$faq" -f yaml -o yaml --slurp '.[0].spec.install.spec.clusterPermissions+= [{serviceAccountName: .[2].metadata.name, rules: .[1].rules }] | .[0]' csv.yaml cockroach-database-role_rbac.authorization.k8s.io_v1_clusterrole.yaml cockroach-database-sa_v1_serviceaccount.yaml > cockroach-operator.v${RH_BUNDLE_VERSION}.clusterserviceversion.yaml
 shopt -s extglob
 rm -v !("cockroach-operator.v${RH_BUNDLE_VERSION}.clusterserviceversion.yaml"|"crdb.cockroachlabs.com_crdbclusters.yaml") 
 shopt -u extglob

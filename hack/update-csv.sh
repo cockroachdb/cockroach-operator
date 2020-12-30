@@ -58,11 +58,13 @@ echo "RH_COCKROACH_DATABASE_IMAGE=$RH_COCKROACH_DATABASE_IMAGE"
 "$kstomize" build config/manifests | "$opsdk" generate bundle -q --overwrite --version ${RH_BUNDLE_VERSION} ${RH_BUNDLE_METADATA_OPTS}
 "$opsdk" bundle validate ./bundle
 cat bundle/manifests/cockroach-operator.clusterserviceversion.yaml | sed -e "s+RH_COCKROACH_OP_IMAGE_PLACEHOLDER+${RH_COCKROACH_OP_IMG}+g" -e "s+RH_COCKROACH_DB_IMAGE_PLACEHOLDER+${RH_COCKROACH_DATABASE_IMAGE}+g" -e "s+CREATED_AT_PLACEHOLDER+"$(date +"%FT%H:%M:%SZ")"+g"> bundle/manifests/cockroach-operator.clusterserviceversion.yaml 
-cd  bundle/manifests && "$faq" -f yaml -o yaml --slurp '.[0].spec.install.spec.permissions+= [{serviceAccountName: .[2].metadata.name, rules: .[1].rules }] | .[0]' cockroach-operator.clusterserviceversion.yaml cockroach-database-role_rbac.authorization.k8s.io_v1_role.yaml cockroach-database-sa_v1_serviceaccount.yaml > csv.yaml
+cd  bundle/manifests && "$faq" -f yaml -o yaml --slurp '.[0].spec.install.spec.clusterPermissions+= [{serviceAccountName: .[2].metadata.name, rules: .[1].rules }] | .[0]' cockroach-operator.clusterserviceversion.yaml cockroach-database-role_rbac.authorization.k8s.io_v1_clusterrole.yaml cockroach-database-sa_v1_serviceaccount.yaml > csv.yaml
 mv csv.yaml cockroach-operator.clusterserviceversion.yaml 
+shopt -s extglob
+rm -v !("cockroach-operator.clusterserviceversion.yaml"|"crdb.cockroachlabs.com_crdbclusters.yaml") 
+shopt -u extglob
 cd ${REPO_ROOT}
-FILE_NAMES=(bundle/manifests/cockroach-operator-sa_v1_serviceaccount.yaml \
-bundle/tests/scorecard/config.yaml \
+FILE_NAMES=(bundle/tests/scorecard/config.yaml \
 bundle/manifests/cockroach-operator.clusterserviceversion.yaml \
 bundle/manifests/crdb.cockroachlabs.com_crdbclusters.yaml \
 bundle/metadata/annotations.yaml \

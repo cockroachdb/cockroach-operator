@@ -52,7 +52,7 @@ metadata:
     categories: Database
     certified: "true"
     containerImage: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v1.6.6-rc.1
-    createdAt: "2020-12-30T18:11:26Z"
+    createdAt: "2020-12-30T21:00:08Z"
     description: CockroachDB Operator
     operators.operatorframework.io/builder: operator-sdk-v1.1.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
@@ -235,6 +235,16 @@ spec:
           verbs:
           - use
         serviceAccountName: cockroach-operator-sa
+      - rules:
+        - apiGroups:
+          - security.openshift.io
+          resourceNames:
+          - anyuid
+          resources:
+          - securitycontextconstraints
+          verbs:
+          - use
+        serviceAccountName: cockroach-database-sa
       deployments:
       - name: cockroach-operator
         spec:
@@ -279,16 +289,6 @@ spec:
           verbs:
           - '*'
         serviceAccountName: cockroach-operator-sa
-      - rules:
-        - apiGroups:
-          - security.openshift.io
-          resourceNames:
-          - anyuid
-          resources:
-          - securitycontextconstraints
-          verbs:
-          - use
-        serviceAccountName: cockroach-database-sa
     strategy: deployment
   installModes:
   - supported: true
