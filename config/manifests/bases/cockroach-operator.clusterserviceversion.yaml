@@ -44,6 +44,12 @@ spec:
         name: cockroach-operator
         version: v1
       specDescriptors:
+      - description: (Required) Database disk storage configuration
+        displayName: Data Store
+        path: dataStore
+      - description: (Required) Container image information
+        displayName: Cockroach Database Image
+        path: image
       - description: Number of nodes (pods) in the cluster
         displayName: Number of nodes
         path: nodes

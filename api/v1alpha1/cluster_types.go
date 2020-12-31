@@ -34,6 +34,7 @@ type CrdbClusterSpec struct {
 	// +required
 	Nodes int32 `json:"nodes"`
 	// (Required) Container image information
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Cockroach Database Image"
 	// +required
 	Image PodImage `json:"image"`
 	// (Optional) The database port (`--port` CLI parameter when starting the service)
@@ -84,6 +85,7 @@ type CrdbClusterSpec struct {
 	// +optional
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 	// (Required) Database disk storage configuration
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Data Store"
 	// +required
 	DataStore Volume `json:"dataStore,omitempty"`
 }
