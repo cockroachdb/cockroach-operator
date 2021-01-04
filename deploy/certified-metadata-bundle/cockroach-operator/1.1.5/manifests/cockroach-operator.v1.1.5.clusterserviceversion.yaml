@@ -26,10 +26,6 @@ metadata:
                 }
               }
             },
-            "image": {
-              "name": "registry.connect.redhat.com/cockroachdb/cockroach:v20.2.2",
-              "pullPolicy": "Always"
-            },
             "nodes": 3,
             "tlsEnabled": true
           }
@@ -39,13 +35,13 @@ metadata:
     categories: Database
     certified: "true"
     containerImage: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v1.6.6-rc.1
-    createdAt: "2020-12-31T10:43:09Z"
+    createdAt: "2021-01-04T18:50:43Z"
     description: CockroachDB Operator
     operators.operatorframework.io/builder: operator-sdk-v1.1.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
     repository: https://github.com/cockroachdb/cockroach-operator
     support: Cockroach Labs
-  name: cockroach-operator.v1.1.4
+  name: cockroach-operator.v1.1.5
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -308,4 +304,4 @@ spec:
   maturity: beta
   provider:
     name: Cockroach Labs
-  version: 1.1.4
+  version: 1.1.5

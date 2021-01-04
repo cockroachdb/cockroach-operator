@@ -343,7 +343,6 @@ spec:
                 your CockroachDB Cluster
               type: boolean
           required:
-          - image
           - nodes
           type: object
         status:
