@@ -1,4 +1,4 @@
-# Copyright 2020 The Cockroach Authors
+# Copyright 2021 The Cockroach Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -52,7 +52,7 @@ metadata:
     categories: Database
     certified: "true"
     containerImage: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v1.1.0-rc.1
-    createdAt: 2020-12-16T16:12:32Z
+    createdAt: 2021-12-16T16:12:32Z
     description: CockroachDB Operator
     operators.operatorframework.io/builder: operator-sdk-v1.1.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
