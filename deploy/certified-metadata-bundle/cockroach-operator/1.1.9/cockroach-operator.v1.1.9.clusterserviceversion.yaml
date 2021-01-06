@@ -35,13 +35,13 @@ metadata:
     categories: Database
     certified: "true"
     containerImage: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v1.6.6-rc.1
-    createdAt: "2021-01-04T21:04:54Z"
+    createdAt: "2021-01-05T22:08:43Z"
     description: CockroachDB Operator
     operators.operatorframework.io/builder: operator-sdk-v1.1.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
     repository: https://github.com/cockroachdb/cockroach-operator
     support: Cockroach Labs
-  name: cockroach-operator.v1.1.7
+  name: cockroach-operator.v1.1.9
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -51,6 +51,13 @@ spec:
       displayName: CoachroachDB Operator
       kind: CrdbCluster
       name: crdbclusters.crdb.cockroachlabs.com
+      resources:
+      - kind: Service
+        name: cockroach-operator
+        version: v1
+      - kind: StatefulSet
+        name: cockroach-operator
+        version: v1
       specDescriptors:
       - description: (Required) Database disk storage configuration
         displayName: Data Store
@@ -297,4 +304,4 @@ spec:
   maturity: beta
   provider:
     name: Cockroach Labs
-  version: 1.1.7
+  version: 1.1.9

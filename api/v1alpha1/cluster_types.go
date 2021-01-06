@@ -95,7 +95,10 @@ type CrdbClusterStatus struct {
 	// List of conditions representing the current status of the cluster resource.
 	// +operator-sdk:csv:customresourcedefinitions:type=status, displayName="Cluster Conditions",xDescriptors="urn:alm:descriptor:io.kubernetes.conditions"
 	Conditions []ClusterCondition `json:"conditions,omitempty"`
+	// +operator-sdk:csv:customresourcedefinitions:type=status, displayName="Operator Conditions",xDescriptors="urn:alm:descriptor:com.tectonic.ui:hidden"
+	OperatorConditions []ClusterCondition `json:"operatorConditions,omitempty"`
 	// Database service version. Not populated and is just a placeholder currently.
+	// +operator-sdk:csv:customresourcedefinitions:type=status, displayName="Version",xDescriptors="urn:alm:descriptor:com.tectonic.ui:hidden"
 	Version string `json:"version,omitempty"`
 }
 
@@ -118,7 +121,7 @@ type ClusterCondition struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:categories=all;cockroachdb,shortName=crdb
 // +kubebuilder:subresource:status
-// +operator-sdk:csv:customresourcedefinitions:displayName="CoachroachDB Operator"
+// +operator-sdk:csv:customresourcedefinitions:displayName="CoachroachDB Operator",resources={{StatefulSet,v1,cockroach-operator},{Service,v1,cockroach-operator}}
 // CrdbCluster is the CRD for the cockroachDB clusters API
 type CrdbCluster struct {
 	metav1.TypeMeta   `json:",inline"`

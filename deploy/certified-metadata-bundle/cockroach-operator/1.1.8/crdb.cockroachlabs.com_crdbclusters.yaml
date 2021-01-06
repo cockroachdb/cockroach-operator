@@ -269,26 +269,6 @@ spec:
                 - type
                 type: object
               type: array
-            operatorConditions:
-              items:
-                description: ClusterCondition represents cluster status as it is perceived by the operator
-                properties:
-                  lastTransitionTime:
-                    description: The time when the condition was updated
-                    format: date-time
-                    type: string
-                  status:
-                    description: 'Condition status: True, False or Unknown'
-                    type: string
-                  type:
-                    description: Type/Name of the condition
-                    type: string
-                required:
-                - lastTransitionTime
-                - status
-                - type
-                type: object
-              type: array
             version:
               description: Database service version. Not populated and is just a placeholder currently.
               type: string
