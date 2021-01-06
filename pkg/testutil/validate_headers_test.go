@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Cockroach Authors
+Copyright 2021 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import (
 	"testing"
 )
 
-const GOOD_MAKEFILE = `# Copyright 2020 The Cockroach Authors
+const GOOD_MAKEFILE = `# Copyright 2021 The Cockroach Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ target:
 `
 const GOOD_GOFILE = `// +build
 /*
-Copyright 2020 The Cockroach Authors
+Copyright 2021 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -61,7 +61,7 @@ limitations under the License.
 package testutil
 `
 const BAD_GOFILE = `/*
-Copyright 2020 The Wrong Authors
+Copyright 2021 The Wrong Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
