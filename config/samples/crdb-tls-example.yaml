@@ -27,6 +27,3 @@ spec:
         volumeMode: Filesystem
   tlsEnabled: true
   nodes: 3
-  image:
-    name: registry.connect.redhat.com/cockroachdb/cockroach@sha256:3edda46eccce8350440a0ea78dad2e41a3eaa0838fe57945ad5318739e968516
-    pullPolicy: Always

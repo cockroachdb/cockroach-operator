@@ -1,0 +1,320 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "crdb.cockroachlabs.com/v1alpha1",
+          "kind": "CrdbCluster",
+          "metadata": {
+            "name": "crdb-tls-example"
+          },
+          "spec": {
+            "dataStore": {
+              "pvc": {
+                "spec": {
+                  "accessModes": [
+                    "ReadWriteOnce"
+                  ],
+                  "resources": {
+                    "requests": {
+                      "storage": "10Gi"
+                    }
+                  },
+                  "volumeMode": "Filesystem"
+                }
+              }
+            },
+            "nodes": 3,
+            "tlsEnabled": true
+          }
+        }
+      ]
+    capabilities: Full Lifecycle
+    categories: Database
+    certified: "true"
+    containerImage: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v1.6.7-rc.1
+    createdAt: "2021-01-07T22:15:50Z"
+    description: CockroachDB Operator
+    operators.operatorframework.io/builder: operator-sdk-v1.1.0
+    operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
+    repository: https://github.com/cockroachdb/cockroach-operator
+    support: Cockroach Labs
+  name: cockroach-operator.v1.1.18
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: CrdbCluster is the CRD for the cockroachDB clusters API
+      displayName: CoachroachDB Operator
+      kind: CrdbCluster
+      name: crdbclusters.crdb.cockroachlabs.com
+      resources:
+      - kind: Service
+        name: cockroach-operator
+        version: v1
+      - kind: StatefulSet
+        name: cockroach-operator
+        version: v1
+      specDescriptors:
+      - description: (Required) Database disk storage configuration
+        displayName: Data Store
+        path: dataStore
+      - description: (Required) Container image information
+        displayName: Cockroach Database Image
+        path: image
+      - description: Number of nodes (pods) in the cluster
+        displayName: Number of nodes
+        path: nodes
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:podCount
+      - description: (Optional) TLSEnabled determines if TLS is enabled for your CockroachDB
+          Cluster
+        displayName: TLS Enabled
+        path: tlsEnabled
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+      statusDescriptors:
+      - description: List of conditions representing the current status of the cluster
+          resource.
+        displayName: Cluster Conditions
+        path: conditions
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes.conditions
+      - displayName: Operator Conditions
+        path: operatorConditions
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: Database service version. Not populated and is just a placeholder
+          currently.
+        displayName: Version
+        path: version
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      version: v1alpha1
+  description: This operator launches and manages a 3+ node cluster of CockroachDB.
+  displayName: CockroachDB Operator
+  icon:
+  - base64data: PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMS44MiAzMiIgd2lkdGg9IjI0ODYiIGhlaWdodD0iMjUwMCI+PHRpdGxlPkNMPC90aXRsZT48cGF0aCBkPSJNMTkuNDIgOS4xN2ExNS4zOSAxNS4zOSAwIDAgMS0zLjUxLjQgMTUuNDYgMTUuNDYgMCAwIDEtMy41MS0uNCAxNS42MyAxNS42MyAwIDAgMSAzLjUxLTMuOTEgMTUuNzEgMTUuNzEgMCAwIDEgMy41MSAzLjkxek0zMCAuNTdBMTcuMjIgMTcuMjIgMCAwIDAgMjUuNTkgMGExNy40IDE3LjQgMCAwIDAtOS42OCAyLjkzQTE3LjM4IDE3LjM4IDAgMCAwIDYuMjMgMGExNy4yMiAxNy4yMiAwIDAgMC00LjQ0LjU3QTE2LjIyIDE2LjIyIDAgMCAwIDAgMS4xM2EuMDcuMDcgMCAwIDAgMCAuMDkgMTcuMzIgMTcuMzIgMCAwIDAgLjgzIDEuNTcuMDcuMDcgMCAwIDAgLjA4IDAgMTYuMzkgMTYuMzkgMCAwIDEgMS44MS0uNTQgMTUuNjUgMTUuNjUgMCAwIDEgMTEuNTkgMS44OCAxNy41MiAxNy41MiAwIDAgMC0zLjc4IDQuNDhjLS4yLjMyLS4zNy42NS0uNTUgMXMtLjIyLjQ1LS4zMy42OS0uMzEuNzItLjQ0IDEuMDhhMTcuNDYgMTcuNDYgMCAwIDAgNC4yOSAxOC43Yy4yNi4yNS41My40OS44MS43M3MuNDQuMzcuNjcuNTQuNTkuNDQuODkuNjRhLjA3LjA3IDAgMCAwIC4wOCAwYy4zLS4yMS42LS40Mi44OS0uNjRzLjQ1LS4zNS42Ny0uNTQuNTUtLjQ4LjgxLS43M2ExNy40NSAxNy40NSAwIDAgMCA1LjM4LTEyLjYxIDE3LjM5IDE3LjM5IDAgMCAwLTEuMDktNi4wOWMtLjE0LS4zNy0uMjktLjczLS40NS0xLjA5cy0uMjItLjQ3LS4zMy0uNjktLjM1LS42Ni0uNTUtMWExNy42MSAxNy42MSAwIDAgMC0zLjc4LTQuNDggMTUuNjUgMTUuNjUgMCAwIDEgMTEuNi0xLjg0IDE2LjEzIDE2LjEzIDAgMCAxIDEuODEuNTQuMDcuMDcgMCAwIDAgLjA4IDBxLjQ0LS43Ni44Mi0xLjU2YS4wNy4wNyAwIDAgMCAwLS4wOUExNi44OSAxNi44OSAwIDAgMCAzMCAuNTd6IiBmaWxsPSIjMTUxZjM0Ii8+PHBhdGggZD0iTTIxLjgyIDE3LjQ3YTE1LjUxIDE1LjUxIDAgMCAxLTQuMjUgMTAuNjkgMTUuNjYgMTUuNjYgMCAwIDEtLjcyLTQuNjggMTUuNSAxNS41IDAgMCAxIDQuMjUtMTAuNjkgMTUuNjIgMTUuNjIgMCAwIDEgLjcyIDQuNjgiIGZpbGw9IiMzNDg1NDAiLz48cGF0aCBkPSJNMTUgMjMuNDhhMTUuNTUgMTUuNTUgMCAwIDEtLjcyIDQuNjggMTUuNTQgMTUuNTQgMCAwIDEtMy41My0xNS4zN0ExNS41IDE1LjUgMCAwIDEgMTUgMjMuNDgiIGZpbGw9IiM3ZGJjNDIiLz48L3N2Zz4=
+    mediatype: image/svg+xml
+  install:
+    spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - '*'
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        - apiGroups:
+          - rbac.authorization.k8s.io
+          resources:
+          - clusterroles
+          verbs:
+          - get
+          - list
+          - delete
+        - apiGroups:
+          - apps
+          resources:
+          - statefulsets
+          verbs:
+          - '*'
+        - apiGroups:
+          - apps
+          resources:
+          - statefulsets/finalizers
+          verbs:
+          - '*'
+        - apiGroups:
+          - apps
+          resources:
+          - statefulsets/status
+          verbs:
+          - '*'
+        - apiGroups:
+          - certificates.k8s.io
+          resources:
+          - certificatesigningrequests
+          verbs:
+          - '*'
+        - apiGroups:
+          - certificates.k8s.io
+          resources:
+          - certificatesigningrequests/approval
+          verbs:
+          - '*'
+        - apiGroups:
+          - certificates.k8s.io
+          resources:
+          - certificatesigningrequests/status
+          verbs:
+          - '*'
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps
+          verbs:
+          - '*'
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps/status
+          verbs:
+          - '*'
+        - apiGroups:
+          - ""
+          resources:
+          - pods/exec
+          verbs:
+          - '*'
+        - apiGroups:
+          - ""
+          resources:
+          - secrets
+          verbs:
+          - '*'
+        - apiGroups:
+          - ""
+          resources:
+          - services
+          verbs:
+          - '*'
+        - apiGroups:
+          - ""
+          resources:
+          - services/finalizers
+          verbs:
+          - '*'
+        - apiGroups:
+          - ""
+          resources:
+          - services/status
+          verbs:
+          - '*'
+        - apiGroups:
+          - crdb.cockroachlabs.com
+          resources:
+          - crdbclusters
+          verbs:
+          - '*'
+        - apiGroups:
+          - crdb.cockroachlabs.com
+          resources:
+          - crdbclusters/status
+          verbs:
+          - '*'
+        - apiGroups:
+          - policy
+          resources:
+          - poddisruptionbudgets
+          verbs:
+          - '*'
+        - apiGroups:
+          - policy
+          resources:
+          - poddisruptionbudgets/finalizers
+          verbs:
+          - '*'
+        - apiGroups:
+          - policy
+          resources:
+          - poddisruptionbudgets/status
+          verbs:
+          - '*'
+        - apiGroups:
+          - security.openshift.io
+          resourceNames:
+          - anyuid
+          resources:
+          - securitycontextconstraints
+          verbs:
+          - use
+        serviceAccountName: cockroach-operator-sa
+      - rules:
+        - apiGroups:
+          - security.openshift.io
+          resourceNames:
+          - anyuid
+          resources:
+          - securitycontextconstraints
+          verbs:
+          - use
+        serviceAccountName: cockroach-database-sa
+      deployments:
+      - name: cockroach-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              app: cockroach-operator
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                app: cockroach-operator
+            spec:
+              containers:
+              - args:
+                - -feature-gates
+                - UseDecommission=true,Upgrade=false
+                env:
+                - name: RELATED_IMAGE_COCKROACH
+                  value: "registry.connect.redhat.com/cockroachdb/cockroach:v20.2.2"
+                - name: WATCH_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.annotations['olm.targetNamespaces']
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: OPERATOR_NAME
+                  value: cockroachdb
+                image: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v1.6.7-rc.1
+                imagePullPolicy: IfNotPresent
+                name: cockroach-operator
+                resources:
+                  requests:
+                    cpu: 10m
+                    memory: 32Mi
+              serviceAccountName: cockroach-operator-sa
+      permissions:
+      - rules:
+        - apiGroups:
+          - '*'
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        serviceAccountName: cockroach-operator-sa
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: false
+    type: AllNamespaces
+  keywords:
+  - database
+  - cockroachDB
+  links:
+  - name: Documentation
+    url: https://docs.cockroachlabs.com
+  - name: Operator Source
+    url: https://github.com/cockroachdb/cockroach-operator
+  - name: Cockroach Labs
+    url: https://www.cockroachlabs.com
+  maintainers:
+  - email: support@cockroachlabs.com
+    name: Cockroach Labs Support
+  maturity: beta
+  provider:
+    name: Cockroach Labs
+  version: 1.1.18

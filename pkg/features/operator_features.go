@@ -39,6 +39,10 @@ const (
 	// beta: v1.0
 	// Decommission controls how the statefulset scales down
 	Decommission featuregate.Feature = "UseDecommission"
+	// alpha: v0.1
+	// beta: v1.0
+	// Upgrades controls upgrade mechanism
+	Upgrade featuregate.Feature = "Upgrade"
 )
 
 func init() {
@@ -51,4 +55,5 @@ func init() {
 var defaultOperatorFeatureGates = map[featuregate.Feature]featuregate.FeatureSpec{
 	PartitionedUpdate: {Default: false, PreRelease: featuregate.Alpha},
 	Decommission:      {Default: false, PreRelease: featuregate.Alpha},
+	Upgrade:           {Default: true, PreRelease: featuregate.Alpha},
 }
