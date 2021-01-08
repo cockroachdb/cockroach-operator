@@ -182,9 +182,11 @@ func (b StatefulSetBuilder) MakeContainers() []corev1.Container {
 	// openshift testing.  They need to set the image name dynamically using a environment
 	// variable to allow the testing of a specific image.
 	//
-	image := os.Getenv(RHEnvVar)
+	image := b.Spec().Image.Name
 	if image == "" {
-		image = b.Spec().Image.Name
+		if rhe := os.Getenv(RHEnvVar); rhe != "" {
+			image = rhe
+		}
 	}
 
 	return []corev1.Container{
