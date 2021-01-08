@@ -88,7 +88,11 @@ func (r *ClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return requeueIfError(client.IgnoreNotFound(err))
 	}
 
-	cluster := resource.NewCluster(cr)
+	cluster, err := resource.NewCluster(cr)
+	if err != nil {
+		log.Error(err, "failed to construct cluster resources")
+		return requeueAfter(5*time.Minute, err)
+	}
 
 	// Save context cancellation function for actors to call if needed
 	ctx = actor.ContextWithCancelFn(ctx, cancel)

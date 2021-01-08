@@ -27,10 +27,12 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-func NewCluster(original *api.CrdbCluster) Cluster {
+func NewCluster(original *api.CrdbCluster) (Cluster, error) {
 	cr := original.DeepCopy()
 
-	api.SetClusterSpecDefaults(&cr.Spec)
+	if err := api.SetClusterSpecDefaults(&cr.Spec); err != nil {
+		return Cluster{}, err
+	}
 
 	timeNow := metav1.Now()
 	condition.InitConditionsIfNeeded(&cr.Status, timeNow)
@@ -38,7 +40,7 @@ func NewCluster(original *api.CrdbCluster) Cluster {
 	return Cluster{
 		cr:       cr,
 		initTime: timeNow,
-	}
+	}, nil
 }
 
 func ClusterPlaceholder(name string) *api.CrdbCluster {

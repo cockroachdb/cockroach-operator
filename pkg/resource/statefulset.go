@@ -19,7 +19,6 @@ package resource
 import (
 	"errors"
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/cockroachdb/cockroach-operator/pkg/labels"
@@ -41,7 +40,6 @@ const (
 	certsDirName = "certs"
 
 	DbContainerName = "db"
-	RHEnvVar        = "RELATED_IMAGE_COCKROACH"
 )
 
 type StatefulSetBuilder struct {
@@ -176,21 +174,10 @@ func (b StatefulSetBuilder) makePodTemplate() corev1.PodTemplateSpec {
 // MakeContainers creates a slice of corev1.Containers which includes a single
 // corev1.Container that is based on the CR.
 func (b StatefulSetBuilder) MakeContainers() []corev1.Container {
-
-	//
-	// This code block allows for RedHat to override the coachroach image name during
-	// openshift testing.  They need to set the image name dynamically using a environment
-	// variable to allow the testing of a specific image.
-	//
-	image := os.Getenv(RHEnvVar)
-	if image == "" {
-		image = b.Spec().Image.Name
-	}
-
 	return []corev1.Container{
 		{
 			Name:            DbContainerName,
-			Image:           image,
+			Image:           b.Spec().Image.Name,
 			ImagePullPolicy: *b.Spec().Image.PullPolicyName,
 			Resources:       b.Spec().Resources,
 			Command:         []string{"/cockroach/cockroach"},

@@ -18,6 +18,7 @@ package v1alpha1
 
 import (
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -26,24 +27,96 @@ import (
 )
 
 func TestSetClusterSpecDefaults(t *testing.T) {
-	s := &CrdbClusterSpec{}
+	original, ok := os.LookupEnv(RHEnvVar)
+	// Ensure that RHEnvVar is reset after this test
+	defer func() {
+		if ok {
+			os.Setenv(RHEnvVar, original)
+		}
+	}()
+
 	maxUnavailable := int32(1)
 	policy := v1.PullIfNotPresent
-	expected := &CrdbClusterSpec{
-		GRPCPort:       &DefaultGRPCPort,
-		HTTPPort:       &DefaultHTTPPort,
-		Cache:          "25%",
-		MaxSQLMemory:   "25%",
-		MaxUnavailable: &maxUnavailable,
-		Image: PodImage{
-			PullPolicyName: &policy,
+
+	testCases := []struct {
+		Name  string
+		Setup func()
+		Error error
+		In    CrdbClusterSpec
+		Out   CrdbClusterSpec
+	}{
+		{
+			Name: "Defaults",
+			Setup: func() {
+				os.Setenv(RHEnvVar, "RH_DEFAULT_IMAGE")
+			},
+			In: CrdbClusterSpec{},
+			Out: CrdbClusterSpec{
+				GRPCPort:       &DefaultGRPCPort,
+				HTTPPort:       &DefaultHTTPPort,
+				Cache:          "25%",
+				MaxSQLMemory:   "25%",
+				MaxUnavailable: &maxUnavailable,
+				Image: PodImage{
+					Name:           "RH_DEFAULT_IMAGE",
+					PullPolicyName: &policy,
+				},
+			},
+		},
+		{
+			Name: "NoOverrideImage",
+			Setup: func() {
+				os.Setenv(RHEnvVar, "RH_DEFAULT_IMAGE")
+			},
+			In: CrdbClusterSpec{Image: PodImage{Name: "Custom"}},
+			Out: CrdbClusterSpec{
+				GRPCPort:       &DefaultGRPCPort,
+				HTTPPort:       &DefaultHTTPPort,
+				Cache:          "25%",
+				MaxSQLMemory:   "25%",
+				MaxUnavailable: &maxUnavailable,
+				Image: PodImage{
+					Name:           "Custom",
+					PullPolicyName: &policy,
+				},
+			},
+		},
+		{
+			Name:  "ErrorOnNoImageNoEnvVar",
+			Error: fmt.Errorf(".Image.Name and RELATED_IMAGE_COCKROACH are both unset"),
+			Setup: func() {
+				os.Unsetenv(RHEnvVar)
+			},
+			In: CrdbClusterSpec{},
+			Out: CrdbClusterSpec{
+				GRPCPort:       &DefaultGRPCPort,
+				HTTPPort:       &DefaultHTTPPort,
+				Cache:          "25%",
+				MaxSQLMemory:   "25%",
+				MaxUnavailable: &maxUnavailable,
+				Image: PodImage{
+					PullPolicyName: &policy,
+				},
+			},
 		},
 	}
 
-	SetClusterSpecDefaults(s)
+	for _, tc := range testCases {
+		t.Run(tc.Name, func(t *testing.T) {
+			tc.Setup()
 
-	diff := cmp.Diff(expected, s)
-	if diff != "" {
-		assert.Fail(t, fmt.Sprintf("unexpected result (-want +got):\n%v", diff))
+			err := SetClusterSpecDefaults(&tc.In)
+
+			if tc.Error == nil {
+				assert.NoError(t, err)
+			} else {
+				assert.EqualError(t, err, tc.Error.Error())
+			}
+
+			diff := cmp.Diff(tc.Out, tc.In)
+			if diff != "" {
+				assert.Fail(t, fmt.Sprintf("unexpected result (-want +got):\n%v", diff))
+			}
+		})
 	}
 }

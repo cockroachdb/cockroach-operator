@@ -122,6 +122,11 @@ func (b ClusterBuilder) Cr() *api.CrdbCluster {
 }
 
 func (b ClusterBuilder) Cluster() *resource.Cluster {
-	cluster := resource.NewCluster(b.Cr())
+	cluster, err := resource.NewCluster(b.Cr())
+	// We're a testutil and NewCluster shouldn't ever fail. Panic here to keep
+	// the API clean.
+	if err != nil {
+		panic(err)
+	}
 	return &cluster
 }
