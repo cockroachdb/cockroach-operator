@@ -61,11 +61,6 @@ spec:
               items:
                 type: string
               type: array
-            annotations:
-              additionalProperties:
-                type: string
-              description: (Optional) Additional custom resource annotations
-              type: object
             cache:
               description: '(Optional) The total size for caches (`--cache` command
                 line parameter) Default: "25%"'

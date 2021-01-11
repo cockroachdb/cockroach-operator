@@ -92,10 +92,6 @@ type CrdbClusterSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Map of additional custom labels"
 	// +optional
 	Labels map[string]string `json:"labels,omitempty"`
-	// (Optional) Additional custom resource annotations
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Map of additional custom annotations"
-	// +optional
-	Annotations map[string]string `json:"annotations,omitempty"`
 }
 
 // CrdbClusterStatus defines the observed state of Cluster
