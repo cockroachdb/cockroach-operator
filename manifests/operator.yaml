@@ -261,7 +261,7 @@ spec:
           imagePullPolicy: IfNotPresent
           # uncomment this to enable ParitionedUpdates
           # args: ["-feature-gates","PartitionedUpdate=true,UseDecommission=true,Upgrade=false"]
-          args: ["-feature-gates","UseDecommission=true,Upgrade=false"]
+          args: ["-feature-gates","Upgrade=false"]
           env:
             - name: WATCH_NAMESPACE
               valueFrom:

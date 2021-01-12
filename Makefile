@@ -117,7 +117,7 @@ dev/syncdeps:
 #RED HAT IMAGE BUNDLE
 RH_BUNDLE_REGISTRY?=registry.connect.redhat.com/cockroachdb
 RH_BUNDLE_IMAGE_REPOSITORY?=cockroachdb-operator-bundle
-RH_BUNDLE_VERSION?=1.1.19
+RH_BUNDLE_VERSION?=1.1.20
 RH_DEPLOY_PATH="deploy/certified-metadata-bundle"
 RH_DEPLOY_FULL_PATH="$(RH_DEPLOY_PATH)/cockroach-operator/"
 RH_COCKROACH_DATABASE_IMAGE=registry.connect.redhat.com/cockroachdb/cockroach:v20.2.2
