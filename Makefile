@@ -120,7 +120,7 @@ RH_BUNDLE_IMAGE_REPOSITORY?=cockroachdb-operator-bundle
 RH_BUNDLE_VERSION?=1.1.21
 RH_DEPLOY_PATH="deploy/certified-metadata-bundle"
 RH_DEPLOY_FULL_PATH="$(RH_DEPLOY_PATH)/cockroach-operator/"
-RH_COCKROACH_DATABASE_IMAGE=registry.connect.redhat.com/cockroachdb/cockroach:v20.2.2
+RH_COCKROACH_DATABASE_IMAGE=registry.connect.redhat.com/cockroachdb/cockroach:v20.2.3
 RH_OPERATOR_IMAGE?=registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v1.6.7-rc.1
 
 # Generate package manifests.
