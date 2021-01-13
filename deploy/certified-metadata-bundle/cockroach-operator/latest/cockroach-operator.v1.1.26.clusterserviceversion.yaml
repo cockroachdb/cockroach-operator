@@ -8,7 +8,7 @@ metadata:
           "apiVersion": "crdb.cockroachlabs.com/v1alpha1",
           "kind": "CrdbCluster",
           "metadata": {
-            "name": "crdb-tls-example"
+            "name": "crdb-tls-example-new"
           },
           "spec": {
             "dataStore": {
@@ -35,13 +35,13 @@ metadata:
     categories: Database
     certified: "true"
     containerImage: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v1.6.12-rc.1
-    createdAt: "2021-01-13T12:24:55Z"
+    createdAt: "2021-01-13T16:47:51Z"
     description: CockroachDB Operator
     operators.operatorframework.io/builder: operator-sdk-v1.1.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
     repository: https://github.com/cockroachdb/cockroach-operator
     support: Cockroach Labs
-  name: cockroach-operator.v1.1.25
+  name: cockroach-operator.v1.1.26
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -256,7 +256,7 @@ spec:
                 - Upgrade=false
                 env:
                 - name: RELATED_IMAGE_COCKROACH
-                  value: registry.connect.redhat.com/cockroachdb/cockroach:v20.2.3
+                  value: "registry.connect.redhat.com/cockroachdb/cockroach:v20.2.3"
                 - name: WATCH_NAMESPACE
                   valueFrom:
                     fieldRef:
@@ -310,4 +310,4 @@ spec:
   maturity: beta
   provider:
     name: Cockroach Labs
-  version: 1.1.25
+  version: 1.1.26
