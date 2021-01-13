@@ -34,21 +34,21 @@ metadata:
     capabilities: Full Lifecycle
     categories: Database
     certified: "true"
-    containerImage: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v1.6.7-rc.1
-    createdAt: "2021-01-12T19:08:19Z"
+    containerImage: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v1.6.12-rc.1
+    createdAt: "2021-01-13T12:24:55Z"
     description: CockroachDB Operator
     operators.operatorframework.io/builder: operator-sdk-v1.1.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
     repository: https://github.com/cockroachdb/cockroach-operator
     support: Cockroach Labs
-  name: cockroach-operator.v1.1.21
+  name: cockroach-operator.v1.1.25
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
     - description: CrdbCluster is the CRD for the cockroachDB clusters API
-      displayName: CoachroachDB Operator
+      displayName: CoackroachDB Operator
       kind: CrdbCluster
       name: crdbclusters.crdb.cockroachlabs.com
       specDescriptors:
@@ -256,7 +256,7 @@ spec:
                 - Upgrade=false
                 env:
                 - name: RELATED_IMAGE_COCKROACH
-                  value: "registry.connect.redhat.com/cockroachdb/cockroach:v20.2.2"
+                  value: registry.connect.redhat.com/cockroachdb/cockroach:v20.2.3
                 - name: WATCH_NAMESPACE
                   valueFrom:
                     fieldRef:
@@ -267,7 +267,7 @@ spec:
                       fieldPath: metadata.name
                 - name: OPERATOR_NAME
                   value: cockroachdb
-                image: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v1.6.7-rc.1
+                image: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v1.6.12-rc.1
                 imagePullPolicy: IfNotPresent
                 name: cockroach-operator
                 resources:
@@ -310,4 +310,4 @@ spec:
   maturity: beta
   provider:
     name: Cockroach Labs
-  version: 1.1.21
+  version: 1.1.25

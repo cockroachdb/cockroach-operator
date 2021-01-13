@@ -65,6 +65,9 @@ func SetFalse(ctype api.ClusterConditionType, status *api.CrdbClusterStatus, now
 func SetTrue(ctype api.ClusterConditionType, status *api.CrdbClusterStatus, now metav1.Time) {
 	setStatus(ctype, metav1.ConditionTrue, status, now)
 }
+func SetOperatorCondTrue(ctype api.ClusterConditionType, status *api.CrdbClusterStatus, now metav1.Time) {
+	setOperatorStatus(ctype, metav1.ConditionTrue, status, now)
+}
 
 func setStatus(ctype api.ClusterConditionType, status metav1.ConditionStatus, clusterStatus *api.CrdbClusterStatus, now metav1.Time) {
 	cond := findOrCreate(ctype, clusterStatus)
@@ -76,6 +79,17 @@ func setStatus(ctype api.ClusterConditionType, status metav1.ConditionStatus, cl
 	cond.Status = status
 	cond.LastTransitionTime = now
 }
+func setOperatorStatus(ctype api.ClusterConditionType, status metav1.ConditionStatus, clusterStatus *api.CrdbClusterStatus, now metav1.Time) {
+	cond := findOrCreateOp(ctype, clusterStatus)
+
+	if cond.Status == status {
+		return
+	}
+
+	cond.Status = status
+	cond.LastTransitionTime = now
+}
+
 
 func findOrCreate(ctype api.ClusterConditionType, status *api.CrdbClusterStatus) *api.ClusterCondition {
 	pos := pos(ctype, status.Conditions)
@@ -91,6 +105,21 @@ func findOrCreate(ctype api.ClusterConditionType, status *api.CrdbClusterStatus)
 
 	return &status.Conditions[len(status.Conditions)-1]
 }
+func findOrCreateOp(ctype api.ClusterConditionType, status *api.CrdbClusterStatus) *api.ClusterCondition {
+	pos := pos(ctype, status.OperatorConditions)
+	if pos >= 0 {
+		return &status.OperatorConditions[pos]
+	}
+
+	status.OperatorConditions = append(status.OperatorConditions, api.ClusterCondition{
+		Type:               ctype,
+		Status:             metav1.ConditionUnknown,
+		LastTransitionTime: metav1.Now(),
+	})
+
+	return &status.OperatorConditions[len(status.OperatorConditions)-1]
+}
+
 
 func pos(ctype api.ClusterConditionType, conds []api.ClusterCondition) int {
 	for i := range conds {

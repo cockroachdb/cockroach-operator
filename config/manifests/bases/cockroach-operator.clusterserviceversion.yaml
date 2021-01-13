@@ -33,7 +33,7 @@ spec:
   customresourcedefinitions:
     owned:
     - description: CrdbCluster is the CRD for the cockroachDB clusters API
-      displayName: CoachroachDB Operator
+      displayName: CoackroachDB Operator
       kind: CrdbCluster
       name: crdbclusters.crdb.cockroachlabs.com
       specDescriptors:

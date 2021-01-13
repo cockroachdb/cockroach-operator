@@ -89,6 +89,13 @@ func (r *ClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	cluster := resource.NewCluster(cr)
+	// //fix for open shift
+	cluster.SetOperatorCondTrue(api.InitOperatorCondition)
+	if err := r.Client.Status().Update(ctx, cluster.Unwrap()); err != nil {
+		log.Error(err, "failed to update cluster status on InitOperatorCondition")
+		//return requeueIfError(err)
+	}
+
 
 	// Save context cancellation function for actors to call if needed
 	ctx = actor.ContextWithCancelFn(ctx, cancel)

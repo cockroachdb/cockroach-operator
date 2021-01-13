@@ -257,7 +257,7 @@ spec:
       serviceAccountName: cockroach-operator-sa
       containers:
         - name: cockroach-operator
-          image: cockroachdb/cockroach-operator
+          image: us.gcr.io/chris-love-operator-playground/cockroachdb-operator:v1.6.12-rc.1
           imagePullPolicy: IfNotPresent
           # uncomment this to enable ParitionedUpdates
           # args: ["-feature-gates","PartitionedUpdate=true,UseDecommission=true,Upgrade=false"]

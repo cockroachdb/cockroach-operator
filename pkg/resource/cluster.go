@@ -65,6 +65,10 @@ func (cluster Cluster) SetTrue(ctype api.ClusterConditionType) {
 	condition.SetTrue(ctype, &cluster.cr.Status, cluster.InitTime())
 }
 
+func (cluster Cluster) SetOperatorCondTrue(ctype api.ClusterConditionType) {
+	condition.SetOperatorCondTrue(ctype, &cluster.cr.Status, cluster.InitTime())
+}
+
 func (cluster Cluster) SetFalse(ctype api.ClusterConditionType) {
 	condition.SetFalse(ctype, &cluster.cr.Status, cluster.InitTime())
 }
