@@ -53,7 +53,7 @@ func init() {
 // To add a new feature, define a key for it above and add it here. The features will be
 // available throughout Kubernetes binaries.
 var defaultOperatorFeatureGates = map[featuregate.Feature]featuregate.FeatureSpec{
-	PartitionedUpdate: {Default: false, PreRelease: featuregate.Alpha},
-	Decommission:      {Default: false, PreRelease: featuregate.Alpha},
-	Upgrade:           {Default: true, PreRelease: featuregate.Alpha},
+	PartitionedUpdate: {Default: true, PreRelease: featuregate.Alpha},
+	Decommission:      {Default: true, PreRelease: featuregate.Alpha},
+	Upgrade:           {Default: false, PreRelease: featuregate.Alpha},
 }

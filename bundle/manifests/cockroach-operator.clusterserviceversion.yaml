@@ -48,7 +48,7 @@ metadata:
     categories: Database
     certified: "true"
     containerImage: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v1.6.12-rc.1
-    createdAt: "2021-01-15T08:35:18Z"
+    createdAt: "2021-01-15T08:49:52Z"
     description: CockroachDB Operator
     operators.operatorframework.io/builder: operator-sdk-v1.1.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
