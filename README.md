@@ -10,9 +10,14 @@ The CockroachDB Kubernetes Operator deploys CockroachDB on a Kubernetes cluster.
 ## Limitations
 
 - This project is in beta and is not production-ready.
-- The Operator currently runs on GKE.
+- The Operator currently runs on GKE. VMware Tanzu, EKS, and AKS have not been tested.
 - Currently the Kubernetes CA is required to deploy a secure cluster.
 - Expansion of persistent volumes is not yet functional.
+- The Operator does not yet support [multiple Kubernetes clusters for multi-region deployments](https://www.cockroachlabs.com/docs/stable/orchestrate-cockroachdb-with-kubernetes-multi-cluster.html#eks).
+- The Operator does not yet [automatically create Pod Security Policies](https://github.com/cockroachdb/cockroach-operator/issues/216).
+- [Migrating from a deployment using the Helm Chart to the Operator](https://github.com/cockroachdb/cockroach-operator/issues/140) has not been defined or tested.
+- The Operator does not yet [automatically create an ingress object](https://github.com/cockroachdb/cockroach-operator/issues/76).
+- The Operator has not been tested with [Istio](https://istio.io/).  
 
 ## Prerequisites
 
