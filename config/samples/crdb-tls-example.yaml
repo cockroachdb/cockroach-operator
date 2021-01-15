@@ -14,7 +14,7 @@
 apiVersion: crdb.cockroachlabs.com/v1alpha1
 kind: CrdbCluster
 metadata:
-  name: crdb-tls-example-new
+  name: crdb-tls-example
 spec:
   dataStore:
     pvc:

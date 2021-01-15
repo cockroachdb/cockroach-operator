@@ -206,9 +206,21 @@ func (c *FakeClient) DeleteAllOf(_ context.Context, obj runtime.Object, opts ...
 }
 
 func (c *FakeClient) Status() client.StatusWriter {
-	panic("implement me")
+	// panic("implement me")
+	return &fakeStatusWriter{client: c}
 }
 
+type fakeStatusWriter struct {
+	client *FakeClient
+}
+
+func (sw *fakeStatusWriter) Update(ctx context.Context, obj runtime.Object, opts ...client.UpdateOption) error {
+	return sw.client.Update(ctx, obj, opts...)
+}
+
+func (sw *fakeStatusWriter) Patch(ctx context.Context, obj runtime.Object, patch client.Patch, opts ...client.PatchOption) error {
+	return sw.client.Patch(ctx, obj, patch, opts...)
+}
 func (c *FakeClient) invoke(action Action) (handled bool, err error) {
 	for _, reactor := range c.ReactionChain {
 		if !reactor.Handles(action) {
