@@ -30,6 +30,4 @@ const (
 	RequestCertCondition ClusterConditionType = "RequestCert"
 	//UpgradeCondition string
 	UpgradeCondition ClusterConditionType = "Upgrade"
-	//InitOperatorCondition string
-	InitOperatorCondition ClusterConditionType = "InitOperatorStatus"
 )
