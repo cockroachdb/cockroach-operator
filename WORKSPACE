@@ -88,7 +88,7 @@ container_pull(
     name = "redhat_ubi_minimal",
     registry = "registry.access.redhat.com",
     repository = "ubi8/ubi-minimal",
-    digest = "sha256:3364fa3bd7a5aea2932e352a446ec7f46378885f6a8f03847acc64dd100aa4cc",
+    tag = "latest",
 )
 
 # Load and define targets defined in //hack/bin

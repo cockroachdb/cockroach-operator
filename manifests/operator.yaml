@@ -12,6 +12,43 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cockroach-database-role
+rules:
+  - verbs:
+      - use
+    apiGroups:
+      - security.openshift.io
+    resources:
+      - securitycontextconstraints
+    resourceNames:
+      - anyuid
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cockroach-database-sa
+  namespace: default
+  annotations:
+  labels:
+    app: cockroach-operator
+---
+# RBAC Definition (ClutserRole, ServiceAccount, and ClusterRoleBinding):
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cockroach-database-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cockroach-database-role
+subjects:
+  - kind: ServiceAccount
+    name: cockroach-database-sa
+    namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: cockroach-operator-role
@@ -25,12 +62,12 @@ rules:
 ---
 # RBAC Definition (ClutserRole, ServiceAccount, and ClusterRoleBinding):
 apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
+kind: ClusterRoleBinding
 metadata:
   name: cockroach-operator-rolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
-  kind: Role
+  kind: ClusterRole
   name: cockroach-operator-role
 subjects:
   - kind: ServiceAccount
@@ -184,14 +221,14 @@ metadata:
     app: cockroach-operator
 ---
 apiVersion: rbac.authorization.k8s.io/v1beta1
-kind: ClusterRoleBinding
+kind: RoleBinding
 metadata:
   name: cockroach-operator-default
   labels:
     app: cockroach-operator
 roleRef:
   apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
+  kind: Role
   name: cockroach-operator-role
 subjects:
   - name: cockroach-operator-sa
@@ -223,7 +260,8 @@ spec:
           image: cockroachdb/cockroach-operator:v1.0.3
           imagePullPolicy: IfNotPresent
           # uncomment this to enable ParitionedUpdates
-          # args: ["-feature-gates","PartitionedUpdate=true,UseDecommission=true"]
+          # args: ["-feature-gates","PartitionedUpdate=true,UseDecommission=true,Upgrade=false"]
+          args: ["-feature-gates","Upgrade=false"]
           env:
             - name: WATCH_NAMESPACE
               valueFrom:

@@ -243,7 +243,6 @@ spec:
               description: (Optional) TLSEnabled determines if TLS is enabled for your CockroachDB Cluster
               type: boolean
           required:
-          - image
           - nodes
           type: object
         status:
@@ -251,6 +250,26 @@ spec:
           properties:
             conditions:
               description: List of conditions representing the current status of the cluster resource.
+              items:
+                description: ClusterCondition represents cluster status as it is perceived by the operator
+                properties:
+                  lastTransitionTime:
+                    description: The time when the condition was updated
+                    format: date-time
+                    type: string
+                  status:
+                    description: 'Condition status: True, False or Unknown'
+                    type: string
+                  type:
+                    description: Type/Name of the condition
+                    type: string
+                required:
+                - lastTransitionTime
+                - status
+                - type
+                type: object
+              type: array
+            operatorConditions:
               items:
                 description: ClusterCondition represents cluster status as it is perceived by the operator
                 properties:

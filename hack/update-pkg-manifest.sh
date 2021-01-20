@@ -34,6 +34,7 @@ fi
 opsdk=$(realpath "$1")
 kstomize="$(realpath "$2")"
 opm=$(realpath "$3")
+faq="$(realpath "$4")"
 export PATH=$(dirname "$opsdk"):$PATH
 # This script should be run via `bazel run //hack:update-pkg-manifest
 # It will be used on Openshift certification image bundle releases.
@@ -43,18 +44,18 @@ REPO_ROOT=${BUILD_WORKSPACE_DIRECTORY}
 cd "${REPO_ROOT}"
 echo ${REPO_ROOT}
 echo "+++ Running update package manifest for certification"
-RH_BUNDLE_VERSION="$4"
-[[ -z "$RH_BUNDLE_VERSION" ]] && { echo "Error: RH_BUNDLE_VERSION not set"; exit 1; }
+[[ -z "$5" ]] && { echo "Error: RH_BUNDLE_VERSION not set"; exit 1; }
+RH_BUNDLE_VERSION="$5"
 echo "RH_BUNDLE_VERSION=$RH_BUNDLE_VERSION"
-RH_COCKROACH_OP_IMG="$5"
+[[ -z "$6" ]] && { echo "Error: RH_COCKROACH_OP_IMG not set"; exit 1; }
+RH_COCKROACH_OP_IMG="$6"
 echo "RH_COCKROACH_OP_IMG=$RH_COCKROACH_OP_IMG"
-[[ -z "$RH_COCKROACH_OP_IMG" ]] && { echo "Error: RH_COCKROACH_OP_IMG not set"; exit 1; }
-RH_PKG_MAN_OPTS="$6"
+[[ -z "$7" ]] && { echo "Error: RH_PKG_MAN_OPTS not set"; exit 1; }
+RH_PKG_MAN_OPTS="$7"
 echo "RH_PKG_MAN_OPTS=$RH_PKG_MAN_OPTS"
-[[ -z "$RH_PKG_MAN_OPTS" ]] && { echo "Error: RH_PKG_MAN_OPTS not set"; exit 1; }
-RH_COCKROACH_DATABASE_IMAGE="$7"
+[[ -z "$8" ]] && { echo "Error: RH_COCKROACH_DATABASE_IMAGE not set"; exit 1; }
+RH_COCKROACH_DATABASE_IMAGE="$8"
 echo "RH_COCKROACH_DATABASE_IMAGE=$RH_COCKROACH_DATABASE_IMAGE"
-[[ -z "$RH_COCKROACH_DATABASE_IMAGE" ]] && { echo "Error: RH_COCKROACH_DATABASE_IMAGE not set"; exit 1; }
 DEPLOY_PATH="deploy/certified-metadata-bundle/cockroach-operator"
 DEPLOY_CERTIFICATION_PATH="deploy/certified-metadata-bundle"
 if [ -d "${DEPLOY_PATH}/${RH_BUNDLE_VERSION}" ] 
@@ -65,9 +66,11 @@ fi
 rm -rf ${DEPLOY_PATH}/${RH_BUNDLE_VERSION}
 "$opsdk" generate kustomize manifests -q --verbose
 "$kstomize" build config/manifests | "$opsdk" generate packagemanifests -q --version ${RH_BUNDLE_VERSION} ${RH_PKG_MAN_OPTS} --output-dir ${DEPLOY_PATH} --input-dir ${DEPLOY_PATH} --verbose
-rm -rf ${DEPLOY_PATH}/${RH_BUNDLE_VERSION}/cockroach-operator-sa_v1_serviceaccount.yaml
-cat ${DEPLOY_PATH}/${RH_BUNDLE_VERSION}/cockroach-operator.clusterserviceversion.yaml | sed -e "s+RH_COCKROACH_OP_IMAGE_PLACEHOLDER+${RH_COCKROACH_OP_IMG}+g" -e "s+RH_COCKROACH_DB_IMAGE_PLACEHOLDER+${RH_COCKROACH_DATABASE_IMAGE}+g" -e "s+CREATED_AT_PLACEHOLDER+"$(date +"%FT%H:%M:%SZ")"+g"> ${DEPLOY_PATH}/${RH_BUNDLE_VERSION}/cockroach-operator.v${RH_BUNDLE_VERSION}.clusterserviceversion.yaml
-rm -rf ${DEPLOY_PATH}/${RH_BUNDLE_VERSION}/cockroach-operator.clusterserviceversion.yaml
+cat ${DEPLOY_PATH}/${RH_BUNDLE_VERSION}/cockroach-operator.clusterserviceversion.yaml | sed -e "s+RH_COCKROACH_OP_IMAGE_PLACEHOLDER+${RH_COCKROACH_OP_IMG}+g" -e "s+RH_COCKROACH_DB_IMAGE_PLACEHOLDER+${RH_COCKROACH_DATABASE_IMAGE}+g" -e "s+CREATED_AT_PLACEHOLDER+"$(date +"%FT%H:%M:%SZ")"+g"> ${DEPLOY_PATH}/${RH_BUNDLE_VERSION}/csv.yaml
+cd  ${DEPLOY_PATH}/${RH_BUNDLE_VERSION} && "$faq" -f yaml -o yaml --slurp '.[0].spec.install.spec.clusterPermissions+= [{serviceAccountName: .[2].metadata.name, rules: .[1].rules }] | .[0]' csv.yaml cockroach-database-role_rbac.authorization.k8s.io_v1_clusterrole.yaml cockroach-database-sa_v1_serviceaccount.yaml > cockroach-operator.v${RH_BUNDLE_VERSION}.clusterserviceversion.yaml
+shopt -s extglob
+rm -v !("cockroach-operator.v${RH_BUNDLE_VERSION}.clusterserviceversion.yaml"|"crdb.cockroachlabs.com_crdbclusters.yaml") 
+shopt -u extglob
 # This is needed after csv generation
 cd ${REPO_ROOT}
 FILE_NAMES=(
