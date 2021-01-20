@@ -206,7 +206,6 @@ func (c *FakeClient) DeleteAllOf(_ context.Context, obj runtime.Object, opts ...
 }
 
 func (c *FakeClient) Status() client.StatusWriter {
-	// panic("implement me")
 	return &fakeStatusWriter{client: c}
 }
 
