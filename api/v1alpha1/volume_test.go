@@ -67,37 +67,21 @@ func TestApply(t *testing.T) {
 		assertFn func(t *testing.T, vol *api.Volume, sts *appsv1.StatefulSetSpec)
 	}{
 		{
-			name: "both emptry dir and pvc claim provided",
+			name: "both hostPath and pvc claim provided",
 			sts:  sts.DeepCopy(),
 			vol: api.Volume{
-				EmptyDir:    &corev1.EmptyDirVolumeSource{},
+				HostPath: &corev1.HostPathVolumeSource{
+					Path: "/mnt/data",
+				},
 				VolumeClaim: &api.VolumeClaim{},
 			},
-			assertFn: errorsWith("one of HostPath, EmptyDir or VolumeClaim should be set"),
+			assertFn: errorsWith("one of HostPath or VolumeClaim should be set"),
 		},
 		{
 			name:     "no empty dir or pvc claim provided",
 			sts:      sts.DeepCopy(),
 			vol:      api.Volume{},
 			assertFn: errorsWith("no valid Volume source provided"),
-		},
-		{
-			name: "empty dir is correctly applied",
-			sts:  sts.DeepCopy(),
-			vol: api.Volume{
-				EmptyDir: &corev1.EmptyDirVolumeSource{},
-			},
-			assertFn: func(t *testing.T, vol *api.Volume, sts *appsv1.StatefulSetSpec) {
-				require.NoError(t, applyFn(vol, sts))
-
-				assertVolumeMounts(t, sts, "datadir", "/data")
-
-				require.Len(t, sts.Template.Spec.Volumes, 1)
-
-				volume := &sts.Template.Spec.Volumes[0]
-				require.NotNil(t, volume.EmptyDir)
-				assert.Equal(t, "datadir", volume.Name)
-			},
 		},
 		{
 			name: "host dir is correctly applied",

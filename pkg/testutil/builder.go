@@ -63,8 +63,14 @@ func (b ClusterBuilder) WithNodeCount(c int32) ClusterBuilder {
 	return b
 }
 
-func (b ClusterBuilder) WithEmptyDirDataStore() ClusterBuilder {
-	b.cluster.Spec.DataStore = api.Volume{EmptyDir: &corev1.EmptyDirVolumeSource{}}
+func (b ClusterBuilder) WithHostPathDataStore(hostPath string, hostPathType *corev1.HostPathType) ClusterBuilder {
+
+	b.cluster.Spec.DataStore = api.Volume{
+		HostPath: &corev1.HostPathVolumeSource{
+			Path: hostPath,
+			Type: hostPathType,
+		},
+	}
 	return b
 }
 

@@ -75,7 +75,8 @@ spec:
           name: certs
       terminationGracePeriodSeconds: 60
       volumes:
-      - emptyDir: {}
+      - hostPath:
+          path: /mnt/data
         name: datadir
       - name: certs
         projected:

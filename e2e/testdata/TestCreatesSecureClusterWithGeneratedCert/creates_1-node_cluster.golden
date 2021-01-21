@@ -5,7 +5,8 @@ metadata:
   name: crdb
 spec:
   dataStore:
-    emptyDir: {}
+    hostPath:
+      path: /mnt/data
   image:
     name: cockroachdb/cockroach:v19.2.6
   nodeTLSSecret: GENERATED
@@ -91,7 +92,9 @@ spec:
     operator: Exists
     tolerationSeconds: 300
   volumes:
-  - emptyDir: {}
+  - hostPath:
+      path: /mnt/data
+      type: ""
     name: datadir
   - name: certs
     projected:
@@ -284,7 +287,9 @@ spec:
       securityContext: {}
       terminationGracePeriodSeconds: 60
       volumes:
-      - emptyDir: {}
+      - hostPath:
+          path: /mnt/data
+          type: ""
         name: datadir
       - name: certs
         projected:

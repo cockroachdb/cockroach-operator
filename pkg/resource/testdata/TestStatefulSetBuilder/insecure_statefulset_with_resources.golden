@@ -77,7 +77,8 @@ spec:
           name: datadir
       terminationGracePeriodSeconds: 60
       volumes:
-      - emptyDir: {}
+      - hostPath:
+          path: /mnt/data
         name: datadir
   updateStrategy:
     rollingUpdate: {}

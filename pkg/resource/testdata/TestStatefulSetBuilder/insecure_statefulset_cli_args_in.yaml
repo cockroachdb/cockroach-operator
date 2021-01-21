@@ -20,7 +20,8 @@ metadata:
   namespace: test-ns
 spec:
   dataStore:
-    emptyDir: {}
+    hostPath:
+      path: /mnt/data
   grpcPort: 26257
   httpPort: 8080
   image:
