@@ -34,7 +34,8 @@ type CrdbClusterSpec struct {
 	// +required
 	Nodes int32 `json:"nodes"`
 	// (Required) Container image information
-	// +required
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Cockroach Database Image"
+	// +optional
 	Image PodImage `json:"image"`
 	// (Optional) The database port (`--port` CLI parameter when starting the service)
 	// Default: 26257
@@ -84,6 +85,7 @@ type CrdbClusterSpec struct {
 	// +optional
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 	// (Required) Database disk storage configuration
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Data Store"
 	// +required
 	DataStore Volume `json:"dataStore,omitempty"`
 }
@@ -93,7 +95,10 @@ type CrdbClusterStatus struct {
 	// List of conditions representing the current status of the cluster resource.
 	// +operator-sdk:csv:customresourcedefinitions:type=status, displayName="Cluster Conditions",xDescriptors="urn:alm:descriptor:io.kubernetes.conditions"
 	Conditions []ClusterCondition `json:"conditions,omitempty"`
+	// +operator-sdk:csv:customresourcedefinitions:type=status, displayName="Operator Conditions",xDescriptors="urn:alm:descriptor:com.tectonic.ui:hidden"
+	OperatorConditions []ClusterCondition `json:"operatorConditions,omitempty"`
 	// Database service version. Not populated and is just a placeholder currently.
+	// +operator-sdk:csv:customresourcedefinitions:type=status, displayName="Version",xDescriptors="urn:alm:descriptor:com.tectonic.ui:hidden"
 	Version string `json:"version,omitempty"`
 }
 
@@ -116,7 +121,7 @@ type ClusterCondition struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:categories=all;cockroachdb,shortName=crdb
 // +kubebuilder:subresource:status
-// +operator-sdk:csv:customresourcedefinitions:displayName="CoachroachDB Operator",resources={{StatefulSet,v1,cockroach-operator},{Service,v1,cockroach-operator}}
+// +operator-sdk:csv:customresourcedefinitions:displayName="CockroachDB Operator"
 // CrdbCluster is the CRD for the cockroachDB clusters API
 type CrdbCluster struct {
 	metav1.TypeMeta   `json:",inline"`

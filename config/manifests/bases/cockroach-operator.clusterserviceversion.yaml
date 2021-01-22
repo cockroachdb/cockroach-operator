@@ -33,17 +33,16 @@ spec:
   customresourcedefinitions:
     owned:
     - description: CrdbCluster is the CRD for the cockroachDB clusters API
-      displayName: CoachroachDB Operator
+      displayName: CockroachDB Operator
       kind: CrdbCluster
       name: crdbclusters.crdb.cockroachlabs.com
-      resources:
-      - kind: Service
-        name: cockroach-operator
-        version: v1
-      - kind: StatefulSet
-        name: cockroach-operator
-        version: v1
       specDescriptors:
+      - description: (Required) Database disk storage configuration
+        displayName: Data Store
+        path: dataStore
+      - description: (Required) Container image information
+        displayName: Cockroach Database Image
+        path: image
       - description: Number of nodes (pods) in the cluster
         displayName: Number of nodes
         path: nodes
@@ -60,6 +59,15 @@ spec:
         path: conditions
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes.conditions
+      - displayName: Operator Conditions
+        path: operatorConditions
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: Database service version. Not populated and is just a placeholder currently.
+        displayName: Version
+        path: version
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
       version: v1alpha1
     - description: CrdbCluster is the CRD for the cockroachDB clusters API
       displayName: CoachroachDB Operator
@@ -124,5 +132,4 @@ spec:
   maturity: beta
   provider:
     name: Cockroach Labs
-    url: https://www.cockroachlabs.com
   version: 0.0.0

@@ -26,7 +26,4 @@ spec:
             storage: 10Gi
         volumeMode: Filesystem
   tlsEnabled: true
-  image:
-    name: RH_COCKROACH_DB_IMAGE_PLACEHOLDER
-    pullPolicy: Always
   nodes: 3

@@ -25,8 +25,10 @@ import (
 	"github.com/Masterminds/semver/v3"
 	api "github.com/cockroachdb/cockroach-operator/api/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/condition"
+	"github.com/cockroachdb/cockroach-operator/pkg/features"
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
+	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -50,7 +52,7 @@ type upgrade struct {
 }
 
 func (up *upgrade) Handles(conds []api.ClusterCondition) bool {
-	return condition.False(api.NotInitializedCondition, conds)
+	return condition.False(api.NotInitializedCondition, conds) && utilfeature.DefaultMutableFeatureGate.Enabled(features.Upgrade)
 }
 
 func (up *upgrade) Act(ctx context.Context, cluster *resource.Cluster) error {

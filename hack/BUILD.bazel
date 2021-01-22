@@ -16,6 +16,8 @@ GOFMT = "@go_sdk//:bin/gofmt"
 
 JQ = "//hack/bin:jq"
 
+FAQ = "//hack/bin:faq"
+
 OPERATORSDK = "//hack/bin:operator-sdk"
 
 KUSTOMIZE = "//hack/bin:kustomize"
@@ -183,11 +185,13 @@ sh_binary(
         "$(location %s)" % OPERATORSDK,
         "$(location %s)" % KUSTOMIZE,
         "$(location %s)" % OPM,
+        "$(location %s)" % FAQ,
     ],
     data = [
         OPERATORSDK,
         KUSTOMIZE,
         OPM,
+        FAQ,
         "@//:all-srcs",
     ],
 )
@@ -201,11 +205,13 @@ sh_binary(
         "$(location %s)" % OPERATORSDK,
         "$(location %s)" % KUSTOMIZE,
         "$(location %s)" % OPM,
+        "$(location %s)" % FAQ,
     ],
     data = [
         OPERATORSDK,
         KUSTOMIZE,
         OPM,
+        FAQ,
         "@//:all-srcs",
     ],
 )

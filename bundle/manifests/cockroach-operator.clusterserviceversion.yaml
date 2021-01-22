@@ -39,10 +39,6 @@ metadata:
                 }
               }
             },
-            "image": {
-              "name": "registry.connect.redhat.com/cockroachdb/cockroach:v20.2.2",
-              "pullPolicy": "Always"
-            },
             "nodes": 3,
             "tlsEnabled": true
           }
@@ -51,47 +47,58 @@ metadata:
     capabilities: Full Lifecycle
     categories: Database
     certified: "true"
-    containerImage: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v1.1.0-rc.1
-    createdAt: 2021-12-16T16:12:32Z
+    containerImage: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v1.6.12-rc.1
+    createdAt: "2021-01-15T08:49:52Z"
     description: CockroachDB Operator
     operators.operatorframework.io/builder: operator-sdk-v1.1.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
     repository: https://github.com/cockroachdb/cockroach-operator
     support: Cockroach Labs
-  name: cockroach-operator.v1.1.0
+  name: cockroach-operator.v1.1.26
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
     - description: CrdbCluster is the CRD for the cockroachDB clusters API
-      displayName: CoachroachDB Operator
+      displayName: CockroachDB Operator
       kind: CrdbCluster
       name: crdbclusters.crdb.cockroachlabs.com
-      resources:
-      - kind: Service
-        name: cockroach-operator
-        version: v1
-      - kind: StatefulSet
-        name: cockroach-operator
-        version: v1
       specDescriptors:
+      - description: (Required) Database disk storage configuration
+        displayName: Data Store
+        path: dataStore
+      - description: (Required) Container image information
+        displayName: Cockroach Database Image
+        path: image
       - description: Number of nodes (pods) in the cluster
         displayName: Number of nodes
         path: nodes
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:podCount
-      - description: (Optional) TLSEnabled determines if TLS is enabled for your CockroachDB Cluster
+      - description: (Optional) TLSEnabled determines if TLS is enabled for your CockroachDB
+          Cluster
         displayName: TLS Enabled
         path: tlsEnabled
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
       statusDescriptors:
-      - description: List of conditions representing the current status of the cluster resource.
+      - description: List of conditions representing the current status of the cluster
+          resource.
         displayName: Cluster Conditions
         path: conditions
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes.conditions
+      - displayName: Operator Conditions
+        path: operatorConditions
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: Database service version. Not populated and is just a placeholder
+          currently.
+        displayName: Version
+        path: version
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
       version: v1alpha1
   description: This operator launches and manages a 3+ node cluster of CockroachDB.
   displayName: CockroachDB Operator
@@ -233,6 +240,16 @@ spec:
           verbs:
           - use
         serviceAccountName: cockroach-operator-sa
+      - rules:
+        - apiGroups:
+          - security.openshift.io
+          resourceNames:
+          - anyuid
+          resources:
+          - securitycontextconstraints
+          verbs:
+          - use
+        serviceAccountName: cockroach-database-sa
       deployments:
       - name: cockroach-operator
         spec:
@@ -247,9 +264,12 @@ spec:
                 app: cockroach-operator
             spec:
               containers:
-              - env:
+              - args:
+                - -feature-gates
+                - Upgrade=false
+                env:
                 - name: RELATED_IMAGE_COCKROACH
-                  value: registry.connect.redhat.com/cockroachdb/cockroach:v20.2.2
+                  value: registry.connect.redhat.com/cockroachdb/cockroach:v20.2.3
                 - name: WATCH_NAMESPACE
                   valueFrom:
                     fieldRef:
@@ -260,7 +280,7 @@ spec:
                       fieldPath: metadata.name
                 - name: OPERATOR_NAME
                   value: cockroachdb
-                image: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v1.1.0-rc.1
+                image: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v1.6.12-rc.1
                 imagePullPolicy: IfNotPresent
                 name: cockroach-operator
                 resources:
@@ -303,5 +323,4 @@ spec:
   maturity: beta
   provider:
     name: Cockroach Labs
-    url: https://www.cockroachlabs.com
-  version: 1.1.0
+  version: 1.1.26
