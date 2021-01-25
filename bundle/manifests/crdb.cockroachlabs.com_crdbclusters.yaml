@@ -224,7 +224,7 @@ spec:
               format: int32
               type: integer
             nodeTLSSecret:
-              description: '(Optional) The secret with certificates and a private key for the TLS endpoint on the database port. The standard naming of files is expected (tls.key, tls.crt, ca.crt) Default: ""'
+              description: '(Optional) The secret with certificates and a private key for the TLS endpoint on the database port. The standard naming of files is expected (node.key, node.crt, ca.crt) Default: ""'
               type: string
             nodes:
               description: Number of nodes (pods) in the cluster

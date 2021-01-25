@@ -74,8 +74,8 @@ func TestTLSSecretReady(t *testing.T) {
 				},
 				Data: map[string][]byte{
 					"ca.crt":  {},
-					"tls.crt": {},
-					"tls.key": {},
+					"node.crt": {},
+					"node.key": {},
 				},
 			},
 			expected: true,
