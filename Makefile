@@ -19,10 +19,10 @@
 
 # values used in workspace-status.sh
 
-DOCKER_REGISTRY?=us.gcr.io/chris-love-operator-playground
+DOCKER_REGISTRY?=cockroachdb
 DOCKER_IMAGE_REPOSITORY?=cockroachdb-operator
 # Default bundle image tag
-APP_VERSION?=v1.6.12-rc.1
+APP_VERSION?=v1.6.12-rc.2
 
 # 
 # Testing targets
