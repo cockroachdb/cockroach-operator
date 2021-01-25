@@ -107,5 +107,5 @@ func TestSelector(t *testing.T) {
 		"app.kubernetes.io/component": "database",
 	}
 
-	assert.Equal(t, expected, labels.Common(cr).Selector())
+	assert.Equal(t, expected, labels.Common(cr).Selector(cr))
 }
