@@ -42,7 +42,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.name
-        image: cockroachdb/cockroach:v19.2.6
+        image: cockroachdb/cockroach:v20.2.3
         imagePullPolicy: IfNotPresent
         livenessProbe:
           httpGet:
@@ -85,16 +85,16 @@ spec:
               items:
               - key: ca.crt
                 path: ca.crt
-              - key: tls.crt
+              - key: node.crt
                 path: node.crt
-              - key: tls.key
+              - key: node.key
                 path: node.key
               name: test-cluster-node
           - secret:
               items:
-              - key: tls.crt
+              - key: client.root.crt
                 path: client.root.crt
-              - key: tls.key
+              - key: client.root.key
                 path: client.root.key
               name: test-cluster-root
   updateStrategy:

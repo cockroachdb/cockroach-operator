@@ -73,7 +73,7 @@ func TestTLSSecretReady(t *testing.T) {
 					Namespace: namespace,
 				},
 				Data: map[string][]byte{
-					"ca.crt":  {},
+					"ca.crt":   {},
 					"node.crt": {},
 					"node.key": {},
 				},

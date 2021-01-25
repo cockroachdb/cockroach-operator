@@ -77,7 +77,6 @@ func setStatus(ctype api.ClusterConditionType, status metav1.ConditionStatus, cl
 	cond.LastTransitionTime = now
 }
 
-
 func findOrCreate(ctype api.ClusterConditionType, status *api.CrdbClusterStatus) *api.ClusterCondition {
 	pos := pos(ctype, status.Conditions)
 	if pos >= 0 {
@@ -92,8 +91,6 @@ func findOrCreate(ctype api.ClusterConditionType, status *api.CrdbClusterStatus)
 
 	return &status.Conditions[len(status.Conditions)-1]
 }
-
-
 
 func pos(ctype api.ClusterConditionType, conds []api.ClusterCondition) int {
 	for i := range conds {

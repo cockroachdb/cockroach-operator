@@ -50,7 +50,7 @@ type CrdbClusterSpec struct {
 	// +optional
 	TLSEnabled bool `json:"tlsEnabled,omitempty"`
 	// (Optional) The secret with certificates and a private key for the TLS endpoint
-	// on the database port. The standard naming of files is expected (tls.key, tls.crt, ca.crt)
+	// on the database port. The standard naming of files is expected (node.key, node.crt, ca.crt)
 	// Default: ""
 	// +optional
 	NodeTLSSecret string `json:"nodeTLSSecret,omitempty"`

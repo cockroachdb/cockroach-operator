@@ -113,16 +113,16 @@ spec:
           items:
           - key: ca.crt
             path: ca.crt
-          - key: tls.crt
+          - key: node.crt
             path: node.crt
-          - key: tls.key
+          - key: node.key
             path: node.key
           name: crdb-node
       - secret:
           items:
-          - key: tls.crt
+          - key: node.crt
             path: client.root.crt
-          - key: tls.key
+          - key: node.key
             path: client.root.key
           name: crdb-root
 
@@ -130,8 +130,8 @@ spec:
 apiVersion: v1
 data:
   ca.crt: '[replaced]'
-  tls.crt: '[replaced]'
-  tls.key: '[replaced]'
+  node.crt: '[replaced]'
+  node.key: '[replaced]'
 kind: Secret
 metadata:
   name: crdb-node
@@ -141,8 +141,8 @@ type: Opaque
 apiVersion: v1
 data:
   ca.crt: '[replaced]'
-  tls.crt: '[replaced]'
-  tls.key: '[replaced]'
+  node.crt: '[replaced]'
+  node.key: '[replaced]'
 kind: Secret
 metadata:
   name: crdb-root
@@ -318,16 +318,16 @@ spec:
               items:
               - key: ca.crt
                 path: ca.crt
-              - key: tls.crt
+              - key: node.crt
                 path: node.crt
-              - key: tls.key
+              - key: node.key
                 path: node.key
               name: crdb-node
           - secret:
               items:
-              - key: tls.crt
+              - key: node.crt
                 path: client.root.crt
-              - key: tls.key
+              - key: node.key
                 path: client.root.key
               name: crdb-root
   updateStrategy:
