@@ -52,7 +52,7 @@ cockroach-operator-6f7b86ffc4-9ppkv   1/1     Running   0          54s
 
 ## Start CockroachDB
 
-Download [`example.yaml`](https://github.com/cockroachdb/cockroach-operator/examples/example.yaml) and optionally modify the default configuration as outlined below.
+Download [`example.yaml`](https://github.com/cockroachdb/cockroach-operator/blob/master/examples/example.yaml) and optionally modify the default configuration as outlined below.
 
 ```
 apiVersion: crdb.cockroachlabs.com/v1alpha1
