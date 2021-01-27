@@ -10,6 +10,8 @@ spec:
     emptyDir: {}
   image:
     name: cockroachdb/cockroach:v19.2.6
+  labels:
+    customlabel: Test
   nodes: 1
   resources: {}
   tlsEnabled: true

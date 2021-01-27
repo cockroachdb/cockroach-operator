@@ -4,12 +4,12 @@ kind: CrdbCluster
 metadata:
   name: crdb
 spec:
-  labels:
-    customlabel: Test
   dataStore:
     emptyDir: {}
   image:
     name: cockroachdb/cockroach:v19.2.6
+  labels:
+    customlabel: Test
   nodes: 3
   resources: {}
 
