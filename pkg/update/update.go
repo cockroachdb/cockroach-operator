@@ -24,6 +24,7 @@ import (
 	"github.com/cenkalti/backoff"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
+	"go.uber.org/zap/zapcore"
 	v1 "k8s.io/api/apps/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -107,7 +108,7 @@ func NewSleeper(duration time.Duration) *sleeperImpl {
 }
 
 func (s *sleeperImpl) Sleep(l logr.Logger, logSuffix string) {
-	l.Info("sleeping", "duration", string(s.duration), "label", logSuffix)
+	l.V(int(zapcore.DebugLevel)).Info("sleeping", "duration", string(s.duration), "label", logSuffix)
 	time.Sleep(s.duration)
 }
 
@@ -196,7 +197,7 @@ func PartitionedRollingUpdateStrategy(perPodVerificationFunc func(*UpdateSts, in
 			// If pod already updated, we are probably retrying a failed job
 			// attempt. Best not to redo the update in that case, especially the sleeps!!
 			if err := perPodVerificationFunc(updateSts, int(partition), l); err == nil {
-				l.Info("already updated, skipping sleep", "partition", partition)
+				l.V(int(zapcore.DebugLevel)).Info("already updated, skipping sleep", "partition", partition)
 				skipSleep = true
 				continue
 			}
@@ -218,7 +219,7 @@ func PartitionedRollingUpdateStrategy(perPodVerificationFunc func(*UpdateSts, in
 			// Wait until verificationFunction verifies the update, passing in
 			// the current partition so the function knows which pod to check
 			// the status of.
-			l.Info("waiting until partition done updating", "partition number:", partition)
+			l.V(int(zapcore.DebugLevel)).Info("waiting until partition done updating", "partition number:", partition)
 			if err := waitUntilPerPodVerificationFuncVerifies(updateSts, perPodVerificationFunc, int(partition), updateTimer, l); err != nil {
 				return false, errors.Wrapf(err, "error while running verificationFunc on pod %d", int(partition))
 			}
@@ -268,7 +269,7 @@ func makeWaitUntilAllPodsReadyFuncInAllClusters(
 ) func(ctx context.Context, l logr.Logger) error {
 	return func(ctx context.Context, l logr.Logger) error {
 
-		l.Info("waiting until all pods are in the ready state")
+		l.V(int(zapcore.DebugLevel)).Info("waiting until all pods are in the ready state")
 		f := func() error {
 			got := 0
 			for ns, clientset := range clientsets {
@@ -284,7 +285,7 @@ func makeWaitUntilAllPodsReadyFuncInAllClusters(
 				l.Error(err, "number of ready replicas is,  not equal to num CRDB pods")
 				return err
 			}
-			l.Info("all replicas are ready")
+			l.V(int(zapcore.DebugLevel)).Info("all replicas are ready")
 			return nil
 		}
 

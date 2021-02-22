@@ -21,6 +21,7 @@ import (
 
 	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
+	"go.uber.org/zap/zapcore"
 )
 
 //PVCPruner interface
@@ -78,7 +79,7 @@ func (s *Scaler) EnsureScale(ctx context.Context, scale uint) error {
 	for crdbScale > scale {
 		oneOff := crdbScale - 1
 
-		s.Logger.Info("scaling down stateful set", "have", crdbScale, "want", oneOff)
+		s.Logger.V(int(zapcore.DebugLevel)).Info("scaling down stateful set", "have", crdbScale, "want", oneOff)
 
 		// TODO (chrisseto): If decommissioning fails due to a timeout
 		// recommission that node before failing this job.
@@ -128,7 +129,7 @@ func (s *Scaler) EnsureScale(ctx context.Context, scale uint) error {
 	// with cascade = false and recreating them. They will "adopt" the old/existing pods and in theory not
 	// have an affect on the cluster as a whole.
 	for crdbScale < scale {
-		s.Logger.Info("scaling up stateful set", "have", crdbScale, "want", (crdbScale + 1))
+		s.Logger.V(int(zapcore.DebugLevel)).Info("scaling up stateful set", "have", crdbScale, "want", (crdbScale + 1))
 		if err := s.CRDB.SetReplicas(ctx, crdbScale+1); err != nil {
 			return err
 		}

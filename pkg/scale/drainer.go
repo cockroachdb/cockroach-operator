@@ -28,6 +28,7 @@ import (
 	"github.com/cenkalti/backoff"
 	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
+	"go.uber.org/zap/zapcore"
 
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -80,7 +81,7 @@ func (d *CockroachNodeDrainer) Decommission(ctx context.Context, replica uint) e
 		return err
 	}
 
-	d.Logger.Info("draining node", "NodeID", lastNodeID)
+	d.Logger.V(int(zapcore.InfoLevel)).Info("draining node", "NodeID", lastNodeID)
 
 	if err := d.executeDrainCmd(ctx, lastNodeID); err != nil {
 		return err
@@ -171,8 +172,8 @@ func (d *CockroachNodeDrainer) makeDrainStatusChecker(id uint) func(ctx context.
 
 		isLive, replicasStr, isDecommissioning := record[8], record[9], record[10]
 
-		d.Logger.Info(
-			"node status",
+		d.Logger.V(int(zapcore.InfoLevel)).Info(
+			"draining node do to decommission",
 			"id", id,
 			"isLive", isLive,
 			"replicas", replicasStr,

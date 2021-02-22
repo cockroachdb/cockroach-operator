@@ -30,7 +30,7 @@ import (
 )
 
 const (
-	// JobContainerName used on spec for teh container
+	// JobContainerName used on spec for the container
 	JobContainerName     = "crdb"
 	GetTagVersionCommand = "/cockroach/cockroach version | grep 'Build Tag:'| awk '{print $3}'"
 )

@@ -29,6 +29,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
+	"go.uber.org/zap/zapcore"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -89,7 +90,7 @@ func UpdateClusterCockroachVersion(
 		kind,
 	)
 
-	l.Info("starting upgrade")
+	l.V(int(zapcore.InfoLevel)).Info("starting upgrade")
 
 	if isForwardOneMajorVersion(update.WantVersion, update.CurrentVersion) {
 		if err := setDowngradeOption(ctx, update.WantVersion, update.CurrentVersion, update.Db, l); err != nil {
@@ -153,7 +154,7 @@ func makeWaitUntilAllPodsReadyFunc(
 ) func(ctx context.Context, l logr.Logger) error {
 	return func(ctx context.Context, l logr.Logger) error {
 
-		l.Info("waiting until all pods are in the ready state")
+		l.V(int(zapcore.DebugLevel)).Info("waiting until all pods are in the ready state")
 		f := func() error {
 
 			sts, err := cluster.Clientset.AppsV1().StatefulSets(update.StsNamespace).Get(ctx, update.StsName, metav1.GetOptions{})
@@ -169,7 +170,7 @@ func makeWaitUntilAllPodsReadyFunc(
 				return err
 			}
 
-			l.Info("all replicas are ready makeWaitUntilAllPodsReadyFunc update_cockroach_version.go")
+			l.V(int(zapcore.DebugLevel)).Info("all replicas are ready makeWaitUntilAllPodsReadyFunc update_cockroach_version.go")
 			return nil
 		}
 
@@ -196,10 +197,10 @@ func kindAndCheckPreserveDowngradeSetting(
 	//}
 
 	if isPatch(wantVersion, currentVersion) {
-		l.Info("patch upgrade")
+		l.V(int(zapcore.DebugLevel)).Info("patch upgrade")
 		return "PATCH", nil
 	} else if isForwardOneMajorVersion(wantVersion, currentVersion) {
-		l.Info("major upgrade")
+		l.V(int(zapcore.DebugLevel)).Info("major upgrade")
 		s := "MAJOR_UPGRADE"
 		preserve, err := preserveDowngradeSetting(ctx, db)
 		if err != nil {
@@ -219,7 +220,7 @@ func kindAndCheckPreserveDowngradeSetting(
 		}
 		return s, nil
 	} else if isBackOneMajorVersion(wantVersion, currentVersion) {
-		l.Info("major rollback")
+		l.V(int(zapcore.DebugLevel)).Info("major rollback")
 		s := "MAJOR_ROLLBACK"
 		preserve, err := preserveDowngradeSetting(ctx, db)
 		if err != nil {
@@ -237,12 +238,14 @@ func kindAndCheckPreserveDowngradeSetting(
 		}
 		return s, nil
 	}
-	l.Info("unknown upgrade")
-	return "UNKNOWN", UpdateNotAllowed{
+
+	err := UpdateNotAllowed{
 		cur:   currentVersion,
 		want:  wantVersion,
 		extra: "only patches, rolling forward one major version, & rolling back one major version supported",
 	}
+	l.Error(err, "unknown upgrade")
+	return "UNKNOWN", err
 }
 
 func preserveDowngradeSetting(ctx context.Context, db *sql.DB) (*semver.Version, error) {
@@ -273,7 +276,7 @@ func setDowngradeOption(ctx context.Context, wantVersion *semver.Version, curren
 		return errors.Wrapf(err, "setting preserve downgrade option failed")
 	}
 
-	l.Info("set downgrade option since major version", "cluster.preserve_downgrade_option", newDowngradeOption)
+	l.V(int(zapcore.DebugLevel)).Info("set downgrade option since major version", "cluster.preserve_downgrade_option", newDowngradeOption)
 
 	return nil
 }

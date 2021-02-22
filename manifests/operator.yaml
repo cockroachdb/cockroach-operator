@@ -263,7 +263,7 @@ spec:
           imagePullPolicy: IfNotPresent
           # uncomment this to enable different new features
           # args: ["-feature-gates","PartitionedUpdate=true,UseDecommission=true,Upgrade=false, CrdbVersionValidator=false"]
-          args: ["-feature-gates","Upgrade=false"]
+          args: ["-feature-gates","Upgrade=false","--zap-log-level","info"]
           env:
             - name: WATCH_NAMESPACE
               valueFrom:

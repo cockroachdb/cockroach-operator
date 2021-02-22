@@ -28,6 +28,7 @@ import (
 	"github.com/cockroachdb/cockroach-operator/pkg/tls"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
+	"go.uber.org/zap/zapcore"
 	certs "k8s.io/api/certificates/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
@@ -60,7 +61,7 @@ func (rc *requestCert) Act(ctx context.Context, cluster *resource.Cluster) error
 	log := rc.log.WithValues("CrdbCluster", cluster.ObjectKey())
 
 	if !cluster.Spec().TLSEnabled || cluster.Spec().NodeTLSSecret != "" {
-		log.Info("Skipping TLS cert generation", "enabled", cluster.Spec().TLSEnabled, "secret", cluster.Spec().NodeTLSSecret)
+		log.V(int(zapcore.DebugLevel)).Info("Skipping TLS cert generation", "enabled", cluster.Spec().TLSEnabled, "secret", cluster.Spec().NodeTLSSecret)
 		return nil
 	}
 
@@ -72,7 +73,7 @@ func (rc *requestCert) Act(ctx context.Context, cluster *resource.Cluster) error
 }
 
 func (rc *requestCert) issueNodeCert(ctx context.Context, log logr.Logger, cluster *resource.Cluster) error {
-	log.Info("requesting node certificate")
+	log.V(int(zapcore.DebugLevel)).Info("requesting node certificate")
 
 	secret, err := resource.LoadTLSSecret(cluster.NodeTLSSecretName(),
 		resource.NewKubeResource(ctx, rc.client, cluster.Namespace(), kube.DefaultPersister))
@@ -102,7 +103,7 @@ func (rc *requestCert) issueNodeCert(ctx context.Context, log logr.Logger, clust
 }
 
 func (rc *requestCert) issueClientCert(ctx context.Context, log logr.Logger, cluster *resource.Cluster) error {
-	log.Info("requesting client certificate")
+	log.V(int(zapcore.DebugLevel)).Info("requesting client certificate")
 
 	secret, err := resource.LoadTLSSecret(cluster.ClientTLSSecretName(),
 		resource.NewKubeResource(ctx, rc.client, cluster.Namespace(), kube.DefaultPersister))
@@ -131,7 +132,7 @@ func (rc *requestCert) issue(ctx context.Context, csrName string, request *x509.
 	secret *resource.TLSSecret, usages []certs.KeyUsage) error {
 	log := rc.log.WithValues("csr", csrName)
 
-	log.Info("issuing certificate")
+	log.V(int(zapcore.DebugLevel)).Info("issuing certificate")
 
 	csr, err := tls.InitCSR(ctx, rc.client, csrName)
 	if err != nil {
@@ -140,7 +141,7 @@ func (rc *requestCert) issue(ctx context.Context, csrName string, request *x509.
 
 	switch csr.Status {
 	case tls.SigningRequestNotFound:
-		log.Info("submitting a CSR")
+		log.V(int(zapcore.DebugLevel)).Info("submitting a CSR")
 
 		if err := tls.SignAndCreate(request, secret, csr.Unwrap(), usages); err != nil {
 			return err
@@ -152,14 +153,14 @@ func (rc *requestCert) issue(ctx context.Context, csrName string, request *x509.
 
 		return NotReadyErr{Err: errors.New("client CSR is not ready, giving it some time")}
 	case tls.SigningRequestPending:
-		log.Info("approving CSR")
+		log.V(int(zapcore.DebugLevel)).Info("approving CSR")
 		if err := tls.Approve(ctx, rc.config, csr.Unwrap()); err != nil {
 			return err
 		}
 
 		return NotReadyErr{Err: errors.New("client CSR is not ready, giving it some time")}
 	case tls.SigningRequestApproved:
-		log.Info("the CSR has been approved")
+		log.V(int(zapcore.DebugLevel)).Info("the CSR has been approved")
 
 		ca, err := kube.GetClusterCA(ctx, rc.config)
 		if err != nil {
@@ -173,7 +174,7 @@ func (rc *requestCert) issue(ctx context.Context, csrName string, request *x509.
 
 		return nil
 	case tls.SigningRequestDenied:
-		log.Info("request was denied")
+		log.V(int(zapcore.ErrorLevel)).Info("request was denied")
 
 		return PermanentErr{Err: errors.New("client CSR request was denied")}
 	default:
