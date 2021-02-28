@@ -69,6 +69,15 @@ func NewOperatorActions(scheme *runtime.Scheme, cl client.Client, config *rest.C
 		update = newUpgrade(scheme, cl, config)
 	}
 
+	var certs Actor
+	// entry point for new PartitionUpdate upgrades
+	// this feature is controlled by a featuregate
+	if utilfeature.DefaultMutableFeatureGate.Enabled(features.GenerateCerts) {
+		certs = newRequestCert(scheme, cl, config)
+	} else {
+		certs = newGenerateCert(scheme, cl, config)
+	}
+
 	// The order of these actors MATTERS.
 	// We need to have update before deploy so that
 	// updates run before the deploy actor, or
@@ -78,7 +87,7 @@ func NewOperatorActions(scheme *runtime.Scheme, cl client.Client, config *rest.C
 	// have the featuregate check above or in there handles
 	// func.
 	return []Actor{
-		newRequestCert(scheme, cl, config),
+		certs,
 		newDecommission(scheme, cl, config),
 		update,
 		newResizePVC(scheme, cl, config),
