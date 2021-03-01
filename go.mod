@@ -3,34 +3,26 @@ module github.com/cockroachdb/cockroach-operator
 go 1.14
 
 require (
+	github.com/Azure/azure-storage-blob-go v0.12.0 // indirect
 	github.com/Masterminds/semver/v3 v3.1.0
 	github.com/banzaicloud/k8s-objectmatcher v1.3.2
 	github.com/cenkalti/backoff v2.2.1+incompatible
-	github.com/cockroachdb/cockroach v0.0.0-20210204185734-162c5ac4968c // indirect
+	github.com/cockroachdb/cockroach v0.0.0-20210204185734-162c5ac4968c
 	github.com/cockroachdb/errors v1.8.0
-	github.com/cockroachdb/redact v1.0.7 // indirect
 	github.com/dustin/go-humanize v1.0.0
 	github.com/go-logr/logr v0.1.0
 	github.com/go-logr/zapr v0.1.1
-	github.com/gofrs/uuid v3.3.0+incompatible // indirect
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/google/go-cmp v0.4.0
-	github.com/imdario/mergo v0.3.9 // indirect
 	github.com/jackc/pgx/v4 v4.9.0
-	github.com/kr/pretty v0.2.1 // indirect
-	github.com/kr/text v0.2.0 // indirect
 	github.com/lib/pq v1.8.0
 	github.com/onsi/ginkgo v1.13.0
 	github.com/onsi/gomega v1.10.1
 	github.com/pkg/errors v0.9.1
-	github.com/shopspring/decimal v1.2.0 // indirect
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.6.1
 	go.uber.org/zap v1.14.1
-	golang.org/x/mod v0.3.0 // indirect
 	golang.org/x/net v0.0.0-20200602114024-627f9648deb9
-	golang.org/x/sys v0.0.0-20200824131525-c12d262b63d8 // indirect
-	golang.org/x/tools v0.0.0-20200702044944-0cc1aa72b347 // indirect
 	gopkg.in/yaml.v2 v2.3.0
 	k8s.io/api v0.18.5
 	k8s.io/apiextensions-apiserver v0.18.5 // indirect
@@ -54,4 +46,5 @@ replace (
 	k8s.io/client-go v9.0.0+incompatible => k8s.io/client-go v0.18.5
 	sigs.k8s.io/controller-runtime v0.5.4 => sigs.k8s.io/controller-runtime v0.5.1-0.20200416234307-5377effd4043
 	vitess.io/vitess => github.com/cockroachdb/vitess v2.2.0-rc.1.0.20180830030426-1740ce8b3188+incompatible
+
 )

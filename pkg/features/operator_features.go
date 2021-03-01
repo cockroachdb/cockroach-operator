@@ -51,6 +51,12 @@ const (
 	// beta: v1.0
 	// ResizePVC allows for the resizing of PVC Volumes
 	ResizePVC featuregate.Feature = "ResizePVC"
+
+	// owner: @chrislovecnm
+	// alpha: v0.1
+	// beta: v1.0
+	// GenerateCerts uses crdb code to generate self signed certifcates
+	GenerateCerts featuregate.Feature = "GenerateCerts"
 )
 
 func init() {

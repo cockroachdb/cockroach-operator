@@ -29,6 +29,7 @@ go_library(
         "//pkg/update:go_default_library",
         "//pkg/utilfeature:go_default_library",
         "@com_github_cenkalti_backoff//:go_default_library",
+        "@com_github_cockroachdb_cockroach//pkg/security:go_default_library",
         "@com_github_cockroachdb_errors//:go_default_library",
         "@com_github_go_logr_logr//:go_default_library",
         "@com_github_masterminds_semver_v3//:go_default_library",
