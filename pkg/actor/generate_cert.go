@@ -28,6 +28,7 @@ import (
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	"github.com/cockroachdb/cockroach/pkg/security"
+	"github.com/cockroachdb/cockroach/pkg/sql"
 	cr_errors "github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -118,7 +119,7 @@ func (rc *generateCert) Act(ctx context.Context, cluster *resource.Cluster) erro
 		return err
 	}
 
-	return rc.issueClientCert(ctx, log, cluster)
+	return rc.generateClientCert(ctx, log, cluster)
 }
 
 func (rc *generateCert) generateCA(ctx context.Context, log logr.Logger, cluster *resource.Cluster) error {
@@ -182,7 +183,7 @@ func (rc *generateCert) generateNodeCert(ctx context.Context, log logr.Logger, c
 	return nil
 }
 
-func (rc *generateCert) issueClientCert(ctx context.Context, log logr.Logger, cluster *resource.Cluster) error {
+func (rc *generateCert) generateClientCert(ctx context.Context, log logr.Logger, cluster *resource.Cluster) error {
 	log.Info("generating client certificate")
 
 	secret, err := resource.LoadTLSSecret(cluster.ClientTLSSecretName(),
@@ -195,11 +196,7 @@ func (rc *generateCert) issueClientCert(ctx context.Context, log logr.Logger, cl
 		return nil
 	}
 
-	//csrName := fmt.Sprintf("root.%s.%s.%s", cluster.Name(), cluster.Namespace(), cluster.Domain())
-	//args := []string{csrName}
-
-	username, err := security.MakeSQLUsernameFromUserInput("root", security.UsernameCreation)
-	if err != nil {
+	if username, err = sql.NormalizeAndValidateUsernameNoBlocklist("root"); err != nil {
 		return errors.Wrap(err, "failed to generate client certificate and key")
 	}
 

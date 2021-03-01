@@ -787,6 +787,7 @@ def go_repositories():
 
     go_repository(
         name = "com_github_grpc_ecosystem_grpc_gateway",
+        build_file_generation = "on",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/grpc-ecosystem/grpc-gateway",
         replace = "github.com/cockroachdb/grpc-gateway",
@@ -5312,8 +5313,7 @@ def go_repositories():
     )
     go_repository(
         name = "com_github_google_flatbuffers",
-        build_file_generation = "on",
-        build_file_proto_mode = "disable",
+        build_file_proto_mode = "disable_global",
         importpath = "github.com/google/flatbuffers",
         sum = "h1:O7CEyB8Cb3/DmtxODGtLHcEvpr81Jm5qLg/hsHnxA2A=",
         version = "v1.11.0",

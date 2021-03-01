@@ -13,6 +13,7 @@ require (
 	github.com/go-logr/logr v0.1.0
 	github.com/go-logr/zapr v0.1.1
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
+	github.com/google/flatbuffers v1.11.0
 	github.com/google/go-cmp v0.4.0
 	github.com/jackc/pgx/v4 v4.9.0
 	github.com/lib/pq v1.8.0
