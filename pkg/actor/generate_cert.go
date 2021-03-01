@@ -18,7 +18,6 @@ package actor
 
 import (
 	"context"
-	"crypto/x509"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -28,12 +27,10 @@ import (
 	"github.com/cockroachdb/cockroach-operator/pkg/condition"
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
-	"github.com/cockroachdb/cockroach-operator/pkg/tls"
 	"github.com/cockroachdb/cockroach/pkg/security"
 	cr_errors "github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
-	certs "k8s.io/api/certificates/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -77,7 +74,7 @@ type generateCert struct {
 
 	config   *rest.Config
 	CertsDir string
-	CaKey    string
+	CAKey    string
 }
 
 func (rc *generateCert) Handles(conds []api.ClusterCondition) bool {
@@ -109,7 +106,7 @@ func (rc *generateCert) Act(ctx context.Context, cluster *resource.Cluster) erro
 		return err
 	}
 
-	rc.CaKey = caDir + "/ca.key"
+	rc.CAKey = caDir + "/ca.key"
 
 	defer os.RemoveAll(caDir)
 
@@ -130,7 +127,7 @@ func (rc *generateCert) generateCA(ctx context.Context, log logr.Logger, cluster
 	return cr_errors.Wrap(
 		security.CreateCAPair(
 			rc.CertsDir,
-			rc.CaKey,
+			rc.CAKey,
 			keySize,
 			caCertificateLifetime,
 			allowCAKeyReuse,
@@ -154,10 +151,10 @@ func (rc *generateCert) generateNodeCert(ctx context.Context, log logr.Logger, c
 	csrName := fmt.Sprintf("node.%s.%s.%s", cluster.Name(), cluster.Namespace(), cluster.Domain())
 	args := []string{csrName}
 
-	err := cr_errors.Wrap(
+	err = cr_errors.Wrap(
 		security.CreateNodePair(
 			rc.CertsDir,
-			rc.CaKey,
+			rc.CAKey,
 			keySize,
 			certificateLifetime,
 			overwriteFiles,
@@ -182,11 +179,11 @@ func (rc *generateCert) generateNodeCert(ctx context.Context, log logr.Logger, c
 		return errors.Wrap(err, "failed to update client TLS secret certs")
 	}
 
-	return err
+	return nil
 }
 
 func (rc *generateCert) issueClientCert(ctx context.Context, log logr.Logger, cluster *resource.Cluster) error {
-	log.Info("requesting client certificate")
+	log.Info("generating client certificate")
 
 	secret, err := resource.LoadTLSSecret(cluster.ClientTLSSecretName(),
 		resource.NewKubeResource(ctx, rc.client, cluster.Namespace(), kube.DefaultPersister))
@@ -198,69 +195,40 @@ func (rc *generateCert) issueClientCert(ctx context.Context, log logr.Logger, cl
 		return nil
 	}
 
-	csrName := fmt.Sprintf("root.%s.%s.%s", cluster.Name(), cluster.Namespace(), cluster.Domain())
+	//csrName := fmt.Sprintf("root.%s.%s.%s", cluster.Name(), cluster.Namespace(), cluster.Domain())
+	//args := []string{csrName}
 
-	usages := []certs.KeyUsage{
-		certs.UsageDigitalSignature,
-		certs.UsageKeyEncipherment,
-		certs.UsageClientAuth,
-	}
-
-	request := tls.NewClientCertificateRequest("root")
-
-	return rc.issue(ctx, csrName, request, secret, usages)
-}
-
-func (rc *generateCert) issue(ctx context.Context, csrName string, request *x509.CertificateRequest,
-	secret *resource.TLSSecret, usages []certs.KeyUsage) error {
-	log := rc.log.WithValues("csr", csrName)
-
-	log.Info("issuing certificate")
-
-	csr, err := tls.InitCSR(ctx, rc.client, csrName)
+	username, err := security.MakeSQLUsernameFromUserInput("root", security.UsernameCreation)
 	if err != nil {
-		return errors.Wrapf(err, "failed to init CSR %s", csrName)
+		return errors.Wrap(err, "failed to generate client certificate and key")
 	}
 
-	switch csr.Status {
-	case tls.SigningRequestNotFound:
-		log.Info("submitting a CSR")
-
-		if err := tls.SignAndCreate(request, secret, csr.Unwrap(), usages); err != nil {
-			return err
-		}
-
-		if err := rc.client.Create(ctx, csr.Unwrap()); err != nil {
-			return errors.Wrapf(err, "failed to create CSR %s", csrName)
-		}
-
-		return NotReadyErr{Err: errors.New("client CSR is not ready, giving it some time")}
-	case tls.SigningRequestPending:
-		log.Info("approving CSR")
-		if err := tls.Approve(ctx, rc.config, csr.Unwrap()); err != nil {
-			return err
-		}
-
-		return NotReadyErr{Err: errors.New("client CSR is not ready, giving it some time")}
-	case tls.SigningRequestApproved:
-		log.Info("the CSR has been approved")
-
-		ca, err := kube.GetClusterCA(ctx, rc.config)
-		if err != nil {
-			return errors.Wrap(err, "failed to fetch cluster CA certificate")
-		}
-
-		pemCert := csr.Unwrap().Status.Certificate
-		if err := secret.UpdateCertAndCA(pemCert, ca, log); err != nil {
-			return errors.Wrap(err, "failed to update client TLS secret certs")
-		}
-
-		return nil
-	case tls.SigningRequestDenied:
-		log.Info("request was denied")
-
-		return PermanentErr{Err: errors.New("client CSR request was denied")}
-	default:
-		return errors.New("unknown CSR status")
+	err = errors.Wrap(
+		security.CreateClientPair(
+			rc.CertsDir,
+			rc.CAKey,
+			keySize,
+			certificateLifetime,
+			overwriteFiles,
+			"root",
+			generatePKCS8Key),
+		"failed to generate client certificate and key")
+	if err != nil {
+		return err
 	}
+	ca, err := ioutil.ReadFile(rc.CAKey)
+	if err != nil {
+		return err
+	}
+
+	pemCert, err := ioutil.ReadFile(rc.CertsDir + "/client.root.crt")
+	if err != nil {
+		return err
+	}
+
+	if err = secret.UpdateCertAndCA(pemCert, ca, log); err != nil {
+		return errors.Wrap(err, "failed to update client TLS secret certs")
+	}
+
+	return nil
 }

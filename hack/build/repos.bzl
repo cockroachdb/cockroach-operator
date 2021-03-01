@@ -787,8 +787,7 @@ def go_repositories():
 
     go_repository(
         name = "com_github_grpc_ecosystem_grpc_gateway",
-        build_file_generation = "on",
-        build_file_proto_mode = "disable",
+        build_file_proto_mode = "disable_global",
         importpath = "github.com/grpc-ecosystem/grpc-gateway",
         replace = "github.com/cockroachdb/grpc-gateway",
         sum = "h1:pZuUpNtmLArGU2vCW+mNetvruw6jRcxDxwOnMT+XLWI=",
