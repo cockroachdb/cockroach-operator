@@ -1,5 +1,6 @@
 build --workspace_status_command hack/build/print-workspace-status.sh
 test --test_output=errors
+# parallel still is not working well
 #test --test_arg=-test.parallel=8
 
 # helpful for dev

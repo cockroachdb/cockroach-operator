@@ -22,17 +22,15 @@ import (
 	"fmt"
 	"sort"
 	"strings"
-	"sync"
 	"testing"
 
-	api "github.com/cockroachdb/cockroach-operator/api/v1alpha1"
+	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	apiruntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/rand"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -81,30 +79,32 @@ type Sandbox struct {
 	Namespace string
 }
 
-func (s Sandbox) setNamespaceIfMissing(obj apiruntime.Object) apiruntime.Object {
+func (s Sandbox) setNamespaceIfMissing(obj client.Object) client.Object {
 	accessor, _ := meta.Accessor(obj)
 	if accessor.GetNamespace() == "" {
-		obj = obj.DeepCopyObject()
-		accessor, _ = meta.Accessor(obj)
+		runtimeObject := obj.DeepCopyObject()
+		accessor, _ = meta.Accessor(runtimeObject)
 		accessor.SetNamespace(s.Namespace)
+		obj, _ := runtimeObject.(client.Object)
+		return obj
 	}
 
 	return obj
 }
 
-func (s Sandbox) Create(obj apiruntime.Object) error {
+func (s Sandbox) Create(obj client.Object) error {
 	obj = s.setNamespaceIfMissing(obj)
 
 	return s.env.Create(context.TODO(), obj)
 }
 
-func (s Sandbox) Update(obj apiruntime.Object) error {
+func (s Sandbox) Update(obj client.Object) error {
 	obj = s.setNamespaceIfMissing(obj)
 
 	return s.env.Update(context.TODO(), obj)
 }
 
-func (s Sandbox) Get(o apiruntime.Object) error {
+func (s Sandbox) Get(o client.Object) error {
 	accessor, err := meta.Accessor(o)
 	if err != nil {
 		return err
@@ -118,7 +118,7 @@ func (s Sandbox) Get(o apiruntime.Object) error {
 	return s.env.Get(context.TODO(), key, o)
 }
 
-func (s Sandbox) List(list apiruntime.Object, labels map[string]string) error {
+func (s Sandbox) List(list client.ObjectList, labels map[string]string) error {
 	ns := client.InNamespace(s.Namespace)
 	matchingLabels := client.MatchingLabels(labels)
 
@@ -172,21 +172,15 @@ func createServiceAccount(s Sandbox) error {
 }
 
 func startCtrlMgr(t *testing.T, mgr manager.Manager) func() {
-	stop := make(chan struct{})
-	wg := &sync.WaitGroup{}
-	wg.Add(1)
+	ctx, cancel := context.WithCancel(context.Background())
 
 	go func() {
-		defer wg.Done()
-		if err := mgr.Start(stop); err != nil {
+		if err := mgr.Start(ctx); err != nil {
 			t.Fatal(err)
 		}
 	}()
 
-	return func() {
-		close(stop)
-		wg.Wait()
-	}
+	return cancel
 }
 
 func NewDiffingSandbox(t *testing.T, env *ActiveEnv) DiffingSandbox {
@@ -296,11 +290,11 @@ func (l objList) Less(i, j int) bool {
 	agvk, bgvk := a.GroupVersionKind(), b.GroupVersionKind()
 
 	if agvk.Group != bgvk.Group {
-		if agvk.Group == api.GroupVersion.Group {
+		if agvk.Group == api.SchemeGroupVersion.Group {
 			return true
 		}
 
-		if bgvk.Group == api.GroupVersion.Group {
+		if bgvk.Group == api.SchemeGroupVersion.Group {
 			return false
 		}
 	}

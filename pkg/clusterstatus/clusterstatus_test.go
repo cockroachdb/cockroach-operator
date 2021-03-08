@@ -19,7 +19,7 @@ package clusterstatus
 import (
 	"testing"
 
-	api "github.com/cockroachdb/cockroach-operator/api/v1alpha1"
+	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/stretchr/testify/assert"
 )
 

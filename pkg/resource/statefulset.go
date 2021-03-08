@@ -26,8 +26,8 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -48,7 +48,7 @@ type StatefulSetBuilder struct {
 	Selector labels.Labels
 }
 
-func (b StatefulSetBuilder) Build(obj runtime.Object) error {
+func (b StatefulSetBuilder) Build(obj client.Object) error {
 	ss, ok := obj.(*appsv1.StatefulSet)
 	if !ok {
 		return errors.New("failed to cast to StatefulSet object")
@@ -141,7 +141,7 @@ func (b StatefulSetBuilder) Build(obj runtime.Object) error {
 	return nil
 }
 
-func (b StatefulSetBuilder) Placeholder() runtime.Object {
+func (b StatefulSetBuilder) Placeholder() client.Object {
 	return &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: b.StatefulSetName(),
@@ -149,7 +149,7 @@ func (b StatefulSetBuilder) Placeholder() runtime.Object {
 	}
 }
 
-func (b StatefulSetBuilder) SetAnnotations(obj runtime.Object) error {
+func (b StatefulSetBuilder) SetAnnotations(obj client.Object) error {
 	ss, ok := obj.(*appsv1.StatefulSet)
 	if !ok {
 		return errors.New("failed to cast to StatefulSet object")

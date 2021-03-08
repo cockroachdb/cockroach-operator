@@ -6,7 +6,7 @@ go_library(
     importpath = "github.com/cockroachdb/cockroach-operator/pkg/condition",
     visibility = ["//visibility:public"],
     deps = [
-        "//api/v1alpha1:go_default_library",
+        "//apis/v1alpha1:go_default_library",
         "@io_k8s_apimachinery//pkg/apis/meta/v1:go_default_library",
     ],
 )
@@ -16,7 +16,7 @@ go_test(
     srcs = ["condition_test.go"],
     embed = [":go_default_library"],
     deps = [
-        "//api/v1alpha1:go_default_library",
+        "//apis/v1alpha1:go_default_library",
         "@com_github_stretchr_testify//assert:go_default_library",
         "@io_k8s_apimachinery//pkg/apis/meta/v1:go_default_library",
     ],

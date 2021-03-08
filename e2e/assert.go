@@ -27,7 +27,7 @@ import (
 
 	"k8s.io/client-go/kubernetes"
 
-	api "github.com/cockroachdb/cockroach-operator/api/v1alpha1"
+	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/database"
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
 	"github.com/cockroachdb/cockroach-operator/pkg/labels"
@@ -358,6 +358,7 @@ func requireDatabaseToFunction(t *testing.T, sb testenv.DiffingSandbox, b testut
 		t.Fatal(fmt.Errorf("found incorrect number of rows.  Expected 2 got %v", count))
 	}
 
+	t.Log("finished testing database")
 }
 
 func getCount(t *testing.T, rows *sql.Rows) (count int) {

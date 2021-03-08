@@ -27,7 +27,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 
-	api "github.com/cockroachdb/cockroach-operator/api/v1alpha1"
+	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 )
 
 func InitScheme(t *testing.T) *runtime.Scheme {

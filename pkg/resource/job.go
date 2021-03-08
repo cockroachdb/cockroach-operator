@@ -26,7 +26,7 @@ import (
 	kbatch "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -41,7 +41,7 @@ type JobBuilder struct {
 	Selector labels.Labels
 }
 
-func (b JobBuilder) Build(obj runtime.Object) error {
+func (b JobBuilder) Build(obj client.Object) error {
 	job, ok := obj.(*kbatch.Job)
 	if !ok {
 		return errors.New("failed to cast to Job object")
@@ -110,7 +110,7 @@ func (b JobBuilder) MakeContainers() []corev1.Container {
 		},
 	}
 }
-func (b JobBuilder) Placeholder() runtime.Object {
+func (b JobBuilder) Placeholder() client.Object {
 	return &kbatch.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: b.JobName(),

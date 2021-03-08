@@ -15,7 +15,7 @@ go_library(
     importpath = "github.com/cockroachdb/cockroach-operator/pkg/resource",
     visibility = ["//visibility:public"],
     deps = [
-        "//api/v1alpha1:go_default_library",
+        "//apis/v1alpha1:go_default_library",
         "//pkg/clusterstatus:go_default_library",
         "//pkg/condition:go_default_library",
         "//pkg/kube:go_default_library",
@@ -50,7 +50,7 @@ go_test(
     data = glob(["testdata/**"]),
     embed = [":go_default_library"],
     deps = [
-        "//api/v1alpha1:go_default_library",
+        "//apis/v1alpha1:go_default_library",
         "//pkg/kube:go_default_library",
         "//pkg/labels:go_default_library",
         "//pkg/ptr:go_default_library",

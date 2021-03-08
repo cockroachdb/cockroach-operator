@@ -8,11 +8,12 @@ go_library(
         "cluster_defaults.go",
         "cluster_types.go",
         "condition_types.go",
+        "doc.go",
         "groupversion_info.go",
         "volume.go",
         "zz_generated.deepcopy.go",
     ],
-    importpath = "github.com/cockroachdb/cockroach-operator/api/v1alpha1",
+    importpath = "github.com/cockroachdb/cockroach-operator/apis/v1alpha1",
     visibility = ["//visibility:public"],
     deps = [
         "@com_github_pkg_errors//:go_default_library",
@@ -48,6 +49,7 @@ go_test(
         "//hack/bin:kubectl",
     ],
     embed = [":go_default_library"],
+    importpath = "github.com/cockroachdb/cockroach-operator/apis/v1alpha1",
     deps = [
         "//pkg/testutil/paths:go_default_library",
         "@com_github_google_go_cmp//cmp:go_default_library",

@@ -23,7 +23,7 @@ import (
 	"testing"
 	"time"
 
-	api "github.com/cockroachdb/cockroach-operator/api/v1alpha1"
+	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/actor"
 	"github.com/cockroachdb/cockroach-operator/pkg/controller"
 	"github.com/cockroachdb/cockroach-operator/pkg/testutil"
@@ -137,18 +137,7 @@ func TestCreatesSecureCluster(t *testing.T) {
 
 			RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
 			requireDatabaseToFunction(t, sb, builder)
-
-			//state, err := sb.Diff()
-			_, err := sb.Diff()
-			require.NoError(t, err)
-
-			// we cannot do this with the job, we just need to pull
-			// the statefulset and not everything from the namespace
-			/*
-				expected := testutil.ReadOrUpdateGoldenFile(t, state, *updateOpt)
-
-				testutil.AssertDiff(t, expected, state)
-			*/
+			t.Log("Done with basic cluster")
 		},
 	}
 
@@ -201,6 +190,7 @@ func TestUpgradesMinorVersion(t *testing.T) {
 
 				RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
 				requireDbContainersToUseImage(t, sb, current)
+				t.Log("Done with upgrade")
 			},
 		},
 	}
@@ -251,6 +241,7 @@ func TestUpgradesMajorVersion19to20(t *testing.T) {
 
 				RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
 				requireDbContainersToUseImage(t, sb, current)
+				t.Log("Done with major upgrade")
 			},
 		},
 	}
@@ -300,6 +291,7 @@ func TestUpgradesMajorVersion20_1To20_2(t *testing.T) {
 
 				RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
 				requireDbContainersToUseImage(t, sb, current)
+				t.Log("Done with major upgrade")
 			},
 		},
 	}
@@ -355,6 +347,7 @@ func TestDecommissionFunctionality(t *testing.T) {
 				RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
 				requireDecommissionNode(t, sb, builder, 3)
 				requireDatabaseToFunction(t, sb, builder)
+				t.Log("Done with decommision")
 			},
 		},
 	}

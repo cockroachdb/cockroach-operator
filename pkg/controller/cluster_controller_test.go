@@ -22,7 +22,7 @@ import (
 	"testing"
 	"time"
 
-	api "github.com/cockroachdb/cockroach-operator/api/v1alpha1"
+	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/actor"
 	"github.com/cockroachdb/cockroach-operator/pkg/controller"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
@@ -134,7 +134,7 @@ func TestReconcile(t *testing.T) {
 				},
 			}
 
-			actual, err := r.Reconcile(req)
+			actual, err := r.Reconcile(context.TODO(), req)
 			if tt.wantErr != "" {
 				require.EqualError(t, err, tt.wantErr)
 			}

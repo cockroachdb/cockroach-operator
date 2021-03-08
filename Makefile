@@ -29,11 +29,11 @@ APP_VERSION?=v1.6.12-rc.2
 # 
 .PHONY: test/all
 test/all:
-	bazel test //api/... //pkg/... --test_arg=--test.v
+	bazel test //apis/... //pkg/... --test_arg=--test.v
 
-.PHONY: test/api
-test/api:
-	bazel test //api/...
+.PHONY: test/apis
+test/apis:
+	bazel test //apis/...
 
 .PHONY: test/pkg
 test/pkg:

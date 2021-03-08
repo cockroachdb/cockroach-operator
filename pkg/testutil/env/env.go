@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"os"
 
+	customClient "github.com/cockroachdb/cockroach-operator/pkg/client/clientset/versioned"
 	"github.com/pkg/errors"
 	apiruntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -81,6 +82,8 @@ func (env *Env) Start() *ActiveEnv {
 		Clientset: kubernetes.NewForConfigOrDie(env.Environment.Config),
 		Interface: dc,
 		Cfg:       env.Environment.Config,
+
+		CustomClient: customClient.NewForConfigOrDie(env.Environment.Config),
 	}
 
 	resources, err := loadResources(k8s)
@@ -99,7 +102,8 @@ type k8s struct {
 	client.Client
 	*kubernetes.Clientset
 	dynamic.Interface
-	Cfg *rest.Config
+	Cfg          *rest.Config
+	CustomClient *customClient.Clientset
 }
 
 func (k k8s) namespaceableResource(gvr schema.GroupVersionResource) dynamic.NamespaceableResourceInterface {

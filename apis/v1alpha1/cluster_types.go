@@ -24,10 +24,11 @@ import (
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 // Important: Run "make" to regenerate code after modifying this file
 
-// CrdbClusterSpec defines the desired state of a CockroachDB Cluster
-// that the operator maintains.
 // +k8s:openapi-gen=true
 // +k8s:deepcopy-gen=true
+
+// CrdbClusterSpec defines the desired state of a CockroachDB Cluster
+// that the operator maintains.
 type CrdbClusterSpec struct {
 	// Number of nodes (pods) in the cluster
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Number of nodes",xDescriptors="urn:alm:descriptor:com.tectonic.ui:podCount"
@@ -94,8 +95,10 @@ type CrdbClusterSpec struct {
 	CockroachDBVersion string `json:"cockroachDBVersion,omitempty"`
 }
 
-// CrdbClusterStatus defines the observed state of Cluster
+// +k8s:openapi-gen=true
 // +k8s:deepcopy-gen=true
+
+// CrdbClusterStatus defines the observed state of Cluster
 type CrdbClusterStatus struct {
 	// List of conditions representing the current status of the cluster resource.
 	// +operator-sdk:csv:customresourcedefinitions:type=status, displayName="Cluster Conditions",xDescriptors="urn:alm:descriptor:io.kubernetes.conditions"
@@ -113,9 +116,11 @@ type CrdbClusterStatus struct {
 	ClusterStatus string `json:"clusterStatus,omitempty"`
 }
 
+// +k8s:openapi-gen=true
+// +k8s:deepcopy-gen=true
+
 // ClusterCondition represents cluster status as it is perceived by
 // the operator
-// +k8s:deepcopy-gen=true
 type ClusterCondition struct {
 	// +required
 	// Type/Name of the condition
@@ -164,11 +169,12 @@ type CrdbCluster struct {
 	Status CrdbClusterStatus `json:"status,omitempty"`
 }
 
-// PodImage represents the image information for a container that is used
-// to build the StatefulSet.
 // +kubebuilder:object:generate=true
 // +k8s:openapi-gen=true
 // +k8s:deepcopy-gen=true
+
+// PodImage represents the image information for a container that is used
+// to build the StatefulSet.
 type PodImage struct {
 	// Container image with supported CockroachDB version.
 	// This defaults to the version pinned to the operator and requires a full container and tag/sha name.
@@ -185,11 +191,12 @@ type PodImage struct {
 	PullSecret *string `json:"pullSecret,omitempty"`
 }
 
-// Volume defined storage configuration for the container with the Database.
-// Only one of the fields should set
 // +k8s:openapi-gen=true
 // +kubebuilder:object:generate=true
 // +k8s:deepcopy-gen=true
+
+// Volume defined storage configuration for the container with the Database.
+// Only one of the fields should set
 type Volume struct {
 	// Directory from the host node's filesystem
 	// +optional
@@ -207,11 +214,12 @@ type Volume struct {
 	SupportsAutoResize bool `json:"supportsAutoResize"`
 }
 
-// VolumeClaim wraps a persistent volume claim (PVC) to use with the container.
-// Only one of the fields should set
 // +kubebuilder:object:generate=true
 // +k8s:openapi-gen=true
 // +k8s:deepcopy-gen=true
+
+// VolumeClaim wraps a persistent volume claim (PVC) to use with the container.
+// Only one of the fields should set
 type VolumeClaim struct {
 	// PVC to request a new persistent volume
 	// +required
@@ -221,10 +229,11 @@ type VolumeClaim struct {
 	PersistentVolumeSource corev1.PersistentVolumeClaimVolumeSource `json:"source,omitempty"`
 }
 
-// CrdbClusterList contains a list of Cluster
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +kubebuilder:resource:categories=all;addons
 // +k8s:deepcopy-gen=true
+
+// CrdbClusterList contains a list of Cluster
 type CrdbClusterList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
