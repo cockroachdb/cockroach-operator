@@ -201,7 +201,7 @@ func (b StatefulSetBuilder) MakeContainers() []corev1.Container {
 			Image:           image,
 			ImagePullPolicy: *b.Spec().Image.PullPolicyName,
 			Resources:       b.Spec().Resources,
-			Command:         []string{"/cockroach/cockroach"},
+			Command:         []string{"/cockroach/cockroach.sh"},
 			Args:            b.dbArgs(),
 			Env: []corev1.EnvVar{
 				{
