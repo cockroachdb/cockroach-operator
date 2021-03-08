@@ -44,14 +44,16 @@ func (b PublicServiceBuilder) Build(obj runtime.Object) error {
 		service.ObjectMeta.Labels = map[string]string{}
 	}
 
-	service.Spec = corev1.ServiceSpec{
-		Type: corev1.ServiceTypeClusterIP,
-		Ports: []corev1.ServicePort{
-			{Name: "grpc", Port: *b.Cluster.Spec().GRPCPort},
-			{Name: "http", Port: *b.Cluster.Spec().HTTPPort},
-		},
-		Selector: b.Selector,
+	if service.Spec.Type != corev1.ServiceTypeClusterIP {
+		service.Spec = corev1.ServiceSpec{
+			Type: corev1.ServiceTypeClusterIP,
+			Ports: []corev1.ServicePort{
+				{Name: "grpc", Port: *b.Cluster.Spec().GRPCPort},
+				{Name: "http", Port: *b.Cluster.Spec().HTTPPort},
+			},
+		}
 	}
+	service.Spec.Selector = b.Selector
 
 	return nil
 }

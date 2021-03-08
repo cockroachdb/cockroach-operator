@@ -19,8 +19,10 @@ package update
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	semver "github.com/Masterminds/semver/v3"
+	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	"github.com/go-logr/logr"
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -32,9 +34,17 @@ import (
 // a function which takes a statefulset and returns the same statefulset, with
 // the CockroachDB container image within changed to the new cockroachImage.
 func makeUpdateCockroachVersionFunction(
-	cockroachImage string,
+	cockroachImage, version, oldVersion string,
 ) func(sts *v1.StatefulSet) (*v1.StatefulSet, error) {
 	return func(sts *v1.StatefulSet) (*v1.StatefulSet, error) {
+		timeNow := metav1.Now()
+		if val, ok := sts.Annotations[resource.CrdbHistoryAnnotation]; !ok {
+			sts.Annotations[resource.CrdbHistoryAnnotation] = fmt.Sprintf("%s=%s", timeNow.Format(time.RFC3339), oldVersion)
+		} else {
+			sts.Annotations[resource.CrdbHistoryAnnotation] = fmt.Sprintf("%s %s=%s", val, timeNow.Format(time.RFC3339), oldVersion)
+		}
+		sts.Annotations[resource.CrdbVersionAnnotation] = version
+		sts.Annotations[resource.CrdbContainerImageAnnotation] = cockroachImage
 		for i := range sts.Spec.Template.Spec.Containers {
 			container := &sts.Spec.Template.Spec.Containers[i]
 			// TODO "db" is hardcoded.  Make this a value in statefulset resource

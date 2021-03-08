@@ -16,16 +16,30 @@ limitations under the License.
 
 package v1alpha1
 
-//ClusterConditionType type alias
-type ClusterConditionType string
+//ActionStatus struct used to save the status of each action that the controller runs
+type ActionStatus int
 
 const (
-	//CrdbVersionNotChecked condition used to run the version checker and sync other actions
-	CrdbVersionNotChecked ClusterConditionType = "CrdbVersionNotChecked"
-	//NotInitializedCondition condition used to signal that a cluster was initialed and to sync the action
-	NotInitializedCondition ClusterConditionType = "NotInitialized"
-	//DecommissionCondition string
-	DecommissionCondition ClusterConditionType = "Decommission"
-	//InitializeCondition string
-	InitializeCondition ClusterConditionType = "Initialize"
+	//Failed status
+	Failed = iota
+	//Starting status
+	Starting
+	//Finished status
+	Finished
+	//Unknown status
+	Unknown
 )
+
+var statuses []string = []string{
+	"Failed",
+	"Starting",
+	"Finished",
+	"Unknown",
+}
+
+func (a ActionStatus) String() string {
+	if a < Failed || a > Unknown {
+		return "Unknown"
+	}
+	return statuses[a]
+}

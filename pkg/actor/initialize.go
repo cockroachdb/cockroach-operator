@@ -23,8 +23,10 @@ import (
 
 	api "github.com/cockroachdb/cockroach-operator/api/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/condition"
+	"github.com/cockroachdb/cockroach-operator/pkg/features"
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
+	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -47,7 +49,14 @@ type initialize struct {
 	config *rest.Config
 }
 
+// GetActionType returns the  api.InitializeAction value used to set the cluster status errors
+func (init initialize) GetActionType() api.ActionType {
+	return api.InitializeAction
+}
 func (init initialize) Handles(conds []api.ClusterCondition) bool {
+	if utilfeature.DefaultMutableFeatureGate.Enabled(features.CrdbVersionValidator) {
+		return condition.False(api.CrdbVersionNotChecked, conds) && condition.True(api.NotInitializedCondition, conds)
+	}
 	return condition.True(api.NotInitializedCondition, conds)
 }
 
@@ -87,7 +96,7 @@ func (init initialize) Act(ctx context.Context, cluster *resource.Cluster) error
 		// can happen if container has not finished its startup
 		if strings.Contains(err.Error(), "unable to upgrade connection: container not found") ||
 			strings.Contains(err.Error(), "does not have a host assigned") {
-			return NotReadyErr{Err: errors.New("pod has not complitely started")}
+			return NotReadyErr{Err: errors.New("pod has not completely started")}
 		}
 
 		return errors.Wrapf(err, "failed to initialize the cluster")

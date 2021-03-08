@@ -88,6 +88,7 @@ def install_misc():
         urls = ["https://github.com/stedolan/jq/releases/download/jq-1.5/jq-osx-amd64"],
     )
     http_file(
+        #this tool is used on open shift generation to generate the csv
         name = "faq_linux",
         executable = 1,
         sha256 = "53360a0d22b0608d5e29f8e84450f2fdc94573246fb552896afedbf8f1687981",

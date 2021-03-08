@@ -99,7 +99,7 @@ func UpdateClusterCockroachVersion(
 
 	wantImage := fmt.Sprintf("%s:%s", update.WantImageName, update.WantVersion.Original())
 
-	updateFunction := makeUpdateCockroachVersionFunction(wantImage)
+	updateFunction := makeUpdateCockroachVersionFunction(wantImage, update.WantVersion.Original(), update.CurrentVersion.Original())
 	perPodVerificationFunction := makeIsCRBPodIsRunningNewVersionFunction(
 		wantImage,
 	)
@@ -208,8 +208,8 @@ func kindAndCheckPreserveDowngradeSetting(
 		// To do a roll forward, preserve downgrade option should either be
 		// unset, or set to current version. If unset, kubeupdate will set it to
 		// current version.
-		if preserve.Compare(&semver.Version{}) != 0 &&
-			(preserve.Major() != currentVersion.Major() || preserve.Minor() != currentVersion.Minor()) {
+		if (preserve.Compare(&semver.Version{}) != 0 &&
+			(preserve.Major() != currentVersion.Major() || preserve.Minor() != currentVersion.Minor())) {
 			return s, UpdateNotAllowed{
 				cur:      currentVersion,
 				want:     wantVersion,

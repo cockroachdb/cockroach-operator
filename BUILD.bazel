@@ -69,6 +69,7 @@ filegroup(
         "//manifests:all-srcs",
         "//pkg/actor:all-srcs",
         "//pkg/clustersql:all-srcs",
+        "//pkg/clusterstatus:all-srcs",
         "//pkg/condition:all-srcs",
         "//pkg/controller:all-srcs",
         "//pkg/database:all-srcs",

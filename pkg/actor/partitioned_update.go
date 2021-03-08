@@ -22,12 +22,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/cockroachdb/cockroach-operator/pkg/database"
-
 	"github.com/Masterminds/semver/v3"
 	api "github.com/cockroachdb/cockroach-operator/api/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/condition"
-	"github.com/cockroachdb/cockroach-operator/pkg/kube"
+	"github.com/cockroachdb/cockroach-operator/pkg/database"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	"github.com/cockroachdb/cockroach-operator/pkg/update"
 	"github.com/pkg/errors"
@@ -37,6 +35,9 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/cockroachdb/cockroach-operator/pkg/features"
+	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
 )
 
 func newPartitionedUpdate(scheme *runtime.Scheme, cl client.Client, config *rest.Config) Actor {
@@ -53,7 +54,14 @@ type partitionedUpdate struct {
 	config *rest.Config
 }
 
+// GetActionType returns api.PartialUpdateAction action used to set the cluster status errors
+func (up *partitionedUpdate) GetActionType() api.ActionType {
+	return api.PartialUpdateAction
+}
 func (up *partitionedUpdate) Handles(conds []api.ClusterCondition) bool {
+	if utilfeature.DefaultMutableFeatureGate.Enabled(features.CrdbVersionValidator) {
+		return condition.False(api.NotInitializedCondition, conds) && condition.False(api.CrdbVersionNotChecked, conds)
+	}
 	return condition.False(api.NotInitializedCondition, conds)
 }
 
@@ -88,40 +96,40 @@ func (up *partitionedUpdate) Act(ctx context.Context, cluster *resource.Cluster)
 	// We need to have it not tell us the version
 	// See https://github.com/cockroachdb/cockroach-operator/issues/200
 
-	dbContainer, err := kube.FindContainer(resource.DbContainerName, &statefulSet.Spec.Template.Spec)
-	if err != nil {
-		return err
+	containerWanted := cluster.GetAnnotationContainerImage()
+	if containerWanted == "" {
+		cluster.SetTrue(api.CrdbVersionNotChecked)
+		log.Info("no crdbcontainerimage annotation found ... waiting for version checker to run")
+		return nil
+	}
+	versionWantedCalFmtStr := cluster.GetVersionAnnotation()
+	if versionWantedCalFmtStr == "" {
+		cluster.SetTrue(api.CrdbVersionNotChecked)
+		log.Info("no version annotation found on crd ... waiting for version checker to run")
+		return nil
+	}
+	currentVersionCalFmtStr := statefulSet.Annotations[resource.CrdbVersionAnnotation]
+	if currentVersionCalFmtStr == "" {
+		cluster.SetTrue(api.CrdbVersionNotChecked)
+		log.Info("no version annotation found on sts ... waiting for version checker to run")
+		return nil
 	}
 
-	// nothing to be done
-	if dbContainer.Image == cluster.Spec().Image.Name {
+	// check annotation
+	if currentVersionCalFmtStr == versionWantedCalFmtStr {
 		log.Info("no version changes needed")
 		return nil
 	}
 
-	currentImageVersionString := getVersionFromImage(dbContainer.Image)
-	if currentImageVersionString == "" {
-		return fmt.Errorf("unknown CockroachDB version in container name: %s", dbContainer.Image)
-	}
+	containerWanted = getImageNameNoVersion(containerWanted)
 
-	currentVersion, err := semver.NewVersion(currentImageVersionString)
+	currentVersion, err := semver.NewVersion(currentVersionCalFmtStr)
 	if err != nil {
-		return errors.Wrapf(err, "failed to parse container image version: %s", currentImageVersionString)
+		return errors.Wrapf(err, "failed to parse container image version: %s", currentVersionCalFmtStr)
 	}
-
-	wantImageVersionString := getVersionFromImage(cluster.Spec().Image.Name)
-	if wantImageVersionString == "" {
-		return fmt.Errorf("unknown CockroachDB version in spec: %s", cluster.Spec().Image.Name)
-	}
-
-	wantVersion, err := semver.NewVersion(wantImageVersionString)
+	wantVersion, err := semver.NewVersion(versionWantedCalFmtStr)
 	if err != nil {
-		return errors.Wrapf(err, "failed to parse spec image version: %s", wantImageVersionString)
-	}
-
-	wantContainer := getImageNameNoVersion(cluster.Spec().Image.Name)
-	if wantContainer == "" {
-		return fmt.Errorf("unknown CockroachDB container image %s", cluster.Spec().Image.Name)
+		return errors.Wrapf(err, "failed to parse spec image version: %s", versionWantedCalFmtStr)
 	}
 
 	// TODO we probably should make these items and more configurable
@@ -186,12 +194,12 @@ func (up *partitionedUpdate) Act(ctx context.Context, cluster *resource.Cluster)
 	// TODO test downgrades
 	// see https://github.com/cockroachdb/cockroach-operator/issues/208
 
-	log.Info("update starting with partitioned update", "old version", currentImageVersionString, "new version", wantImageVersionString, "image", wantContainer)
+	log.Info("update starting with partitioned update", "old version", currentVersionCalFmtStr, "new version", versionWantedCalFmtStr, "image", containerWanted)
 
 	updateRoach := &update.UpdateRoach{
 		CurrentVersion: currentVersion,
 		WantVersion:    wantVersion,
-		WantImageName:  wantContainer,
+		WantImageName:  containerWanted,
 		StsName:        stsName,
 		StsNamespace:   cluster.Namespace(),
 		Db:             db,
@@ -221,7 +229,7 @@ func (up *partitionedUpdate) Act(ctx context.Context, cluster *resource.Cluster)
 	}
 
 	// TODO set status that we are completed.
-	log.Info("update completed with partitioned update", "new version", wantImageVersionString)
+	log.Info("update completed with partitioned update", "new version", versionWantedCalFmtStr)
 	CancelLoop(ctx)
 	return nil
 }
@@ -233,4 +241,11 @@ func inK8s(file string) bool {
 		return false
 	}
 	return true
+}
+func getStsAnnotation(statefulSet *appsv1.StatefulSet, key string) string {
+	if currentVersion, ok := statefulSet.Annotations[key]; !ok {
+		return ""
+	} else {
+		return currentVersion
+	}
 }

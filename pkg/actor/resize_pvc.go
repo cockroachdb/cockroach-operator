@@ -67,6 +67,11 @@ type resizePVC struct {
 	config *rest.Config
 }
 
+//GetActionType returns api.RequestCertAction action used to set the cluster status errors
+func (rp *resizePVC) GetActionType() api.ActionType {
+	return api.ResizePVCAction
+}
+
 // Handles returns true if the DB is initialized
 func (rp *resizePVC) Handles(conds []api.ClusterCondition) bool {
 	return condition.False(api.NotInitializedCondition, conds) && utilfeature.DefaultMutableFeatureGate.Enabled(features.ResizePVC)

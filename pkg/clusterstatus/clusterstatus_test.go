@@ -14,35 +14,23 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package condition
+package clusterstatus
 
 import (
 	"testing"
 
 	api "github.com/cockroachdb/cockroach-operator/api/v1alpha1"
 	"github.com/stretchr/testify/assert"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestInitializesForEmptyConditions(t *testing.T) {
-	now := metav1.Now()
-
+func TestSetClusterStatusOnFirstReconcile(t *testing.T) {
 	status := api.CrdbClusterStatus{}
 
-	expected := []api.ClusterCondition{
-		{
-			Type:               "NotInitialized",
-			Status:             metav1.ConditionTrue,
-			LastTransitionTime: now,
-		},
-		{
-			Type:               "CrdbVersionNotChecked",
-			Status:             metav1.ConditionTrue,
-			LastTransitionTime: now,
-		},
-	}
+	expectedActions := []api.ClusterAction{}
+	expectedClusterStatus := api.ActionStatus(api.Starting).String()
 
-	InitConditionsIfNeeded(&status, now)
+	SetClusterStatusOnFirstReconcile(&status)
 
-	assert.ElementsMatch(t, expected, status.Conditions)
+	assert.ElementsMatch(t, expectedActions, status.OperatorActions)
+	assert.Equal(t, expectedClusterStatus, status.ClusterStatus)
 }

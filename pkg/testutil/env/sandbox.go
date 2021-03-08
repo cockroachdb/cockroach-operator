@@ -69,7 +69,6 @@ func NewSandbox(t *testing.T, env *ActiveEnv) Sandbox {
 	if err := createServiceAccount(s); err != nil {
 		t.Fatal(err)
 	}
-
 	t.Cleanup(s.Cleanup)
 
 	return s

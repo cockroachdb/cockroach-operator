@@ -261,8 +261,8 @@ spec:
           #image: cockroach-operator:bazel
           image: cockroachdb/cockroach-operator:v1.6.12-rc.2
           imagePullPolicy: IfNotPresent
-          # uncomment this to enable ParitionedUpdates
-          # args: ["-feature-gates","PartitionedUpdate=true,UseDecommission=true,Upgrade=false,ResizePVC=true"]
+          # uncomment this to enable different new features
+          # args: ["-feature-gates","PartitionedUpdate=true,UseDecommission=true,Upgrade=false, CrdbVersionValidator=false"]
           args: ["-feature-gates","Upgrade=false"]
           env:
             - name: WATCH_NAMESPACE
@@ -275,6 +275,14 @@ spec:
                   fieldPath: metadata.name
             - name: OPERATOR_NAME
               value: cockroachdb
+            - name: RELATED_IMAGE_COCKROACH_v20.2.5
+              value: cockroachdb/cockroach:v20.2.5
+            - name: RELATED_IMAGE_COCKROACH_v20.2.3
+              value: cockroachdb/cockroach:v20.2.3
+            - name: RELATED_IMAGE_COCKROACH_v20.1.12
+              value: cockroachdb/cockroach:v20.1.12
+            - name: RELATED_IMAGE_COCKROACH_v19.2.12
+              value: cockroachdb/cockroach:v19.2.12
           resources:
             requests:
               cpu: 10m

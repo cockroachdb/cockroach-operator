@@ -5,6 +5,7 @@ go_library(
     srcs = [
         "cluster.go",
         "discovery_service.go",
+        "job.go",
         "pod_distruption_budget.go",
         "public_service.go",
         "resource.go",
@@ -15,6 +16,7 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//api/v1alpha1:go_default_library",
+        "//pkg/clusterstatus:go_default_library",
         "//pkg/condition:go_default_library",
         "//pkg/kube:go_default_library",
         "//pkg/labels:go_default_library",
@@ -22,6 +24,7 @@ go_library(
         "@com_github_go_logr_logr//:go_default_library",
         "@com_github_pkg_errors//:go_default_library",
         "@io_k8s_api//apps/v1:go_default_library",
+        "@io_k8s_api//batch/v1:go_default_library",
         "@io_k8s_api//core/v1:go_default_library",
         "@io_k8s_api//policy/v1beta1:go_default_library",
         "@io_k8s_apimachinery//pkg/api/meta:go_default_library",

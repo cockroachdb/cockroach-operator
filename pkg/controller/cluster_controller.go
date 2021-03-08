@@ -61,6 +61,8 @@ type ClusterReconciler struct {
 // +kubebuilder:rbac:groups=policy,resources=poddisruptionbudgets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=policy,resources=poddisruptionbudgets/status,verbs=get
 // +kubebuilder:rbac:groups=policy,resources=poddisruptionbudgets/finalizers,verbs=get;list;watch
+// +kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=batch,resources=jobs/status,verbs=get
 
 // Reconcile is the reconciliation loop entry point for cluster CRDs.  It fetches the current cluster resources
 // and uses its state to interact with the world via a set of actions implemented by `Actor`s
@@ -89,6 +91,28 @@ func (r *ClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	cluster := resource.NewCluster(cr)
+	// on first run we need to save the status and exit to pass Openshift CI
+	// we added a state called Starting for field ClusterStatus to accomplish this
+	if cluster.Status().ClusterStatus == "" {
+		cluster.SetClusterStatusOnFirstReconcile()
+		if err := r.Client.Status().Update(ctx, cluster.Unwrap()); err != nil {
+			log.Error(err, "failed to update cluster status on action")
+			return requeueIfError(err)
+		}
+		return requeueImmediately()
+	}
+
+	//force version validation on mismatch between status and spec
+	if !cluster.True(api.CrdbVersionNotChecked) {
+		if cluster.GetCockroachDBImageName() != cluster.Status().CrdbContainerImage {
+			cluster.SetTrue(api.CrdbVersionNotChecked)
+			if err := r.Client.Status().Update(ctx, cluster.Unwrap()); err != nil {
+				log.Error(err, "failed to update cluster status on action")
+				return requeueIfError(err)
+			}
+			return requeueImmediately()
+		}
+	}
 
 	// Save context cancellation function for actors to call if needed
 	ctx = actor.ContextWithCancelFn(ctx, cancel)
@@ -99,6 +123,14 @@ func (r *ClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		// Ensure the action is applicable to the current resource state
 		if a.Handles(cluster.Status().Conditions) {
 			if err := a.Act(ctx, &cluster); err != nil {
+				// Save the error on he Status for each action
+				log.Info("Error on action", "Action", a.GetActionType(), "err", err.Error())
+				cluster.SetActionFailed(a.GetActionType(), err.Error())
+				defer func(ctx context.Context, cluster *resource.Cluster) {
+					if err := r.Client.Status().Update(ctx, cluster.Unwrap()); err != nil {
+						log.Error(err, "failed to update cluster status")
+					}
+				}(ctx, &cluster)
 				// Short pause
 				if notReadyErr, ok := err.(actor.NotReadyErr); ok {
 					log.Info("requeueing", "reason", notReadyErr.Error())
@@ -111,8 +143,19 @@ func (r *ClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 					return requeueAfter(5*time.Minute, err)
 				}
 
+				// No requeue
+				if invalidContainerVersError, ok := err.(actor.InvalidContainerVersionError); ok {
+					log.Error(invalidContainerVersError, "can't proceed with reconcile")
+					return noRequeue()
+				}
+
 				log.Error(err, "action failed")
 				return requeueIfError(err)
+			}
+			// reset errors on each run  if there was an error,
+			// this is to cover the not ready case
+			if cluster.Failed(a.GetActionType()) {
+				cluster.SetActionFinished(a.GetActionType())
 			}
 		}
 
@@ -136,7 +179,7 @@ func (r *ClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		log.Info("cluster resources is not up to date")
 		return requeueImmediately()
 	}
-
+	cluster.SetClusterStatus()
 	if err := r.Client.Status().Update(ctx, cluster.Unwrap()); err != nil {
 		log.Error(err, "failed to update cluster status")
 		return requeueIfError(err)
