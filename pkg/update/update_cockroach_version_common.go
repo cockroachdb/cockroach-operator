@@ -24,6 +24,7 @@ import (
 	semver "github.com/Masterminds/semver/v3"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	"github.com/go-logr/logr"
+	"go.uber.org/zap/zapcore"
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -78,7 +79,7 @@ func makeIsCRBPodIsRunningNewVersionFunction(
 
 		crdbPod, err := clientset.CoreV1().Pods(stsNamespace).Get(update.ctx, podName, metav1.GetOptions{})
 		if k8sErrors.IsNotFound(err) { // this is not an error
-			l.Info("cannot find Pod", "podName", podName, "namespace", stsNamespace)
+			l.V(int(zapcore.DebugLevel)).Info("cannot find Pod", "podName", podName, "namespace", stsNamespace)
 			return err
 		} else if statusError, isStatus := err.(*k8sErrors.StatusError); isStatus { // this is an error
 			l.Error(statusError, fmt.Sprintf("status error getting pod %v", statusError.ErrStatus.Message))
@@ -95,7 +96,7 @@ func makeIsCRBPodIsRunningNewVersionFunction(
 
 				// TODO this is not an error but should return a wait status
 				if container.Image != cockroachImage {
-					l.Info("Pod is not updated to current image.")
+					l.V(int(zapcore.DebugLevel)).Info("Pod is not updated to current image.")
 					return fmt.Errorf("%s pod is on image %s, expected %s", podName, container.Image, cockroachImage)
 				}
 
@@ -103,11 +104,11 @@ func makeIsCRBPodIsRunningNewVersionFunction(
 				// CRDB pod is updated to new Cockroach image. Now check
 				// that the pod is in a ready state before proceeding.
 				if !IsPodReady(crdbPod) {
-					l.Info("Pod is not ready yet.", "pod name", crdbPod)
+					l.V(int(zapcore.DebugLevel)).Info("Pod is not ready yet.", "pod name", crdbPod)
 					return fmt.Errorf("%s pod not ready yet", crdbPod)
 				}
 
-				l.Info("is running new version on", "podName", podName, "stsName", stsNamespace)
+				l.V(int(zapcore.DebugLevel)).Info("is running new version on", "podName", podName, "stsName", stsNamespace)
 				return nil
 			}
 		}

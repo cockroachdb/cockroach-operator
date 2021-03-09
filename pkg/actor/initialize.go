@@ -28,6 +28,7 @@ import (
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
 	"github.com/pkg/errors"
+	"go.uber.org/zap/zapcore"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	kubetypes "k8s.io/apimachinery/pkg/types"
@@ -62,7 +63,7 @@ func (init initialize) Handles(conds []api.ClusterCondition) bool {
 
 func (init initialize) Act(ctx context.Context, cluster *resource.Cluster) error {
 	log := init.log.WithValues("CrdbCluster", cluster.ObjectKey())
-	log.Info("initializing CockroachDB")
+	log.V(int(zapcore.InfoLevel)).Info("initializing CockroachDB")
 
 	stsName := cluster.StatefulSetName()
 
@@ -72,14 +73,14 @@ func (init initialize) Act(ctx context.Context, cluster *resource.Cluster) error
 	}
 	ss := &appsv1.StatefulSet{}
 	if err := init.client.Get(ctx, key, ss); err != nil {
-		log.Info("failed to fetch statefulset")
+		log.Error(err, "failed to fetch statefulset")
 		return kube.IgnoreNotFound(err)
 	}
 
 	status := &ss.Status
 
 	if status.CurrentReplicas == 0 || status.CurrentReplicas < status.Replicas {
-		log.Info("statefulset does not have all replicas up")
+		log.V(int(zapcore.WarnLevel)).Info("statefulset does not have all replicas up")
 		return NotReadyErr{Err: errors.New("statefulset does not have all replicas up")}
 	}
 
@@ -104,7 +105,7 @@ func (init initialize) Act(ctx context.Context, cluster *resource.Cluster) error
 
 	cluster.SetFalse(api.NotInitializedCondition)
 
-	log.Info("completed")
+	log.V(int(zapcore.InfoLevel)).Info("completed intializing database")
 	return nil
 }
 

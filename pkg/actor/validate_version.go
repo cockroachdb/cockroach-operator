@@ -32,6 +32,7 @@ import (
 	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
+	"go.uber.org/zap/zapcore"
 	kbatch "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -68,7 +69,7 @@ func (v *versionChecker) Handles(conds []api.ClusterCondition) bool {
 
 func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) error {
 	log := v.log.WithValues("CrdbCluster", cluster.ObjectKey())
-	log.Info("version checker")
+	log.V(int(zapcore.DebugLevel)).Info("starting to check the crdb version of the container provided")
 
 	r := resource.NewManagedKubeResource(ctx, v.client, cluster, kube.AnnotatingPersister)
 	owner := cluster.Unwrap()
@@ -97,12 +98,12 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 	}
 
 	if changed {
-		log.Info("created/updated job, stopping request processing")
+		log.V(int(zapcore.DebugLevel)).Info("created/updated job, stopping request processing")
 		CancelLoop(ctx)
 		return nil
 	}
 	jobName := cluster.JobName()
-	log.Info("version checker", "job", jobName)
+	log.V(int(zapcore.DebugLevel)).Info("version checker", "job", jobName)
 	key := kubetypes.NamespacedName{
 		Namespace: cluster.Namespace(),
 		Name:      jobName,
@@ -129,11 +130,11 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 			return errors.Wrapf(err, "failed to list running pod for job")
 		}
 		if len(pods.Items) == 0 {
-			log.Info("No running pods yet for version checker... we will retry later")
+			log.V(int(zapcore.DebugLevel)).Info("No running pods yet for version checker... we will retry later")
 			return nil
 		}
 		podName := pods.Items[0].Name
-		log.Info("versionchecker", "jobPodName", podName)
+		log.V(int(zapcore.DebugLevel)).Info("versionchecker", "jobPodName", podName)
 		cmd := []string{
 			"/bin/bash",
 			"-c",
@@ -142,7 +143,7 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 		// exec on the pod of the job to obtain the version of the cockroach DB
 		output, stderr, err := kube.ExecInPod(v.scheme, v.config, cluster.Namespace(),
 			podName, resource.JobContainerName, cmd)
-		log.Info("version checker result after exec in pod: ", "output", output)
+		log.V(int(zapcore.DebugLevel)).Info("version checker result after exec in pod: ", "output", output)
 		// if the container is running but the exec retrieved a stderr on our cmd
 		if stderr != "" {
 			// PermanentErr will requeue after 5 min
@@ -175,11 +176,11 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 		}
 		containerImage = dbContainer.Image
 		if strings.EqualFold(cluster.GetVersionAnnotation(), calVersion) {
-			log.Info("No update on version annotation -> nothing changed")
+			log.V(int(zapcore.DebugLevel)).Info("No update on version annotation -> nothing changed")
 			return nil
 		}
 		if strings.EqualFold(cluster.GetAnnotationContainerImage(), containerImage) {
-			log.Info("No update on container image annotation -> nothing changed")
+			log.V(int(zapcore.DebugLevel)).Info("No update on container image annotation -> nothing changed")
 			return nil
 		}
 		cluster.SetClusterVersion(calVersion)
@@ -224,7 +225,7 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 		log.Error(err, "failed saving cluster status on version checker")
 		return err
 	}
-	log.Info("completed version checker")
+	log.V(int(zapcore.DebugLevel)).Info("completed version checker")
 	CancelLoop(ctx)
 	return nil
 }
@@ -253,10 +254,10 @@ func IsJobPodRunning(
 		return err
 	}
 	if len(pods.Items) == 0 {
-		l.Info("No running pods yet for version checker... we will retry later")
+		l.V(int(zapcore.DebugLevel)).Info("No running pods yet for version checker... we will retry later")
 		return nil
 	}
-	l.Info("job pod is ready")
+	l.V(int(zapcore.DebugLevel)).Info("job pod is ready")
 	return nil
 }
 
