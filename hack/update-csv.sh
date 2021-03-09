@@ -54,33 +54,52 @@ echo "RH_BUNDLE_METADATA_OPTS=$RH_BUNDLE_METADATA_OPTS"
 [[ -z "$9" ]] && { echo "Error: RH_COCKROACH_DATABASE_IMAGE not set"; exit 1; }
 RH_COCKROACH_DATABASE_IMAGE="$9"
 echo "RH_COCKROACH_DATABASE_IMAGE=$RH_COCKROACH_DATABASE_IMAGE"
+SUPPORTED_VERSIONS=(v20.2.5 v20.1.12 v19.2.12)
 "$opsdk" generate kustomize manifests -q 
 "$kstomize" build config/manifests | "$opsdk" generate bundle -q --overwrite --version ${RH_BUNDLE_VERSION} ${RH_BUNDLE_METADATA_OPTS}
 "$opsdk" bundle validate ./bundle
-cat bundle/manifests/cockroach-operator.clusterserviceversion.yaml | sed -e "s+RH_COCKROACH_OP_IMAGE_PLACEHOLDER+${RH_COCKROACH_OP_IMG}+g" -e "s+RH_COCKROACH_DB_IMAGE_PLACEHOLDER+${RH_COCKROACH_DATABASE_IMAGE}+g" -e "s+CREATED_AT_PLACEHOLDER+"$(date +"%FT%H:%M:%SZ")"+g"> bundle/manifests/cockroach-operator.clusterserviceversion.yaml 
-cd  bundle/manifests && "$faq" -f yaml -o yaml --slurp '.[0].spec.install.spec.clusterPermissions+= [{serviceAccountName: .[2].metadata.name, rules: .[1].rules }] | .[0]' cockroach-operator.clusterserviceversion.yaml cockroach-database-role_rbac.authorization.k8s.io_v1_clusterrole.yaml cockroach-database-sa_v1_serviceaccount.yaml > csv.yaml
-mv csv.yaml cockroach-operator.clusterserviceversion.yaml 
-shopt -s extglob
-rm -v !("cockroach-operator.clusterserviceversion.yaml"|"crdb.cockroachlabs.com_crdbclusters.yaml") 
-shopt -u extglob
-cd ${REPO_ROOT}
-FILE_NAMES=(bundle/tests/scorecard/config.yaml \
-bundle/manifests/cockroach-operator.clusterserviceversion.yaml \
-bundle/manifests/crdb.cockroachlabs.com_crdbclusters.yaml \
-bundle/metadata/annotations.yaml \
-config/manifests/bases/cockroach-operator.clusterserviceversion.yaml \
-)
-for YAML in "${FILE_NAMES[@]}"
+# cat bundle/manifests/cockroach-operator.clusterserviceversion.yaml | sed -e "s+RH_COCKROACH_OP_IMAGE_PLACEHOLDER+${RH_COCKROACH_OP_IMG}+g"  -e "s+CREATED_AT_PLACEHOLDER+"$(date +"%FT%H:%M:%SZ")"+g"> bundle/manifests/cockroach-operator.clusterserviceversion.yaml 
+
+VAR_VERSIONS=""
+for v in "${SUPPORTED_VERSIONS[@]}"
 do
-   :
-   cat "${REPO_ROOT}/hack/boilerplate/boilerplate.yaml.txt" "${REPO_ROOT}/${YAML}" > "${REPO_ROOT}/${YAML}.mod"
-   mv "${REPO_ROOT}/${YAML}.mod" "${REPO_ROOT}/${YAML}"
+  ENV_VAR_PLACEHOLDER="RH_COCKROACH_DB_IMAGE_PLACEHOLDER_${v}"
+  RH_COCKROACH_DATABASE_IMAGE_VERSION="registry.connect.redhat.com/cockroachdb/cockroach:${v}"
+
+  echo "ENV_VAR_PLACEHOLDER=${ENV_VAR_PLACEHOLDER}"
+  echo "RH_COCKROACH_DATABASE_IMAGE_VERSION=${RH_COCKROACH_DATABASE_IMAGE_VERSION}"
+  # VAR_VERSIONS+=' -e "'"s+${ENV_VAR_PLACEHOLDER}+${RH_COCKROACH_DATABASE_IMAGE_VERSION}+g"'"'
+  VAR_VERSIONS+="s+${ENV_VAR_PLACEHOLDER}+${RH_COCKROACH_DATABASE_IMAGE_VERSION}+g; "
+
+  # cat bundle/manifests/cockroach-operator.clusterserviceversion.yaml | sed -e "s+${ENV_VAR_PLACEHOLDER}+${RH_COCKROACH_DATABASE_IMAGE_VERSION}+g"> bundle/manifests/cockroach-operator.clusterserviceversion.yaml 
 done 
+echo "VAR_VERSIONS=${VAR_VERSIONS}"
+cat bundle/manifests/cockroach-operator.clusterserviceversion.yaml | sed -e "s+RH_COCKROACH_OP_IMAGE_PLACEHOLDER+${RH_COCKROACH_OP_IMG}+g" -e "s+CREATED_AT_PLACEHOLDER+"$(date +"%FT%H:%M:%SZ")"+g" ${VAR_VERSIONS}> bundle/manifests/cockroach-operator.clusterserviceversion.yaml 
 
-DOCKER_FILE_NAME="bundle.Dockerfile"
 
-cat "${REPO_ROOT}/hack/boilerplate/boilerplate.Dockerfile.txt" "${REPO_ROOT}/${DOCKER_FILE_NAME}" > "${REPO_ROOT}/${DOCKER_FILE_NAME}.mod"
-mv "${REPO_ROOT}/${DOCKER_FILE_NAME}.mod" "${REPO_ROOT}/${DOCKER_FILE_NAME}"
+# cd  bundle/manifests && "$faq" -f yaml -o yaml --slurp '.[0].spec.install.spec.clusterPermissions+= [{serviceAccountName: .[2].metadata.name, rules: .[1].rules }] | .[0]' cockroach-operator.clusterserviceversion.yaml cockroach-database-role_rbac.authorization.k8s.io_v1_clusterrole.yaml cockroach-database-sa_v1_serviceaccount.yaml > csv.yaml
+# mv csv.yaml cockroach-operator.clusterserviceversion.yaml 
+# shopt -s extglob
+# rm -v !("cockroach-operator.clusterserviceversion.yaml"|"crdb.cockroachlabs.com_crdbclusters.yaml") 
+# shopt -u extglob
+# cd ${REPO_ROOT}
+# FILE_NAMES=(bundle/tests/scorecard/config.yaml \
+# bundle/manifests/cockroach-operator.clusterserviceversion.yaml \
+# bundle/manifests/crdb.cockroachlabs.com_crdbclusters.yaml \
+# bundle/metadata/annotations.yaml \
+# config/manifests/bases/cockroach-operator.clusterserviceversion.yaml \
+# )
+# for YAML in "${FILE_NAMES[@]}"
+# do
+#    :
+#    cat "${REPO_ROOT}/hack/boilerplate/boilerplate.yaml.txt" "${REPO_ROOT}/${YAML}" > "${REPO_ROOT}/${YAML}.mod"
+#    mv "${REPO_ROOT}/${YAML}.mod" "${REPO_ROOT}/${YAML}"
+# done 
+
+# DOCKER_FILE_NAME="bundle.Dockerfile"
+
+# cat "${REPO_ROOT}/hack/boilerplate/boilerplate.Dockerfile.txt" "${REPO_ROOT}/${DOCKER_FILE_NAME}" > "${REPO_ROOT}/${DOCKER_FILE_NAME}.mod"
+# mv "${REPO_ROOT}/${DOCKER_FILE_NAME}.mod" "${REPO_ROOT}/${DOCKER_FILE_NAME}"
  
 
 
