@@ -68,6 +68,9 @@ func init() {
 var defaultOperatorFeatureGates = map[featuregate.Feature]featuregate.FeatureSpec{
 	PartitionedUpdate:    {Default: true, PreRelease: featuregate.Alpha},
 	Decommission:         {Default: true, PreRelease: featuregate.Alpha},
-	Upgrade:              {Default: false, PreRelease: featuregate.Alpha},
+	ResizePVC:            {Default: true, PreRelease: featuregate.Alpha},
 	CrdbVersionValidator: {Default: true, PreRelease: featuregate.Alpha},
+
+	// Deprecated
+	Upgrade: {Default: false, PreRelease: featuregate.Alpha},
 }
