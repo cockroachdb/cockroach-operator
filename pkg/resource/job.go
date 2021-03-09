@@ -32,7 +32,7 @@ import (
 const (
 	// JobContainerName used on spec for teh container
 	JobContainerName     = "crdb"
-	GetTagVersionCommand = "/cockroach/cockroach version | grep 'Build Tag:'| awk '{print $3}'"
+	GetTagVersionCommand = "/cockroach/cockroach.sh version | grep 'Build Tag:'| awk '{print $3}'"
 )
 
 type JobBuilder struct {
