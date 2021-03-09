@@ -20,6 +20,7 @@ import (
 	"context"
 	"testing"
 
+	api "github.com/cockroachdb/cockroach-operator/api/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/actor"
 	"github.com/cockroachdb/cockroach-operator/pkg/testutil"
 	"github.com/go-logr/zapr"
@@ -46,7 +47,7 @@ func (t callTracker) calledOnceFor(resource, name string) error {
 	return nil
 }
 
-func TestDeploysNotInitalizedCluster(t *testing.T) {
+func TestDeploysNotInitalizedClusterAfterVersionChecker(t *testing.T) {
 	actor.Log = zapr.NewLogger(zaptest.NewLogger(t)).WithName("deploy-test")
 
 	var expected, actual callTracker = make(map[key]int), make(map[key]int)
@@ -71,8 +72,10 @@ func TestDeploysNotInitalizedCluster(t *testing.T) {
 		WithUID("cockroachdb-uid").
 		WithEmptyDirDataStore().
 		WithNodeCount(1).Cluster()
+	cluster.SetFalse(api.CrdbVersionNotChecked)
 
 	deploy := actor.NewDeploy(scheme, client)
+	t.Log(cluster.Status().Conditions)
 	require.True(t, deploy.Handles(cluster.Status().Conditions))
 
 	// 3 is the number of resources we expect to be created. The action should be repeated as it is

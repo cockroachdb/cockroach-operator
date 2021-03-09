@@ -51,6 +51,11 @@ type upgrade struct {
 	config *rest.Config
 }
 
+//GetActionType returns api.UpgradeAction action used to set the cluster status errors
+func (up *upgrade) GetActionType() api.ActionType {
+	return api.UpgradeAction
+}
+
 func (up *upgrade) Handles(conds []api.ClusterCondition) bool {
 	return condition.False(api.NotInitializedCondition, conds) && utilfeature.DefaultMutableFeatureGate.Enabled(features.Upgrade)
 }
@@ -100,9 +105,9 @@ func (up *upgrade) Act(ctx context.Context, cluster *resource.Cluster) error {
 		return errors.Wrapf(err, "failed to fetch cluster version")
 	}
 
-	// Caret range comparison `^` to detect major change
+	// Tilda range comparison `~` to detect major change
 	// https://github.com/Masterminds/semver#caret-range-comparisons-major)
-	contraintStr := fmt.Sprintf("^%s", clusterStr)
+	contraintStr := fmt.Sprintf("~%s", clusterStr)
 	constraint, err := semver.NewConstraint(contraintStr)
 	if err != nil {
 		return errors.Wrapf(err, "failed to initialize version contaraint: %s", contraintStr)

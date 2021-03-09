@@ -21,8 +21,10 @@ import (
 
 	api "github.com/cockroachdb/cockroach-operator/api/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/condition"
+	"github.com/cockroachdb/cockroach-operator/pkg/features"
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
+	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -40,13 +42,21 @@ type deploy struct {
 	action
 }
 
+// GetActionType returns the  api.DeployAction value used to set the cluster status errors
+func (d deploy) GetActionType() api.ActionType {
+	return api.DeployAction
+}
+
 func (d deploy) Handles(conds []api.ClusterCondition) bool {
-	return condition.False(api.NotInitializedCondition, conds) || condition.True(api.NotInitializedCondition, conds)
+	if utilfeature.DefaultMutableFeatureGate.Enabled(features.CrdbVersionValidator) {
+		return (condition.False(api.NotInitializedCondition, conds) || condition.True(api.NotInitializedCondition, conds)) && (condition.False(api.CrdbVersionNotChecked, conds))
+	}
+	return (condition.False(api.NotInitializedCondition, conds) || condition.True(api.NotInitializedCondition, conds))
 }
 
 func (d deploy) Act(ctx context.Context, cluster *resource.Cluster) error {
 	log := d.log.WithValues("CrdbCluster", cluster.ObjectKey())
-	log.Info("reconciling resources")
+	log.Info("reconciling resources on deploy action")
 
 	r := resource.NewManagedKubeResource(ctx, d.client, cluster, kube.AnnotatingPersister)
 
@@ -89,7 +99,6 @@ func (d deploy) Act(ctx context.Context, cluster *resource.Cluster) error {
 		CancelLoop(ctx)
 		return nil
 	}
-
 	changed, err = (resource.Reconciler{
 		ManagedResource: r,
 		Builder: resource.StatefulSetBuilder{

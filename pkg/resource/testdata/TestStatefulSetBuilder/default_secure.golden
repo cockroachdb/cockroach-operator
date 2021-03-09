@@ -3,6 +3,9 @@ kind: StatefulSet
 metadata:
   creationTimestamp: null
   name: test-cluster
+  annotations:
+    crdb.io/containerimage: ""
+    crdb.io/version: ""
 spec:
   podManagementPolicy: OrderedReady
   replicas: 1

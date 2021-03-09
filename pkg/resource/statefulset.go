@@ -19,7 +19,6 @@ package resource
 import (
 	"errors"
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/cockroachdb/cockroach-operator/pkg/labels"
@@ -41,7 +40,6 @@ const (
 	certsDirName = "certs"
 
 	DbContainerName = "db"
-	RHEnvVar        = "RELATED_IMAGE_COCKROACH"
 )
 
 type StatefulSetBuilder struct {
@@ -55,11 +53,14 @@ func (b StatefulSetBuilder) Build(obj runtime.Object) error {
 	if !ok {
 		return errors.New("failed to cast to StatefulSet object")
 	}
-
 	if ss.ObjectMeta.Name == "" {
 		ss.ObjectMeta.Name = b.StatefulSetName()
 	}
-
+	if ss.Annotations == nil {
+		ss.Annotations = make(map[string]string)
+	}
+	ss.Annotations[CrdbVersionAnnotation] = b.Cluster.GetVersionAnnotation()
+	ss.Annotations[CrdbContainerImageAnnotation] = b.Cluster.GetAnnotationContainerImage()
 	ss.Spec = appsv1.StatefulSetSpec{
 		ServiceName: b.Cluster.DiscoveryServiceName(),
 		Replicas:    ptr.Int32(b.Spec().Nodes),
@@ -148,6 +149,22 @@ func (b StatefulSetBuilder) Placeholder() runtime.Object {
 	}
 }
 
+func (b StatefulSetBuilder) SetAnnotations(obj runtime.Object) error {
+	ss, ok := obj.(*appsv1.StatefulSet)
+	if !ok {
+		return errors.New("failed to cast to StatefulSet object")
+	}
+	ss.Annotations[CrdbVersionAnnotation] = b.Cluster.Status().Version
+	ss.Annotations[CrdbContainerImageAnnotation] = b.Cluster.Status().CrdbContainerImage
+	timeNow := metav1.Now()
+	if val, ok := ss.Annotations[CrdbHistoryAnnotation]; !ok {
+		ss.Annotations[CrdbHistoryAnnotation] = fmt.Sprintf("%s:%s", timeNow.String(), b.Cluster.Status().Version)
+	} else {
+		ss.Annotations[CrdbHistoryAnnotation] = fmt.Sprintf("%s %s:%s", val, timeNow.String(), b.Cluster.Status().Version)
+	}
+	return nil
+}
+
 func (b StatefulSetBuilder) makePodTemplate() corev1.PodTemplateSpec {
 	pod := corev1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
@@ -176,16 +193,7 @@ func (b StatefulSetBuilder) makePodTemplate() corev1.PodTemplateSpec {
 // MakeContainers creates a slice of corev1.Containers which includes a single
 // corev1.Container that is based on the CR.
 func (b StatefulSetBuilder) MakeContainers() []corev1.Container {
-
-	//
-	// This code block allows for RedHat to override the coachroach image name during
-	// openshift testing.  They need to set the image name dynamically using a environment
-	// variable to allow the testing of a specific image.
-	//
-	image := os.Getenv(RHEnvVar)
-	if image == "" {
-		image = b.Spec().Image.Name
-	}
+	image := b.GetCockroachDBImageName()
 
 	return []corev1.Container{
 		{

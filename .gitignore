@@ -61,3 +61,4 @@ bazel-testlogs
 .secrets
 opm
 faq
+jobs/*

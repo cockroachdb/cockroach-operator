@@ -48,10 +48,20 @@ func (e PermanentErr) Error() string {
 	return e.Err.Error()
 }
 
+//InvalidContainerVersionError error used to stop requeue the request on failure
+type InvalidContainerVersionError struct {
+	Err error
+}
+
+func (e InvalidContainerVersionError) Error() string {
+	return e.Err.Error()
+}
+
 // Actor is one action against the cluster if the cluster resource state can be handled
 type Actor interface {
 	Handles([]api.ClusterCondition) bool
 	Act(context.Context, *resource.Cluster) error
+	GetActionType() api.ActionType
 }
 
 // NewOperatorActions creates a slice of actors that control the actions or actors for the operator.
@@ -69,6 +79,8 @@ func NewOperatorActions(scheme *runtime.Scheme, cl client.Client, config *rest.C
 		update = newUpgrade(scheme, cl, config)
 	}
 
+	decommission := newDecommission(scheme, cl, config)
+	versionChecker := newVersionChecker(scheme, cl, config)
 	// The order of these actors MATTERS.
 	// We need to have update before deploy so that
 	// updates run before the deploy actor, or
@@ -78,8 +90,9 @@ func NewOperatorActions(scheme *runtime.Scheme, cl client.Client, config *rest.C
 	// have the featuregate check above or in there handles
 	// func.
 	return []Actor{
+		versionChecker,
 		newRequestCert(scheme, cl, config),
-		newDecommission(scheme, cl, config),
+		decommission,
 		update,
 		newResizePVC(scheme, cl, config),
 		newDeploy(scheme, cl),

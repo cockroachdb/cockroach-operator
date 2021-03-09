@@ -56,6 +56,9 @@ func (a *fakeActor) Act(ctx context.Context, _ *resource.Cluster) error {
 	}
 	return a.err
 }
+func (a *fakeActor) GetActionType() api.ActionType {
+	return api.UnknownAction
+}
 
 func TestReconcile(t *testing.T) {
 	scheme := testutil.InitScheme(t)
@@ -83,18 +86,24 @@ func TestReconcile(t *testing.T) {
 		want    ctrl.Result
 		wantErr string
 	}{
+		// {
+		// 	name: "reconcile action fails",
+		// 	action: fakeActor{
+		// 		err: errors.New("failed to reconcile resource"),
+		// 	},
+		// 	want:    ctrl.Result{Requeue: false},
+		// 	wantErr: "failed to reconcile resource",
+		// },
+		// {
+		// 	name:    "reconcile action updates owned resource successfully",
+		// 	action:  fakeActor{},
+		// 	want:    ctrl.Result{Requeue: false},
+		// 	wantErr: "",
+		// },
 		{
-			name: "reconcile action fails",
-			action: fakeActor{
-				err: errors.New("failed to reconcile resource"),
-			},
-			want:    ctrl.Result{Requeue: false},
-			wantErr: "failed to reconcile resource",
-		},
-		{
-			name:    "reconcile action updates owned resource successfully",
+			name:    "on first reconcile we update and requeue",
 			action:  fakeActor{},
-			want:    ctrl.Result{Requeue: false},
+			want:    ctrl.Result{Requeue: true},
 			wantErr: "",
 		},
 		{

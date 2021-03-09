@@ -114,7 +114,7 @@ copyfiles() {
 }
 
 gen-deepcopy() {
-  clean apis 'zz_generated.deepcopy.go'
+  clean api 'zz_generated.deepcopy.go'
   echo "Generating deepcopy methods..." >&2
   prefixed_inputs=( "${deepcopy_inputs[@]/#/$module_name/}" )
   joined=$( IFS=$','; echo "${prefixed_inputs[*]}" )

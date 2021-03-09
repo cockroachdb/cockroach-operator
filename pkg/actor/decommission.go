@@ -52,6 +52,11 @@ type decommission struct {
 	config *rest.Config
 }
 
+//GetActionType returns  api.DecommissionAction used to set the cluster status errors
+func (d decommission) GetActionType() api.ActionType {
+	return api.DecommissionAction
+}
+
 func (d decommission) Handles(conds []api.ClusterCondition) bool {
 	return condition.False(api.NotInitializedCondition, conds) && utilfeature.DefaultMutableFeatureGate.Enabled(features.Decommission)
 }
