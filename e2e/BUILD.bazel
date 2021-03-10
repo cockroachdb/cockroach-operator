@@ -30,6 +30,7 @@ go_test(
     srcs = ["e2e_test.go"],
     data = [
         "//config/crd/bases:crd_manifest",
+        "//hack/bin:cockroach",
         "//hack/bin:kind",
         "//hack/bin:etcd",
         "//hack/bin:kube-apiserver",

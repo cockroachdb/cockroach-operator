@@ -35,5 +35,5 @@ spec:
   #     memory: "8Gi"
   tlsEnabled: true
   image:
-    name: cockroachdb/cockroach:v20.2.0
+    name: cockroachdb/cockroach:v20.2.5
   nodes: 3
