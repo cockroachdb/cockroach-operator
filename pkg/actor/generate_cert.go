@@ -26,11 +26,10 @@ import (
 	api "github.com/cockroachdb/cockroach-operator/api/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/condition"
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
+	"github.com/cockroachdb/cockroach-operator/pkg/logging"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	"github.com/cockroachdb/cockroach-operator/pkg/security"
 	"github.com/cockroachdb/cockroach-operator/pkg/util"
-	cr_errors "github.com/cockroachdb/errors"
-	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
@@ -85,16 +84,19 @@ func (rc *generateCert) GetActionType() api.ActionType {
 
 // Handles returns if this Actor can run.
 func (rc *generateCert) Handles(conds []api.ClusterCondition) bool {
+	// TODO this is not working am I doing this correctly?
+	// condition.True(api.CertificateGenerated, conds)
 	return condition.True(api.NotInitializedCondition, conds)
 }
 
 // Act func generates the various certificates required and then stores
 // the certificates in secrets.
 func (rc *generateCert) Act(ctx context.Context, cluster *resource.Cluster) error {
-	log := rc.log.WithValues("CrdbCluster", cluster.ObjectKey())
+
+	log := logging.NewLogging(rc.log.WithValues("CrdbCluster", cluster.ObjectKey()))
 
 	if !cluster.Spec().TLSEnabled || cluster.Spec().NodeTLSSecret != "" {
-		log.Info("Skipping TLS cert generation", "enabled", cluster.Spec().TLSEnabled, "secret", cluster.Spec().NodeTLSSecret)
+		log.Debug("Skipping TLS cert generation", "enabled", cluster.Spec().TLSEnabled, "secret", cluster.Spec().NodeTLSSecret)
 		return nil
 	}
 
@@ -106,25 +108,46 @@ func (rc *generateCert) Act(ctx context.Context, cluster *resource.Cluster) erro
 
 	caDir, cleanupCADir := util.CreateTempDir("caDir")
 	defer cleanupCADir()
-	rc.CAKey = caDir + "/ca.key"
+	rc.CAKey = filepath.Join(caDir, "ca.key")
 
 	// generate the base CA cert and key
 	if err := rc.generateCA(ctx, log, cluster); err != nil {
-		return err
+		return log.LogAndWrapError(err, "error generating CA")
 	}
 
 	// generate the node certificate for the database to use
 	if err := rc.generateNodeCert(ctx, log, cluster); err != nil {
-		return err
+		return log.LogAndWrapError(err, "error generating Node Certificate")
 	}
 
+	// TODO if we save the node certificate but error on saving the client
+	// certificate should we delete the node secret?
+
 	// generate the client certificates for the database to use
-	return rc.generateClientCert(ctx, log, cluster)
+	if err := rc.generateClientCert(ctx, log, cluster); err != nil {
+		return log.LogAndWrapError(err, "error generating Client Certificate")
+	}
+
+	// we force the saving of the status on the cluster and cancel the loop
+	fetcher := resource.NewKubeFetcher(ctx, cluster.Namespace(), rc.client)
+
+	cr := resource.ClusterPlaceholder(cluster.Name())
+	if err := fetcher.Fetch(cr); err != nil {
+		return log.LogAndWrapError(err, "failed to retrieve CrdbCluster resource")
+	}
+	refreshedCluster := resource.NewCluster(cr)
+	// save the status of the cluster
+	refreshedCluster.SetTrue(api.CertificateGenerated)
+	if err := rc.client.Status().Update(ctx, refreshedCluster.Unwrap()); err != nil {
+		return log.LogAndWrapError(err, "failed saving cluster status on version checker")
+	}
+
+	return nil
 }
 
-func (rc *generateCert) generateCA(ctx context.Context, log logr.Logger, cluster *resource.Cluster) error {
-	log.Info("generating CA")
-	return cr_errors.Wrap(
+func (rc *generateCert) generateCA(ctx context.Context, log *logging.Logging, cluster *resource.Cluster) error {
+	log.Debug("generating CA")
+	return errors.Wrap(
 		security.CreateCAPair(
 			rc.CertsDir,
 			rc.CAKey,
@@ -142,8 +165,8 @@ func (rc *generateCert) generateCA(ctx context.Context, log logr.Logger, cluster
 // This time a new CA is generated, the Node secret is not updated, but the client certicate is generated
 // using a new CA.
 
-func (rc *generateCert) generateNodeCert(ctx context.Context, log logr.Logger, cluster *resource.Cluster) error {
-	log.Info("generating node certificate")
+func (rc *generateCert) generateNodeCert(ctx context.Context, log *logging.Logging, cluster *resource.Cluster) error {
+	log.Debug("generating node certificate")
 
 	// load the secret.  If it exists don't update the cert
 	secret, err := resource.LoadTLSSecret(cluster.NodeTLSSecretName(),
@@ -155,6 +178,7 @@ func (rc *generateCert) generateNodeCert(ctx context.Context, log logr.Logger, c
 	// if the secret is ready then don't update the secret
 	// the Actor should have already generated the secret
 	if secret.Ready() {
+		log.Debug("not updating node certificate as it exists")
 		return nil
 	}
 
@@ -172,7 +196,7 @@ func (rc *generateCert) generateNodeCert(ctx context.Context, log logr.Logger, c
 	}
 
 	// create the Node Pair certificates
-	err = cr_errors.Wrap(
+	err = errors.Wrap(
 		security.CreateNodePair(
 			rc.CertsDir,
 			rc.CAKey,
@@ -189,17 +213,17 @@ func (rc *generateCert) generateNodeCert(ctx context.Context, log logr.Logger, c
 	// Read the node certificates into memory
 	ca, err := ioutil.ReadFile(filepath.Join(rc.CertsDir, "ca.crt"))
 	if err != nil {
-		return err
+		return errors.Wrap(err, "unable to read ca.crt")
 	}
 
 	pemCert, err := ioutil.ReadFile(filepath.Join(rc.CertsDir, "node.crt"))
 	if err != nil {
-		return err
+		return errors.Wrap(err, "unable to read node.crt")
 	}
 
 	pemKey, err := ioutil.ReadFile(filepath.Join(rc.CertsDir, "node.key"))
 	if err != nil {
-		return err
+		return errors.Wrap(err, "unable to ready node.key")
 	}
 
 	// TODO we are not using the TLS secret type, but are using Opaque secrets.
@@ -209,16 +233,16 @@ func (rc *generateCert) generateNodeCert(ctx context.Context, log logr.Logger, c
 	secret = resource.CreateTLSSecret(cluster.NodeTLSSecretName(),
 		resource.NewKubeResource(ctx, rc.client, cluster.Namespace(), kube.DefaultPersister))
 
-	if err = secret.UpdateCertAndKeyAndCA(pemCert, pemKey, ca, log); err != nil {
+	if err = secret.UpdateCertAndKeyAndCA(pemCert, pemKey, ca, log.GetLog()); err != nil {
 		return errors.Wrap(err, "failed to update node TLS secret certs")
 	}
 
-	log.Info("generated and saved node certificate and key")
+	log.Debug("generated and saved node certificate and key")
 	return nil
 }
 
-func (rc *generateCert) generateClientCert(ctx context.Context, log logr.Logger, cluster *resource.Cluster) error {
-	log.Info("generating client certificate")
+func (rc *generateCert) generateClientCert(ctx context.Context, log *logging.Logging, cluster *resource.Cluster) error {
+	log.Debug("generating client certificate")
 
 	// load the secret.  If it exists don't update the cert
 	secret, err := resource.LoadTLSSecret(cluster.ClientTLSSecretName(),
@@ -230,6 +254,7 @@ func (rc *generateCert) generateClientCert(ctx context.Context, log logr.Logger,
 	// if the secret is ready then don't update the secret
 	// the Actor should have already generated the secret
 	if secret.Ready() {
+		log.Debug("not updating client certificate")
 		return nil
 	}
 
@@ -256,27 +281,27 @@ func (rc *generateCert) generateClientCert(ctx context.Context, log logr.Logger,
 	// Load the certificates into memory
 	ca, err := ioutil.ReadFile(filepath.Join(rc.CertsDir, "ca.crt"))
 	if err != nil {
-		return err
+		return errors.Wrap(err, "unable to read ca.crt")
 	}
 
 	pemCert, err := ioutil.ReadFile(filepath.Join(rc.CertsDir, "client.root.crt"))
 	if err != nil {
-		return err
+		return errors.Wrap(err, "unable to read client.root.crt")
 	}
 
 	pemKey, err := ioutil.ReadFile(filepath.Join(rc.CertsDir, "client.root.key"))
 	if err != nil {
-		return err
+		return errors.Wrap(err, "unable to read client.root.key")
 	}
 
 	// create and save the TLS certificates into a secret
 	secret = resource.CreateTLSSecret(cluster.ClientTLSSecretName(),
 		resource.NewKubeResource(ctx, rc.client, cluster.Namespace(), kube.DefaultPersister))
 
-	if err = secret.UpdateCertAndKeyAndCA(pemCert, pemKey, ca, log); err != nil {
+	if err = secret.UpdateCertAndKeyAndCA(pemCert, pemKey, ca, log.GetLog()); err != nil {
 		return errors.Wrap(err, "failed to update client TLS secret certs")
 	}
 
-	log.Info("generated and saved client certificate and key")
+	log.Debug("generated and saved client certificate and key")
 	return nil
 }

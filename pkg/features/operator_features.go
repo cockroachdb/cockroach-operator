@@ -76,7 +76,7 @@ var defaultOperatorFeatureGates = map[featuregate.Feature]featuregate.FeatureSpe
 	Decommission:         {Default: true, PreRelease: featuregate.Alpha},
 	ResizePVC:            {Default: true, PreRelease: featuregate.Alpha},
 	CrdbVersionValidator: {Default: true, PreRelease: featuregate.Alpha},
-	GenerateCerts:        {Default: false, PreRelease: featuregate.Alpha},
+	GenerateCerts:        {Default: true, PreRelease: featuregate.Alpha},
 
 	// Deprecated
 	Upgrade: {Default: false, PreRelease: featuregate.Alpha},

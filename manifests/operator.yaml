@@ -257,22 +257,19 @@ spec:
       serviceAccountName: cockroach-operator-sa
       containers:
         - name: cockroach-operator
-            # TODO comment out
           # uncomment this to get bazel k8s deploying working
-          image: cockroachdb:bazel
-          # image: cockroachdb/cockroach-operator:v1.6.12-rc.2
+          # image: cockroach-operator:bazel
+          image: cockroachdb/cockroach-operator:v1.6.12-rc.2
           imagePullPolicy: IfNotPresent
           # different new features are commented out below
           # uncomment them to enable the featureGate
           args: 
             - feature-gates
             - Upgrade=false
-            # TODO comment out
-            - GenerateCerts=true
             # the below log level accepts "info" "debug" "warn" or "error"
             - -zap-log-level
-            # - info
-            - debug
+            - info
+            # - debug
           env:
             - name: WATCH_NAMESPACE
               valueFrom:
@@ -284,13 +281,13 @@ spec:
                   fieldPath: metadata.name
             - name: OPERATOR_NAME
               value: cockroachdb
-            - name: RELATED_IMAGE_COCKROACH_v20.2.5
+            - name: RELATED_IMAGE_COCKROACH_v20_2_5
               value: cockroachdb/cockroach:v20.2.5
-            - name: RELATED_IMAGE_COCKROACH_v20.2.3
+            - name: RELATED_IMAGE_COCKROACH_v20_2_3
               value: cockroachdb/cockroach:v20.2.3
-            - name: RELATED_IMAGE_COCKROACH_v20.1.12
+            - name: RELATED_IMAGE_COCKROACH_v20_1_12
               value: cockroachdb/cockroach:v20.1.12
-            - name: RELATED_IMAGE_COCKROACH_v19.2.12
+            - name: RELATED_IMAGE_COCKROACH_v19_2_12
               value: cockroachdb/cockroach:v19.2.12
           resources:
             requests:
