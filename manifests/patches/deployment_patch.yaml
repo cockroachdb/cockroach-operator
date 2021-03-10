@@ -13,10 +13,10 @@ spec:
       containers:
         - name: cockroach-operator
           env:
-            - name: RELATED_IMAGE_COCKROACH_v19.2.12
-              value: RH_COCKROACH_DB_IMAGE_PLACEHOLDER_v19.2.12
-            - name: RELATED_IMAGE_COCKROACH_v20.1.12
-              value: RH_COCKROACH_DB_IMAGE_PLACEHOLDER_v20.1.12
-            - name: RELATED_IMAGE_COCKROACH_v20.2.5
-              value: RH_COCKROACH_DB_IMAGE_PLACEHOLDER_v20.2.5
+            - name: RELATED_IMAGE_COCKROACH_v19_2_12
+              value: RH_COCKROACH_DB_IMAGE_PLACEHOLDER_v19_2_12
+            - name: RELATED_IMAGE_COCKROACH_v20_1_12
+              value: RH_COCKROACH_DB_IMAGE_PLACEHOLDER_v20_1_12
+            - name: RELATED_IMAGE_COCKROACH_v20_2_5
+              value: RH_COCKROACH_DB_IMAGE_PLACEHOLDER_v20_2_5
           image: RH_COCKROACH_OP_IMAGE_PLACEHOLDER

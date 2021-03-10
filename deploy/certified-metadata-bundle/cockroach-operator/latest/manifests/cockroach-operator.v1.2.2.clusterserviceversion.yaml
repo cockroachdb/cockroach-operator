@@ -35,7 +35,7 @@ metadata:
     categories: Database
     certified: "true"
     containerImage: us.gcr.io/chris-love-operator-playground/cockroachdb-operator:v1.8.37
-    createdAt: "2021-03-10T11:25:06Z"
+    createdAt: "2021-03-10T19:58:37Z"
     description: CockroachDB Operator
     operators.operatorframework.io/builder: operator-sdk-v1.1.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
@@ -270,11 +270,11 @@ spec:
                 - -feature-gates
                 - Upgrade=false,ResizePVC=false
                 env:
-                - name: RELATED_IMAGE_COCKROACH_v19.2.12
+                - name: RELATED_IMAGE_COCKROACH_v19_2_12
                   value: registry.connect.redhat.com/cockroachdb/cockroach:v19.2.12
-                - name: RELATED_IMAGE_COCKROACH_v20.1.12
+                - name: RELATED_IMAGE_COCKROACH_v20_1_12
                   value: registry.connect.redhat.com/cockroachdb/cockroach:v20.1.12
-                - name: RELATED_IMAGE_COCKROACH_v20.2.5
+                - name: RELATED_IMAGE_COCKROACH_v20_2_5
                   value: registry.connect.redhat.com/cockroachdb/cockroach:v20.2.5
                 - name: WATCH_NAMESPACE
                   valueFrom:

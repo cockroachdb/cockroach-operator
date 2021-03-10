@@ -275,11 +275,11 @@ spec:
                   fieldPath: metadata.name
             - name: OPERATOR_NAME
               value: cockroachdb
-            - name: RELATED_IMAGE_COCKROACH_v20.2.5
+            - name: RELATED_IMAGE_COCKROACH_v20_2_5
               value: cockroachdb/cockroach:v20.2.5
-            - name: RELATED_IMAGE_COCKROACH_v20.1.12
+            - name: RELATED_IMAGE_COCKROACH_v20_1_12
               value: cockroachdb/cockroach:v20.1.12
-            - name: RELATED_IMAGE_COCKROACH_v19.2.12
+            - name: RELATED_IMAGE_COCKROACH_v19_2_12
               value: cockroachdb/cockroach:v19.2.12
           resources:
             requests:
