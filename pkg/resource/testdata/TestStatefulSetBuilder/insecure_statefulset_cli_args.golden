@@ -38,7 +38,7 @@ spec:
         - --max-sql-memory=2GB
         - --temp-dir=/tmp
         command:
-        - /cockroach/cockroach
+        - /cockroach/cockroach.sh
         env:
         - name: COCKROACH_CHANNEL
           value: kubernetes-operator
