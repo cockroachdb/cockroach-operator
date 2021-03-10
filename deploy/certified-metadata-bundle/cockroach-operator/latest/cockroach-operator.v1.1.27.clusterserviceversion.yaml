@@ -8,7 +8,7 @@ metadata:
           "apiVersion": "crdb.cockroachlabs.com/v1alpha1",
           "kind": "CrdbCluster",
           "metadata": {
-            "name": "crdb-tls-example-new"
+            "name": "crdb-tls-example"
           },
           "spec": {
             "dataStore": {
@@ -34,27 +34,33 @@ metadata:
     capabilities: Full Lifecycle
     categories: Database
     certified: "true"
-    containerImage: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v1.6.12-rc.1
-    createdAt: "2021-01-13T16:47:51Z"
+    containerImage: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v1.8.36
+    createdAt: "2021-03-10T09:13:41Z"
     description: CockroachDB Operator
     operators.operatorframework.io/builder: operator-sdk-v1.1.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
     repository: https://github.com/cockroachdb/cockroach-operator
     support: Cockroach Labs
-  name: cockroach-operator.v1.1.26
+  name: cockroach-operator.v1.1.27
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
     - description: CrdbCluster is the CRD for the cockroachDB clusters API
-      displayName: CoackroachDB Operator
+      displayName: CockroachDB Operator
       kind: CrdbCluster
       name: crdbclusters.crdb.cockroachlabs.com
       specDescriptors:
       - description: (Required) Database disk storage configuration
         displayName: Data Store
         path: dataStore
+      - description: 'SupportsAutoResize marks that a PVC will resize without restarting
+          the entire cluster Default: false'
+        displayName: PVC Supports Auto Resizing
+        path: dataStore.supportsAutoResize
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
       - description: (Required) Container image information
         displayName: Cockroach Database Image
         path: image
@@ -70,14 +76,23 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
       statusDescriptors:
+      - description: OperatorStatus represent the status of the operator(Failed, Starting,
+          Running or Other)
+        displayName: OperatorStatus
+        path: clusterStatus
       - description: List of conditions representing the current status of the cluster
           resource.
         displayName: Cluster Conditions
         path: conditions
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes.conditions
-      - displayName: Operator Conditions
-        path: operatorConditions
+      - description: CrdbContainerImage is the container that will be installed
+        displayName: CrdbContainerImage
+        path: crdbcontainerimage
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - displayName: Crdb Actions
+        path: operatorActions
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: Database service version. Not populated and is just a placeholder
@@ -255,8 +270,12 @@ spec:
                 - -feature-gates
                 - Upgrade=false
                 env:
-                - name: RELATED_IMAGE_COCKROACH
-                  value: "registry.connect.redhat.com/cockroachdb/cockroach:v20.2.3"
+                - name: RELATED_IMAGE_COCKROACH_v19.2.12
+                  value: registry.connect.redhat.com/cockroachdb/cockroach:v19.2.12
+                - name: RELATED_IMAGE_COCKROACH_v20.1.12
+                  value: registry.connect.redhat.com/cockroachdb/cockroach:v20.1.12
+                - name: RELATED_IMAGE_COCKROACH_v20.2.5
+                  value: registry.connect.redhat.com/cockroachdb/cockroach:v20.2.5
                 - name: WATCH_NAMESPACE
                   valueFrom:
                     fieldRef:
@@ -267,7 +286,7 @@ spec:
                       fieldPath: metadata.name
                 - name: OPERATOR_NAME
                   value: cockroachdb
-                image: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v1.6.12-rc.1
+                image: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v1.8.36
                 imagePullPolicy: IfNotPresent
                 name: cockroach-operator
                 resources:
@@ -310,4 +329,4 @@ spec:
   maturity: beta
   provider:
     name: Cockroach Labs
-  version: 1.1.26
+  version: 1.1.27

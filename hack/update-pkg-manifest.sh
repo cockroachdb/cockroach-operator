@@ -57,6 +57,7 @@ echo "RH_PKG_MAN_OPTS=$RH_PKG_MAN_OPTS"
 RH_COCKROACH_DATABASE_IMAGE="$8"
 echo "RH_COCKROACH_DATABASE_IMAGE=$RH_COCKROACH_DATABASE_IMAGE"
 DEPLOY_PATH="deploy/certified-metadata-bundle/cockroach-operator"
+SUPPORTED_VERSIONS=(v20.2.5 v20.1.12 v19.2.12)
 DEPLOY_CERTIFICATION_PATH="deploy/certified-metadata-bundle"
 if [ -d "${DEPLOY_PATH}/${RH_BUNDLE_VERSION}" ] 
 then
@@ -64,9 +65,17 @@ then
     exit 1
 fi
 rm -rf ${DEPLOY_PATH}/${RH_BUNDLE_VERSION}
+VAR_VERSIONS=""
+for v in "${SUPPORTED_VERSIONS[@]}"
+do
+  ENV_VAR_PLACEHOLDER="RH_COCKROACH_DB_IMAGE_PLACEHOLDER_${v}"
+  RH_COCKROACH_DATABASE_IMAGE_VERSION="registry.connect.redhat.com/cockroachdb/cockroach:${v}"
+  VAR_VERSIONS+="s+${ENV_VAR_PLACEHOLDER}+${RH_COCKROACH_DATABASE_IMAGE_VERSION}+g; "
+done 
 "$opsdk" generate kustomize manifests -q --verbose
 "$kstomize" build config/manifests | "$opsdk" generate packagemanifests -q --version ${RH_BUNDLE_VERSION} ${RH_PKG_MAN_OPTS} --output-dir ${DEPLOY_PATH} --input-dir ${DEPLOY_PATH} --verbose
-cat ${DEPLOY_PATH}/${RH_BUNDLE_VERSION}/cockroach-operator.clusterserviceversion.yaml | sed -e "s+RH_COCKROACH_OP_IMAGE_PLACEHOLDER+${RH_COCKROACH_OP_IMG}+g" -e "s+RH_COCKROACH_DB_IMAGE_PLACEHOLDER+${RH_COCKROACH_DATABASE_IMAGE}+g" -e "s+CREATED_AT_PLACEHOLDER+"$(date +"%FT%H:%M:%SZ")"+g"> ${DEPLOY_PATH}/${RH_BUNDLE_VERSION}/csv.yaml
+# cat ${DEPLOY_PATH}/${RH_BUNDLE_VERSION}/cockroach-operator.clusterserviceversion.yaml | sed -e "s+RH_COCKROACH_OP_IMAGE_PLACEHOLDER+${RH_COCKROACH_OP_IMG}+g" -e "s+RH_COCKROACH_DB_IMAGE_PLACEHOLDER+${RH_COCKROACH_DATABASE_IMAGE}+g" -e "s+CREATED_AT_PLACEHOLDER+"$(date +"%FT%H:%M:%SZ")"+g"> ${DEPLOY_PATH}/${RH_BUNDLE_VERSION}/csv.yaml
+cat ${DEPLOY_PATH}/${RH_BUNDLE_VERSION}/cockroach-operator.clusterserviceversion.yaml | sed "${VAR_VERSIONS}s+RH_COCKROACH_OP_IMAGE_PLACEHOLDER+${RH_COCKROACH_OP_IMG}+g; s+CREATED_AT_PLACEHOLDER+"$(date +"%FT%H:%M:%SZ")"+g"> ${DEPLOY_PATH}/${RH_BUNDLE_VERSION}/csv.yaml
 cd  ${DEPLOY_PATH}/${RH_BUNDLE_VERSION} && "$faq" -f yaml -o yaml --slurp '.[0].spec.install.spec.clusterPermissions+= [{serviceAccountName: .[2].metadata.name, rules: .[1].rules }] | .[0]' csv.yaml cockroach-database-role_rbac.authorization.k8s.io_v1_clusterrole.yaml cockroach-database-sa_v1_serviceaccount.yaml > cockroach-operator.v${RH_BUNDLE_VERSION}.clusterserviceversion.yaml
 shopt -s extglob
 rm -v !("cockroach-operator.v${RH_BUNDLE_VERSION}.clusterserviceversion.yaml"|"crdb.cockroachlabs.com_crdbclusters.yaml") 
