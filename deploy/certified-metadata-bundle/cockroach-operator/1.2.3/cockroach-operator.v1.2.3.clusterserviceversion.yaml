@@ -35,13 +35,13 @@ metadata:
     categories: Database
     certified: "true"
     containerImage: us.gcr.io/chris-love-operator-playground/cockroachdb-operator:v1.8.37
-    createdAt: "2021-03-10T19:58:37Z"
+    createdAt: "2021-03-10T20:10:12Z"
     description: CockroachDB Operator
     operators.operatorframework.io/builder: operator-sdk-v1.1.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
     repository: https://github.com/cockroachdb/cockroach-operator
     support: Cockroach Labs
-  name: cockroach-operator.v1.2.2
+  name: cockroach-operator.v1.2.3
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -329,4 +329,4 @@ spec:
   maturity: beta
   provider:
     name: Cockroach Labs
-  version: 1.2.2
+  version: 1.2.3
