@@ -37,20 +37,19 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	apiresource "k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
-func requireClusterToBeReadyEventually(t *testing.T, sb testenv.DiffingSandbox, b testutil.ClusterBuilder) {
+func RequireClusterToBeReadyEventuallyTimeout(t *testing.T, sb testenv.DiffingSandbox, b testutil.ClusterBuilder, timeout time.Duration) {
 	cluster := b.Cluster()
 
-	err := wait.Poll(10*time.Second, 600*time.Second, func() (bool, error) {
-		if initialized, err := clusterIsInitialized(t, sb, cluster.Name()); err != nil || !initialized {
-			return false, err
-		}
+	err := wait.Poll(10*time.Second, timeout, func() (bool, error) {
 
 		ss, err := fetchStatefulSet(sb, cluster.StatefulSetName())
 		if err != nil {
+			t.Logf("error fetching stateful set")
 			return false, err
 		}
 
@@ -59,13 +58,41 @@ func requireClusterToBeReadyEventually(t *testing.T, sb testenv.DiffingSandbox, 
 			return false, nil
 		}
 
-		return statefulSetIsReady(ss), nil
+		if !statefulSetIsReady(ss) {
+			t.Logf("stateful set is not ready")
+			return false, nil
+		}
+		return true, nil
+	})
+	require.NoError(t, err)
+}
+
+func requireClusterToBeReadyEventually(t *testing.T, sb testenv.DiffingSandbox, b testutil.ClusterBuilder) {
+	cluster := b.Cluster()
+
+	err := wait.Poll(10*time.Second, 60*time.Second, func() (bool, error) {
+
+		ss, err := fetchStatefulSet(sb, cluster.StatefulSetName())
+		if err != nil {
+			t.Logf("error fetching stateful set")
+			return false, err
+		}
+
+		if ss == nil {
+			t.Logf("stateful set is not found")
+			return false, nil
+		}
+		if !statefulSetIsReady(ss) {
+			t.Logf("stateful set is not ready")
+			return false, nil
+		}
+		return true, nil
 	})
 	require.NoError(t, err)
 }
 
 func requireDbContainersToUseImage(t *testing.T, sb testenv.DiffingSandbox, cr *api.CrdbCluster) {
-	err := wait.Poll(10*time.Second, 180*time.Second, func() (bool, error) {
+	err := wait.Poll(10*time.Second, 400*time.Second, func() (bool, error) {
 		pods, err := fetchPodsInStatefulSet(sb, labels.Common(cr).Selector())
 		if err != nil {
 			return false, err
@@ -228,24 +255,31 @@ func requireDownGradeOptionSet(t *testing.T, sb testenv.DiffingSandbox, b testut
 	}
 
 }
-func requireDecommissionNode(t *testing.T, sb testenv.DiffingSandbox, b testutil.ClusterBuilder) {
+func requireDecommissionNode(t *testing.T, sb testenv.DiffingSandbox, b testutil.ClusterBuilder, numNodes int32) {
 	cluster := b.Cluster()
 
-	err := wait.Poll(10*time.Second, 600*time.Second, func() (bool, error) {
-		if initialized, err := clusterIsInitialized(t, sb, cluster.Name()); err != nil || !initialized {
-			return false, err
-		}
-
-		ss, err := fetchStatefulSet(sb, cluster.StatefulSetName())
+	err := wait.Poll(10*time.Second, 400*time.Second, func() (bool, error) {
+		sts, err := fetchStatefulSet(sb, cluster.StatefulSetName())
 		if err != nil {
+			t.Logf("statefulset is not found %v", err)
 			return false, err
 		}
 
-		if ss == nil {
-			t.Logf("stateful set is not found")
+		if sts == nil {
+			t.Log("statefulset is not found")
 			return false, nil
 		}
-		return statefulSetIsReady(ss) && b.Cr().Spec.Nodes == ss.Status.Replicas, nil
+
+		if !statefulSetIsReady(sts) {
+			t.Log("statefulset is not ready")
+			return false, nil
+		}
+
+		if numNodes != sts.Status.Replicas {
+			t.Log("statefulset replicas do not match")
+			return false, nil
+		}
+		return true, nil
 	})
 	require.NoError(t, err)
 }
@@ -330,15 +364,11 @@ func getCount(t *testing.T, rows *sql.Rows) (count int) {
 	return count
 }
 
-func requirePVCToResize(t *testing.T, sb testenv.DiffingSandbox, b testutil.ClusterBuilder) {
+func requirePVCToResize(t *testing.T, sb testenv.DiffingSandbox, b testutil.ClusterBuilder, quantity apiresource.Quantity) {
 	cluster := b.Cluster()
 
 	// TODO rewrite this
 	err := wait.Poll(10*time.Second, 300*time.Second, func() (bool, error) {
-		if initialized, err := clusterIsInitialized(t, sb, cluster.Name()); err != nil || !initialized {
-			return false, err
-		}
-
 		ss, err := fetchStatefulSet(sb, cluster.StatefulSetName())
 		if err != nil {
 			return false, err
@@ -355,7 +385,7 @@ func requirePVCToResize(t *testing.T, sb testenv.DiffingSandbox, b testutil.Clus
 		clientset, err := kubernetes.NewForConfig(sb.Mgr.GetConfig())
 		require.NoError(t, err)
 
-		resized, err := resizedPVCs(context.TODO(), ss, b.Cluster(), clientset)
+		resized, err := resizedPVCs(context.TODO(), ss, b.Cluster(), clientset, t, quantity)
 		require.NoError(t, err)
 
 		return resized, nil
@@ -365,7 +395,7 @@ func requirePVCToResize(t *testing.T, sb testenv.DiffingSandbox, b testutil.Clus
 
 // test to see if all PVCs are resized
 func resizedPVCs(ctx context.Context, sts *appsv1.StatefulSet, cluster *resource.Cluster,
-	clientset *kubernetes.Clientset) (bool, error) {
+	clientset *kubernetes.Clientset, t *testing.T, quantity apiresource.Quantity) (bool, error) {
 
 	prefixes := make([]string, len(sts.Spec.VolumeClaimTemplates))
 	pvcsToKeep := make(map[string]bool, int(*sts.Spec.Replicas)*len(sts.Spec.VolumeClaimTemplates))
@@ -390,11 +420,12 @@ func resizedPVCs(ctx context.Context, sts *appsv1.StatefulSet, cluster *resource
 	if err != nil {
 		return false, err
 	}
-	newSize := cluster.Spec().DataStore.VolumeClaim.PersistentVolumeClaimSpec.Resources.Requests.Storage()
+
 	for _, pvc := range pvcs.Items {
+		t.Logf("checking pvc %s", pvc.Name)
 		// Resize PVCs that are still in use
 		if pvcsToKeep[pvc.Name] {
-			if !pvc.Spec.Resources.Requests.Storage().Equal(*newSize) {
+			if !pvc.Spec.Resources.Requests.Storage().Equal(quantity) {
 				return false, nil
 			}
 		}

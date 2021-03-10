@@ -242,15 +242,15 @@ def install_kind():
     http_file(
         name = "kind_darwin",
         executable = 1,
-        sha256 = "11b8a7fda7c9d6230f0f28ffe57831a7227c0655dfb8d38e838e8f03db6612de",
-        urls = ["https://github.com/kubernetes-sigs/kind/releases/download/v0.7.0/kind-darwin-amd64"],
+        sha256 = "a934e573621917a2785f3ddfa7b6187d18fa1c20c94c013919736b3256d37f57",
+        urls = ["https://github.com/kubernetes-sigs/kind/releases/download/v0.10.0/kind-darwin-amd64"],
     )
 
     http_file(
         name = "kind_linux",
         executable = 1,
-        sha256 = "0e07d5a9d5b8bf410a1ad8a7c8c9c2ea2a4b19eda50f1c629f1afadb7c80fae7",
-        urls = ["https://github.com/kubernetes-sigs/kind/releases/download/v0.7.0/kind-linux-amd64"],
+        sha256 = "74767776488508d847b0bb941212c1cb76ace90d9439f4dee256d8a04f1309c6",
+        urls = ["https://github.com/kubernetes-sigs/kind/releases/download/v0.10.0/kind-linux-amd64"],
     )
 
 ## Fetch kubetest2 binary used during e2e tests

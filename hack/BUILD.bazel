@@ -1,6 +1,6 @@
 # gazelle:exclude verify_boilerplate_test.go
 
-load("@io_bazel_rules_go//go:def.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library", "go_test")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -23,6 +23,12 @@ OPERATORSDK = "//hack/bin:operator-sdk"
 KUSTOMIZE = "//hack/bin:kustomize"
 
 OPM = "//hack/bin:opm"
+
+KIND = "//hack/bin:kind"
+
+KUBETEST2 = "//hack/bin:kubetest2"
+
+KUBETEST2KIND = "//hack/bin:kubetest2-kind"
 
 CONTROLLER_GEN = "@io_k8s_sigs_controller_tools//cmd/controller-gen"
 
@@ -268,4 +274,50 @@ go_test(
         "@//:all-srcs",
     ],
     deps = ["//pkg/testutil:go_default_library"],
+)
+
+go_library(
+    name = "go_start_kind",
+    srcs = ["start_kind.go"],
+    importpath = "github.com/cockroachdb/cockroach-operator/hack",
+    deps = ["//pkg/testutil/exec:go_default_library"],
+)
+
+go_binary(
+    name = "kind-stop",
+    args = [
+        "-action stop",
+    ],
+    data = [
+        KIND,
+        KUBETEST2,
+        KUBETEST2KIND,
+    ],
+    embed = [":go_start_kind"],
+)
+
+go_binary(
+    name = "kind-kubeconfig",
+    args = [
+        "-action kubeconfig",
+    ],
+    data = [
+        KIND,
+        KUBETEST2,
+        KUBETEST2KIND,
+    ],
+    embed = [":go_start_kind"],
+)
+
+go_binary(
+    name = "kind-start",
+    args = [
+        "-action start",
+    ],
+    data = [
+        KIND,
+        KUBETEST2,
+        KUBETEST2KIND,
+    ],
+    embed = [":go_start_kind"],
 )

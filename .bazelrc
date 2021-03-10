@@ -1,8 +1,8 @@
 build --workspace_status_command hack/build/print-workspace-status.sh
-test --test_output=errors
+#test --test_output=errors
+#test --test_arg=-test.parallel=8
 
 # helpful for dev
-#test --test_output=streamed
-#test --test_arg=-test.v
+test --test_output=streamed
+test --test_arg=-test.v
 # TODO this is not working for the e2e tests
-#test --test_arg=-test.parallel=8

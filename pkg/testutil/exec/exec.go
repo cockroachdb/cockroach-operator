@@ -35,10 +35,20 @@ func StopKubeTest2(clusterName string) error {
 // StartKubeTest2 starts a kind server.
 func StartKubeTest2(clusterName string) error {
 	args := []string{
-		"kind", "--up", "--cluster-name", clusterName, "--loglevel", "10",
+		"kind", "--up", "--cluster-name", clusterName, "--verbosity", "10",
 	}
 
 	println("Up(): startin kind cluster...\n")
 	// we want to see the output so use process.ExecJUnit
 	return process.ExecJUnit("kubetest2", args, os.Environ())
+}
+
+// GetKubeconfig gets kubeconfig from kind
+func GetKubeConfig(clusterName string) error {
+	args := []string{
+		"export", "kubeconfig", "--name", clusterName, "--verbosity", "10",
+	}
+	println("getting kubeconfig for cluster ...\n")
+	// we want to see the output so use process.ExecJUnit
+	return process.ExecJUnit("kind", args, os.Environ())
 }
