@@ -81,6 +81,15 @@ func NewOperatorActions(scheme *runtime.Scheme, cl client.Client, config *rest.C
 
 	decommission := newDecommission(scheme, cl, config)
 	versionChecker := newVersionChecker(scheme, cl, config)
+	var certs Actor
+	// entry point for new GenerateCert
+	// this feature is controlled by a featuregate
+	if utilfeature.DefaultMutableFeatureGate.Enabled(features.GenerateCerts) {
+		certs = newGenerateCert(scheme, cl, config)
+	} else {
+		certs = newRequestCert(scheme, cl, config)
+	}
+
 	// The order of these actors MATTERS.
 	// We need to have update before deploy so that
 	// updates run before the deploy actor, or
@@ -91,7 +100,7 @@ func NewOperatorActions(scheme *runtime.Scheme, cl client.Client, config *rest.C
 	// func.
 	return []Actor{
 		versionChecker,
-		newRequestCert(scheme, cl, config),
+		certs,
 		decommission,
 		update,
 		newResizePVC(scheme, cl, config),

@@ -56,6 +56,12 @@ const (
 	// beta: v1.0
 	// CrdbVersionValidator controls upgrade mechanism
 	CrdbVersionValidator featuregate.Feature = "CrdbVersionValidator"
+
+	// owner: @chrislovecnm
+	// alpha: v0.1
+	// beta: v1.0
+	// GenerateCerts uses crdb binary to generate self signed certifcates
+	GenerateCerts featuregate.Feature = "GenerateCerts"
 )
 
 func init() {
@@ -70,6 +76,7 @@ var defaultOperatorFeatureGates = map[featuregate.Feature]featuregate.FeatureSpe
 	Decommission:         {Default: true, PreRelease: featuregate.Alpha},
 	ResizePVC:            {Default: true, PreRelease: featuregate.Alpha},
 	CrdbVersionValidator: {Default: true, PreRelease: featuregate.Alpha},
+	GenerateCerts:        {Default: false, PreRelease: featuregate.Alpha},
 
 	// Deprecated
 	Upgrade: {Default: false, PreRelease: featuregate.Alpha},

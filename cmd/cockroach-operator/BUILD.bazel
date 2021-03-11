@@ -86,10 +86,25 @@ container_image(
     visibility = ["//visibility:public"],
 )
 
+pkg_tar(
+    name = "cockroach-tar",
+    srcs = ["//hack/bin:cockroach"],
+    mode = "0755",
+    package_dir = "/usr/local/bin",
+)
+
+# include cockroach in an image
+container_image(
+    name = "cockroach_image",
+    base = ":ubi_base_image",
+    tars = [
+        ":cockroach-tar",
+    ],
+)
+
 go_image(
     name = "operator_image",
-    # using the ubi image instead of the go base image
-    base = ":ubi_base_image",
+    base = ":cockroach_image",  # include the cr binary
     binary = ":cockroach-operator",
     visibility = ["//visibility:public"],
 )

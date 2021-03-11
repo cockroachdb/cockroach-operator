@@ -30,6 +30,8 @@ const (
 	InitializeAction ActionType = "Initialize"
 	//RequestCertAction string
 	RequestCertAction ActionType = "RequestCert"
+	//GenerateCert string
+	GenerateCertAction ActionType = "GenerateCert"
 	//RequestCertAction string
 	ResizePVCAction ActionType = "ResizePVC"
 	//UpgradeAction string

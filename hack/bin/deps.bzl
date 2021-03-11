@@ -30,6 +30,7 @@ def install():
     install_operator_sdk()
     install_kustomize()
     install_opm()
+    install_crdb()
 
     # Install golang.org/x/build as kubernetes/repo-infra requires it for the
     # build-tar bazel target.
@@ -322,7 +323,8 @@ def install_kustomize():
         sha256 = "e52e8c194b5084301338d8762bf36b81b5254f525b164ba8b010de123110247f",
         urls = ["https://storage.googleapis.com/crdb-bazel-artifacts/linux/kustomize"],
     )
-    ## Fetch opm used on generating csv
+
+## Fetch opm used on generating csv
 def install_opm():
     http_file(
        name = "opm_darwin",
@@ -338,6 +340,36 @@ def install_opm():
         urls = ["https://storage.googleapis.com/crdb-bazel-artifacts/linux/opm"],
     )
 
+## Fetch crdb used in our container
+def install_crdb():
+    http_archive(
+       name = "crdb_darwin", # todo fix or remove
+       sha256 = "bbe3a03c661555e8b083856c56c8a3b459f83064d1d552ed3467cbfb66e76db7",
+       urls = ["https://binaries.cockroachdb.com/cockroach-v20.2.5.darwin-10.9-amd64.tgz"],
+       build_file_content = """
+filegroup(
+    name = "file",
+    srcs = [
+        "cockroach-v20.2.5.darwin-amd64/cockroach",
+    ],
+    visibility = ["//visibility:public"],
+)
+""",
+    )
 
+    http_archive(
+        name = "crdb_linux",
+        sha256 = "57f4b00c736d8511328d6f33997a3a66cb4ec7142cb126d872dade399a0922e6",
+        urls = ["https://binaries.cockroachdb.com/cockroach-v20.2.5.linux-amd64.tgz"],
+        build_file_content = """
+filegroup(
+    name = "file",
+    srcs = [
+        "cockroach-v20.2.5.linux-amd64/cockroach",
+    ],
+    visibility = ["//visibility:public"],
+)
+""",
+   )
 
 

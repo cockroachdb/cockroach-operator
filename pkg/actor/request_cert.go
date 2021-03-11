@@ -53,6 +53,7 @@ type requestCert struct {
 func (rc *requestCert) GetActionType() api.ActionType {
 	return api.RequestCertAction
 }
+
 func (rc *requestCert) Handles(conds []api.ClusterCondition) bool {
 	return condition.True(api.NotInitializedCondition, conds)
 }
