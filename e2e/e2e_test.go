@@ -152,6 +152,7 @@ func TestCreatesSecureClusterWithGeneratedCertCRv20(t *testing.T) {
 	}
 
 	testLog := zapr.NewLogger(zaptest.NewLogger(t))
+	require.NoError(t, utilfeature.DefaultMutableFeatureGate.Set("GenerateCerts=true"))
 
 	actor.Log = testLog
 
@@ -166,7 +167,7 @@ func TestCreatesSecureClusterWithGeneratedCertCRv20(t *testing.T) {
 		name: "creates 3-node secure cluster with v20.1.6",
 		test: func(t *testing.T) {
 			require.NoError(t, sb.Create(builder.Cr()))
-			RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
+			RequireuClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
 			requireDatabaseToFunction(t, sb, builder)
 		},
 	}
@@ -174,6 +175,7 @@ func TestCreatesSecureClusterWithGeneratedCertCRv20(t *testing.T) {
 	steps := Steps{create}
 
 	steps.Run(t)
+	require.NoError(t, utilfeature.DefaultMutableFeatureGate.Set("GenerateCerts=false"))
 }
 
 func TestUpgradesMinorVersion(t *testing.T) {

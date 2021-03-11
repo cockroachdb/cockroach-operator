@@ -166,6 +166,18 @@ genrule(
     visibility = ["//visibility:public"],
 )
 
+#  fetch_crdb downloads the cockroach binary
+genrule(
+    name = "fetch_crdb",
+    srcs = select({
+        ":darwin": ["@crdb_darwin//:file"],
+        ":k8": ["@crdb_linux//:file"],
+    }),
+    outs = ["cockroach"],
+    cmd = "cp $(SRCS) $@",
+    visibility = ["//visibility:public"],
+)
+
 #  fetch_kustomize rules to fetch the kind binary from github
 genrule(
     name = "fetch_kustomize",
