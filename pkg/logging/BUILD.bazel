@@ -1,0 +1,37 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["log_with_level.go"],
+    importpath = "github.com/cockroachdb/cockroach-operator/pkg/logging",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@com_github_go_logr_logr//:go_default_library",
+        "@com_github_pkg_errors//:go_default_library",
+        "@org_uber_go_zap//zapcore:go_default_library",
+    ],
+)
+
+filegroup(
+    name = "package-srcs",
+    srcs = glob(["**"]),
+    tags = ["automanaged"],
+    visibility = ["//visibility:private"],
+)
+
+filegroup(
+    name = "all-srcs",
+    srcs = [":package-srcs"],
+    tags = ["automanaged"],
+    visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "go_default_test",
+    srcs = ["log_with_level_test.go"],
+    embed = [":go_default_library"],
+    deps = [
+        "@com_github_go_logr_zapr//:go_default_library",
+        "@org_uber_go_zap//zaptest:go_default_library",
+    ],
+)

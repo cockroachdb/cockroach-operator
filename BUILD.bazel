@@ -77,6 +77,7 @@ filegroup(
         "//pkg/features:all-srcs",
         "//pkg/kube:all-srcs",
         "//pkg/labels:all-srcs",
+        "//pkg/logging:all-srcs",
         "//pkg/ptr:all-srcs",
         "//pkg/resource:all-srcs",
         "//pkg/scale:all-srcs",

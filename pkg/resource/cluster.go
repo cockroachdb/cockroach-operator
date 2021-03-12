@@ -203,13 +203,18 @@ func (cluster Cluster) GetCockroachDBImageName() string {
 	supportedImages := getSupportedCrdbImages()
 	if cluster.Spec().CockroachDBVersion != "" {
 		if version, ok := cluster.LookupSupportedVersion(cluster.Spec().CockroachDBVersion); ok {
+			if version == "" {
+				return NotSupportedVersion
+			}
 			if image, ok := supportedImages[version]; ok {
+				if image == "" {
+					return NotSupportedVersion
+				}
 				return image
 			}
 		}
 		return NotSupportedVersion
 	}
-
 	//we validate the version after the job runs with exec
 	return cluster.Spec().Image.Name
 }
@@ -242,6 +247,9 @@ func (cluster Cluster) IsFresh(fetcher Fetcher) (bool, error) {
 
 	return cluster.cr.ResourceVersion == actual.ResourceVersion, nil
 }
+
+// TODO add error handling to ensure that env variables are set correctly and
+// that we have a min number of them
 
 // getSupportedCrdbImages will dynamic build an slice using the env var added in the operator.yaml
 // We will add all the env var that start with RELATED_IMAGE

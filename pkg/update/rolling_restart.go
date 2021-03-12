@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/cockroachdb/cockroach-operator/pkg/kube"
 	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
 	v1 "k8s.io/api/apps/v1"
@@ -90,7 +91,7 @@ func makeRollingUpdateVerificationFunc() func(update *UpdateSts, podNumber int, 
 			return errors.Wrap(err, "got error getting pod from k8s api")
 		}
 
-		if !IsPodReady(crdbPod) {
+		if !kube.IsPodReady(crdbPod) {
 			l.Info("Pod is not ready yet.", "pod name", crdbPod)
 			return fmt.Errorf("%s pod not ready yet", crdbPod)
 		}
