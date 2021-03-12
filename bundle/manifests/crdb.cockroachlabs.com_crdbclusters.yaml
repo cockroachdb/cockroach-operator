@@ -59,6 +59,9 @@ spec:
             clientTLSSecret:
               description: '(Optional) The secret with a certificate and a private key for root database user Default: ""'
               type: string
+            cockroachDBVersion:
+              description: '(Optional) CockroachDBVersion sets the explicit version of the cockroachDB image Default: ""'
+              type: string
             dataStore:
               description: (Required) Database disk storage configuration
               properties:
@@ -190,6 +193,9 @@ spec:
                           type: string
                       type: object
                   type: object
+                supportsAutoResize:
+                  description: 'SupportsAutoResize marks that a PVC will resize without restarting the entire cluster Default: false'
+                  type: boolean
               type: object
             grpcPort:
               description: '(Optional) The database port (`--port` CLI parameter when starting the service) Default: 26257'
@@ -261,6 +267,9 @@ spec:
         status:
           description: CrdbClusterStatus defines the observed state of Cluster
           properties:
+            clusterStatus:
+              description: OperatorStatus represent the status of the operator(Failed, Starting, Running or Other)
+              type: string
             conditions:
               description: List of conditions representing the current status of the cluster resource.
               items:
@@ -282,19 +291,25 @@ spec:
                 - type
                 type: object
               type: array
-            operatorConditions:
+            crdbcontainerimage:
+              description: CrdbContainerImage is the container that will be installed
+              type: string
+            operatorActions:
               items:
-                description: ClusterCondition represents cluster status as it is perceived by the operator
+                description: ClusterAction represents cluster status as it is perceived by the operator
                 properties:
                   lastTransitionTime:
                     description: The time when the condition was updated
                     format: date-time
                     type: string
+                  message:
+                    description: Message related to the status of the action
+                    type: string
                   status:
-                    description: 'Condition status: True, False or Unknown'
+                    description: 'Action status: Failed, Finished or Unknown'
                     type: string
                   type:
-                    description: Type/Name of the condition
+                    description: Type/Name of the action
                     type: string
                 required:
                 - lastTransitionTime

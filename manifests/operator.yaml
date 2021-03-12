@@ -261,6 +261,11 @@ spec:
           # image: cockroach-operator:bazel
           image: cockroachdb/cockroach-operator:v1.6.12-rc.2
           imagePullPolicy: IfNotPresent
+          # uncomment this to enable different new features
+          # args: ["-feature-gates","PartitionedUpdate=true,UseDecommission=true,Upgrade=false, CrdbVersionValidator=false"]
+          # this is for openshift only
+          # args: ["-feature-gates", "Upgrade=false,ResizePVC=false"]
+          
           # different new features are commented out below
           # uncomment them to enable the featureGate
           args: 
@@ -283,8 +288,6 @@ spec:
               value: cockroachdb
             - name: RELATED_IMAGE_COCKROACH_v20_2_5
               value: cockroachdb/cockroach:v20.2.5
-            - name: RELATED_IMAGE_COCKROACH_v20_2_3
-              value: cockroachdb/cockroach:v20.2.3
             - name: RELATED_IMAGE_COCKROACH_v20_1_12
               value: cockroachdb/cockroach:v20.1.12
             - name: RELATED_IMAGE_COCKROACH_v19_2_12

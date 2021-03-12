@@ -40,6 +40,11 @@ spec:
       - description: (Required) Database disk storage configuration
         displayName: Data Store
         path: dataStore
+      - description: 'SupportsAutoResize marks that a PVC will resize without restarting the entire cluster Default: false'
+        displayName: PVC Supports Auto Resizing
+        path: dataStore.supportsAutoResize
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
       - description: (Required) Container image information
         displayName: Cockroach Database Image
         path: image
@@ -54,13 +59,21 @@ spec:
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
       statusDescriptors:
+      - description: OperatorStatus represent the status of the operator(Failed, Starting, Running or Other)
+        displayName: OperatorStatus
+        path: clusterStatus
       - description: List of conditions representing the current status of the cluster resource.
         displayName: Cluster Conditions
         path: conditions
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes.conditions
-      - displayName: Operator Conditions
-        path: operatorConditions
+      - description: CrdbContainerImage is the container that will be installed
+        displayName: CrdbContainerImage
+        path: crdbcontainerimage
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - displayName: Crdb Actions
+        path: operatorActions
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: Database service version. Not populated and is just a placeholder currently.

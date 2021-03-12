@@ -37,7 +37,7 @@ spec:
         - --cache=25%
         - --max-sql-memory=25%
         command:
-        - /cockroach/cockroach
+        - /cockroach/cockroach.sh
         env:
         - name: COCKROACH_CHANNEL
           value: kubernetes-operator

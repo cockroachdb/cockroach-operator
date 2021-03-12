@@ -54,10 +54,20 @@ echo "RH_BUNDLE_METADATA_OPTS=$RH_BUNDLE_METADATA_OPTS"
 [[ -z "$9" ]] && { echo "Error: RH_COCKROACH_DATABASE_IMAGE not set"; exit 1; }
 RH_COCKROACH_DATABASE_IMAGE="$9"
 echo "RH_COCKROACH_DATABASE_IMAGE=$RH_COCKROACH_DATABASE_IMAGE"
+SUPPORTED_VERSIONS=(v20.2.5 v20.1.12 v19.2.12)
 "$opsdk" generate kustomize manifests -q 
 "$kstomize" build config/manifests | "$opsdk" generate bundle -q --overwrite --version ${RH_BUNDLE_VERSION} ${RH_BUNDLE_METADATA_OPTS}
 "$opsdk" bundle validate ./bundle
-cat bundle/manifests/cockroach-operator.clusterserviceversion.yaml | sed -e "s+RH_COCKROACH_OP_IMAGE_PLACEHOLDER+${RH_COCKROACH_OP_IMG}+g" -e "s+RH_COCKROACH_DB_IMAGE_PLACEHOLDER+${RH_COCKROACH_DATABASE_IMAGE}+g" -e "s+CREATED_AT_PLACEHOLDER+"$(date +"%FT%H:%M:%SZ")"+g"> bundle/manifests/cockroach-operator.clusterserviceversion.yaml 
+
+VAR_VERSIONS=""
+for v in "${SUPPORTED_VERSIONS[@]}"
+do
+  vrs=${v//./_}
+  ENV_VAR_PLACEHOLDER="RH_COCKROACH_DB_IMAGE_PLACEHOLDER_${vrs}"
+  RH_COCKROACH_DATABASE_IMAGE_VERSION="registry.connect.redhat.com/cockroachdb/cockroach:${v}"
+  VAR_VERSIONS+="s+${ENV_VAR_PLACEHOLDER}+${RH_COCKROACH_DATABASE_IMAGE_VERSION}+g; "
+done 
+cat bundle/manifests/cockroach-operator.clusterserviceversion.yaml | sed "${VAR_VERSIONS}s+RH_COCKROACH_OP_IMAGE_PLACEHOLDER+${RH_COCKROACH_OP_IMG}+g; s+CREATED_AT_PLACEHOLDER+"$(date +"%FT%H:%M:%SZ")"+g"> bundle/manifests/cockroach-operator.clusterserviceversion.yaml 
 cd  bundle/manifests && "$faq" -f yaml -o yaml --slurp '.[0].spec.install.spec.clusterPermissions+= [{serviceAccountName: .[2].metadata.name, rules: .[1].rules }] | .[0]' cockroach-operator.clusterserviceversion.yaml cockroach-database-role_rbac.authorization.k8s.io_v1_clusterrole.yaml cockroach-database-sa_v1_serviceaccount.yaml > csv.yaml
 mv csv.yaml cockroach-operator.clusterserviceversion.yaml 
 shopt -s extglob
