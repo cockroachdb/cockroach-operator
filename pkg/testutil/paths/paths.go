@@ -41,7 +41,7 @@ Either re-run this test using "bazel test //e2e/{name}" or set the %s environmen
 }
 
 func getPath(name string, path ...string) (string, error) {
-	bazelPath := filepath.Join(append([]string{os.Getenv("RUNFILES_DIR"), os.Getenv("TEST_WORKSPACE")}, path...)...)
+	bazelPath := filepath.Join(append([]string{os.Getenv("RUNFILES_DIR"), os.Getenv("TEST_WORKSPACE"), os.Getenv("BUILD_WORKSPACE_DIRECTORY")}, path...)...)
 	p, err := exec.LookPath(bazelPath)
 	if err == nil {
 		return p, nil

@@ -39,7 +39,7 @@ func NewBuilder(name string) ClusterBuilder {
 			},
 			Spec: api.CrdbClusterSpec{
 				Image: api.PodImage{
-					Name: "cockroachdb/cockroach:v19.2.6",
+					Name: "cockroachdb/cockroach:v20.2.5",
 				},
 			},
 		},

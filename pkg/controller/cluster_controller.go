@@ -24,6 +24,7 @@ import (
 	"github.com/cockroachdb/cockroach-operator/pkg/actor"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	"github.com/go-logr/logr"
+	"go.uber.org/zap/zapcore"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	policy "k8s.io/api/policy/v1beta1"
@@ -80,7 +81,7 @@ func (r *ClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	defer cancel()
 
 	log := r.Log.WithValues("CrdbCluster", req.NamespacedName)
-	log.Info("reconciling CockroachDB cluster")
+	log.V(int(zapcore.InfoLevel)).Info("reconciling CockroachDB cluster")
 
 	fetcher := resource.NewKubeFetcher(ctx, req.Namespace, r.Client)
 
@@ -133,7 +134,7 @@ func (r *ClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 				}(ctx, &cluster)
 				// Short pause
 				if notReadyErr, ok := err.(actor.NotReadyErr); ok {
-					log.Info("requeueing", "reason", notReadyErr.Error())
+					log.V(int(zapcore.DebugLevel)).Info("requeueing", "reason", notReadyErr.Error())
 					return requeueAfter(5*time.Second, nil)
 				}
 
@@ -162,7 +163,7 @@ func (r *ClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		// Stop processing and wait for Kubernetes scheduler to call us again as the actor
 		// modified a resource owned by the controller
 		if cancelled(ctx) {
-			log.Info("request was interrupted")
+			log.V(int(zapcore.InfoLevel)).Info("request was interrupted")
 			return noRequeue()
 		}
 	}
@@ -176,7 +177,7 @@ func (r *ClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	// If the resource was updated, it is needed to start all over again
 	// to ensure that the latest state was reconciled
 	if !fresh {
-		log.Info("cluster resources is not up to date")
+		log.V(int(zapcore.DebugLevel)).Info("cluster resources is not up to date")
 		return requeueImmediately()
 	}
 	cluster.SetClusterStatus()
@@ -185,7 +186,7 @@ func (r *ClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return requeueIfError(err)
 	}
 
-	log.Info("reconciliation completed")
+	log.V(int(zapcore.InfoLevel)).Info("reconciliation completed")
 	return noRequeue()
 }
 

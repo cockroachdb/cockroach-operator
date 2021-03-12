@@ -29,6 +29,7 @@ import (
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	"github.com/cockroachdb/cockroach-operator/pkg/update"
 	"github.com/pkg/errors"
+	"go.uber.org/zap/zapcore"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	kubetypes "k8s.io/apimachinery/pkg/types"
@@ -74,7 +75,7 @@ func (up *partitionedUpdate) Act(ctx context.Context, cluster *resource.Cluster)
 	// see https://github.com/cockroachdb/cockroach-operator/issues/202
 
 	log := up.log.WithValues("CrdbCluster", cluster.ObjectKey())
-	log.Info("checking update opportunities, using a partitioned update")
+	log.V(int(zapcore.InfoLevel)).Info("checking update opportunities, using a partitioned update")
 
 	stsName := cluster.StatefulSetName()
 
@@ -102,10 +103,11 @@ func (up *partitionedUpdate) Act(ctx context.Context, cluster *resource.Cluster)
 		log.Info("no crdbcontainerimage annotation found ... waiting for version checker to run")
 		return nil
 	}
+
 	versionWantedCalFmtStr := cluster.GetVersionAnnotation()
 	if versionWantedCalFmtStr == "" {
 		cluster.SetTrue(api.CrdbVersionNotChecked)
-		log.Info("no version annotation found on crd ... waiting for version checker to run")
+		log.V(int(zapcore.DebugLevel)).Info("no version annotation found on crd ... waiting for version checker to run")
 		return nil
 	}
 	currentVersionCalFmtStr := statefulSet.Annotations[resource.CrdbVersionAnnotation]
@@ -149,10 +151,10 @@ func (up *partitionedUpdate) Act(ctx context.Context, cluster *resource.Cluster)
 
 	serviceName := cluster.PublicServiceName()
 	if runningInsideK8s {
-		log.Info("operator is running inside of kubernetes, connecting to service for db connection")
+		log.V(int(zapcore.DebugLevel)).Info("operator is running inside of kubernetes, connecting to service for db connection")
 	} else {
 		serviceName = fmt.Sprintf("%s-0.%s.%s", cluster.Name(), cluster.Name(), cluster.Namespace())
-		log.Info("operator is NOT inside of kubernetes, connnecting to pod ordinal zero for db connection")
+		log.V(int(zapcore.DebugLevel)).Info("operator is NOT inside of kubernetes, connnecting to pod ordinal zero for db connection")
 	}
 
 	// The connection needs to use the discovery service name because of the
@@ -188,13 +190,13 @@ func (up *partitionedUpdate) Act(ctx context.Context, cluster *resource.Cluster)
 	if err != nil {
 		return errors.Wrapf(err, "failed to create database connection")
 	}
-	log.Info("opened db connection")
+	log.V(int(zapcore.DebugLevel)).Info("opened db connection")
 	defer db.Close()
 
 	// TODO test downgrades
 	// see https://github.com/cockroachdb/cockroach-operator/issues/208
 
-	log.Info("update starting with partitioned update", "old version", currentVersionCalFmtStr, "new version", versionWantedCalFmtStr, "image", containerWanted)
+	log.V(int(zapcore.InfoLevel)).Info("update starting with partitioned update", "old version", currentVersionCalFmtStr, "new version", versionWantedCalFmtStr, "image", containerWanted)
 
 	updateRoach := &update.UpdateRoach{
 		CurrentVersion: currentVersion,
@@ -229,7 +231,7 @@ func (up *partitionedUpdate) Act(ctx context.Context, cluster *resource.Cluster)
 	}
 
 	// TODO set status that we are completed.
-	log.Info("update completed with partitioned update", "new version", versionWantedCalFmtStr)
+	log.V(int(zapcore.DebugLevel)).Info("update completed with partitioned update", "new version", versionWantedCalFmtStr)
 	CancelLoop(ctx)
 	return nil
 }

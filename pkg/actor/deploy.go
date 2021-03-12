@@ -26,6 +26,7 @@ import (
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
 	"github.com/pkg/errors"
+	"go.uber.org/zap/zapcore"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -56,7 +57,7 @@ func (d deploy) Handles(conds []api.ClusterCondition) bool {
 
 func (d deploy) Act(ctx context.Context, cluster *resource.Cluster) error {
 	log := d.log.WithValues("CrdbCluster", cluster.ObjectKey())
-	log.Info("reconciling resources on deploy action")
+	log.V(int(zapcore.DebugLevel)).Info("reconciling resources on deploy action")
 
 	r := resource.NewManagedKubeResource(ctx, d.client, cluster, kube.AnnotatingPersister)
 
@@ -76,7 +77,7 @@ func (d deploy) Act(ctx context.Context, cluster *resource.Cluster) error {
 	}
 
 	if changed {
-		log.Info("created/updated discovery service, stopping request processing")
+		log.V(int(zapcore.DebugLevel)).Info("created/updated discovery service, stopping request processing")
 		CancelLoop(ctx)
 		return nil
 	}
@@ -95,7 +96,7 @@ func (d deploy) Act(ctx context.Context, cluster *resource.Cluster) error {
 	}
 
 	if changed {
-		log.Info("created/updated public service, stopping request processing")
+		log.V(int(zapcore.DebugLevel)).Info("created/updated public service, stopping request processing")
 		CancelLoop(ctx)
 		return nil
 	}
@@ -113,7 +114,7 @@ func (d deploy) Act(ctx context.Context, cluster *resource.Cluster) error {
 	}
 
 	if changed {
-		log.Info("created/updated statefulset, stopping request processing")
+		log.V(int(zapcore.DebugLevel)).Info("created/updated statefulset, stopping request processing")
 		CancelLoop(ctx)
 		return nil
 	}
@@ -135,12 +136,12 @@ func (d deploy) Act(ctx context.Context, cluster *resource.Cluster) error {
 		}
 
 		if changed {
-			log.Info("created/updated pdb, stopping request processing")
+			log.V(int(zapcore.DebugLevel)).Info("created/updated pdb, stopping request processing")
 			CancelLoop(ctx)
 			return nil
 		}
 	}
 
-	log.Info("completed")
+	log.V(int(zapcore.DebugLevel)).Info("deployed database")
 	return nil
 }

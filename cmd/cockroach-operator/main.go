@@ -48,15 +48,21 @@ func init() {
 func main() {
 	var metricsAddr, featureGatesString string
 	var enableLeaderElection bool
+
+	// use zap logging cli options
+	opts := zap.Options{}
+	opts.BindFlags(flag.CommandLine)
+
 	flag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&featureGatesString, "feature-gates", "", "Feature gate to enable, format is a command separated list enabling features, for instance RunAsNonRoot=false")
 	flag.BoolVar(&enableLeaderElection, "enable-leader-election", false,
 		"Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
 	flag.Parse()
 
-	ctrl.SetLogger(zap.New(func(o *zap.Options) {
-		o.Development = true
-	}))
+	// create logger using zap cli options
+	// for instance --zap-log-level=debug
+	logger := zap.New(zap.UseFlagOptions(&opts))
+	ctrl.SetLogger(logger)
 
 	// If features gates are passed to the command line, use it (otherwise use featureGates from configuration)
 	if featureGatesString != "" {

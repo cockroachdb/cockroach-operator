@@ -26,6 +26,29 @@ const (
 	caKey = "ca.crt"
 )
 
+// CreateTLSSecrete returns a TLSSecreat struct that is
+// used to store the certs via secrets.
+func CreateTLSSecret(name string, r Resource) *TLSSecret {
+
+	// TODO we are not saving a corev1.Secret that
+	// is the tls secret type but is an opaque secret
+	// we should use the correct type
+	s := &TLSSecret{
+		Resource: r,
+		secret: &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: name,
+			},
+		},
+	}
+
+	if s.secret.Data == nil {
+		s.secret.Data = map[string][]byte{}
+	}
+
+	return s
+}
+
 func LoadTLSSecret(name string, r Resource) (*TLSSecret, error) {
 	s := &TLSSecret{
 		Resource: r,
@@ -87,6 +110,23 @@ func (s *TLSSecret) UpdateCertAndCA(cert, ca []byte, log logr.Logger) error {
 	_, err := s.Persist(s.secret, func() error {
 		s.secret.Data[corev1.TLSCertKey] = newCert
 		s.secret.Data[caKey] = newCA
+
+		return nil
+	})
+
+	return err
+}
+
+// UpdateCertAndKeyAndCA updates three different certificates at the same time.
+// It save the TLSCertKey, the CA, and the TLSPrivateKey in a secret.
+func (s *TLSSecret) UpdateCertAndKeyAndCA(cert, key []byte, ca []byte, log logr.Logger) error {
+	newCert, newCA := append([]byte{}, cert...), append([]byte{}, ca...)
+	newKey := append([]byte{}, key...)
+
+	_, err := s.Persist(s.secret, func() error {
+		s.secret.Data[corev1.TLSCertKey] = newCert
+		s.secret.Data[caKey] = newCA
+		s.secret.Data[corev1.TLSPrivateKeyKey] = newKey
 
 		return nil
 	})

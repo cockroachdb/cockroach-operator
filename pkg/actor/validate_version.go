@@ -17,8 +17,10 @@ limitations under the License.
 package actor
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"strings"
 	"time"
 
@@ -32,6 +34,7 @@ import (
 	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
+	"go.uber.org/zap/zapcore"
 	kbatch "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -68,15 +71,34 @@ func (v *versionChecker) Handles(conds []api.ClusterCondition) bool {
 
 func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) error {
 	log := v.log.WithValues("CrdbCluster", cluster.ObjectKey())
-	log.Info("version checker")
+	log.V(int(zapcore.DebugLevel)).Info("starting to check the crdb version of the container provided")
 
 	r := resource.NewManagedKubeResource(ctx, v.client, cluster, kube.AnnotatingPersister)
 	owner := cluster.Unwrap()
-	// we check if the image tag version is supported by the operator,
-	// this can return false only for api fieled CockroachDBVersion
-	if !cluster.IsSupportedImage() {
-		return InvalidContainerVersionError{Err: errors.New(fmt.Sprintf("crdb image %s not supported", cluster.Spec().CockroachDBVersion))}
+
+	// If the image.name is set use that value and do not check that the
+	// version is set in the supported versions.
+	// If it is not set then pass through the if statement and check that
+	if cluster.Spec().Image.Name == "" {
+		if cluster.Spec().CockroachDBVersion == "" {
+			err := InvalidContainerVersionError{Err: errors.New("Cockroach image name and cockroachDBVersion api fields are not set, you must set one of them")}
+			log.Error(err, "invalid custom resources")
+			return err
+		}
+		log.V(int(zapcore.DebugLevel)).Info("User set cockroachDBVersion")
+		// we check if the cockroachDBVersion is supported by the operator,
+		// this can return false only for api feild CockroachDBVersion
+		// The supported versions are set as enviroment variables in the operator manifest.
+		if !cluster.IsSupportedImage() {
+			err := InvalidContainerVersionError{Err: errors.New(fmt.Sprintf("crdb version %s not supported", cluster.Spec().CockroachDBVersion))}
+			log.Error(err, "The cockroachDBVersion API value is set to a value that is not supported by the operator. Supported versions are set via the RELATED_IMAGE env variables in the operator manifest.")
+			return err
+		}
+		log.V(int(zapcore.DebugLevel)).Info(fmt.Sprintf("supported CockroachDBVersion %s", cluster.Spec().CockroachDBVersion))
+	} else {
+		log.V(int(zapcore.DebugLevel)).Info("User set image.name, using that field instead of cockroachDBVersion")
 	}
+
 	var calVersion, containerImage string
 	//reset the values of the annotation and make sure we will have the correct one
 	cluster.SetClusterVersion(calVersion)
@@ -93,93 +115,113 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 		Scheme: v.scheme,
 	}).Reconcile()
 	if err != nil && kube.IgnoreNotFound(err) == nil {
-		return errors.Wrap(err, "failed to reconcile job")
+		err := errors.Wrap(err, "failed to reconcile job not found")
+		log.Error(err, "failed to reconcile job")
+		return err
+	} else if err != nil {
+		log.Error(err, "failed to reconcile job only err")
 	}
 
 	if changed {
-		log.Info("created/updated job, stopping request processing")
+		log.V(int(zapcore.DebugLevel)).Info("created/updated job, stopping request processing")
 		CancelLoop(ctx)
 		return nil
 	}
+
 	jobName := cluster.JobName()
-	log.Info("version checker", "job", jobName)
+	log.V(int(zapcore.DebugLevel)).Info("version checker", "job", jobName)
 	key := kubetypes.NamespacedName{
 		Namespace: cluster.Namespace(),
 		Name:      jobName,
 	}
 	job := &kbatch.Job{}
-	if err := v.client.Get(ctx, key, job); err != nil {
-		return kube.IgnoreNotFound(err)
-	}
+
 	clientset, err := kubernetes.NewForConfig(v.config)
 	if err != nil {
+		log.Error(err, "cannot create k8s client")
 		return errors.Wrapf(err, "check version failed to create kubernetes clientset")
 	}
+	if err := v.client.Get(ctx, key, job); err != nil {
+		err := WaitUntilJobPodIsRunning(ctx, clientset, job, log)
+		if err != nil {
+			log.Error(err, "job not found")
+			return err
+		}
+	}
+
 	// check if the job is completed or failed before EXEC
 	if finished, _ := isJobCompletedOrFailed(job); !finished {
 		if err := WaitUntilJobPodIsRunning(ctx, clientset, job, v.log); err != nil {
-			return errors.Wrapf(err, "failed to check the version of the cluster")
+			log.Error(err, "error checking version of crdb")
+			return errors.Wrapf(err, "failed to check the version of the crdb")
 		}
+
+		podLogOpts := corev1.PodLogOptions{}
 		//get pod for the job we created
 		pods, err := clientset.CoreV1().Pods(job.Namespace).List(ctx, metav1.ListOptions{
 			LabelSelector: labels.Set(job.Spec.Selector.MatchLabels).AsSelector().String(),
 		})
 
 		if err != nil {
+			log.Error(err, "failed to find running pod for job")
 			return errors.Wrapf(err, "failed to list running pod for job")
 		}
 		if len(pods.Items) == 0 {
-			log.Info("No running pods yet for version checker... we will retry later")
+			log.V(int(zapcore.DebugLevel)).Info("No running pods yet for version checker... we will retry later")
 			return nil
 		}
 		podName := pods.Items[0].Name
-		log.Info("versionchecker", "jobPodName", podName)
-		cmd := []string{
-			"/bin/bash",
-			"-c",
-			resource.GetTagVersionCommand,
-		}
-		// exec on the pod of the job to obtain the version of the cockroach DB
-		output, stderr, err := kube.ExecInPod(v.scheme, v.config, cluster.Namespace(),
-			podName, resource.JobContainerName, cmd)
-		log.Info("version checker result after exec in pod: ", "output", output)
-		// if the container is running but the exec retrieved a stderr on our cmd
-		if stderr != "" {
-			// PermanentErr will requeue after 5 min
-			log.Error(errors.New(stderr), "failure after exec in pod")
-			return InvalidContainerVersionError{Err: errors.New(stderr)}
-		}
+
+		req := clientset.CoreV1().Pods(job.Namespace).GetLogs(podName, &podLogOpts)
+		podLogs, err := req.Stream(ctx)
 		if err != nil {
-			// can happen if container has not finished its startup
-			if strings.Contains(err.Error(), "unable to upgrade connection: container not found") ||
-				strings.Contains(err.Error(), "does not have a host assigned") {
-				return NotReadyErr{Err: errors.New("pod has not completely started")}
-			}
-			return errors.Wrapf(err, "failed to check the version of the cluster")
+			msg := "error in opening stream"
+			log.Error(err, msg)
+			return errors.Wrapf(err, msg)
 		}
+		defer podLogs.Close()
+
+		buf := new(bytes.Buffer)
+		_, err = io.Copy(buf, podLogs)
+		if err != nil {
+			msg := "error in copy information from podLogs to buf"
+			log.Error(err, msg)
+			return errors.Wrapf(err, msg)
+		}
+		output := buf.String()
 
 		// This is the value from Build Tag taken from the container
 		calVersion = strings.Replace(output, "\n", "", -1)
 		// if no image is retrieved we exit
 		if calVersion == "" {
-			return PermanentErr{Err: errors.New("failed to check the version of the cluster")}
+			err := PermanentErr{Err: errors.New("failed to check the version of the cluster")}
+			log.Error(err, "crdb version not found")
+			return err
 		}
 
-		// we check if the image tag version is supported by the operator
-		if _, ok := cluster.LookupSupportedVersion(calVersion); !ok {
-			return InvalidContainerVersionError{Err: errors.New(fmt.Sprintf("crdb version %s not supported ", calVersion))}
+		// If the user has not set image.name then check if the calVersion is supported
+		// We already check above that if image.name is not set then cockroachDBVersion is set.
+		if cluster.Spec().Image.Name == "" {
+			// we check if the image tag version is supported by the operator
+			if _, ok := cluster.LookupSupportedVersion(calVersion); !ok {
+				err := InvalidContainerVersionError{Err: errors.New(fmt.Sprintf("crdb version %s not supported ", calVersion))}
+				log.Error(err, "crdb version not supported")
+				return err
+			}
 		}
+
 		dbContainer, err := kube.FindContainer(resource.JobContainerName, &job.Spec.Template.Spec)
 		if err != nil {
+			log.Error(err, "unable to find container version")
 			return err
 		}
 		containerImage = dbContainer.Image
 		if strings.EqualFold(cluster.GetVersionAnnotation(), calVersion) {
-			log.Info("No update on version annotation -> nothing changed")
+			log.V(int(zapcore.DebugLevel)).Info("No update on version annotation -> nothing changed")
 			return nil
 		}
 		if strings.EqualFold(cluster.GetAnnotationContainerImage(), containerImage) {
-			log.Info("No update on container image annotation -> nothing changed")
+			log.V(int(zapcore.DebugLevel)).Info("No update on container image annotation -> nothing changed")
 			return nil
 		}
 		cluster.SetClusterVersion(calVersion)
@@ -188,13 +230,17 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 		cluster.SetAnnotationContainerImage(containerImage)
 		if err := v.client.Update(ctx, cluster.Unwrap()); err != nil {
 			log.Error(err, "failed saving the annotations on version checker")
+			// TODO should we fail here?
 		}
 	} else {
 		// after 2 minutes the pod enters in the completed state
 		// if the container it is running and the version was not retrieved
 		// for instance if the image is nginx and we want to get the crdb version from it case
-		return PermanentErr{Err: errors.New("job completed with version empty-container running but no version was retrieved")}
+		err := PermanentErr{Err: errors.New("job completed with version empty-container running but no version was retrieved")}
+		log.Error(err, "job completed and we cannot find crdb version")
+		return err
 	}
+
 	dp := metav1.DeletePropagationForeground
 
 	//delete the job only if we have managed to get the version and we do not have any errors
@@ -224,7 +270,7 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 		log.Error(err, "failed saving cluster status on version checker")
 		return err
 	}
-	log.Info("completed version checker")
+	log.V(int(zapcore.DebugLevel)).Info("completed version checker", "calVersion", calVersion, "containerImage", containerImage)
 	CancelLoop(ctx)
 	return nil
 }
@@ -250,17 +296,23 @@ func IsJobPodRunning(
 	})
 
 	if err != nil {
-		return err
+		return LogError("error getting pod in job", err, l)
 	}
 	if len(pods.Items) == 0 {
-		l.Info("No running pods yet for version checker... we will retry later")
-		return nil
+		return LogError("job pods are not running yet waiting longer", nil, l)
 	}
-	l.Info("job pod is ready")
+	pod := pods.Items[0]
+	if !kube.IsPodReady(&pod) {
+		return LogError("job pod is not ready yet waiting longer", nil, l)
+	}
+	l.V(int(zapcore.DebugLevel)).Info("job pod is ready")
 	return nil
 }
 
 func WaitUntilJobPodIsRunning(ctx context.Context, clientset kubernetes.Interface, job *kbatch.Job, l logr.Logger) error {
+	if job == nil {
+		return errors.New("job cannot be nil")
+	}
 	f := func() error {
 		return IsJobPodRunning(ctx, clientset, job, l)
 	}
@@ -271,4 +323,12 @@ func WaitUntilJobPodIsRunning(ctx context.Context, clientset kubernetes.Interfac
 		return errors.Wrapf(err, "pod is not running for job: %s", job.Name)
 	}
 	return nil
+}
+
+func LogError(msg string, err error, l logr.Logger) error {
+	l.V(int(zapcore.DebugLevel)).Info(msg)
+	if err == nil {
+		return errors.New(msg)
+	}
+	return errors.Wrapf(err, msg)
 }

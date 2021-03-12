@@ -22,10 +22,11 @@ import (
 	"time"
 
 	semver "github.com/Masterminds/semver/v3"
+	"github.com/cockroachdb/cockroach-operator/pkg/kube"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	"github.com/go-logr/logr"
+	"go.uber.org/zap/zapcore"
 	v1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -78,7 +79,7 @@ func makeIsCRBPodIsRunningNewVersionFunction(
 
 		crdbPod, err := clientset.CoreV1().Pods(stsNamespace).Get(update.ctx, podName, metav1.GetOptions{})
 		if k8sErrors.IsNotFound(err) { // this is not an error
-			l.Info("cannot find Pod", "podName", podName, "namespace", stsNamespace)
+			l.V(int(zapcore.DebugLevel)).Info("cannot find Pod", "podName", podName, "namespace", stsNamespace)
 			return err
 		} else if statusError, isStatus := err.(*k8sErrors.StatusError); isStatus { // this is an error
 			l.Error(statusError, fmt.Sprintf("status error getting pod %v", statusError.ErrStatus.Message))
@@ -95,19 +96,19 @@ func makeIsCRBPodIsRunningNewVersionFunction(
 
 				// TODO this is not an error but should return a wait status
 				if container.Image != cockroachImage {
-					l.Info("Pod is not updated to current image.")
+					l.V(int(zapcore.DebugLevel)).Info("Pod is not updated to current image.")
 					return fmt.Errorf("%s pod is on image %s, expected %s", podName, container.Image, cockroachImage)
 				}
 
 				// TODO this is not an error but should return a wait status
 				// CRDB pod is updated to new Cockroach image. Now check
 				// that the pod is in a ready state before proceeding.
-				if !IsPodReady(crdbPod) {
-					l.Info("Pod is not ready yet.", "pod name", crdbPod)
+				if !kube.IsPodReady(crdbPod) {
+					l.V(int(zapcore.DebugLevel)).Info("Pod is not ready yet.", "podName", podName, "stsName", stsName)
 					return fmt.Errorf("%s pod not ready yet", crdbPod)
 				}
 
-				l.Info("is running new version on", "podName", podName, "stsName", stsNamespace)
+				l.V(int(zapcore.DebugLevel)).Info("is running new version on", "podName", podName, "stsName", stsNamespace)
 				return nil
 			}
 		}
@@ -119,50 +120,6 @@ func makeIsCRBPodIsRunningNewVersionFunction(
 		l.Error(err, "container not found")
 		return err
 	}
-}
-
-// TODO this code is from https://github.com/kubernetes/kubernetes/blob/master/pkg/api/v1/pod/util.go
-// We need to determine if this functionality is available via the client-go
-
-// IsPodReady returns true if a pod is ready; false otherwise.
-func IsPodReady(pod *corev1.Pod) bool {
-	return IsPodReadyConditionTrue(pod.Status)
-}
-
-// IsPodReadyConditionTrue returns true if a pod is ready; false otherwise.
-func IsPodReadyConditionTrue(status corev1.PodStatus) bool {
-	condition := GetPodReadyCondition(status)
-	return condition != nil && condition.Status == corev1.ConditionTrue
-}
-
-// GetPodReadyCondition extracts the pod ready condition from the given status and returns that.
-// Returns nil if the condition is not present.
-func GetPodReadyCondition(status corev1.PodStatus) *corev1.PodCondition {
-	_, condition := GetPodCondition(&status, corev1.PodReady)
-	return condition
-}
-
-// GetPodCondition extracts the provided condition from the given status and returns that.
-// Returns nil and -1 if the condition is not present, and the index of the located condition.
-func GetPodCondition(status *corev1.PodStatus, conditionType corev1.PodConditionType) (int, *corev1.PodCondition) {
-	if status == nil {
-		return -1, nil
-	}
-	return GetPodConditionFromList(status.Conditions, conditionType)
-}
-
-// GetPodConditionFromList extracts the provided condition from the given list of condition and
-// returns the index of the condition and the condition. Returns -1 and nil if the condition is not present.
-func GetPodConditionFromList(conditions []corev1.PodCondition, conditionType corev1.PodConditionType) (int, *corev1.PodCondition) {
-	if conditions == nil {
-		return -1, nil
-	}
-	for i := range conditions {
-		if conditions[i].Type == conditionType {
-			return i, &conditions[i]
-		}
-	}
-	return -1, nil
 }
 
 // Note that while CockroachDB considers 19.2 to be a major release, if we follow

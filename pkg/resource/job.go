@@ -30,7 +30,7 @@ import (
 )
 
 const (
-	// JobContainerName used on spec for teh container
+	// JobContainerName used on spec for the container
 	JobContainerName     = "crdb"
 	GetTagVersionCommand = "/cockroach/cockroach.sh version | grep 'Build Tag:'| awk '{print $3}'"
 )
@@ -94,6 +94,11 @@ func (b JobBuilder) buildPodTemplate() corev1.PodTemplateSpec {
 // MakeContainers creates a slice of corev1.Containers which includes a single
 // corev1.Container that is based on the CR.
 func (b JobBuilder) MakeContainers() []corev1.Container {
+	// image := b.GetCockroachDBImageName()
+	// TODO we need error handling to determine if we cannot find an image.
+	// if image == NotSupportedVersion {
+	//		panic("unable to find image")
+	//}
 	return []corev1.Container{
 		{
 			Name:            JobContainerName,

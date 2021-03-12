@@ -30,6 +30,7 @@ def install():
     install_operator_sdk()
     install_kustomize()
     install_opm()
+    install_crdb()
 
     # Install golang.org/x/build as kubernetes/repo-infra requires it for the
     # build-tar bazel target.
@@ -242,15 +243,15 @@ def install_kind():
     http_file(
         name = "kind_darwin",
         executable = 1,
-        sha256 = "11b8a7fda7c9d6230f0f28ffe57831a7227c0655dfb8d38e838e8f03db6612de",
-        urls = ["https://github.com/kubernetes-sigs/kind/releases/download/v0.7.0/kind-darwin-amd64"],
+        sha256 = "a934e573621917a2785f3ddfa7b6187d18fa1c20c94c013919736b3256d37f57",
+        urls = ["https://github.com/kubernetes-sigs/kind/releases/download/v0.10.0/kind-darwin-amd64"],
     )
 
     http_file(
         name = "kind_linux",
         executable = 1,
-        sha256 = "0e07d5a9d5b8bf410a1ad8a7c8c9c2ea2a4b19eda50f1c629f1afadb7c80fae7",
-        urls = ["https://github.com/kubernetes-sigs/kind/releases/download/v0.7.0/kind-linux-amd64"],
+        sha256 = "74767776488508d847b0bb941212c1cb76ace90d9439f4dee256d8a04f1309c6",
+        urls = ["https://github.com/kubernetes-sigs/kind/releases/download/v0.10.0/kind-linux-amd64"],
     )
 
 ## Fetch kubetest2 binary used during e2e tests
@@ -322,7 +323,8 @@ def install_kustomize():
         sha256 = "e52e8c194b5084301338d8762bf36b81b5254f525b164ba8b010de123110247f",
         urls = ["https://storage.googleapis.com/crdb-bazel-artifacts/linux/kustomize"],
     )
-    ## Fetch opm used on generating csv
+
+## Fetch opm used on generating csv
 def install_opm():
     http_file(
        name = "opm_darwin",
@@ -338,6 +340,36 @@ def install_opm():
         urls = ["https://storage.googleapis.com/crdb-bazel-artifacts/linux/opm"],
     )
 
+## Fetch crdb used in our container
+def install_crdb():
+    http_archive(
+       name = "crdb_darwin", # todo fix or remove
+       sha256 = "bbe3a03c661555e8b083856c56c8a3b459f83064d1d552ed3467cbfb66e76db7",
+       urls = ["https://binaries.cockroachdb.com/cockroach-v20.2.5.darwin-10.9-amd64.tgz"],
+       build_file_content = """
+filegroup(
+    name = "file",
+    srcs = [
+        "cockroach-v20.2.5.darwin-amd64/cockroach",
+    ],
+    visibility = ["//visibility:public"],
+)
+""",
+    )
 
+    http_archive(
+        name = "crdb_linux",
+        sha256 = "57f4b00c736d8511328d6f33997a3a66cb4ec7142cb126d872dade399a0922e6",
+        urls = ["https://binaries.cockroachdb.com/cockroach-v20.2.5.linux-amd64.tgz"],
+        build_file_content = """
+filegroup(
+    name = "file",
+    srcs = [
+        "cockroach-v20.2.5.linux-amd64/cockroach",
+    ],
+    visibility = ["//visibility:public"],
+)
+""",
+   )
 
 

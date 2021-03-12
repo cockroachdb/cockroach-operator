@@ -57,6 +57,11 @@ test/e2e-short:
 test/e2e: 
 	bazel test --stamp //e2e/...
 
+# This target exports the kind kubeconfig
+.PHONY: test/e2e/kind-kubeconfig
+test/e2e/kind-kubeconfig:
+	bazel-bin/hack/bin/kind export kubeconfig --name test
+
 # 
 # Different dev targets
 #
