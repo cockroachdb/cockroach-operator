@@ -28,7 +28,6 @@ import (
 	"github.com/cockroachdb/cockroach-operator/pkg/controller"
 	"github.com/cockroachdb/cockroach-operator/pkg/testutil"
 	testenv "github.com/cockroachdb/cockroach-operator/pkg/testutil/env"
-	"github.com/cockroachdb/cockroach-operator/pkg/testutil/exec"
 	"github.com/cockroachdb/cockroach-operator/pkg/testutil/paths"
 	"github.com/go-logr/zapr"
 	"github.com/stretchr/testify/require"
@@ -38,11 +37,13 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-var updateOpt = flag.Bool("update", false, "update the golden files of this test")
-
 // TODO parallel seems to be buggy.  Not certain why, but we need to figure out if running with the operator
 // deployed in the cluster helps
+// We may have a threadsafe problem where one test starts messing with another test
 var parallel = *flag.Bool("parallel", false, "run tests in parallel")
+
+// run the pvc test
+var pvc = *flag.Bool("pvc", false, "run pvc test")
 
 var env *testenv.ActiveEnv
 
@@ -70,24 +71,8 @@ func (ss Steps) Run(t *testing.T) {
 func TestMain(m *testing.M) {
 	flag.Parse()
 
-	// We are running in bazel so set up the directory for the test binaries
-	if os.Getenv("TEST_WORKSPACE") != "" {
-		// TODO create a toolchain for this
-		paths.MaybeSetEnv("PATH", "kubetest2-kind", "hack", "bin", "kubetest2-kind")
-	}
-
-	noKind := os.Getenv("TEST_DO_NOT_USE_KIND")
-	if noKind == "" {
-		os.Setenv("USE_EXISTING_CLUSTER", "true")
-
-		// TODO random name for server and also random open port
-		err := exec.StartKubeTest2("test")
-		if err != nil {
-			panic(err)
-		}
-	}
-
-	// TODO verify success of cluster start? Does kind do it?
+	os.Setenv("USE_EXISTING_CLUSTER", "true")
+	paths.MaybeSetEnv("PATH", "kubetest2-kind", "hack", "bin", "kubetest2-kind")
 
 	e := testenv.NewEnv(runtime.NewSchemeBuilder(api.AddToScheme),
 		filepath.Join("..", "config", "crd", "bases"),
@@ -96,13 +81,6 @@ func TestMain(m *testing.M) {
 	env = e.Start()
 	code := m.Run()
 	e.Stop()
-
-	if noKind == "" {
-		err := exec.StopKubeTest2("test")
-		if err != nil {
-			panic(err)
-		}
-	}
 	os.Exit(code)
 }
 
@@ -118,6 +96,8 @@ func TestCreatesSecureCluster(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
 	}
+
+	paths.MaybeSetEnv("PATH", "kubetest2-kind", "hack", "bin", "kubetest2-kind")
 
 	testLog := zapr.NewLogger(zaptest.NewLogger(t))
 
@@ -304,16 +284,6 @@ func TestDecommissionFunctionality(t *testing.T) {
 	// Testing removing and decommisioning a node.  We start at 4 node and then
 	// remove the 4th node
 
-	// This is now running locally
-	/*
-		if doNotTestFlakes(t) {
-			t.Log("This test is marked as a flake, not running test")
-			return
-		} else {
-			t.Log("Running this test, although this test is flakey")
-		}
-
-	*/
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
 	}
@@ -355,14 +325,15 @@ func TestDecommissionFunctionality(t *testing.T) {
 }
 
 func TestPVCResize(t *testing.T) {
-
 	// Testing PVCResize
-	// TODO once we get GKE up and running we need
-	// to run this test.
-
-	t.Skip("kind does not support pvc resize")
+	if !pvc {
+		t.Skip("platform does not support pvc resize")
+	}
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
+	}
+	if parallel {
+		t.Parallel()
 	}
 	testLog := zapr.NewLogger(zaptest.NewLogger(t))
 	actor.Log = testLog
@@ -395,13 +366,4 @@ func TestPVCResize(t *testing.T) {
 		},
 	}
 	steps.Run(t)
-}
-
-func doNotTestFlakes(t *testing.T) bool {
-	if os.Getenv("TEST_FLAKES") != "" {
-		t.Log("running flakey tests")
-		return false
-	}
-	t.Log("not running flakey tests")
-	return true
 }

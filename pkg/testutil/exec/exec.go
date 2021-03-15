@@ -48,7 +48,7 @@ func StopKubeTest2(clusterName string) error {
 // StartKubeTest2 starts a kind server.
 func StartKubeTest2(clusterName string) error {
 	args := []string{
-		"kind", "--up", "--cluster-name", clusterName, "--verbosity", "10",
+		"kind", "--up", "--cluster-name", clusterName, "-v", "10",
 	}
 
 	println("Up(): startin kind cluster...\n")

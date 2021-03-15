@@ -375,7 +375,7 @@ func requirePVCToResize(t *testing.T, sb testenv.DiffingSandbox, b testutil.Clus
 	cluster := b.Cluster()
 
 	// TODO rewrite this
-	err := wait.Poll(10*time.Second, 300*time.Second, func() (bool, error) {
+	err := wait.Poll(10*time.Second, 500*time.Second, func() (bool, error) {
 		ss, err := fetchStatefulSet(sb, cluster.StatefulSetName())
 		if err != nil {
 			return false, err
