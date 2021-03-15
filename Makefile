@@ -19,10 +19,10 @@
 
 # values used in workspace-status.sh
 
-DOCKER_REGISTRY?=cockroachdb
+DOCKER_REGISTRY?=us.gcr.io/chris-love-operator-playground
 DOCKER_IMAGE_REPOSITORY?=cockroachdb-operator
 # Default bundle image tag
-APP_VERSION?=v1.6.12-rc.2
+APP_VERSION?=v1.8.40
 
 # 
 # Testing targets
@@ -122,11 +122,11 @@ dev/syncdeps:
 #RED HAT IMAGE BUNDLE
 RH_BUNDLE_REGISTRY?=registry.connect.redhat.com/cockroachdb
 RH_BUNDLE_IMAGE_REPOSITORY?=cockroachdb-operator-bundle
-RH_BUNDLE_VERSION?=1.2.5
+RH_BUNDLE_VERSION?=1.2.6
 RH_DEPLOY_PATH="deploy/certified-metadata-bundle"
 RH_DEPLOY_FULL_PATH="$(RH_DEPLOY_PATH)/cockroach-operator/"
-RH_COCKROACH_DATABASE_IMAGE=registry.connect.redhat.com/cockroachdb/cockroach:v20.2.3
-RH_OPERATOR_IMAGE?=registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v1.6.12-rc.1
+RH_COCKROACH_DATABASE_IMAGE=registry.connect.redhat.com/cockroachdb/cockroach:v20.2.5
+RH_OPERATOR_IMAGE?=us.gcr.io/chris-love-operator-playground/cockroachdb-operator:v1.8.40
 
 # Generate package manifests.
 # Options for "packagemanifests".
@@ -201,7 +201,3 @@ BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 .PHONY: gen-csv
 gen-csv: dev/generate
 	bazel run  //hack:update-csv  -- $(RH_BUNDLE_VERSION) $(RH_OPERATOR_IMAGE) $(BUNDLE_METADATA_OPTS) $(RH_COCKROACH_DATABASE_IMAGE)
-		
-
-
-		
