@@ -17,7 +17,7 @@ limitations under the License.
 package labels
 
 import (
-	api "github.com/cockroachdb/cockroach-operator/api/v1alpha1"
+	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"

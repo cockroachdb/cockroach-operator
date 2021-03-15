@@ -17,7 +17,7 @@ limitations under the License.
 package testutil
 
 import (
-	api "github.com/cockroachdb/cockroach-operator/api/v1alpha1"
+	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	corev1 "k8s.io/api/core/v1"
 	apiresource "k8s.io/apimachinery/pkg/api/resource"

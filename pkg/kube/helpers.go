@@ -101,8 +101,8 @@ func GetClusterCA(ctx context.Context, config *rest.Config) ([]byte, error) {
 	return nil, errors.New("no cluster CA found")
 }
 
-func Get(ctx context.Context, cl client.Client, obj runtime.Object) error {
-	key, _ := client.ObjectKeyFromObject(obj)
+func Get(ctx context.Context, cl client.Client, obj client.Object) error {
+	key := client.ObjectKeyFromObject(obj)
 
 	return cl.Get(ctx, key, obj)
 }
@@ -117,9 +117,9 @@ func FindContainer(container string, spec *corev1.PodSpec) (*corev1.Container, e
 	return nil, fmt.Errorf("failed to find container %s", container)
 }
 
-type PersistFn func(context.Context, client.Client, runtime.Object, MutateFn) (upserted bool, err error)
+type PersistFn func(context.Context, client.Client, client.Object, MutateFn) (upserted bool, err error)
 
-var DefaultPersister PersistFn = func(ctx context.Context, cl client.Client, obj runtime.Object, f MutateFn) (upserted bool, err error) {
+var DefaultPersister PersistFn = func(ctx context.Context, cl client.Client, obj client.Object, f MutateFn) (upserted bool, err error) {
 	result, err := ctrl.CreateOrUpdate(ctx, cl, obj, func() error {
 		return f()
 	})
@@ -127,7 +127,7 @@ var DefaultPersister PersistFn = func(ctx context.Context, cl client.Client, obj
 	return result == ctrlutil.OperationResultCreated || result == ctrlutil.OperationResultUpdated, err
 }
 
-var AnnotatingPersister PersistFn = func(ctx context.Context, cl client.Client, obj runtime.Object, f MutateFn) (upserted bool, err error) {
+var AnnotatingPersister PersistFn = func(ctx context.Context, cl client.Client, obj client.Object, f MutateFn) (upserted bool, err error) {
 	return CreateOrUpdateAnnotated(ctx, cl, obj, func() error {
 		return f()
 	})
@@ -136,8 +136,8 @@ var AnnotatingPersister PersistFn = func(ctx context.Context, cl client.Client, 
 // MutateFn is a function which mutates the existing object into it's desired state.
 type MutateFn func() error
 
-func CreateOrUpdateAnnotated(ctx context.Context, c client.Client, obj runtime.Object, f MutateFn) (upserted bool, err error) {
-	key, _ := client.ObjectKeyFromObject(obj)
+func CreateOrUpdateAnnotated(ctx context.Context, c client.Client, obj client.Object, f MutateFn) (upserted bool, err error) {
+	key := client.ObjectKeyFromObject(obj)
 
 	if err := c.Get(ctx, key, obj); err != nil {
 		if !apierrors.IsNotFound(err) {
@@ -193,12 +193,13 @@ func CreateOrUpdateAnnotated(ctx context.Context, c client.Client, obj runtime.O
 	return true, nil
 }
 
-func mutate(f MutateFn, key client.ObjectKey, obj runtime.Object) error {
+func mutate(f MutateFn, key client.ObjectKey, obj client.Object) error {
 	if err := f(); err != nil {
 		return err
 	}
 
-	if newKey, err := client.ObjectKeyFromObject(obj); err != nil || key != newKey {
+	newKey := client.ObjectKeyFromObject(obj)
+	if key.String() != newKey.String() {
 		return fmt.Errorf("MutateFn cannot mutate object name and/or object namespace")
 	}
 

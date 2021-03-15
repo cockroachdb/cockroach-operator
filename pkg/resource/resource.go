@@ -32,18 +32,18 @@ import (
 
 // Builder populates a given Kubernetes resource or creates its default instance (placeholder)
 type Builder interface {
-	Build(runtime.Object) error
-	Placeholder() runtime.Object
+	Build(client.Object) error
+	Placeholder() client.Object
 }
 
 // Fetcher updates the object with its state from Kubernetes
 type Fetcher interface {
-	Fetch(obj runtime.Object) error
+	Fetch(obj client.Object) error
 }
 
 // Persister creates or updates the object in Kubernetes after calling the mutation function.
 type Persister interface {
-	Persist(obj runtime.Object, mutateFn func() error) (upserted bool, err error)
+	Persist(obj client.Object, mutateFn func() error) (upserted bool, err error)
 }
 
 func NewKubeResource(ctx context.Context, client client.Client, namespace string, persistFn kube.PersistFn) Resource {
@@ -179,7 +179,7 @@ type KubeFetcher struct {
 	client.Reader
 }
 
-func (f KubeFetcher) Fetch(o runtime.Object) error {
+func (f KubeFetcher) Fetch(o client.Object) error {
 	accessor, err := meta.Accessor(o)
 	if err != nil {
 		return err
@@ -214,7 +214,7 @@ type KubePersister struct {
 	client.Client
 }
 
-func (p KubePersister) Persist(obj runtime.Object, mutateFn func() error) (upserted bool, err error) {
+func (p KubePersister) Persist(obj client.Object, mutateFn func() error) (upserted bool, err error) {
 	if err := addNamespace(obj, p.namespace); err != nil {
 		return false, err
 	}

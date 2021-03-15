@@ -8,33 +8,28 @@ require (
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/cockroachdb/errors v1.8.0
 	github.com/dustin/go-humanize v1.0.0
-	github.com/go-logr/logr v0.1.0
-	github.com/go-logr/zapr v0.1.1
-	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
-	github.com/google/go-cmp v0.4.0
+	github.com/go-logr/logr v0.3.0
+	github.com/go-logr/zapr v0.2.0
+	github.com/google/go-cmp v0.5.2
 	github.com/jackc/pgx/v4 v4.9.0
 	github.com/lib/pq v1.3.0
-	github.com/onsi/ginkgo v1.13.0
-	github.com/onsi/gomega v1.10.1
+	github.com/onsi/ginkgo v1.14.1
+	github.com/onsi/gomega v1.10.2
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/pflag v1.0.5
-	github.com/stretchr/testify v1.5.1
-	go.uber.org/zap v1.14.1
-	golang.org/x/net v0.0.0-20200520004742-59133d7f0dd7
+	github.com/stretchr/testify v1.6.1
+	go.uber.org/zap v1.15.0
+	golang.org/x/net v0.0.0-20201110031124-69a78807bb2b
 	gopkg.in/yaml.v2 v2.3.0
-	k8s.io/api v0.18.5
-	k8s.io/apiextensions-apiserver v0.18.5 // indirect
-	k8s.io/apimachinery v0.18.5
+	k8s.io/api v0.20.2
+	k8s.io/apimachinery v0.20.2
 	k8s.io/client-go v9.0.0+incompatible
-	k8s.io/code-generator v0.18.5
-	k8s.io/kube-openapi v0.0.0-20200410145947-61e04a5be9a6
-	sigs.k8s.io/controller-runtime v0.5.4
-	sigs.k8s.io/controller-tools v0.2.9-0.20200414181213-645d44dca7c0
+	k8s.io/code-generator v0.20.2
+	k8s.io/kube-openapi v0.0.0-20201113171705-d219536bb9fd
+	sigs.k8s.io/controller-runtime v0.8.2
+	sigs.k8s.io/controller-tools v0.5.0
 	sigs.k8s.io/kubetest2 v0.0.0-20200807173356-3d574132ed2e
 	sigs.k8s.io/yaml v1.2.0
 )
 
-replace (
-	k8s.io/client-go v9.0.0+incompatible => k8s.io/client-go v0.18.5
-	sigs.k8s.io/controller-runtime v0.5.4 => sigs.k8s.io/controller-runtime v0.5.1-0.20200416234307-5377effd4043
-)
+replace k8s.io/client-go v9.0.0+incompatible => k8s.io/client-go v0.20.2

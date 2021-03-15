@@ -20,7 +20,7 @@ import (
 	"context"
 	"fmt"
 
-	api "github.com/cockroachdb/cockroach-operator/api/v1alpha1"
+	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/clustersql"
 	"github.com/cockroachdb/cockroach-operator/pkg/condition"
 	"github.com/cockroachdb/cockroach-operator/pkg/database"

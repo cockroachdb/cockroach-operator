@@ -154,7 +154,7 @@ func (c *FakeClient) AddReactor(verb string, resource string, reaction ReactionF
 	c.ReactionChain = append(c.ReactionChain, &simpleReactor{verb, resource, reaction})
 }
 
-func (c *FakeClient) Get(ctx context.Context, key client.ObjectKey, obj runtime.Object) error {
+func (c *FakeClient) Get(ctx context.Context, key client.ObjectKey, obj client.Object) error {
 	gvr, err := getGVRFromObject(c.scheme, obj)
 	if err != nil {
 		return errors.Wrapf(err, "failed to find GVR of object %s", key.String())
@@ -169,17 +169,17 @@ func (c *FakeClient) Get(ctx context.Context, key client.ObjectKey, obj runtime.
 	return c.client.Get(ctx, key, obj)
 }
 
-func (c *FakeClient) List(_ context.Context, list runtime.Object, opts ...client.ListOption) error {
+func (c *FakeClient) List(_ context.Context, list client.ObjectList, opts ...client.ListOption) error {
 	panic("implement me")
 }
 
-func (c *FakeClient) Create(ctx context.Context, obj runtime.Object, opts ...client.CreateOption) error {
+func (c *FakeClient) Create(ctx context.Context, obj client.Object, opts ...client.CreateOption) error {
 	gvr, err := getGVRFromObject(c.scheme, obj)
 	if err != nil {
 		return errors.Wrapf(err, "failed to find GVR of object")
 	}
 
-	key, _ := client.ObjectKeyFromObject(obj)
+	key := client.ObjectKeyFromObject(obj)
 	a := NewCreateAction(key, gvr)
 
 	if handled, err := c.invoke(a); handled {
@@ -189,19 +189,19 @@ func (c *FakeClient) Create(ctx context.Context, obj runtime.Object, opts ...cli
 	return c.client.Create(ctx, obj, opts...)
 }
 
-func (c *FakeClient) Delete(_ context.Context, obj runtime.Object, opts ...client.DeleteOption) error {
+func (c *FakeClient) Delete(_ context.Context, obj client.Object, opts ...client.DeleteOption) error {
 	panic("implement me")
 }
 
-func (c *FakeClient) Update(ctx context.Context, obj runtime.Object, opts ...client.UpdateOption) error {
+func (c *FakeClient) Update(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error {
 	return c.client.Update(ctx, obj, opts...)
 }
 
-func (c *FakeClient) Patch(_ context.Context, obj runtime.Object, patch client.Patch, opts ...client.PatchOption) error {
+func (c *FakeClient) Patch(_ context.Context, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
 	panic("implement me")
 }
 
-func (c *FakeClient) DeleteAllOf(_ context.Context, obj runtime.Object, opts ...client.DeleteAllOfOption) error {
+func (c *FakeClient) DeleteAllOf(_ context.Context, obj client.Object, opts ...client.DeleteAllOfOption) error {
 	panic("implement me")
 }
 
@@ -209,15 +209,23 @@ func (c *FakeClient) Status() client.StatusWriter {
 	return &fakeStatusWriter{client: c}
 }
 
+func (c *FakeClient) RESTMapper() meta.RESTMapper {
+	return nil
+}
+
+func (c *FakeClient) Scheme() *runtime.Scheme {
+	return c.scheme
+}
+
 type fakeStatusWriter struct {
 	client *FakeClient
 }
 
-func (sw *fakeStatusWriter) Update(ctx context.Context, obj runtime.Object, opts ...client.UpdateOption) error {
+func (sw *fakeStatusWriter) Update(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error {
 	return sw.client.Update(ctx, obj, opts...)
 }
 
-func (sw *fakeStatusWriter) Patch(ctx context.Context, obj runtime.Object, patch client.Patch, opts ...client.PatchOption) error {
+func (sw *fakeStatusWriter) Patch(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
 	return sw.client.Patch(ctx, obj, patch, opts...)
 }
 func (c *FakeClient) invoke(action Action) (handled bool, err error) {

@@ -58,7 +58,7 @@ filegroup(
     name = "all-srcs",
     srcs = [
         ":package-srcs",
-        "//api/v1alpha1:all-srcs",
+        "//apis/v1alpha1:all-srcs",
         "//cmd/cockroach-operator:all-srcs",
         "//config:all-srcs",
         "//deploy/certified-metadata-bundle/cockroach-operator/latest/manifests:all-srcs",
@@ -68,6 +68,9 @@ filegroup(
         "//hack:all-srcs",
         "//manifests:all-srcs",
         "//pkg/actor:all-srcs",
+        "//pkg/client/clientset/versioned:all-srcs",
+        "//pkg/client/informers/externalversions:all-srcs",
+        "//pkg/client/listers/apis/v1alpha1:all-srcs",
         "//pkg/clustersql:all-srcs",
         "//pkg/clusterstatus:all-srcs",
         "//pkg/condition:all-srcs",

@@ -22,7 +22,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // This service only exists to create DNS entries for each pod in
@@ -35,7 +35,7 @@ type DiscoveryServiceBuilder struct {
 	Selector map[string]string
 }
 
-func (b DiscoveryServiceBuilder) Build(obj runtime.Object) error {
+func (b DiscoveryServiceBuilder) Build(obj client.Object) error {
 	service, ok := obj.(*corev1.Service)
 	if !ok {
 		return errors.New("failed to cast to Service object")
@@ -64,7 +64,7 @@ func (b DiscoveryServiceBuilder) Build(obj runtime.Object) error {
 	return nil
 }
 
-func (b DiscoveryServiceBuilder) Placeholder() runtime.Object {
+func (b DiscoveryServiceBuilder) Placeholder() client.Object {
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: b.DiscoveryServiceName(),

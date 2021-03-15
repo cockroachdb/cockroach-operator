@@ -17,7 +17,7 @@ limitations under the License.
 package clusterstatus
 
 import (
-	api "github.com/cockroachdb/cockroach-operator/api/v1alpha1"
+	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 

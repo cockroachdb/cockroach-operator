@@ -35,7 +35,7 @@ module_name="github.com/cockroachdb/cockroach-operator"
 
 # Generate deepcopy functions for all internal and external APIs
 deepcopy_inputs=(
-  api/v1alpha1
+  apis/v1alpha1
 )
 
 go_sdk=$PWD/external/go_sdk
@@ -128,6 +128,54 @@ gen-deepcopy() {
   done
 }
 
+client_subpackage="pkg/client"
+client_package="${module_name}/${client_subpackage}"
+# Generate clientsets, listers and informers for user-facing API types
+client_inputs=(
+  apis/v1alpha1
+)
+
+gen-clientsets() {
+  clean "${client_subpackage}"/clientset '*.go'
+  echo "Generating clientset..." >&2
+  prefixed_inputs=( "${client_inputs[@]/#/$module_name/}" )
+  joined=$( IFS=$','; echo "${prefixed_inputs[*]}" )
+  "$clientgen" \
+    --go-header-file hack/boilerplate/boilerplate.go.txt \
+    --clientset-name versioned \
+    --input-base "" \
+    --input "$joined" \
+    --output-package "${client_package}"/clientset
+  copyfiles "${client_subpackage}/clientset" "*.go"
+}
+
+gen-listers() {
+  clean "${client_subpackage}/listers" '*.go'
+  echo "Generating listers..." >&2
+  prefixed_inputs=( "${client_inputs[@]/#/$module_name/}" )
+  joined=$( IFS=$','; echo "${prefixed_inputs[*]}" )
+  "$listergen" \
+    --go-header-file hack/boilerplate/boilerplate.go.txt \
+    --input-dirs "$joined" \
+    --output-package "${client_package}"/listers
+  copyfiles "${client_subpackage}/listers" "*.go"
+}
+
+gen-informers() {
+  clean "${client_subpackage}"/informers '*.go'
+  echo "Generating informers..." >&2
+  prefixed_inputs=( "${client_inputs[@]/#/$module_name/}" )
+  joined=$( IFS=$','; echo "${prefixed_inputs[*]}" )
+  "$informergen" \
+    --go-header-file hack/boilerplate/boilerplate.go.txt \
+    --input-dirs "$joined" \
+    --versioned-clientset-package "${client_package}"/clientset/versioned \
+    --listers-package "${client_package}"/listers \
+    --output-package "${client_package}"/informers
+  copyfiles "${client_subpackage}/informers" "*.go"
+}
+
+
 runfiles="$(pwd)"
 export GO111MODULE=off
 ensure-in-gopath
@@ -141,6 +189,9 @@ export GO111MODULE=off
 export GOCACHE=$old
 
 gen-deepcopy
+gen-clientsets
+gen-listers
+gen-informers
 
 ## Call update-bazel
 export GO111MODULE=on

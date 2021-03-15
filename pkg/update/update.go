@@ -108,7 +108,7 @@ func NewSleeper(duration time.Duration) *sleeperImpl {
 }
 
 func (s *sleeperImpl) Sleep(l logr.Logger, logSuffix string) {
-	l.V(int(zapcore.DebugLevel)).Info("sleeping", "duration", string(s.duration), "label", logSuffix)
+	l.V(int(zapcore.DebugLevel)).Info("sleeping", "duration", s.duration.String(), "label", logSuffix)
 	time.Sleep(s.duration)
 }
 

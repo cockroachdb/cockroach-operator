@@ -21,8 +21,8 @@ import (
 	"github.com/cockroachdb/cockroach-operator/pkg/labels"
 	policy "k8s.io/api/policy/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // PdbBuilder models the PodDistruptionBudget that the
@@ -35,7 +35,7 @@ type PdbBuilder struct {
 
 // Build creates a policy.PodDisruptionBudget for the
 // StatefulSet.
-func (b PdbBuilder) Build(obj runtime.Object) error {
+func (b PdbBuilder) Build(obj client.Object) error {
 	pdb, ok := obj.(*policy.PodDisruptionBudget)
 	if !ok {
 		return errors.New("failed to cast to PDB object")
@@ -80,7 +80,7 @@ func (b PdbBuilder) Build(obj runtime.Object) error {
 
 // TODO update func command - what does this do???
 
-func (b PdbBuilder) Placeholder() runtime.Object {
+func (b PdbBuilder) Placeholder() client.Object {
 	return &policy.PodDisruptionBudget{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: b.DiscoveryServiceName(),

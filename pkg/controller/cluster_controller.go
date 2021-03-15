@@ -20,7 +20,7 @@ import (
 	"context"
 	"time"
 
-	api "github.com/cockroachdb/cockroach-operator/api/v1alpha1"
+	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/actor"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	"github.com/go-logr/logr"
@@ -31,6 +31,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 // ClusterReconciler reconciles a CrdbCluster object
@@ -73,11 +74,11 @@ type ClusterReconciler struct {
 //   - a long requeue (5 minutes)
 //   - cancel the loop and wait for another event
 //   - if no other errors occurred continue to the next action
-func (r *ClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
+func (r *ClusterReconciler) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 
 	// TODO should we make this configurable?
 	// Ensure the loop does not take longer than 4 hours
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Hour)
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Hour)
 	defer cancel()
 
 	log := r.Log.WithValues("CrdbCluster", req.NamespacedName)
