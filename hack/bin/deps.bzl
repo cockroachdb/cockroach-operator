@@ -350,7 +350,7 @@ def install_crdb():
 filegroup(
     name = "file",
     srcs = [
-        "cockroach-v20.2.5.darwin-amd64/cockroach",
+        "cockroach-v20.2.5.darwin-10.9-amd64/cockroach",
     ],
     visibility = ["//visibility:public"],
 )
@@ -366,6 +366,7 @@ filegroup(
     name = "file",
     srcs = [
         "cockroach-v20.2.5.linux-amd64/cockroach",
+cockroach-v20.2.5.darwin-10.9-amd64
     ],
     visibility = ["//visibility:public"],
 )
