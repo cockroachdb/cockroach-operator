@@ -23,6 +23,9 @@ DOCKER_REGISTRY?=cockroachdb
 DOCKER_IMAGE_REPOSITORY?=cockroachdb-operator
 # Default bundle image tag
 APP_VERSION?=v1.6.12-rc.2
+GCP_PROJECT?=chris-love-operator-playground
+GCP_ZONE?=us-central1-a
+CLUSTER_NAME?=bazel-test
 
 # 
 # Testing targets
@@ -45,23 +48,56 @@ test/pkg:
 test/verify:
 	bazel test //hack/...
 
-# This target uses kind to start a k8s cluster  and runs the e2e tests
-# against that cluster.
+# Run only e2e stort tests
 .PHONY: test/e2e-short
 test/e2e-short: 
 	bazel test //e2e/... --test_arg=--test.short
 
 # This target uses kind to start a k8s cluster  and runs the e2e tests
 # against that cluster.
-.PHONY: test/e2e
-test/e2e: 
+.PHONY: test/e2e/kind
+test/e2e/kind: 
+	bazel run //hack:kind-start
 	bazel test --stamp //e2e/...
+	bazel run //hack:kind-stop
+	
+# This target uses kind to start a k8s cluster  and runs the e2e tests
+# against that cluster.
+.PHONY: test/e2e/kind-start
+test/e2e/kind-start: 
+	bazel run //hack:kind-start
 
+# This target uses kind to start a k8s cluster  and runs the e2e tests
+# against that cluster.
+.PHONY: test/e2e/kind-stop
+test/e2e/kind-stop:
+	bazel run //hack:kind-start
+	
 # This target exports the kind kubeconfig
 .PHONY: test/e2e/kind-kubeconfig
 test/e2e/kind-kubeconfig:
 	bazel-bin/hack/bin/kind export kubeconfig --name test
+	
+# This target uses kind to start a k8s gke cluster and runs the e2e tests
+# against that cluster.
+.PHONY: test/e2e/gke
+test/e2e/gke: 
+	bazel run //hack/gke:gke -- --action=start --cluster-name=$(CLUSTER_NAME) --gcp-zone=$(GCP_ZONE) --gcp-project=$(GCP_PROJECT)
+	DOCKER_REGISTRY=$(DOCKER_REGISTRY) \
+	DOCKER_IMAGE_REPOSITORY=$(DOCKER_IMAGE_REPOSITORY) \
+	APP_VERSION=$(APP_VERSION) \
+	bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
+		//manifests:install_operator.apply
+	bazel test --stamp //e2e/... --test_arg=--pvc=true
+	bazel run //hack/gke:gke --  --action=stop --cluster-name=$(CLUSTER_NAME) --gcp-zone=$(GCP_ZONE) --gcp-project=$(GCP_PROJECT)
 
+.PHONY: test/e2e/gke-start
+test/e2e/gke-start:
+	bazel run //hack/gke:gke --  --action=stop --cluster-name=$(CLUSTER_NAME) --gcp-zone=$(GCP_ZONE) --gcp-project=$(GCP_PROJECT)
+
+.PHONY: test/e2e/gke-stop
+test/e2e/gke-stop: 
+	bazel run //hack/gke:gke --  --action=stop --cluster-name=$(CLUSTER_NAME) --gcp-zone=$(GCP_ZONE) --gcp-project=$(GCP_PROJECT)
 # 
 # Different dev targets
 #

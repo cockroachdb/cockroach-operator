@@ -27,6 +27,7 @@ def install():
     install_kind()
     install_kubetest2()
     install_kubetest2_kind()
+    install_kubetest2_gke()
     install_operator_sdk()
     install_kustomize()
     install_opm()
@@ -261,14 +262,14 @@ def install_kubetest2():
     http_file(
        name = "kubetest2_darwin",
        executable = 1,
-       sha256 = "54b7f35575467b6bea173117f693959635c297ec89fc8011a964da8702cde50f",
-       urls = ["https://storage.googleapis.com/crdb-bazel-artifacts/macos/kubetest2"],
+       sha256 = "5b20aadd05eca47dead180a7c8296d75e81c184aabf182d4a41ef96597db543d",
+       urls = ["https://storage.googleapis.com/crdb-bazel-artifacts/osx/kubetest2"],
     )
 
     http_file(
         name = "kubetest2_linux",
         executable = 1,
-        sha256 = "c9c386dd46f3d26f91fc095b9970f57c34e2c54e443958bc097b3ec711e80b58",
+        sha256 = "7f0b05654fa43ca1c607db297b5f3a775f65eea90355bb6b10137a7fffff5e1a",
         urls = ["https://storage.googleapis.com/crdb-bazel-artifacts/linux/kubetest2"],
     )
 
@@ -279,15 +280,33 @@ def install_kubetest2_kind():
     http_file(
        name = "kubetest2_kind_darwin",
        executable = 1,
-       sha256 = "d89aa58feaaafcec82f9b5ffb92954dce157d8eb6dea6015fd3da85449840d7c",
-       urls = ["https://storage.googleapis.com/crdb-bazel-artifacts/macos/kubetest2-kind"],
+       sha256 = "a68bad1b94fd5e432f0555d699d0ce0470d0bf16f1b087e857d55f16f5373385",
+       urls = ["https://storage.googleapis.com/crdb-bazel-artifacts/osx/kubetest2-kind"],
     )
 
     http_file(
         name = "kubetest2_kind_linux",
         executable = 1,
-        sha256 = "e1b7ce0eec0c3db97b4fce3659e25f6190188c9c53f81ae3d090da47265a7599",
+        sha256 = "b13014d3e1464ce58e2bbbec94bead267936155d537f3232ec0a24727263a2a1",
         urls = ["https://storage.googleapis.com/crdb-bazel-artifacts/linux/kubetest2-kind"],
+    )
+
+## Fetch kubetest2-gke binary used during e2e tests
+def install_kubetest2_gke():
+    # install kubetest2-gke binary
+    # TODO osx support
+    http_file(
+       name = "kubetest2_gke_darwin",
+       executable = 1,
+       sha256 = "a1cbe02f61931dbe6c8d1662442f42cb538c81e4ec8cdd40f548f0e05cbd55a7",
+       urls = ["https://storage.googleapis.com/crdb-bazel-artifacts/osx/kubetest2-gke"],
+    )
+
+    http_file(
+        name = "kubetest2_gke_linux",
+        executable = 1,
+        sha256 = "9ac658234efc7f59968888662dd2d21908587789f6b812392ac5b6766b17c0b4",
+        urls = ["https://storage.googleapis.com/crdb-bazel-artifacts/linux/kubetest2-gke"],
     )
 
 ## Fetch operator-sdk used on generating csv

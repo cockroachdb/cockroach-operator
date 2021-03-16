@@ -4,11 +4,20 @@ load("@io_bazel_rules_k8s//k8s:objects.bzl", "k8s_objects")
 k8s_deploy(
     name = "operator",
     images = {
-        # TODO how do we do this?
-        # "{STABLE_DOCKER_REGISTRY}/{STABLE_IMAGE_REPOSITORY}:{STABLE_DOCKER_TAG}": "//cmd/cockroach-operator:operator_image",
-        "cockroachdb/cockroach-operator:v1.6.12-rc.2": "//cmd/cockroach-operator:operator_image",
+        # todo use STAMP variable here instead of the gen_rule below
+        "cockroach-operator:latest": "//cmd/cockroach-operator:operator_image",
     },
-    template = ":operator.yaml",
+    template = ":operator_image",
+)
+
+# rewrite the image: YAML stanza with cockroach-operator
+# if we can figure out how to use STAMP variables we can remove this
+genrule(
+    name = "operator_image",
+    srcs = [":operator.yaml"],
+    outs = [":operator-image.yaml"],
+    cmd = "$(location substitute.sh) $< $@",
+    tools = [":substitute.sh"],
 )
 
 k8s_objects(

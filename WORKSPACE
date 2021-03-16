@@ -15,7 +15,7 @@ load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
 
 protobuf_deps()
 
-## Load rules_go and dependencies
+## Load rules_go and dependencies
 http_archive(
     name = "io_bazel_rules_go",
     sha256 = "a8d6b1b354d371a646d2f7927319974e0f9e52f73a2452d2b3877118169eb6bb",
@@ -35,7 +35,7 @@ go_register_toolchains(
     # nogo = "@//hack/build:nogo_vet",
 )
 
-## Load gazelle and dependencies
+## Load gazelle and dependencies
 http_archive(
     name = "bazel_gazelle",
     url = "https://github.com/bazelbuild/bazel-gazelle/releases/download/v0.19.1/bazel-gazelle-v0.19.1.tar.gz",
@@ -43,8 +43,6 @@ http_archive(
 )
 
 load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies")
-
-gazelle_dependencies()
 
 ## Load kubernetes repo-infra for tools like kazel
 http_archive(
@@ -59,9 +57,9 @@ http_archive(
 ## Load rules_docker and dependencies, for working with docker images
 http_archive(
     name = "io_bazel_rules_docker",
-    sha256 = "4521794f0fba2e20f3bf15846ab5e01d5332e587e9ce81629c7f96c793bb7036",
-    strip_prefix = "rules_docker-0.14.4",
-    urls = ["https://github.com/bazelbuild/rules_docker/releases/download/v0.14.4/rules_docker-v0.14.4.tar.gz"],
+    sha256 = "95d39fd84ff4474babaf190450ee034d958202043e366b9fc38f438c9e6c3334",
+    strip_prefix = "rules_docker-0.16.0",
+    urls = ["https://github.com/bazelbuild/rules_docker/releases/download/v0.16.0/rules_docker-v0.16.0.tar.gz"],
 )
 
 load(
@@ -74,10 +72,6 @@ container_repositories()
 load("@io_bazel_rules_docker//repositories:deps.bzl", container_deps = "deps")
 
 container_deps()
-
-load("@io_bazel_rules_docker//repositories:pip_repositories.bzl", "pip_deps")
-
-pip_deps()
 
 load("@io_bazel_rules_docker//container:container.bzl", "container_pull")
 load("@io_bazel_rules_docker//go:image.bzl", _go_image_repos = "repositories")
@@ -104,12 +98,12 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 # This requires rules_docker to be fully instantiated before
 # it is pulled in.
-# Download the rules_k8s repository at release v0.4
+# Download the rules_k8s repository at release v0.5
 http_archive(
     name = "io_bazel_rules_k8s",
-    sha256 = "d91aeb17bbc619e649f8d32b65d9a8327e5404f451be196990e13f5b7e2d17bb",
-    strip_prefix = "rules_k8s-0.4",
-    urls = ["https://github.com/bazelbuild/rules_k8s/releases/download/v0.4/rules_k8s-v0.4.tar.gz"],
+    strip_prefix = "rules_k8s-0.5",
+    sha256 = "773aa45f2421a66c8aa651b8cecb8ea51db91799a405bd7b913d77052ac7261a",
+    urls = ["https://github.com/bazelbuild/rules_k8s/archive/v0.5.tar.gz"],
 )
 
 load("@io_bazel_rules_k8s//k8s:k8s.bzl", "k8s_repositories")
