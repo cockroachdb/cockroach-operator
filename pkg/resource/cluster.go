@@ -18,11 +18,10 @@ package resource
 
 import (
 	"fmt"
-	"math/rand"
 	"os"
-	"strconv"
 	"strings"
-	"time"
+
+	"github.com/gosimple/slug"
 
 	api "github.com/cockroachdb/cockroach-operator/api/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/clusterstatus"
@@ -150,9 +149,10 @@ func (cluster Cluster) StatefulSetName() string {
 }
 
 func (cluster Cluster) JobName() string {
-	rand.Seed(time.Now().UnixNano())
-	index := rand.Intn(10)
-	return fmt.Sprintf("%s-version-checker-%s", strconv.Itoa(index), cluster.Name())
+	// rand.Seed(time.Now().UnixNano())
+	// index := rand.Intn(10)
+	enText := slug.MakeLang("crdb", "en")
+	return fmt.Sprintf("%s-version-checker-%s", enText, cluster.Name())
 }
 func (cluster Cluster) IsSupportedImage() bool {
 	image := cluster.GetCockroachDBImageName()
