@@ -32,6 +32,7 @@ func TestSetClusterSpecDefaults(t *testing.T) {
 	expected := &CrdbClusterSpec{
 		GRPCPort:       &DefaultGRPCPort,
 		HTTPPort:       &DefaultHTTPPort,
+		SQLPort:        &DefaultSQLPort,
 		Cache:          "25%",
 		MaxSQLMemory:   "25%",
 		MaxUnavailable: &maxUnavailable,

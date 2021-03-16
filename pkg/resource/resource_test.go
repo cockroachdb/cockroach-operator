@@ -142,8 +142,9 @@ func makeTestService() *corev1.Service {
 			ClusterIP:                "None",
 			PublishNotReadyAddresses: true,
 			Ports: []corev1.ServicePort{
-				{Name: "grpc", Port: 26257},
+				{Name: "grpc", Port: 26258},
 				{Name: "http", Port: 8080},
+				{Name: "sql", Port: 26257},
 			},
 			Selector: map[string]string{
 				"app.kubernetes.io/name":      "cockroachdb",
@@ -156,8 +157,9 @@ func makeTestService() *corev1.Service {
 
 func modifyHTTPPort(newValue int32, service *corev1.Service) *corev1.Service {
 	service.Spec.Ports = []corev1.ServicePort{
-		{Name: "grpc", Port: 26257},
+		{Name: "grpc", Port: 26258},
 		{Name: "http", Port: newValue},
+		{Name: "sql", Port: 26257},
 	}
 	service.ObjectMeta.Annotations = map[string]string{
 		"prometheus.io/scrape": "true",

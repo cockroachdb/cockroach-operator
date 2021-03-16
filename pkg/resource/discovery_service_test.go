@@ -58,8 +58,9 @@ func TestDiscoveryServiceBuilder(t *testing.T) {
 					ClusterIP:                "None",
 					PublishNotReadyAddresses: true,
 					Ports: []corev1.ServicePort{
-						{Name: "grpc", Port: 26257},
+						{Name: "grpc", Port: 26258},
 						{Name: "http", Port: 8080},
+						{Name: "sql", Port: 26257},
 					},
 					Selector: map[string]string{
 						"app.kubernetes.io/name":      "cockroachdb",

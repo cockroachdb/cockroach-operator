@@ -265,7 +265,7 @@ spec:
                 type: object
               grpcPort:
                 description: '(Optional) The database port (`--port` CLI parameter
-                  when starting the service) Default: 26257'
+                  when starting the service) Default: 26258'
                 format: int32
                 type: integer
               httpPort:
@@ -343,6 +343,10 @@ spec:
                       to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                     type: object
                 type: object
+              sqlPort:
+                description: 'The SQL Port number Default: 26257'
+                format: int32
+                type: integer
               tlsEnabled:
                 description: (Optional) TLSEnabled determines if TLS is enabled for
                   your CockroachDB Cluster

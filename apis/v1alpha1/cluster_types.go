@@ -39,13 +39,17 @@ type CrdbClusterSpec struct {
 	// +optional
 	Image PodImage `json:"image"`
 	// (Optional) The database port (`--port` CLI parameter when starting the service)
-	// Default: 26257
+	// Default: 26258
 	// +optional
 	GRPCPort *int32 `json:"grpcPort,omitempty"`
 	// The web UI port (`--http-port` CLI parameter when starting the service)
 	// Default: 8080
 	// +optional
 	HTTPPort *int32 `json:"httpPort,omitempty"`
+	// The SQL Port number
+	// Default: 26257
+	// +optional
+	SQLPort *int32 `json:"sqlPort,omitempty"`
 	// (Optional) TLSEnabled determines if TLS is enabled for your CockroachDB Cluster
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="TLS Enabled",xDescriptors="urn:alm:descriptor:com.tectonic.ui:booleanSwitch"
 	// +optional
