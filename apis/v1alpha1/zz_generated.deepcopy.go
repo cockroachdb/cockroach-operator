@@ -134,6 +134,11 @@ func (in *CrdbClusterSpec) DeepCopyInto(out *CrdbClusterSpec) {
 		*out = new(int32)
 		**out = **in
 	}
+	if in.SQLPort != nil {
+		in, out := &in.SQLPort, &out.SQLPort
+		*out = new(int32)
+		**out = **in
+	}
 	if in.MaxUnavailable != nil {
 		in, out := &in.MaxUnavailable, &out.MaxUnavailable
 		*out = new(int32)

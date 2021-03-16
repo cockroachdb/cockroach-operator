@@ -50,6 +50,7 @@ func (b PublicServiceBuilder) Build(obj client.Object) error {
 			Ports: []corev1.ServicePort{
 				{Name: "grpc", Port: *b.Cluster.Spec().GRPCPort},
 				{Name: "http", Port: *b.Cluster.Spec().HTTPPort},
+				{Name: "sql", Port: *b.Cluster.Spec().SQLPort},
 			},
 		}
 	}

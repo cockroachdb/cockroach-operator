@@ -21,7 +21,8 @@ import (
 )
 
 var (
-	DefaultGRPCPort       int32 = 26257
+	DefaultGRPCPort       int32 = 26258
+	DefaultSQLPort        int32 = 26257
 	DefaultHTTPPort       int32 = 8080
 	DefaultMaxUnavailable int32 = 1
 )
@@ -31,6 +32,10 @@ var (
 func SetClusterSpecDefaults(cs *CrdbClusterSpec) {
 	if cs.GRPCPort == nil {
 		cs.GRPCPort = &DefaultGRPCPort
+	}
+
+	if cs.SQLPort == nil {
+		cs.SQLPort = &DefaultSQLPort
 	}
 
 	if cs.HTTPPort == nil {

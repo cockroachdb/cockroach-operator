@@ -57,10 +57,12 @@ func (b DiscoveryServiceBuilder) Build(obj client.Object) error {
 		Ports: []corev1.ServicePort{
 			{Name: "grpc", Port: *b.Cluster.Spec().GRPCPort},
 			{Name: "http", Port: *b.Cluster.Spec().HTTPPort},
+			{Name: "sql", Port: *b.Cluster.Spec().SQLPort},
 		},
 		Selector: b.Selector,
 	}
 
+	fmt.Println(*b.Cluster.Spec().SQLPort)
 	return nil
 }
 

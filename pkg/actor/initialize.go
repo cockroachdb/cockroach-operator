@@ -19,19 +19,24 @@ package actor
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/condition"
 	"github.com/cockroachdb/cockroach-operator/pkg/features"
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
+	"github.com/cockroachdb/cockroach-operator/pkg/logging"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
 	"github.com/pkg/errors"
-	"go.uber.org/zap/zapcore"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	kubetypes "k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -62,8 +67,8 @@ func (init initialize) Handles(conds []api.ClusterCondition) bool {
 }
 
 func (init initialize) Act(ctx context.Context, cluster *resource.Cluster) error {
-	log := init.log.WithValues("CrdbCluster", cluster.ObjectKey())
-	log.V(int(zapcore.InfoLevel)).Info("initializing CockroachDB")
+	log := logging.NewLogging(init.log.WithValues("CrdbCluster", cluster.ObjectKey()))
+	log.Debug("initializing CockroachDB")
 
 	stsName := cluster.StatefulSetName()
 
@@ -77,35 +82,57 @@ func (init initialize) Act(ctx context.Context, cluster *resource.Cluster) error
 		return kube.IgnoreNotFound(err)
 	}
 
-	status := &ss.Status
-
-	if status.CurrentReplicas == 0 || status.CurrentReplicas < status.Replicas {
-		log.V(int(zapcore.WarnLevel)).Info("statefulset does not have all replicas up")
-		return NotReadyErr{Err: errors.New("statefulset does not have all replicas up")}
+	clientset, err := kubernetes.NewForConfig(init.config)
+	if err != nil {
+		return log.LogAndWrapError(err, "cannot create k8s client")
 	}
 
+	pods, err := clientset.CoreV1().Pods(ss.Namespace).List(ctx, metav1.ListOptions{
+		LabelSelector: labels.Set(ss.Spec.Selector.MatchLabels).AsSelector().String(),
+	})
+
+	if err != nil {
+		return log.LogAndWrapError(err, "error getting pods in statefulset")
+	}
+
+	if len(pods.Items) == 0 {
+		return NotReadyErr{Err: errors.New("pod not created")}
+	}
+
+	phase := pods.Items[0].Status.Phase
+	if phase != corev1.PodRunning {
+		return NotReadyErr{Err: errors.New("pod is not running")}
+	}
+
+	log.Debug("Pod is ready")
+
+	port := strconv.FormatInt(int64(*cluster.Spec().GRPCPort), 10)
 	cmd := []string{
-		"/bin/bash",
-		"-c",
-		">- /cockroach/cockroach init " + cluster.SecureMode(),
+		"/cockroach/cockroach.sh",
+		"init",
+		cluster.SecureMode(),
+		"--host=localhost:" + port,
 	}
 
+	log.Debug("Executing init in pod")
 	_, stderr, err := kube.ExecInPod(init.scheme, init.config, cluster.Namespace(),
 		fmt.Sprintf("%s-0", stsName), resource.DbContainerName, cmd)
+	log.Debug("Executed init in pod")
 
 	if err != nil && !alreadyInitialized(stderr) {
 		// can happen if container has not finished its startup
 		if strings.Contains(err.Error(), "unable to upgrade connection: container not found") ||
 			strings.Contains(err.Error(), "does not have a host assigned") {
+			log.Debug("pod has not completely started")
 			return NotReadyErr{Err: errors.New("pod has not completely started")}
 		}
 
-		return errors.Wrapf(err, "failed to initialize the cluster")
+		return log.LogAndWrapError(err, "failed to initialize the cluster")
 	}
 
 	cluster.SetFalse(api.NotInitializedCondition)
 
-	log.V(int(zapcore.InfoLevel)).Info("completed intializing database")
+	log.Debug("completed intializing database")
 	return nil
 }
 

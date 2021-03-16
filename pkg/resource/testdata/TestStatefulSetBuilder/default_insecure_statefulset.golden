@@ -1,11 +1,11 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  creationTimestamp: null
-  name: test-cluster
   annotations:
     crdb.io/containerimage: ""
     crdb.io/version: ""
+  creationTimestamp: null
+  name: test-cluster
 spec:
   podManagementPolicy: OrderedReady
   replicas: 1
@@ -24,18 +24,18 @@ spec:
         app.kubernetes.io/name: cockroachdb
     spec:
       automountServiceAccountToken: false
-      serviceAccountName: "cockroach-database-sa"
       containers:
       - args:
         - start
-        - --join=test-cluster-0.test-cluster.test-ns:26257
+        - --join=test-cluster-0.test-cluster.test-ns:26258
         - --advertise-host=$(POD_NAME).test-cluster.test-ns
         - --logtostderr=INFO
         - --insecure
         - --http-port=8080
-        - --port=26257
         - --cache=25%
         - --max-sql-memory=25%
+        - --sql-addr=:26257
+        - --listen-addr=:26258
         command:
         - /cockroach/cockroach.sh
         env:
@@ -56,11 +56,14 @@ spec:
           periodSeconds: 5
         name: db
         ports:
-        - containerPort: 26257
+        - containerPort: 26258
           name: grpc
           protocol: TCP
         - containerPort: 8080
           name: http
+          protocol: TCP
+        - containerPort: 26257
+          name: sql
           protocol: TCP
         readinessProbe:
           failureThreshold: 2
@@ -74,6 +77,7 @@ spec:
         volumeMounts:
         - mountPath: /cockroach/cockroach-data/
           name: datadir
+      serviceAccountName: cockroach-database-sa
       terminationGracePeriodSeconds: 60
       volumes:
       - emptyDir: {}

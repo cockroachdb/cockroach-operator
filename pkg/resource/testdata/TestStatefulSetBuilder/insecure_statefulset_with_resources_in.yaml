@@ -21,7 +21,7 @@ metadata:
 spec:
   dataStore:
     emptyDir: {}
-  grpcPort: 26257
+  grpcPort: 26258
   httpPort: 8080
   resources:
     limits:

@@ -33,6 +33,7 @@ import (
 const (
 	httpPortName = "http"
 	grpcPortName = "grpc"
+	sqlPortName  = "sql"
 
 	DataDirName      = "datadir"
 	DataDirMountPath = "/cockroach/cockroach-data/"
@@ -228,6 +229,11 @@ func (b StatefulSetBuilder) MakeContainers() []corev1.Container {
 					ContainerPort: *b.Spec().HTTPPort,
 					Protocol:      corev1.ProtocolTCP,
 				},
+				{
+					Name:          sqlPortName,
+					ContainerPort: *b.Spec().SQLPort,
+					Protocol:      corev1.ProtocolTCP,
+				},
 			},
 			LivenessProbe: &corev1.Probe{
 				Handler: corev1.Handler{
@@ -297,9 +303,10 @@ func (b StatefulSetBuilder) dbArgs() []string {
 		"--logtostderr=INFO",
 		b.Cluster.SecureMode(),
 		"--http-port=" + fmt.Sprint(*b.Spec().HTTPPort),
-		"--port=" + fmt.Sprint(*b.Spec().GRPCPort),
 		"--cache=" + b.Spec().Cache,
 		"--max-sql-memory=" + b.Spec().MaxSQLMemory,
+		"--sql-addr=:" + fmt.Sprint(*b.Spec().SQLPort),
+		"--listen-addr=:" + fmt.Sprint(*b.Spec().GRPCPort),
 	}
 
 	return append(aa, b.Spec().AdditionalArgs...)
