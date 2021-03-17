@@ -4889,19 +4889,3 @@ def go_repositories():
         sum = "h1:RlWgLqCMMIYYEVcAR5MDsuHlVkaIPDAF+5Dehzg8L5A=",
         version = "v2.0.0-20180818164646-67afb5ed74ec",
     )
-    go_repository(
-        name = "com_github_gosimple_slug",
-        build_file_generation = "on",
-        build_file_proto_mode = "disable",
-        importpath = "github.com/gosimple/slug",
-        sum = "h1:r5vDcYrFz9BmfIAMC829un9hq7hKM4cHUrsv36LbEqs=",
-        version = "v1.9.0",
-    )
-    go_repository(
-        name = "com_github_rainycape_unidecode",
-        build_file_generation = "on",
-        build_file_proto_mode = "disable",
-        importpath = "github.com/rainycape/unidecode",
-        sum = "h1:ta7tUOvsPHVHGom5hKW5VXNc2xZIkfCKP8iaqOyYtUQ=",
-        version = "v0.0.0-20150907023854-cb7f23ec59be",
-    )
