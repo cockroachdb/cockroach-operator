@@ -228,7 +228,7 @@ func requireDownGradeOptionSet(t *testing.T, sb testenv.DiffingSandbox, b testut
 	conn := &database.DBConnection{
 		Ctx:    context.TODO(),
 		Client: sb.Mgr.GetClient(),
-		Port:   b.Cluster().Spec().GRPCPort,
+		Port:   b.Cluster().Spec().SQLPort,
 		UseSSL: true,
 
 		RestConfig:   sb.Mgr.GetConfig(),
@@ -296,7 +296,7 @@ func requireDatabaseToFunction(t *testing.T, sb testenv.DiffingSandbox, b testut
 	conn := &database.DBConnection{
 		Ctx:    context.TODO(),
 		Client: sb.Mgr.GetClient(),
-		Port:   b.Cluster().Spec().GRPCPort,
+		Port:   b.Cluster().Spec().SQLPort,
 		UseSSL: true,
 
 		RestConfig:   sb.Mgr.GetConfig(),
