@@ -32,12 +32,12 @@ func TestInitializesForEmptyConditions(t *testing.T) {
 	expected := []api.ClusterCondition{
 		{
 			Type:               "Initialized",
-			Status:             metav1.ConditionTrue,
+			Status:             metav1.ConditionFalse,
 			LastTransitionTime: now,
 		},
 		{
 			Type:               "CrdbVersionChecked",
-			Status:             metav1.ConditionTrue,
+			Status:             metav1.ConditionFalse,
 			LastTransitionTime: now,
 		},
 	}
