@@ -148,7 +148,7 @@ func (cluster Cluster) StatefulSetName() string {
 }
 
 func (cluster Cluster) JobName() string {
-	return fmt.Sprintf("%s-version-checker-%d", cluster.Name(), getTimeHashInMinutes(time.Now()))
+	return fmt.Sprintf("%s-vcheck-%d", cluster.Name(), getTimeHashInMinutes(time.Now()))
 }
 func getTimeHashInMinutes(scheduledTime time.Time) int64 {
 	return scheduledTime.Unix() / 60
