@@ -19,4 +19,4 @@ metadata:
 spec:
   sourceType: grpc
   displayName: Cockroach Test Demo
-  image: quay.io/alinalion/cockroachdb-operator-index:1.2.11
+  image: quay.io/alinalion/cockroachdb-operator-index:1.2.16
