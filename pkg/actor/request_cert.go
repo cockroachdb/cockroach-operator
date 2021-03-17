@@ -55,7 +55,7 @@ func (rc *requestCert) GetActionType() api.ActionType {
 }
 
 func (rc *requestCert) Handles(conds []api.ClusterCondition) bool {
-	return condition.True(api.NotInitializedCondition, conds)
+	return condition.False(api.InitializedCondition, conds)
 }
 
 func (rc *requestCert) Act(ctx context.Context, cluster *resource.Cluster) error {

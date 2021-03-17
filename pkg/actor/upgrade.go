@@ -57,7 +57,7 @@ func (up *upgrade) GetActionType() api.ActionType {
 }
 
 func (up *upgrade) Handles(conds []api.ClusterCondition) bool {
-	return condition.False(api.NotInitializedCondition, conds) && utilfeature.DefaultMutableFeatureGate.Enabled(features.Upgrade)
+	return condition.True(api.InitializedCondition, conds) && utilfeature.DefaultMutableFeatureGate.Enabled(features.Upgrade)
 }
 
 func (up *upgrade) Act(ctx context.Context, cluster *resource.Cluster) error {

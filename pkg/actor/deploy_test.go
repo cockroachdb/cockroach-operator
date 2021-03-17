@@ -72,7 +72,7 @@ func TestDeploysNotInitalizedClusterAfterVersionChecker(t *testing.T) {
 		WithUID("cockroachdb-uid").
 		WithEmptyDirDataStore().
 		WithNodeCount(1).Cluster()
-	cluster.SetFalse(api.CrdbVersionNotChecked)
+	cluster.SetTrue(api.CrdbVersionChecked)
 
 	deploy := actor.NewDeploy(scheme, client)
 	t.Log(cluster.Status().Conditions)

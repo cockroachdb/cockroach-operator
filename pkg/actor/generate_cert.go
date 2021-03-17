@@ -86,7 +86,7 @@ func (rc *generateCert) GetActionType() api.ActionType {
 func (rc *generateCert) Handles(conds []api.ClusterCondition) bool {
 	// TODO this is not working am I doing this correctly?
 	// condition.True(api.CertificateGenerated, conds)
-	return condition.True(api.NotInitializedCondition, conds)
+	return condition.False(api.InitializedCondition, conds)
 }
 
 // Act func generates the various certificates required and then stores

@@ -59,7 +59,7 @@ func (d decommission) GetActionType() api.ActionType {
 }
 
 func (d decommission) Handles(conds []api.ClusterCondition) bool {
-	return condition.False(api.NotInitializedCondition, conds) && utilfeature.DefaultMutableFeatureGate.Enabled(features.Decommission)
+	return condition.True(api.InitializedCondition, conds) && utilfeature.DefaultMutableFeatureGate.Enabled(features.Decommission)
 }
 
 func (d decommission) Act(ctx context.Context, cluster *resource.Cluster) error {

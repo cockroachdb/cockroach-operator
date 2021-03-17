@@ -104,9 +104,9 @@ func (r *ClusterReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	}
 
 	//force version validation on mismatch between status and spec
-	if !cluster.True(api.CrdbVersionNotChecked) {
+	if cluster.True(api.CrdbVersionChecked) {
 		if cluster.GetCockroachDBImageName() != cluster.Status().CrdbContainerImage {
-			cluster.SetTrue(api.CrdbVersionNotChecked)
+			cluster.SetFalse(api.CrdbVersionChecked)
 			if err := r.Client.Status().Update(ctx, cluster.Unwrap()); err != nil {
 				log.Error(err, "failed to update cluster status on action")
 				return requeueIfError(err)

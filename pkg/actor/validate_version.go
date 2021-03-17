@@ -66,7 +66,7 @@ func (v *versionChecker) GetActionType() api.ActionType {
 }
 
 func (v *versionChecker) Handles(conds []api.ClusterCondition) bool {
-	return utilfeature.DefaultMutableFeatureGate.Enabled(features.CrdbVersionValidator) && (condition.False(api.NotInitializedCondition, conds) || condition.True(api.NotInitializedCondition, conds)) && condition.True(api.CrdbVersionNotChecked, conds)
+	return utilfeature.DefaultMutableFeatureGate.Enabled(features.CrdbVersionValidator) && (condition.True(api.InitializedCondition, conds) || condition.False(api.InitializedCondition, conds)) && condition.False(api.CrdbVersionChecked, conds)
 }
 
 func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) error {
@@ -266,7 +266,7 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 
 	refreshedCluster := resource.NewCluster(cr)
 	// save the status of the cluster
-	refreshedCluster.SetFalse(api.CrdbVersionNotChecked)
+	refreshedCluster.SetTrue(api.CrdbVersionChecked)
 	refreshedCluster.SetClusterVersion(calVersion)
 	refreshedCluster.SetCrdbContainerImage(containerImage)
 	if err := v.client.Status().Update(ctx, refreshedCluster.Unwrap()); err != nil {

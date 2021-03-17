@@ -74,7 +74,7 @@ func (rp *resizePVC) GetActionType() api.ActionType {
 
 // Handles returns true if the DB is initialized
 func (rp *resizePVC) Handles(conds []api.ClusterCondition) bool {
-	return condition.False(api.NotInitializedCondition, conds) && utilfeature.DefaultMutableFeatureGate.Enabled(features.ResizePVC)
+	return condition.True(api.InitializedCondition, conds) && utilfeature.DefaultMutableFeatureGate.Enabled(features.ResizePVC)
 }
 
 // Act in this implementation resizes PVC volumes of a CR sts.

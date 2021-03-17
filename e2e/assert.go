@@ -126,7 +126,7 @@ func requireDbContainersToUseImage(t *testing.T, sb testenv.DiffingSandbox, cr *
 func clusterIsInitialized(t *testing.T, sb testenv.DiffingSandbox, name string) (bool, error) {
 	expectedConditions := []api.ClusterCondition{
 		{
-			Type:   api.NotInitializedCondition,
+			Type:   api.InitializedCondition,
 			Status: metav1.ConditionFalse,
 		},
 	}

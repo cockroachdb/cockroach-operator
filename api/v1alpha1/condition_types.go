@@ -22,13 +22,10 @@ type ClusterConditionType string
 const (
 	//CrdbCertificateGenerated condition used to run the version checker and sync other actions
 	CertificateGenerated ClusterConditionType = "CertificateGenerated"
-
-	//CrdbVersionNotChecked condition used to run the version checker and sync other actions
-	CrdbVersionNotChecked ClusterConditionType = "CrdbVersionNotChecked"
-	//NotInitializedCondition condition used to signal that a cluster was initialed and to sync the action
-	NotInitializedCondition ClusterConditionType = "NotInitialized"
+	//CrdbVersionChecked condition used to run the version checker and sync other actions
+	CrdbVersionChecked ClusterConditionType = "CrdbVersionChecked"
 	//DecommissionCondition string
 	DecommissionCondition ClusterConditionType = "Decommission"
-	//InitializeCondition string
-	InitializeCondition ClusterConditionType = "Initialize"
+	//InitializedCondition string
+	InitializedCondition ClusterConditionType = "Initialized"
 )

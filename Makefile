@@ -22,7 +22,7 @@
 DOCKER_REGISTRY?=us.gcr.io/chris-love-operator-playground
 DOCKER_IMAGE_REPOSITORY?=cockroachdb-operator
 # Default bundle image tag
-APP_VERSION?=v1.8.48
+APP_VERSION?=v1.8.49
 
 # 
 # Testing targets
