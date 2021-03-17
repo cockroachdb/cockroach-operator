@@ -86,9 +86,18 @@ container_image(
     visibility = ["//visibility:public"],
 )
 
+#  fetch_crdb downloads the cockroach binary
+genrule(
+    name = "fetch_crdb_container",
+    srcs = ["@crdb_linux//:file"],
+    outs = ["cockroach"],
+    cmd = "cp $(SRCS) $@",
+    visibility = ["//visibility:public"],
+)
+
 pkg_tar(
     name = "cockroach-tar",
-    srcs = ["//hack/bin:cockroach"],
+    srcs = [":fetch_crdb_container"],
     mode = "0755",
     package_dir = "/usr/local/bin",
 )
