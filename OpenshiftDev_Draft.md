@@ -11,9 +11,9 @@
 make release/update-pkg-manifest
 make release/opm-build-bundle
 ```
-
-3. Release bundle
+3. Release bundle -- To Do 
 ```
+make dev/push-bundle
 ```
 
 4. Install operator from Operator Hub

@@ -142,6 +142,9 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 		return errors.Wrapf(err, "check version failed to create kubernetes clientset")
 	}
 	if err := v.client.Get(ctx, key, job); err != nil {
+		// if IsJobTerminating(ctx, job, log) {
+		// 	goto ReconcileJob
+		// }
 		err := WaitUntilJobPodIsRunning(ctx, clientset, job, log)
 		if err != nil {
 			log.Error(err, "job not found")
