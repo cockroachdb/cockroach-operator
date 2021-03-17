@@ -28,6 +28,7 @@ def install():
     install_kubetest2()
     install_kubetest2_kind()
     install_kubetest2_gke()
+    install_kubetest2_exe()
     install_operator_sdk()
     install_kustomize()
     install_opm()
@@ -308,7 +309,23 @@ def install_kubetest2_gke():
         sha256 = "9ac658234efc7f59968888662dd2d21908587789f6b812392ac5b6766b17c0b4",
         urls = ["https://storage.googleapis.com/crdb-bazel-artifacts/linux/kubetest2-gke"],
     )
+## Fetch kubetest2-tester-exe binary used during e2e tests
+def install_kubetest2_exe():
+    # install kubetest2-exe binary
+    # TODO osx support
+    http_file(
+       name = "kubetest2_exe_darwin",
+       executable = 1,
+       sha256 = "a1cbe02f61931dbe6c8d1662442f42cb538c81e4ec8cdd40f548f0e05cbd55a7",
+       urls = ["https://storage.googleapis.com/crdb-bazel-artifacts/osx/kubetest2-tester-exec"],
+    )
 
+    http_file(
+        name = "kubetest2_exe_linux",
+        executable = 1,
+        sha256 = "4483f40f48b98e8a6aa41f58bfdf1f2787066a4e1ad1343e4281892aa1326736",
+        urls = ["https://storage.googleapis.com/crdb-bazel-artifacts/linux/kubetest2-tester-exec"],
+    )
 ## Fetch operator-sdk used on generating csv
 def install_operator_sdk():
     # install kubetest2-kind binary

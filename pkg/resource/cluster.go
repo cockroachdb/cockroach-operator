@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/clusterstatus"

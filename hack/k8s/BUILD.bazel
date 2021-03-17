@@ -1,0 +1,39 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["verify_k8s_running.go"],
+    importpath = "github.com/cockroachdb/cockroach-operator/hack/k8s",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//pkg/kube:go_default_library",
+        "@com_github_cenkalti_backoff//:go_default_library",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:go_default_library",
+        "@io_k8s_client_go//kubernetes:go_default_library",
+        "@io_k8s_client_go//plugin/pkg/client/auth/gcp:go_default_library",
+        "@io_k8s_client_go//rest:go_default_library",
+        "@io_k8s_client_go//tools/clientcmd:go_default_library",
+        "@io_k8s_client_go//util/homedir:go_default_library",
+        "@io_k8s_klog_v2//:go_default_library",
+    ],
+)
+
+go_binary(
+    name = "k8s",
+    embed = [":go_default_library"],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "package-srcs",
+    srcs = glob(["**"]),
+    tags = ["automanaged"],
+    visibility = ["//visibility:private"],
+)
+
+filegroup(
+    name = "all-srcs",
+    srcs = [":package-srcs"],
+    tags = ["automanaged"],
+    visibility = ["//visibility:public"],
+)
