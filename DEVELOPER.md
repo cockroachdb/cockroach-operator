@@ -118,3 +118,27 @@ kubectl port-forward crdb-example-0 8080
 Then point your browser to http://localhost:8080 and you will load the admin UI.
 
 NOTE: If you are installing the database in a namespace other than default, please add the `-n` flag appropriately.
+
+## Install Cockroach Operator on an Openshift cluster
+
+1. Create a new image on a custom repo:
+
+```bash
+ make release/image
+```
+
+2. Create bundle:
+```bash
+make release/update-pkg-manifest
+make release/opm-build-bundle
+```
+3. Release bundle -- To Do 
+
+4. Cleanup existing cluster  and register new version on OperatorHub
+```bash
+oc delete crd crdbclusters.crdb.cockroachlabs.com
+kubectl delete pvc,pv  --all
+oc delete -f test-registry.yaml
+oc apply -f test-registry.yaml
+```
+5. Install operator from Operator Hub
