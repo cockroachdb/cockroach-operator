@@ -122,7 +122,7 @@ func (d decommission) Act(ctx context.Context, cluster *resource.Cluster) error 
 		ServiceName:      serviceName,
 		Namespace:        cluster.Namespace(),
 		DatabaseName:     "system", // TODO we need to use variable instead of string
-		Port:             cluster.Spec().GRPCPort,
+		Port:             cluster.Spec().SQLPort,
 		RunningInsideK8s: runningInsideK8s,
 	}
 
