@@ -55,7 +55,7 @@ func defaultBackoffFactory(maxTime time.Duration) backoff.BackOff {
 	return b
 }
 
-var defaultTime time.Duration = 1 * time.Minute
+var defaultTime time.Duration = 5 * time.Minute
 
 // K8sPodLabels are used to store information about
 // kubernetes pod labels to look up pods
