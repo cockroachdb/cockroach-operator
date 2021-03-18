@@ -316,7 +316,7 @@ def install_kubetest2_exe():
     http_file(
        name = "kubetest2_exe_darwin",
        executable = 1,
-       sha256 = "a1cbe02f61931dbe6c8d1662442f42cb538c81e4ec8cdd40f548f0e05cbd55a7",
+       sha256 = "818690cb55590440e163b18dd139c8a8714df9480f869bafe19eb344047cf37c",
        urls = ["https://storage.googleapis.com/crdb-bazel-artifacts/osx/kubetest2-tester-exec"],
     )
 
