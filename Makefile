@@ -51,14 +51,22 @@ test/verify:
 .PHONY: test/e2e-short
 test/e2e-short: 
 	bazel test //e2e/... --test_arg=--test.short
+	
+# Run e2e tests on kind
+.PHONY: test/e2e/run-kind
+test/e2e/run-kind:
+	bazel-bin/hack/bin/kind export kubeconfig --name $(CLUSTER_NAME)
+	bazel run //hack/k8s:k8s -- -type kind
+	bazel test --stamp //e2e/... 
+
 
 # This target uses kind to start a k8s cluster  and runs the e2e tests
 # against that cluster.
 .PHONY: test/e2e/kind
 test/e2e/kind: 
-	bazel run //hack:kind-start
-	bazel test --stamp //e2e/...
-	bazel run //hack:kind-stop
+	bazel build //hack/bin/...
+	PATH=${PATH}:bazel-bin/hack/bin kubetest2 kind --cluster-name=$(CLUSTER_NAME) \
+		--up --down -v 10 --test=exec -- make test/e2e/run-kind
 	
 # This target uses kind to start a k8s cluster  and runs the e2e tests
 # against that cluster.
@@ -76,23 +84,32 @@ test/e2e/kind-stop:
 .PHONY: test/e2e/kind-kubeconfig
 test/e2e/kind-kubeconfig:
 	bazel-bin/hack/bin/kind export kubeconfig --name test
-	
-# This target uses kind to start a k8s gke cluster and runs the e2e tests
-# against that cluster.
-.PHONY: test/e2e/gke
-test/e2e/gke: 
-	bazel run //hack/gke:gke -- --action=start --cluster-name=$(CLUSTER_NAME) --gcp-zone=$(GCP_ZONE) --gcp-project=$(GCP_PROJECT)
+
+# TODO get the pvc test running - the command line arguments are not working
+# Run e2e tests on gke
+.PHONY: test/e2e/run-gke
+test/e2e/run-gke:
+	bazel run //hack/k8s:k8s -- -type gke
+	bazel test --stamp //e2e/... 
 	DOCKER_REGISTRY=$(DOCKER_REGISTRY) \
 	DOCKER_IMAGE_REPOSITORY=$(DOCKER_IMAGE_REPOSITORY) \
 	APP_VERSION=$(APP_VERSION) \
 	bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
 		//manifests:install_operator.apply
-	bazel test --stamp //e2e/... --test_arg=--pvc=true
-	bazel run //hack/gke:gke --  --action=stop --cluster-name=$(CLUSTER_NAME) --gcp-zone=$(GCP_ZONE) --gcp-project=$(GCP_PROJECT)
+
+# This target uses kind to start a k8s gke cluster and runs the e2e tests
+# against that cluster.
+.PHONY: test/e2e/gke
+test/e2e/gke: 
+	bazel build //hack/bin/...
+	PATH=${PATH}:bazel-bin/hack/bin bazel-bin/hack/bin/kubetest2 gke --cluster-name=$(CLUSTER_NAME) \
+		--zone=$(GCP_ZONE) --project=$(GCP_PROJECT) \
+		--version latest --up --down -v 10 --ignore-gcp-ssh-key \
+		--test=exec -- make test/e2e/run-gke
 
 .PHONY: test/e2e/gke-start
 test/e2e/gke-start:
-	bazel run //hack/gke:gke --  --action=stop --cluster-name=$(CLUSTER_NAME) --gcp-zone=$(GCP_ZONE) --gcp-project=$(GCP_PROJECT)
+	bazel run //hack/gke:gke -- --action=start --cluster-name=$(CLUSTER_NAME) --gcp-zone=$(GCP_ZONE) --gcp-project=$(GCP_PROJECT)
 
 .PHONY: test/e2e/gke-stop
 test/e2e/gke-stop: 
