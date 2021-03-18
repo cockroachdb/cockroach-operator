@@ -47,6 +47,12 @@ test/pkg:
 test/verify:
 	bazel test //hack/...
 
+# Run only e2e stort tests
+# We can use this to only run one specific test
+.PHONY: test/e2e-short
+test/e2e-short:
+	bazel test //e2e/... --test_arg=--test.short
+
 #
 # End to end testing targets
 #
@@ -67,7 +73,7 @@ test/verify:
 test/e2e/testrunner-kind:
 	bazel-bin/hack/bin/kind export kubeconfig --name $(CLUSTER_NAME)
 	bazel run //hack/k8s:k8s -- -type kind
-	bazel test --stamp //e2e/... 
+	bazel test --stamp //e2e/...
 
 # Use this target to run e2e tests using a kind k8s cluster.
 # This target uses kind to start a k8s cluster  and runs the e2e tests
@@ -84,8 +90,6 @@ test/e2e/kind:
 	PATH=${PATH}:bazel-bin/hack/bin kubetest2 kind --cluster-name=$(CLUSTER_NAME) \
 		--up --down -v 10 --test=exec -- make test/e2e/testrunner-kind
 	
-# TODO get the pvc test running - the command line arguments are not working
-
 # This target is used by kubetest2-tester-exec when running a gke test
 # k8s:k8s -type gke which checks to see if gke is up and running.
 # Then bazel e2e testing is run.
@@ -95,7 +99,7 @@ test/e2e/kind:
 .PHONY: test/e2e/testrunner-gke
 test/e2e/testrunner-gke:
 	bazel run //hack/k8s:k8s -- -type gke
-	bazel test --stamp //e2e/... 
+	bazel test --stamp --test_arg=--pvc=true //e2e/...
 	DOCKER_REGISTRY=$(DOCKER_REGISTRY) \
 	DOCKER_IMAGE_REPOSITORY=$(DOCKER_IMAGE_REPOSITORY) \
 	APP_VERSION=$(APP_VERSION) \
