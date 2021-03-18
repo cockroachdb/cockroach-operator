@@ -27,7 +27,7 @@ GCP_ZONE?=us-central1-a
 CLUSTER_NAME?=bazel-test
 
 # 
-# Testing targets
+# Unit Testing Targets
 # 
 .PHONY: test/all
 test/all:
@@ -48,72 +48,88 @@ test/verify:
 	bazel test //hack/...
 
 # Run only e2e stort tests
+# We can use this to only run one specific test
 .PHONY: test/e2e-short
-test/e2e-short: 
+test/e2e-short:
 	bazel test //e2e/... --test_arg=--test.short
+
+#
+# End to end testing targets
+#
+# kind: use make test/e2e/kind
+# gke: use make test/e2e/gke
+#
+# kubetest2 binaries from the kubernetes testing team is used
+# by the e2e tests.  We maintain the binaries and the binaries are
+# downloaded from google storage by bazel.  See hack/bin/deps.bzl
+# Once the repo releases binaries we should vendor the tag or 
+# download the built binaries.
 	
-# Run e2e tests on kind
-.PHONY: test/e2e/run-kind
-test/e2e/run-kind:
+# This target is used by kubetest2-tester-exec when running a kind test
+# This target exportis the kubeconfig from kind and then runs 
+# k8s:k8s -type kind which checks to see if kind is up and running.
+# Then bazel e2e testing is run.
+.PHONY: test/e2e/testrunner-kind
+test/e2e/testrunner-kind:
 	bazel-bin/hack/bin/kind export kubeconfig --name $(CLUSTER_NAME)
 	bazel run //hack/k8s:k8s -- -type kind
-	bazel test --stamp //e2e/... 
+	bazel test --stamp //e2e/...
 
-
+# Use this target to run e2e tests using a kind k8s cluster.
 # This target uses kind to start a k8s cluster  and runs the e2e tests
 # against that cluster.
+# This is the main entrypoint for running the e2e tests on kind.
+# This target runs kubetest2 kind that starts a kind cluster
+# Then kubetest2 tester exec is run which runs the make target
+# test/e2e/testrunner-kind.
+# After the tests run the cluster is deleted.
+# If you need a unique cluster name override CLUSTER_NAME.
 .PHONY: test/e2e/kind
 test/e2e/kind: 
 	bazel build //hack/bin/...
 	PATH=${PATH}:bazel-bin/hack/bin kubetest2 kind --cluster-name=$(CLUSTER_NAME) \
-		--up --down -v 10 --test=exec -- make test/e2e/run-kind
+		--up --down -v 10 --test=exec -- make test/e2e/testrunner-kind
 	
-# This target uses kind to start a k8s cluster  and runs the e2e tests
-# against that cluster.
-.PHONY: test/e2e/kind-start
-test/e2e/kind-start: 
-	bazel run //hack:kind-start
-
-# This target uses kind to start a k8s cluster  and runs the e2e tests
-# against that cluster.
-.PHONY: test/e2e/kind-stop
-test/e2e/kind-stop:
-	bazel run //hack:kind-start
-	
-# This target exports the kind kubeconfig
-.PHONY: test/e2e/kind-kubeconfig
-test/e2e/kind-kubeconfig:
-	bazel-bin/hack/bin/kind export kubeconfig --name test
-
-# TODO get the pvc test running - the command line arguments are not working
-# Run e2e tests on gke
-.PHONY: test/e2e/run-gke
-test/e2e/run-gke:
+# This target is used by kubetest2-tester-exec when running a gke test
+# k8s:k8s -type gke which checks to see if gke is up and running.
+# Then bazel e2e testing is run.
+# This target also installs the operator in the default namespace
+# you may need to overrirde the DOCKER_IMAGE_REPOSITORY to match
+# the GKEs project repo.
+.PHONY: test/e2e/testrunner-gke
+test/e2e/testrunner-gke:
 	bazel run //hack/k8s:k8s -- -type gke
-	bazel test --stamp //e2e/... 
-	DOCKER_REGISTRY=$(DOCKER_REGISTRY) \
-	DOCKER_IMAGE_REPOSITORY=$(DOCKER_IMAGE_REPOSITORY) \
-	APP_VERSION=$(APP_VERSION) \
-	bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
-		//manifests:install_operator.apply
+	bazel test --stamp --test_arg=--pvc=true //e2e/...
 
-# This target uses kind to start a k8s gke cluster and runs the e2e tests
+# TODO get this working with GKE testing
+#	K8S_CLUSTER=gke_$(GCP_PROJECT)_$(GCP_ZONE)_$(CLUSTER_NAME) \
+#	DOCKER_REGISTRY=$(DOCKER_REGISTRY) \
+#	DOCKER_IMAGE_REPOSITORY=$(DOCKER_IMAGE_REPOSITORY) \
+#	APP_VERSION=$(APP_VERSION) \
+#	bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
+#		//manifests:install_operator.apply
+
+# Use this target to run e2e tests with a gke cluster.
+# This target uses kind to start a gke k8s cluster  and runs the e2e tests
 # against that cluster.
+# This is the main entrypoint for running the e2e tests on gke kind.
+# This target runs kubetest2 gke that starts a gke cluster
+# Then kubetest2 tester exec is run which runs the make target
+# test/e2e/testrunner-gke.
+# After the tests run the cluster is deleted.
+# If you need a unique cluster name override CLUSTER_NAME.
+# You will probably want to override GCP_ZONE and GCP_PROJECT as well.
+# The gcloud binary is used to start the cluster and is not installed by bazel.
+# You also need gcp permission to start a cluster and upload containers to the
+# projects registry.
 .PHONY: test/e2e/gke
 test/e2e/gke: 
 	bazel build //hack/bin/...
 	PATH=${PATH}:bazel-bin/hack/bin bazel-bin/hack/bin/kubetest2 gke --cluster-name=$(CLUSTER_NAME) \
 		--zone=$(GCP_ZONE) --project=$(GCP_PROJECT) \
 		--version latest --up --down -v 10 --ignore-gcp-ssh-key \
-		--test=exec -- make test/e2e/run-gke
+		--test=exec -- make test/e2e/testrunner-gke
 
-.PHONY: test/e2e/gke-start
-test/e2e/gke-start:
-	bazel run //hack/gke:gke -- --action=start --cluster-name=$(CLUSTER_NAME) --gcp-zone=$(GCP_ZONE) --gcp-project=$(GCP_PROJECT)
-
-.PHONY: test/e2e/gke-stop
-test/e2e/gke-stop: 
-	bazel run //hack/gke:gke --  --action=stop --cluster-name=$(CLUSTER_NAME) --gcp-zone=$(GCP_ZONE) --gcp-project=$(GCP_PROJECT)
 # 
 # Different dev targets
 #
@@ -129,17 +145,12 @@ dev/fmt:
 dev/generate:
 	bazel run //hack:update-codegen //hack:update-crds
 
-# TODO move to bazel / go
-.PHONY: dev/goimports
-dev/goimports:
-	@echo "Running goimports"
-	@python3 hack/update_goimports.py
-
 #
 # Targets that allow to install the operator on an existing cluster
 #
 .PHONY: k8s/apply
 k8s/apply:
+	K8S_CLUSTER=gke_$(GCP_PROJECT)_$(GCP_ZONE)_$(CLUSTER_NAME) \
 	DOCKER_REGISTRY=$(DOCKER_REGISTRY) \
 	DOCKER_IMAGE_REPOSITORY=$(DOCKER_IMAGE_REPOSITORY) \
 	APP_VERSION=$(APP_VERSION) \
@@ -150,6 +161,15 @@ k8s/apply:
 k8s/delete:
 	bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
 		//manifests:install_operator.delete
+	
+#
+# Dev target that updates bazel files and dependecies
+#
+.PHONY: dev/syncdeps
+dev/syncdeps:
+	bazel run //hack:update-deps \
+	bazel run //hack:update-bazel \
+	bazel run //:gazelle -- update-repos -from_file=go.mod
 	
 #
 # Release targets
@@ -163,13 +183,8 @@ release/image:
 		//:push_operator_image 
 
 #
-# Dev target that updates bazel files and dependecies
+# RedHat OpenShift targets
 #
-.PHONY: dev/syncdeps
-dev/syncdeps:
-	bazel run //hack:update-deps \
-	bazel run //hack:update-bazel \
-	bazel run //:gazelle -- update-repos -from_file=go.mod
 
 #RED HAT IMAGE BUNDLE
 RH_BUNDLE_REGISTRY?=registry.connect.redhat.com/cockroachdb
@@ -253,7 +268,3 @@ BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 .PHONY: gen-csv
 gen-csv: dev/generate
 	bazel run  //hack:update-csv  -- $(RH_BUNDLE_VERSION) $(RH_OPERATOR_IMAGE) $(BUNDLE_METADATA_OPTS) $(RH_COCKROACH_DATABASE_IMAGE)
-		
-
-
-		

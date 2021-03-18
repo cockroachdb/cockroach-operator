@@ -55,7 +55,7 @@ func defaultBackoffFactory(maxTime time.Duration) backoff.BackOff {
 	return b
 }
 
-var defaultTime time.Duration = 1 * time.Minute
+var defaultTime time.Duration = 5 * time.Minute
 
 // K8sPodLabels are used to store information about
 // kubernetes pod labels to look up pods
@@ -224,9 +224,9 @@ func main() {
 		panic("set type arg")
 	}
 
+	klog.Infof("Checking that %s k8s cluster has started completely", *k8sTypeFlag)
 	switch {
 	case *k8sTypeFlag == "gke":
-		klog.Info("checking gke")
 		p := createK8sPodLabel(&K8sApp, &GKEPodLabels)
 		clientset, err := createClientSet()
 		if err != nil {
@@ -240,7 +240,6 @@ func main() {
 		}
 		fmt.Println("gke is running")
 	case *k8sTypeFlag == "kind":
-		klog.Info("checking kind")
 		p := createK8sPodLabel(&Component, &KindComponentLabels)
 		clientset, err := createClientSet()
 		if err != nil {
@@ -259,9 +258,9 @@ func main() {
 			klog.Error(err)
 			panic("unable to find kind pods")
 		}
-		klog.Info("kind is running")
 	default:
 		panic("wrong '-type' flag value. 'gke' and 'kind' values are supported")
 	}
 
+	klog.Infof("%s k8s cluster is up and running", *k8sTypeFlag)
 }
