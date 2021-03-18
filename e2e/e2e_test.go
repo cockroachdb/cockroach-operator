@@ -43,7 +43,7 @@ import (
 var parallel = *flag.Bool("parallel", false, "run tests in parallel")
 
 // run the pvc test
-var pvc = *flag.Bool("pvc", false, "run pvc test")
+var pvc = flag.Bool("pvc", false, "run pvc test")
 
 var env *testenv.ActiveEnv
 
@@ -325,8 +325,9 @@ func TestDecommissionFunctionality(t *testing.T) {
 }
 
 func TestPVCResize(t *testing.T) {
+
 	// Testing PVCResize
-	if !pvc {
+	if !*pvc {
 		t.Skip("platform does not support pvc resize")
 	}
 	if testing.Short() {

@@ -62,3 +62,5 @@ bazel-testlogs
 opm
 faq
 jobs/*
+
+_artifacts

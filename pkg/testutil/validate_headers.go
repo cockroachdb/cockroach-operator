@@ -57,6 +57,7 @@ var SkippedPaths = map[string]bool{
 	"Godeps":      true,
 	"third_party": true,
 	"_gopath":     true,
+	"_artifacts":  true,
 	"_output":     true,
 	".git":        true,
 	"vendor":      true,

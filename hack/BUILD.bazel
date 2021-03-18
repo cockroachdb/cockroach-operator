@@ -263,6 +263,7 @@ filegroup(
         "//hack/boilerplate:all-srcs",
         "//hack/build:all-srcs",
         "//hack/gke:all-srcs",
+        "//hack/k8s:all-srcs",
     ],
     tags = ["automanaged"],
     visibility = ["//visibility:public"],

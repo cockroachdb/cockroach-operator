@@ -146,6 +146,18 @@ genrule(
     visibility = ["//visibility:public"],
 )
 
+# fetch_kubetest2_exe`rules to fetch the binary for kubetest2_exe used on e2e tests that are saved on a google cloud bucket
+genrule(
+    name = "fetch_kubetest2_exe",
+    srcs = select({
+        ":darwin": ["@kubetest2_exe_darwin//file"],
+        ":k8": ["@kubetest2_exe_linux//file"],
+    }),
+    outs = ["kubetest2-tester-exec"],
+    cmd = "cp $(SRCS) $@",
+    visibility = ["//visibility:public"],
+)
+
 genrule(
     name = "fetch_controller-gen",
     srcs = ["@io_k8s_sigs_controller_tools//cmd/controller-gen"],
