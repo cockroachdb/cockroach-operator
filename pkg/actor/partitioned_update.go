@@ -61,9 +61,9 @@ func (up *partitionedUpdate) GetActionType() api.ActionType {
 }
 func (up *partitionedUpdate) Handles(conds []api.ClusterCondition) bool {
 	if utilfeature.DefaultMutableFeatureGate.Enabled(features.CrdbVersionValidator) {
-		return condition.False(api.NotInitializedCondition, conds) && condition.False(api.CrdbVersionNotChecked, conds)
+		return condition.True(api.InitializedCondition, conds) && condition.True(api.CrdbVersionChecked, conds)
 	}
-	return condition.False(api.NotInitializedCondition, conds)
+	return condition.True(api.InitializedCondition, conds)
 }
 
 // Act runs a new partitionUpdate.
@@ -99,20 +99,20 @@ func (up *partitionedUpdate) Act(ctx context.Context, cluster *resource.Cluster)
 
 	containerWanted := cluster.GetAnnotationContainerImage()
 	if containerWanted == "" {
-		cluster.SetTrue(api.CrdbVersionNotChecked)
+		cluster.SetFalse(api.CrdbVersionChecked)
 		log.Info("no crdbcontainerimage annotation found ... waiting for version checker to run")
 		return nil
 	}
 
 	versionWantedCalFmtStr := cluster.GetVersionAnnotation()
 	if versionWantedCalFmtStr == "" {
-		cluster.SetTrue(api.CrdbVersionNotChecked)
+		cluster.SetFalse(api.CrdbVersionChecked)
 		log.V(int(zapcore.DebugLevel)).Info("no version annotation found on crd ... waiting for version checker to run")
 		return nil
 	}
 	currentVersionCalFmtStr := statefulSet.Annotations[resource.CrdbVersionAnnotation]
 	if currentVersionCalFmtStr == "" {
-		cluster.SetTrue(api.CrdbVersionNotChecked)
+		cluster.SetFalse(api.CrdbVersionChecked)
 		log.Info("no version annotation found on sts ... waiting for version checker to run")
 		return nil
 	}

@@ -374,7 +374,7 @@ filegroup(
     visibility = ["//visibility:public"],
 )
 """,
-    )
+   )
 
     http_archive(
         name = "crdb_linux",

@@ -147,7 +147,10 @@ func (cluster Cluster) StatefulSetName() string {
 }
 
 func (cluster Cluster) JobName() string {
-	return fmt.Sprintf("%s-version-checker", cluster.Name())
+	return fmt.Sprintf("%s-vcheck-%d", cluster.Name(), getTimeHashInMinutes(time.Now()))
+}
+func getTimeHashInMinutes(scheduledTime time.Time) int64 {
+	return scheduledTime.Unix() / 60
 }
 func (cluster Cluster) IsSupportedImage() bool {
 	image := cluster.GetCockroachDBImageName()

@@ -61,9 +61,9 @@ func (init initialize) GetActionType() api.ActionType {
 }
 func (init initialize) Handles(conds []api.ClusterCondition) bool {
 	if utilfeature.DefaultMutableFeatureGate.Enabled(features.CrdbVersionValidator) {
-		return condition.False(api.CrdbVersionNotChecked, conds) && condition.True(api.NotInitializedCondition, conds)
+		return condition.True(api.CrdbVersionChecked, conds) && condition.False(api.InitializedCondition, conds)
 	}
-	return condition.True(api.NotInitializedCondition, conds)
+	return condition.False(api.InitializedCondition, conds)
 }
 
 func (init initialize) Act(ctx context.Context, cluster *resource.Cluster) error {
@@ -130,7 +130,7 @@ func (init initialize) Act(ctx context.Context, cluster *resource.Cluster) error
 		return log.LogAndWrapError(err, "failed to initialize the cluster")
 	}
 
-	cluster.SetFalse(api.NotInitializedCondition)
+	cluster.SetTrue(api.InitializedCondition)
 
 	log.Debug("completed intializing database")
 	return nil

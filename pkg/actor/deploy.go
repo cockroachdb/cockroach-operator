@@ -50,9 +50,9 @@ func (d deploy) GetActionType() api.ActionType {
 
 func (d deploy) Handles(conds []api.ClusterCondition) bool {
 	if utilfeature.DefaultMutableFeatureGate.Enabled(features.CrdbVersionValidator) {
-		return (condition.False(api.NotInitializedCondition, conds) || condition.True(api.NotInitializedCondition, conds)) && (condition.False(api.CrdbVersionNotChecked, conds))
+		return (condition.True(api.InitializedCondition, conds) || condition.False(api.InitializedCondition, conds)) && (condition.True(api.CrdbVersionChecked, conds))
 	}
-	return (condition.False(api.NotInitializedCondition, conds) || condition.True(api.NotInitializedCondition, conds))
+	return (condition.True(api.InitializedCondition, conds) || condition.False(api.InitializedCondition, conds))
 }
 
 func (d deploy) Act(ctx context.Context, cluster *resource.Cluster) error {
