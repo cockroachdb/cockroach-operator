@@ -20,10 +20,12 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/clusterstatus"
 	"github.com/cockroachdb/cockroach-operator/pkg/condition"
+	"github.com/gosimple/slug"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -147,7 +149,8 @@ func (cluster Cluster) StatefulSetName() string {
 }
 
 func (cluster Cluster) JobName() string {
-	return fmt.Sprintf("%s-vcheck-%d", cluster.Name(), getTimeHashInMinutes(time.Now()))
+	slug.MaxLength = 63
+	return slug.Make(fmt.Sprintf("%s-vcheck-%d", cluster.Name(), getTimeHashInMinutes(time.Now())))
 }
 func getTimeHashInMinutes(scheduledTime time.Time) int64 {
 	return scheduledTime.Unix() / 60
