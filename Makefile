@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# 
+#
 # This project requires the use of bazel.
 # Install instuctions https://docs.bazel.build/versions/master/install.html
 #
@@ -26,12 +26,12 @@ GCP_PROJECT?=chris-love-operator-playground
 GCP_ZONE?=us-central1-a
 CLUSTER_NAME?=bazel-test
 
-# 
+#
 # Unit Testing Targets
-# 
+#
 .PHONY: test/all
 test/all:
-	bazel test //apis/... //pkg/... --test_arg=--test.v
+	bazel test //apis/... //pkg/... //hack/... --test_arg=--test.v
 
 .PHONY: test/apis
 test/apis:
@@ -62,11 +62,11 @@ test/e2e-short:
 # kubetest2 binaries from the kubernetes testing team is used
 # by the e2e tests.  We maintain the binaries and the binaries are
 # downloaded from google storage by bazel.  See hack/bin/deps.bzl
-# Once the repo releases binaries we should vendor the tag or 
+# Once the repo releases binaries we should vendor the tag or
 # download the built binaries.
-	
+
 # This target is used by kubetest2-tester-exec when running a kind test
-# This target exportis the kubeconfig from kind and then runs 
+# This target exportis the kubeconfig from kind and then runs
 # k8s:k8s -type kind which checks to see if kind is up and running.
 # Then bazel e2e testing is run.
 .PHONY: test/e2e/testrunner-kind
@@ -85,11 +85,11 @@ test/e2e/testrunner-kind:
 # After the tests run the cluster is deleted.
 # If you need a unique cluster name override CLUSTER_NAME.
 .PHONY: test/e2e/kind
-test/e2e/kind: 
+test/e2e/kind:
 	bazel build //hack/bin/...
 	PATH=${PATH}:bazel-bin/hack/bin kubetest2 kind --cluster-name=$(CLUSTER_NAME) \
 		--up --down -v 10 --test=exec -- make test/e2e/testrunner-kind
-	
+
 # This target is used by kubetest2-tester-exec when running a gke test
 # k8s:k8s -type gke which checks to see if gke is up and running.
 # Then bazel e2e testing is run.
@@ -123,14 +123,14 @@ test/e2e/testrunner-gke:
 # You also need gcp permission to start a cluster and upload containers to the
 # projects registry.
 .PHONY: test/e2e/gke
-test/e2e/gke: 
+test/e2e/gke:
 	bazel build //hack/bin/...
 	PATH=${PATH}:bazel-bin/hack/bin bazel-bin/hack/bin/kubetest2 gke --cluster-name=$(CLUSTER_NAME) \
 		--zone=$(GCP_ZONE) --project=$(GCP_PROJECT) \
 		--version latest --up --down -v 10 --ignore-gcp-ssh-key \
 		--test=exec -- make test/e2e/testrunner-gke
 
-# 
+#
 # Different dev targets
 #
 .PHONY: dev/build
@@ -161,7 +161,7 @@ k8s/apply:
 k8s/delete:
 	bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
 		//manifests:install_operator.delete
-	
+
 #
 # Dev target that updates bazel files and dependecies
 #
@@ -170,7 +170,7 @@ dev/syncdeps:
 	bazel run //hack:update-deps \
 	bazel run //hack:update-bazel \
 	bazel run //:gazelle -- update-repos -from_file=go.mod
-	
+
 #
 # Release targets
 #
@@ -180,7 +180,7 @@ release/image:
 	DOCKER_IMAGE_REPOSITORY=$(DOCKER_IMAGE_REPOSITORY) \
 	APP_VERSION=$(APP_VERSION) \
 	bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
-		//:push_operator_image 
+		//:push_operator_image
 
 #
 # RedHat OpenShift targets
@@ -234,10 +234,10 @@ release/bundle-image:
 	RH_DEPLOY_PATH=$(RH_DEPLOY_FULL_PATH) \
 	RH_BUNDLE_IMAGE_TAG=$(RH_BUNDLE_VERSION) \
 	bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
-		//:push_operator_bundle_image 
+		//:push_operator_bundle_image
 
 
-OLM_REPO ?= 
+OLM_REPO ?=
 OLM_BUNDLE_REPO ?= cockroachdb-operator-index
 OLM_PACKAGE_NAME ?= cockroachdb-certified
 TAG ?= $(RH_BUNDLE_VERSION)
