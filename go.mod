@@ -11,6 +11,7 @@ require (
 	github.com/go-logr/logr v0.3.0
 	github.com/go-logr/zapr v0.2.0
 	github.com/google/go-cmp v0.5.2
+	github.com/gosimple/slug v1.9.0
 	github.com/jackc/pgx/v4 v4.9.0
 	github.com/lib/pq v1.3.0
 	github.com/onsi/ginkgo v1.14.1
