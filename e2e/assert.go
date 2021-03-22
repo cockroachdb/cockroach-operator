@@ -208,7 +208,7 @@ func fetchPodsInStatefulSet(sb testenv.DiffingSandbox, labels map[string]string)
 		return nil, err
 	}
 	pods, err := clientset.CoreV1().Pods(sb.Namespace).List(context.TODO(), metav1.ListOptions{
-			LabelSelector: k8slabels.Set(matchingLabels).AsSelector().String(),
+		LabelSelector: k8slabels.Set(matchingLabels).AsSelector().String(),
 	})
 	if err != nil {
 		return nil, err
