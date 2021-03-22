@@ -24,7 +24,7 @@ DOCKER_IMAGE_REPOSITORY?=cockroachdb-operator
 APP_VERSION?=v1.6.12-rc.2
 GCP_PROJECT?=chris-love-operator-playground
 GCP_ZONE?=us-central1-a
-CLUSTER_NAME?=bazel-test
+CLUSTER_NAME?=bazel-test-alina
 
 # 
 # Unit Testing Targets
