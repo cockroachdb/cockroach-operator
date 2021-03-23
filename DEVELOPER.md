@@ -1,6 +1,6 @@
 # Developer Notes
 
-This project requires bazel. Version 3.4.1 has been tested.
+This project requires Bazel. Version 3.4.1 has been tested. It is not suppored on Version 4.0.x. It will not work.
 
 See: https://docs.bazel.build/versions/master/install.html
 
@@ -20,10 +20,11 @@ If you are new to Bazel take a look at the Workspace file, as it lays out which 
 
 Just a quick recap of above.  Please install the following.
 
-1. Bazel
-1. Python - TODO version 
-1. Container Engine
-1. kubectl
+1. Bazel (do not install 4.0.x)
+2. realpath
+4. Python - TODO version 
+5. Container Engine
+6. kubectl
 
 If you are not running the e2e tests or the Kubernetes targets you not need the last two.  But you probably have them anyways.
 
