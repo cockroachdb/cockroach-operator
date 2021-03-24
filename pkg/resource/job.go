@@ -39,6 +39,7 @@ type JobBuilder struct {
 	*Cluster
 
 	Selector labels.Labels
+	JobName  string
 }
 
 func (b JobBuilder) Build(obj client.Object) error {
@@ -48,7 +49,7 @@ func (b JobBuilder) Build(obj client.Object) error {
 	}
 
 	if job.ObjectMeta.Name == "" {
-		job.ObjectMeta.Name = b.JobName()
+		job.ObjectMeta.Name = b.JobName
 	}
 
 	// we recreate spec from ground only if we do not find the container job
@@ -106,14 +107,14 @@ func (b JobBuilder) MakeContainers() []corev1.Container {
 			ImagePullPolicy: *b.Spec().Image.PullPolicyName,
 			Resources:       b.Spec().Resources,
 			Command:         []string{"/bin/bash"},
-			Args:            []string{"-c", fmt.Sprintf("%s; sleep 120", GetTagVersionCommand)},
+			Args:            []string{"-c", fmt.Sprintf("%s; sleep 150", GetTagVersionCommand)},
 		},
 	}
 }
 func (b JobBuilder) Placeholder() client.Object {
 	return &kbatch.Job{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: b.JobName(),
+			Name: b.JobName,
 		},
 	}
 }
