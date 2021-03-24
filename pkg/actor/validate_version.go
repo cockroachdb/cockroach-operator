@@ -165,7 +165,6 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 			log.V(int(zapcore.DebugLevel)).Info("step 4")
 			return errors.Wrapf(err, "failed to check the version of the crdb")
 		}
-		log.V(int(zapcore.DebugLevel)).Info("step 3")
 		podLogOpts := corev1.PodLogOptions{}
 		//get pod for the job we created
 		pods, err := clientset.CoreV1().Pods(job.Namespace).List(ctx, metav1.ListOptions{

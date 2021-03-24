@@ -100,7 +100,7 @@ func requireClusterToBeReadyEventually(t *testing.T, sb testenv.DiffingSandbox, 
 }
 
 func requireDbContainersToUseImage(t *testing.T, sb testenv.DiffingSandbox, cr *api.CrdbCluster) {
-	err := wait.Poll(15*time.Second, 400*time.Second, func() (bool, error) {
+	err := wait.Poll(10*time.Second, 400*time.Second, func() (bool, error) {
 		pods, err := fetchPodsInStatefulSet(sb, labels.Common(cr).Selector())
 		if err != nil {
 			return false, err
