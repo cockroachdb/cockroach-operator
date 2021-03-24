@@ -38,6 +38,7 @@ const (
 	CrdbContainerImageAnnotation = "crdb.io/containerimage"
 	CrdbVersionAnnotation        = "crdb.io/version"
 	CrdbHistoryAnnotation        = "crdb.io/history"
+	CrdbCAExpirationAnnotation   = "crdb.io/certexpiration"
 )
 
 func NewCluster(original *api.CrdbCluster) Cluster {
@@ -203,6 +204,12 @@ func (cluster Cluster) SetAnnotationContainerImage(containerimage string) {
 		cluster.cr.Annotations = make(map[string]string)
 	}
 	cluster.cr.Annotations[CrdbContainerImageAnnotation] = containerimage
+}
+func (cluster Cluster) SetAnnotationCAExpiration(version string) {
+	if cluster.cr.Annotations == nil {
+		cluster.cr.Annotations = make(map[string]string)
+	}
+	cluster.cr.Annotations[CrdbCAExpirationAnnotation] = version
 }
 
 func (cluster Cluster) GetCockroachDBImageName() string {
