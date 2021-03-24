@@ -18,12 +18,12 @@
 #
 
 # values used in workspace-status.sh
-DOCKER_REGISTRY?=us.gcr.io/chris-love-operator-playground
+DOCKER_REGISTRY?=cockroachdb
 DOCKER_IMAGE_REPOSITORY?=cockroachdb-operator
 VERSION?=$(shell cat version.txt)
 APP_VERSION?=v$(VERSION)
 # Default bundle image tag
-APP_VERSION?=v1.9.3
+APP_VERSION?=v1.6.12-rc.2
 GCP_PROJECT?=chris-love-operator-playground
 GCP_ZONE?=us-central1-a
 CLUSTER_NAME?=bazel-test
