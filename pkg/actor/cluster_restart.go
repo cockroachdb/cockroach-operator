@@ -50,7 +50,7 @@ func (v *clusterRestart) GetActionType() api.ActionType {
 }
 
 func (v *clusterRestart) Handles(conds []api.ClusterCondition) bool {
-	return utilfeature.DefaultMutableFeatureGate.Enabled(features.ClusterRestart) && (condition.True(api.InitializedCondition, conds) || condition.False(api.InitializedCondition, conds)) && condition.False(api.CrdbVersionChecked, conds)
+	return utilfeature.DefaultMutableFeatureGate.Enabled(features.ClusterRestart) && condition.True(api.InitializedCondition, conds) || condition.False(api.InitializedCondition, conds)
 }
 
 func (v *clusterRestart) Act(ctx context.Context, cluster *resource.Cluster) error {
