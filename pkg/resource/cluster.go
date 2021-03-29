@@ -205,11 +205,11 @@ func (cluster Cluster) SetAnnotationContainerImage(containerimage string) {
 	}
 	cluster.cr.Annotations[CrdbContainerImageAnnotation] = containerimage
 }
-func (cluster Cluster) SetAnnotationCertExpiration(version string) {
+func (cluster Cluster) SetAnnotationCertExpiration(certExpiration string) {
 	if cluster.cr.Annotations == nil {
 		cluster.cr.Annotations = make(map[string]string)
 	}
-	cluster.cr.Annotations[CrdbCertExpirationAnnotation] = version
+	cluster.cr.Annotations[CrdbCertExpirationAnnotation] = certExpiration
 }
 
 func (cluster Cluster) GetCockroachDBImageName() string {

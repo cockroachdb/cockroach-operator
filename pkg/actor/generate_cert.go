@@ -19,6 +19,7 @@ package actor
 import (
 	"context"
 	"crypto/x509"
+	"encoding/pem"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
@@ -115,26 +116,22 @@ func (rc *generateCert) Act(ctx context.Context, cluster *resource.Cluster) erro
 	if err := rc.generateCA(ctx, log, cluster); err != nil {
 		return log.LogAndWrapError(err, "error generating CA")
 	}
-
+	var expirationDatePtr *string
 	// generate the node certificate for the database to use
-	if err := rc.generateNodeCert(ctx, log, cluster); err != nil {
+	if expirationDate, err := rc.generateNodeCert(ctx, log, cluster); err != nil {
 		return log.LogAndWrapError(err, "error generating Node Certificate")
+	}else{
+		expirationDatePtr = &expirationDate
 	}
 
 	// TODO if we save the node certificate but error on saving the client
 	// certificate should we delete the node secret?
 
 	// generate the client certificates for the database to use
-	if expirationDate, err := rc.generateClientCert(ctx, log, cluster); err != nil {
+	if err := rc.generateClientCert(ctx, log, cluster); err != nil {
 		return log.LogAndWrapError(err, "error generating Client Certificate")
-	} else {
-		cluster.SetAnnotationCertExpiration(expirationDate)
-		if err := rc.client.Update(ctx, cluster.Unwrap()); err != nil {
-			log.Error(err, "failed saving the annotations on request certificatese")
-			// TODO we are not failling to continue logic, if a
-		}
+	} 
 
-	}
 
 	// we force the saving of the status on the cluster and cancel the loop
 	fetcher := resource.NewKubeFetcher(ctx, cluster.Namespace(), rc.client)
@@ -144,6 +141,13 @@ func (rc *generateCert) Act(ctx context.Context, cluster *resource.Cluster) erro
 		return log.LogAndWrapError(err, "failed to retrieve CrdbCluster resource")
 	}
 	refreshedCluster := resource.NewCluster(cr)
+	refreshedCluster.SetAnnotationCertExpiration(*expirationDatePtr)
+	log.Debug("Saving ANNOTATION CERT WITH value","expirationdate",*expirationDatePtr)
+	//save annotation first
+	if err := rc.client.Update(ctx, refreshedCluster.Unwrap()); err != nil {
+			log.Error(err, "failed saving the annotations on request certificate")
+			// TODO we are not failling to continue logic, if a
+	}
 	// save the status of the cluster
 	refreshedCluster.SetTrue(api.CertificateGenerated)
 	if err := rc.client.Status().Update(ctx, refreshedCluster.Unwrap()); err != nil {
@@ -173,21 +177,21 @@ func (rc *generateCert) generateCA(ctx context.Context, log *logging.Logging, cl
 // This time a new CA is generated, the Node secret is not updated, but the client certicate is generated
 // using a new CA.
 
-func (rc *generateCert) generateNodeCert(ctx context.Context, log *logging.Logging, cluster *resource.Cluster) error {
+func (rc *generateCert) generateNodeCert(ctx context.Context, log *logging.Logging, cluster *resource.Cluster) (string, error) {
 	log.Debug("generating node certificate")
 
 	// load the secret.  If it exists don't update the cert
 	secret, err := resource.LoadTLSSecret(cluster.NodeTLSSecretName(),
 		resource.NewKubeResource(ctx, rc.client, cluster.Namespace(), kube.DefaultPersister))
 	if kube.IgnoreNotFound(err) != nil {
-		return errors.Wrap(err, "failed to get node TLS secret")
+		return "",errors.Wrap(err, "failed to get node TLS secret")
 	}
 
 	// if the secret is ready then don't update the secret
 	// the Actor should have already generated the secret
 	if secret.Ready() {
 		log.Debug("not updating node certificate as it exists")
-		return nil
+		return rc.getCertificateExpirationDate(ctx, log, secret.Key())
 	}
 
 	// hosts are the various DNS names and IP address that have to exist in the Node certificates
@@ -215,23 +219,23 @@ func (rc *generateCert) generateNodeCert(ctx context.Context, log *logging.Loggi
 		"failed to generate node certificate and key")
 
 	if err != nil {
-		return err
+		return "",err
 	}
 
 	// Read the node certificates into memory
 	ca, err := ioutil.ReadFile(filepath.Join(rc.CertsDir, "ca.crt"))
 	if err != nil {
-		return errors.Wrap(err, "unable to read ca.crt")
+		return "",errors.Wrap(err, "unable to read ca.crt")
 	}
 
 	pemCert, err := ioutil.ReadFile(filepath.Join(rc.CertsDir, "node.crt"))
 	if err != nil {
-		return errors.Wrap(err, "unable to read node.crt")
+		return "",errors.Wrap(err, "unable to read node.crt")
 	}
 
 	pemKey, err := ioutil.ReadFile(filepath.Join(rc.CertsDir, "node.key"))
 	if err != nil {
-		return errors.Wrap(err, "unable to ready node.key")
+		return "",errors.Wrap(err, "unable to ready node.key")
 	}
 
 	// TODO we are not using the TLS secret type, but are using Opaque secrets.
@@ -242,21 +246,21 @@ func (rc *generateCert) generateNodeCert(ctx context.Context, log *logging.Loggi
 		resource.NewKubeResource(ctx, rc.client, cluster.Namespace(), kube.DefaultPersister))
 
 	if err = secret.UpdateCertAndKeyAndCA(pemCert, pemKey, ca, log.GetLog()); err != nil {
-		return errors.Wrap(err, "failed to update node TLS secret certs")
+		return "",errors.Wrap(err, "failed to update node TLS secret certs")
 	}
 
 	log.Debug("generated and saved node certificate and key")
-	return nil
+	return rc.getCertificateExpirationDate(ctx, log, pemCert)
 }
 
-func (rc *generateCert) generateClientCert(ctx context.Context, log *logging.Logging, cluster *resource.Cluster) (string, error) {
+func (rc *generateCert) generateClientCert(ctx context.Context, log *logging.Logging, cluster *resource.Cluster) error {
 	log.Debug("generating client certificate")
 
 	// load the secret.  If it exists don't update the cert
 	secret, err := resource.LoadTLSSecret(cluster.ClientTLSSecretName(),
 		resource.NewKubeResource(ctx, rc.client, cluster.Namespace(), kube.DefaultPersister))
 	if client.IgnoreNotFound(err) != nil {
-		return "", errors.Wrap(err, "failed to get client TLS secret")
+		return errors.Wrap(err, "failed to get client TLS secret")
 	}
 
 	// if the secret is ready then don't update the secret
@@ -264,11 +268,7 @@ func (rc *generateCert) generateClientCert(ctx context.Context, log *logging.Log
 	//but we should read the expiration date
 	if secret.Ready() {
 		log.Debug("not updating client certificate")
-		pemCert, err := ioutil.ReadFile(filepath.Join(rc.CertsDir, "client.root.crt"))
-		if err != nil {
-			return "", errors.Wrap(err, "unable to read client.root.crt")
-		}
-		return rc.getCertificateExpirationDate(ctx, log, pemCert)
+		return nil
 	}
 
 	// Create the user for the certificate
@@ -288,23 +288,23 @@ func (rc *generateCert) generateClientCert(ctx context.Context, log *logging.Log
 			generatePKCS8Key),
 		"failed to generate client certificate and key")
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	// Load the certificates into memory
 	ca, err := ioutil.ReadFile(filepath.Join(rc.CertsDir, "ca.crt"))
 	if err != nil {
-		return "", errors.Wrap(err, "unable to read ca.crt")
+		return errors.Wrap(err, "unable to read ca.crt")
 	}
 
 	pemCert, err := ioutil.ReadFile(filepath.Join(rc.CertsDir, "client.root.crt"))
 	if err != nil {
-		return "", errors.Wrap(err, "unable to read client.root.crt")
+		return errors.Wrap(err, "unable to read client.root.crt")
 	}
 
 	pemKey, err := ioutil.ReadFile(filepath.Join(rc.CertsDir, "client.root.key"))
 	if err != nil {
-		return "", errors.Wrap(err, "unable to read client.root.key")
+		return errors.Wrap(err, "unable to read client.root.key")
 	}
 
 	// create and save the TLS certificates into a secret
@@ -312,25 +312,24 @@ func (rc *generateCert) generateClientCert(ctx context.Context, log *logging.Log
 		resource.NewKubeResource(ctx, rc.client, cluster.Namespace(), kube.DefaultPersister))
 
 	if err = secret.UpdateCertAndKeyAndCA(pemCert, pemKey, ca, log.GetLog()); err != nil {
-		return "", errors.Wrap(err, "failed to update client TLS secret certs")
+		return errors.Wrap(err, "failed to update client TLS secret certs")
 	}
 
 	log.Debug("generated and saved client certificate and key")
-	return rc.getCertificateExpirationDate(ctx, log, pemCert)
+	return nil
 }
 
 func (rc *generateCert) getCertificateExpirationDate(ctx context.Context, log *logging.Logging, pemCert []byte) (string, error) {
-	log.Debug("getExpirationDate from generated cert")
-	// pemCert, err := ioutil.ReadFile(filepath.Join(rc.CertsDir, "client.root.crt"))
-	// if err != nil {
-	// 	return "", errors.Wrap(err, "unable to read client.root.crt")
-	// }
-
-	cert, err := x509.ParseCertificate(pemCert)
+	log.Debug("getExpirationDate from cert")
+ 	block, _ := pem.Decode(pemCert)
+	if block == nil {
+		return "", errors.New("failed to decode certificate")
+	}
+	cert, err := x509.ParseCertificate(block.Bytes)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to parse certificate")
 	}
 
-	log.Debug("getExpirationDate from generated cert", "Not before:", cert.NotBefore.Format(time.RFC3339), "Not after:", cert.NotAfter.Format(time.RFC3339))
+	log.Debug("getExpirationDate from cert", "Not before:", cert.NotBefore.Format(time.RFC3339), "Not after:", cert.NotAfter.Format(time.RFC3339))
 	return cert.NotAfter.Format(time.RFC3339), nil
 }
