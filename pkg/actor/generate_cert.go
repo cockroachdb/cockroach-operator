@@ -141,7 +141,6 @@ func (rc *generateCert) Act(ctx context.Context, cluster *resource.Cluster) erro
 	}
 	refreshedCluster := resource.NewCluster(cr)
 	refreshedCluster.SetAnnotationCertExpiration(*expirationDatePtr)
-	log.Debug("Saving ANNOTATION CERT WITH value", "expirationdate", *expirationDatePtr)
 	//save annotation first
 	if err := rc.client.Update(ctx, refreshedCluster.Unwrap()); err != nil {
 		log.Error(err, "failed saving the annotations on request certificate")
