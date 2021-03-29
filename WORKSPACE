@@ -18,10 +18,10 @@ protobuf_deps()
 ## Load rules_go and dependencies
 http_archive(
     name = "io_bazel_rules_go",
-    sha256 = "a8d6b1b354d371a646d2f7927319974e0f9e52f73a2452d2b3877118169eb6bb",
+    sha256 = "69de5c704a05ff37862f7e0f5534d4f479418afc21806c887db544a316f3cb6b",
     urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.23.3/rules_go-v0.23.3.tar.gz",
-        "https://github.com/bazelbuild/rules_go/releases/download/v0.23.3/rules_go-v0.23.3.tar.gz",
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.27.0/rules_go-v0.27.0.tar.gz",
+        "https://github.com/bazelbuild/rules_go/releases/download/v0.27.0/rules_go-v0.27.0.tar.gz",
     ],
 )
 
@@ -29,17 +29,16 @@ load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_depe
 
 go_rules_dependencies()
 
-go_register_toolchains(
-    go_version = "1.14.4",
-    # todo nogo is failing
-    # nogo = "@//hack/build:nogo_vet",
-)
+go_register_toolchains(version = "1.16")
 
 ## Load gazelle and dependencies
 http_archive(
     name = "bazel_gazelle",
-    url = "https://github.com/bazelbuild/bazel-gazelle/releases/download/v0.19.1/bazel-gazelle-v0.19.1.tar.gz",
-    sha256 = "86c6d481b3f7aedc1d60c1c211c6f76da282ae197c3b3160f54bd3a8f847896f",
+    sha256 = "62ca106be173579c0a167deb23358fdfe71ffa1e4cfdddf5582af26520f1c66f",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/bazel-gazelle/releases/download/v0.23.0/bazel-gazelle-v0.23.0.tar.gz",
+        "https://github.com/bazelbuild/bazel-gazelle/releases/download/v0.23.0/bazel-gazelle-v0.23.0.tar.gz",
+    ],
 )
 
 load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies")
@@ -47,10 +46,10 @@ load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies")
 ## Load kubernetes repo-infra for tools like kazel
 http_archive(
     name = "io_k8s_repo_infra",
-    strip_prefix = "repo-infra-0.0.2",
-    sha256 = "774e160ba1a2a66a736fdc39636dca799a09df015ac5e770a46ec43487ec5708",
+    strip_prefix = "repo-infra-0.2.1",
+    sha256 = "b5051a0dfd63560455fb4d291769444f45b621b27fe7d3b04441aa7d84264171",
     urls = [
-        "https://github.com/kubernetes/repo-infra/archive/v0.0.2.tar.gz",
+        "https://github.com/kubernetes/repo-infra/archive/v0.2.1.tar.gz",
     ],
 )
 
