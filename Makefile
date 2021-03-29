@@ -25,6 +25,7 @@ APP_VERSION?=v1.6.12-rc.2
 GCP_PROJECT?=chris-love-operator-playground
 GCP_ZONE?=us-central1-a
 CLUSTER_NAME?=bazel-test
+DEV_REGISTRY?=gcr.io/$(GCP_PROJECT)
 
 #
 # Unit Testing Targets
@@ -99,15 +100,11 @@ test/e2e/kind:
 .PHONY: test/e2e/testrunner-gke
 test/e2e/testrunner-gke:
 	bazel run //hack/k8s:k8s -- -type gke
+	K8S_CLUSTER=gke_$(GCP_PROJECT)_$(GCP_ZONE)_$(CLUSTER_NAME) \
+	DEV_REGISTRY=$(DEV_REGISTRY) \
+	bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
+		//manifests:install_operator.apply
 	bazel test --stamp --test_arg=--pvc=true //e2e/...
-
-# TODO get this working with GKE testing
-#	K8S_CLUSTER=gke_$(GCP_PROJECT)_$(GCP_ZONE)_$(CLUSTER_NAME) \
-#	DOCKER_REGISTRY=$(DOCKER_REGISTRY) \
-#	DOCKER_IMAGE_REPOSITORY=$(DOCKER_IMAGE_REPOSITORY) \
-#	APP_VERSION=$(APP_VERSION) \
-#	bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
-#		//manifests:install_operator.apply
 
 # Use this target to run e2e tests with a gke cluster.
 # This target uses kind to start a gke k8s cluster  and runs the e2e tests
@@ -151,14 +148,14 @@ dev/generate:
 .PHONY: k8s/apply
 k8s/apply:
 	K8S_CLUSTER=gke_$(GCP_PROJECT)_$(GCP_ZONE)_$(CLUSTER_NAME) \
-	DOCKER_REGISTRY=$(DOCKER_REGISTRY) \
-	DOCKER_IMAGE_REPOSITORY=$(DOCKER_IMAGE_REPOSITORY) \
-	APP_VERSION=$(APP_VERSION) \
+	DEV_REGISTRY=$(DEV_REGISTRY) \
 	bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
 		//manifests:install_operator.apply
 
 .PHONY: k8s/delete
 k8s/delete:
+	K8S_CLUSTER=gke_$(GCP_PROJECT)_$(GCP_ZONE)_$(CLUSTER_NAME) \
+	DEV_REGISTRY=$(DEV_REGISTRY) \
 	bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
 		//manifests:install_operator.delete
 

@@ -126,7 +126,7 @@ k8s_defaults(
     # This is the name of the cluster as it appears in:
     #   kubectl config view --minify -o=jsonpath='{.contexts[0].context.cluster}'
     # You are able to override the default cluster by setting the env variable K8S_CLUSTER
-    cluster = "{CLUSTER}",
+    cluster = "{STABLE_CLUSTER}",
     # You are able to override the default registry by setting the env variable IMAGE_REGISTRY
-    image_chroot = "{IMAGE_REGISTRY}",
+    image_chroot = "{STABLE_IMAGE_REGISTRY}",
 )

@@ -50,9 +50,9 @@ RH_DEPLOY_PATH ${RH_DEPLOY_PATH:-deploy/certified-metadata-bundle/cockroach-oper
 RH_BUNDLE_VERSION ${RH_BUNDLE_VERSION:-""}
 RH_BUNDLE_IMAGE_TAG ${RH_BUNDLE_IMAGE_TAG:-${RH_BUNDLE_VERSION:-""}}
   
-IMAGE_REGISTRY ${DEV_REGISTRY:-us.gcr.io/chris-love-operator-playground}
+STABLE_IMAGE_REGISTRY ${DEV_REGISTRY:-us.gcr.io/chris-love-operator-playground}
 
-CLUSTER ${K8S_CLUSTER:-gke_chris-love-operator-playground_us-central1-a_test}
+STABLE_CLUSTER ${K8S_CLUSTER:-gke_chris-love-operator-playground_us-central1-a_test}
 NUMBER_COMMITS_ON_BRANCH $(git rev-list $(git rev-parse --abbrev-ref HEAD) | wc -l)
 
 gitCommit ${KUBE_GIT_COMMIT-}
