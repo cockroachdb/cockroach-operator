@@ -37,7 +37,8 @@ func newClusterRestart(scheme *runtime.Scheme, cl client.Client, config *rest.Co
 	}
 }
 
-// versionChecker performs the validation of the crdb image for the new cluster
+// clusterRestart will restart the CRDB cluster using 2 option: Rolling Restart and
+// Full Restart in case of CA renew
 type clusterRestart struct {
 	action
 
