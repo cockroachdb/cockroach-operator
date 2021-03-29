@@ -120,7 +120,7 @@ func (rc *generateCert) Act(ctx context.Context, cluster *resource.Cluster) erro
 	// generate the node certificate for the database to use
 	if expirationDate, err := rc.generateNodeCert(ctx, log, cluster); err != nil {
 		return log.LogAndWrapError(err, "error generating Node Certificate")
-	}else{
+	} else {
 		expirationDatePtr = &expirationDate
 	}
 
@@ -130,8 +130,7 @@ func (rc *generateCert) Act(ctx context.Context, cluster *resource.Cluster) erro
 	// generate the client certificates for the database to use
 	if err := rc.generateClientCert(ctx, log, cluster); err != nil {
 		return log.LogAndWrapError(err, "error generating Client Certificate")
-	} 
-
+	}
 
 	// we force the saving of the status on the cluster and cancel the loop
 	fetcher := resource.NewKubeFetcher(ctx, cluster.Namespace(), rc.client)
@@ -142,11 +141,11 @@ func (rc *generateCert) Act(ctx context.Context, cluster *resource.Cluster) erro
 	}
 	refreshedCluster := resource.NewCluster(cr)
 	refreshedCluster.SetAnnotationCertExpiration(*expirationDatePtr)
-	log.Debug("Saving ANNOTATION CERT WITH value","expirationdate",*expirationDatePtr)
+	log.Debug("Saving ANNOTATION CERT WITH value", "expirationdate", *expirationDatePtr)
 	//save annotation first
 	if err := rc.client.Update(ctx, refreshedCluster.Unwrap()); err != nil {
-			log.Error(err, "failed saving the annotations on request certificate")
-			// TODO we are not failling to continue logic, if a
+		log.Error(err, "failed saving the annotations on request certificate")
+		// TODO we are not failling to continue logic, if a
 	}
 	// save the status of the cluster
 	refreshedCluster.SetTrue(api.CertificateGenerated)
@@ -184,7 +183,7 @@ func (rc *generateCert) generateNodeCert(ctx context.Context, log *logging.Loggi
 	secret, err := resource.LoadTLSSecret(cluster.NodeTLSSecretName(),
 		resource.NewKubeResource(ctx, rc.client, cluster.Namespace(), kube.DefaultPersister))
 	if kube.IgnoreNotFound(err) != nil {
-		return "",errors.Wrap(err, "failed to get node TLS secret")
+		return "", errors.Wrap(err, "failed to get node TLS secret")
 	}
 
 	// if the secret is ready then don't update the secret
@@ -219,23 +218,23 @@ func (rc *generateCert) generateNodeCert(ctx context.Context, log *logging.Loggi
 		"failed to generate node certificate and key")
 
 	if err != nil {
-		return "",err
+		return "", err
 	}
 
 	// Read the node certificates into memory
 	ca, err := ioutil.ReadFile(filepath.Join(rc.CertsDir, "ca.crt"))
 	if err != nil {
-		return "",errors.Wrap(err, "unable to read ca.crt")
+		return "", errors.Wrap(err, "unable to read ca.crt")
 	}
 
 	pemCert, err := ioutil.ReadFile(filepath.Join(rc.CertsDir, "node.crt"))
 	if err != nil {
-		return "",errors.Wrap(err, "unable to read node.crt")
+		return "", errors.Wrap(err, "unable to read node.crt")
 	}
 
 	pemKey, err := ioutil.ReadFile(filepath.Join(rc.CertsDir, "node.key"))
 	if err != nil {
-		return "",errors.Wrap(err, "unable to ready node.key")
+		return "", errors.Wrap(err, "unable to ready node.key")
 	}
 
 	// TODO we are not using the TLS secret type, but are using Opaque secrets.
@@ -246,7 +245,7 @@ func (rc *generateCert) generateNodeCert(ctx context.Context, log *logging.Loggi
 		resource.NewKubeResource(ctx, rc.client, cluster.Namespace(), kube.DefaultPersister))
 
 	if err = secret.UpdateCertAndKeyAndCA(pemCert, pemKey, ca, log.GetLog()); err != nil {
-		return "",errors.Wrap(err, "failed to update node TLS secret certs")
+		return "", errors.Wrap(err, "failed to update node TLS secret certs")
 	}
 
 	log.Debug("generated and saved node certificate and key")
@@ -321,7 +320,7 @@ func (rc *generateCert) generateClientCert(ctx context.Context, log *logging.Log
 
 func (rc *generateCert) getCertificateExpirationDate(ctx context.Context, log *logging.Logging, pemCert []byte) (string, error) {
 	log.Debug("getExpirationDate from cert")
- 	block, _ := pem.Decode(pemCert)
+	block, _ := pem.Decode(pemCert)
 	if block == nil {
 		return "", errors.New("failed to decode certificate")
 	}
