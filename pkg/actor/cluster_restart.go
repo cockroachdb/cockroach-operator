@@ -31,8 +31,8 @@ import (
 )
 
 func newClusterRestart(scheme *runtime.Scheme, cl client.Client, config *rest.Config) Actor {
-	return &versionChecker{
-		action: newAction("Crdb Version Validator", scheme, cl),
+	return &clusterRestart{
+		action: newAction("Crdb Cluster Restart", scheme, cl),
 		config: config,
 	}
 }
