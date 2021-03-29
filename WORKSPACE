@@ -118,6 +118,9 @@ load("@io_bazel_rules_k8s//k8s:k8s.bzl", "k8s_defaults")
 
 # Setting up the defaults for rules k8s.  The varible values
 # are replaced by hack/build/print-workspace-status.sh
+# Using environment variables that are prefixed with the word
+# 'STAMP_' causes the rules_k8s files to rebuild when the
+# --stamp and evn values change.
 k8s_defaults(
     # This becomes the name of the @repository and the rule
     # you will import in your BUILD files.
