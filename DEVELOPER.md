@@ -74,6 +74,10 @@ bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
 
 There are various examples that can be installed.  The files are located in the examples directory.
 
+## OSX Big Sur issues
+
+If you are running into problems building on Big Sur you may want to try using `sudo` commands for building.  We have encountered problems with OSX Big Sur release that generates an error message `filterbuildid: permission denied`.  Run the bazel commands using `sudo` currently works.
+
 ## Delete the cluster
 
 When you have removed your example and the persitent volumes you can use the following command to delete your cluster.
