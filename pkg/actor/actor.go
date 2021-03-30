@@ -103,6 +103,7 @@ func NewOperatorActions(scheme *runtime.Scheme, cl client.Client, config *rest.C
 		certs,
 		decommission,
 		update,
+		newClusterRestart(scheme, cl, config),
 		newResizePVC(scheme, cl, config),
 		newDeploy(scheme, cl),
 		newInitialize(scheme, cl, config),

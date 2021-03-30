@@ -45,7 +45,7 @@ type clusterRestart struct {
 	config *rest.Config
 }
 
-//GetActionType returns api.VersionCheckerAction action used to set the cluster status errors
+//GetActionType returns api.ClusterRestartAction action used to set the cluster status errors
 func (v *clusterRestart) GetActionType() api.ActionType {
 	return api.ClusterRestartAction
 }
