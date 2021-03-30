@@ -60,14 +60,14 @@ the next section.
 
 Install the operator
 
-```
-git clone https://github.com/cockroachdb/cockroach-operator.git
-export CLUSTER=test
+```console
+$ git clone https://github.com/cockroachdb/cockroach-operator.git
+$ export CLUSTER=test
 # create a gke cluster
-./hack/create-gke-cluster.sh -c $CLUSTER
+$ ./hack/create-gke-cluster.sh -c $CLUSTER
 
-export IMAGE_REGISTRY=us.gcr.io/$(gcloud config get-value project)
-export K8S_CLUSTER=$(kubectl config view --minify -o=jsonpath='{.contexts[0].context.cluster}')
+$ DEV_REGISTRY=us.gcr.io/$(gcloud config get-value project) \
+K8S_CLUSTER=$(kubectl config view --minify -o=jsonpath='{.contexts[0].context.cluster}') \
 bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
                  //manifests:install_operator.apply
 ```
