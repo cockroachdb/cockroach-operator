@@ -130,7 +130,6 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 		return nil
 	}
 
-	// jobName := cluster.JobName()
 	log.V(int(zapcore.DebugLevel)).Info("version checker", "job", jobName)
 	key := kubetypes.NamespacedName{
 		Namespace: cluster.Namespace(),
@@ -159,8 +158,7 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 			image := cluster.GetCockroachDBImageName()
 			if errBackoff := IsContainerStatusImagePullBackoff(ctx, clientset, job, log, image); errBackoff != nil {
 				err := InvalidContainerVersionError{Err: errBackoff}
-				log.Error(err, "job image incorrect")
-				return err
+				return LogError("job image incorrect", err, log)
 			}
 			log.V(int(zapcore.DebugLevel)).Info("step 4")
 			return errors.Wrapf(err, "failed to check the version of the crdb")
