@@ -66,7 +66,7 @@ gcloud services enable storage-component.googleapis.com
 6. Create a service account and attach it to the project:
 ```bash
 gcloud iam service-accounts create open-shift-sa
-gcloud projects add-iam-policy-bindings openshift-sandbox --member  "serviceAccount:open-shift-sa@openshift-sandbox-id.iam.gserviceaccount.com" --role "roles/owner"
+gcloud projects add-iam-policy-binding openshift-sandbox --member  "serviceAccount:open-shift-sa@openshift-sandbox-id.iam.gserviceaccount.com" --role "roles/owner"
 ``` 
 7. Set credentials:
 ```bash
