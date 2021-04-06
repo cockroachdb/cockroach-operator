@@ -28,7 +28,6 @@ import (
 	"github.com/cockroachdb/cockroach-operator/pkg/scale"
 	"github.com/cockroachdb/cockroach-operator/pkg/update"
 	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
-	"github.com/cockroachdb/vitess/go/vt/log"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"go.uber.org/zap/zapcore"
@@ -124,7 +123,7 @@ func (r *clusterRestart) Act(ctx context.Context, cluster *resource.Cluster) err
 		log.V(int(zapcore.DebugLevel)).Info("completed setting the statefullset replicas to 0")
 
 		replicas := cluster.Spec().Nodes
-		
+
 		if err := r.ScaleSts(ctx, statefulSet, log, clientset, replicas); err != nil {
 			return errors.Wrapf(err, "error reseting statefulset %s.%s to %v replicas", cluster.Namespace(), cluster.StatefulSetName(), replicas)
 		}
@@ -175,7 +174,6 @@ func (r *clusterRestart) ScaleSts(ctx context.Context, sts *appsv1.StatefulSet, 
 }
 
 func handleStsError(err error, l logr.Logger, stsName string, ns string) error {
-	log.V(int(zapcore.DebugLevel)).Info("completed cluster restart")
 	if k8sErrors.IsNotFound(err) {
 		l.Error(err, "sts is not found", "stsName", stsName, "namespace", ns)
 		return errors.Wrapf(err, "sts is not found: %s ns: %s", stsName, ns)
