@@ -2,6 +2,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
 load("@io_bazel_rules_docker//container:container.bzl", "container_image")
 load("@io_bazel_rules_docker//go:image.bzl", "go_image")
 load("@bazel_tools//tools/build_defs/pkg:pkg.bzl", "pkg_tar")
+load("@io_bazel_rules_docker//docker/util:run.bzl", "container_run_and_commit_layer")
 
 go_library(
     name = "go_default_library",
@@ -33,6 +34,16 @@ pkg_tar(
     package_dir = "/licenses",
 )
 
+container_run_and_commit_layer(
+    name = "ubi_update",
+    commands = [
+        "microdnf install yum",
+        "yum -y update-minimal --security --sec-severity=Important --sec-severity=Critical",
+        "microdnf remove yum && microdnf clean all",
+    ],
+    image = "@redhat_ubi_minimal//image",
+)
+
 container_image(
     name = "ubi_base_image",
     # References container_pull from WORKSPACE
@@ -46,7 +57,10 @@ container_image(
         "description": "CockroachDB is a PostgreSQL wire-compatible distributed SQL database",
     },
     stamp = True,
-    tars = [":licenses"],
+    tars = [
+        ":licenses",
+        ":ubi_update",
+    ],
 )
 
 pkg_tar(
