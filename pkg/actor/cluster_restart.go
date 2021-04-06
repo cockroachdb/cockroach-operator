@@ -97,6 +97,16 @@ func (r *clusterRestart) Act(ctx context.Context, cluster *resource.Cluster) err
 			log.Info("restart statefulset does not have all replicas up")
 			return NotReadyErr{Err: errors.New("restart cluster statefulset does not have all replicas up")}
 		}
+		timeNow := metav1.Now()
+		stsName := statefulSet.Name
+		stsNamespace := statefulSet.Namespace
+		statefulSet.Annotations[resource.CrdbRestartAnnotation] = timeNow.Format(time.RFC3339)
+		_, err := clientset.AppsV1().StatefulSets(stsNamespace).Update(ctx, statefulSet, metav1.UpdateOptions{})
+
+		if err != nil {
+			return handleStsError(err, log, stsName, stsNamespace)
+		}
+
 		if err := r.RollingSts(ctx, cluster, clientset); err != nil {
 			return errors.Wrapf(err, "error restarting statefulset %s.%s", cluster.Namespace(), cluster.StatefulSetName())
 		}
