@@ -86,7 +86,7 @@ func (r *clusterRestart) Act(ctx context.Context, cluster *resource.Cluster) err
 		return errors.Wrapf(err, "failed to create kubernetes clientset")
 	}
 
-	if cluster.Spec().RestartType == "Rolling" {
+	if cluster.Spec().RestartType == api.RollingRestart {
 		// TODO statefulSetIsUpdating is not quite working as expected.
 		// I had to check status.  We should look at the update code in partition update to address this
 		if statefulSetIsUpdating(statefulSet) {
@@ -100,6 +100,7 @@ func (r *clusterRestart) Act(ctx context.Context, cluster *resource.Cluster) err
 		timeNow := metav1.Now()
 		stsName := statefulSet.Name
 		stsNamespace := statefulSet.Namespace
+		//this annotation will trigger the rolling update
 		statefulSet.Annotations[resource.CrdbRestartAnnotation] = timeNow.Format(time.RFC3339)
 		_, err := clientset.AppsV1().StatefulSets(stsNamespace).Update(ctx, statefulSet, metav1.UpdateOptions{})
 
@@ -114,7 +115,7 @@ func (r *clusterRestart) Act(ctx context.Context, cluster *resource.Cluster) err
 		return nil
 	}
 
-	if cluster.Spec().RestartType == "FullRestart" {
+	if cluster.Spec().RestartType == api.FullRestart {
 		// TODO statefulSetIsUpdating is not quite working as expected.
 		// I had to check status.  We should look at the update code in partition update to address this
 		if statefulSetIsUpdating(statefulSet) {
@@ -166,9 +167,11 @@ func (r *clusterRestart) RollingSts(ctx context.Context, cluster *resource.Clust
 	return update.RollingRestart(ctx, updateRoach, k8sCluster, r.log)
 }
 
-// updateSts updates the size of an STS' VolumeClaimTemplate to match the new size in the CR.
-// In order to update the volume claim template we have to delete the STS without cascading and then
-// create the sts.
+//ScaleSts updates the replicas of the statefullset to the value from parameters
+//and waits until the statefullset has currentreplicas equal with the desired replicas
+//We will use this in FullRestart logic, by setting replicas to 0 and
+//afterwords setting to the original number of nodes, this way the cluster
+//will load the new CA certs
 func (r *clusterRestart) ScaleSts(ctx context.Context, sts *appsv1.StatefulSet, l logr.Logger, clientset *kubernetes.Clientset, replicas int32) error {
 	timeNow := metav1.Now()
 	stsName := sts.Name

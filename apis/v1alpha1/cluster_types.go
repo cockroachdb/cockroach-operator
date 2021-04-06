@@ -103,7 +103,7 @@ type CrdbClusterSpec struct {
 	// Other values are invalid.
 	// Default: ""
 	// +optional
-	RestartType string `json:"restartType,omitempty"`
+	RestartType ClusterRestartType `json:"restartType,omitempty"`
 }
 
 // +k8s:openapi-gen=true

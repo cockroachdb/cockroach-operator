@@ -7,6 +7,7 @@ go_library(
         "action_types.go",
         "cluster_defaults.go",
         "cluster_types.go",
+        "restart_types.go",
         "condition_types.go",
         "doc.go",
         "groupversion_info.go",

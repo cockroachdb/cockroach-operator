@@ -19,10 +19,8 @@ package update
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
-	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
 	v1 "k8s.io/api/apps/v1"
@@ -106,8 +104,6 @@ func makeRollingUpdateVerificationFunc() func(update *UpdateSts, podNumber int, 
 // in order to reuse updateClusterStatefulSets func.
 func makeRollingUpdateFunc() func(sts *v1.StatefulSet) (*v1.StatefulSet, error) {
 	return func(sts *v1.StatefulSet) (*v1.StatefulSet, error) {
-		timeNow := metav1.Now()
-		sts.Annotations[resource.CrdbRestartAnnotation] = timeNow.Format(time.RFC3339)
 		return sts, nil
 	}
 }
