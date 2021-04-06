@@ -21,7 +21,7 @@
 DOCKER_REGISTRY?=us.gcr.io/chris-love-operator-playground
 DOCKER_IMAGE_REPOSITORY?=cockroachdb-operator
 # Default bundle image tag
-APP_VERSION?=v1.9.13
+APP_VERSION?=v1.9.17
 GCP_PROJECT?=chris-love-operator-playground
 GCP_ZONE?=us-central1-a
 CLUSTER_NAME?=bazel-test-alina

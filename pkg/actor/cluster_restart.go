@@ -87,6 +87,7 @@ func (r *clusterRestart) Act(ctx context.Context, cluster *resource.Cluster) err
 	}
 
 	if cluster.Spec().RestartType == api.RollingRestart {
+		log.V(int(zapcore.DebugLevel)).Info("initiating rolling restart action")
 		// TODO statefulSetIsUpdating is not quite working as expected.
 		// I had to check status.  We should look at the update code in partition update to address this
 		if statefulSetIsUpdating(statefulSet) {
@@ -98,16 +99,16 @@ func (r *clusterRestart) Act(ctx context.Context, cluster *resource.Cluster) err
 			return NotReadyErr{Err: errors.New("restart cluster statefulset does not have all replicas up")}
 		}
 		timeNow := metav1.Now()
-		stsName := statefulSet.Name
-		stsNamespace := statefulSet.Namespace
+		// stsName := statefulSet.Name
+		// stsNamespace := statefulSet.Namespace
 		//this annotation will trigger the rolling update
 		statefulSet.Annotations[resource.CrdbRestartAnnotation] = timeNow.Format(time.RFC3339)
-		_, err := clientset.AppsV1().StatefulSets(stsNamespace).Update(ctx, statefulSet, metav1.UpdateOptions{})
+		// _, err := clientset.AppsV1().StatefulSets(stsNamespace).Update(ctx, statefulSet, metav1.UpdateOptions{})
 
-		if err != nil {
-			return handleStsError(err, log, stsName, stsNamespace)
-		}
-
+		// if err != nil {
+		// 	return handleStsError(err, log, stsName, stsNamespace)
+		// }
+		log.V(int(zapcore.DebugLevel)).Info("BEFORE rolling")
 		if err := r.RollingSts(ctx, cluster, clientset); err != nil {
 			return errors.Wrapf(err, "error restarting statefulset %s.%s", cluster.Namespace(), cluster.StatefulSetName())
 		}
