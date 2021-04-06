@@ -38,6 +38,7 @@ const (
 	CrdbContainerImageAnnotation = "crdb.io/containerimage"
 	CrdbVersionAnnotation        = "crdb.io/version"
 	CrdbHistoryAnnotation        = "crdb.io/history"
+	CrdbRestartAnnotation        = "crdb.io/restart"
 	CrdbCertExpirationAnnotation = "crdb.io/certexpiration"
 )
 

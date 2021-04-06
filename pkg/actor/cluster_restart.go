@@ -18,14 +18,26 @@ package actor
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/condition"
 	"github.com/cockroachdb/cockroach-operator/pkg/features"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
+	"github.com/cockroachdb/cockroach-operator/pkg/scale"
+	"github.com/cockroachdb/cockroach-operator/pkg/update"
 	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
+	"github.com/cockroachdb/vitess/go/vt/log"
+	"github.com/go-logr/logr"
+	"github.com/pkg/errors"
 	"go.uber.org/zap/zapcore"
+	appsv1 "k8s.io/api/apps/v1"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	kubetypes "k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -46,18 +58,131 @@ type clusterRestart struct {
 }
 
 //GetActionType returns api.ClusterRestartAction action used to set the cluster status errors
-func (v *clusterRestart) GetActionType() api.ActionType {
+func (r *clusterRestart) GetActionType() api.ActionType {
 	return api.ClusterRestartAction
 }
 
-func (v *clusterRestart) Handles(conds []api.ClusterCondition) bool {
+func (r *clusterRestart) Handles(conds []api.ClusterCondition) bool {
 	return utilfeature.DefaultMutableFeatureGate.Enabled(features.ClusterRestart) && condition.True(api.InitializedCondition, conds) || condition.False(api.InitializedCondition, conds)
 }
 
-func (v *clusterRestart) Act(ctx context.Context, cluster *resource.Cluster) error {
-	log := v.log.WithValues("CrdbCluster", cluster.ObjectKey())
+func (r *clusterRestart) Act(ctx context.Context, cluster *resource.Cluster) error {
+	log := r.log.WithValues("CrdbCluster", cluster.ObjectKey())
 	log.V(int(zapcore.DebugLevel)).Info("starting cluster restart action")
+	if cluster.Spec().RestartType == "" {
+		log.V(int(zapcore.DebugLevel)).Info("No restart cluster action")
+		return nil
+	}
+	// Get the sts and compare the sts size to the size in the CR
+	key := kubetypes.NamespacedName{
+		Namespace: cluster.Namespace(),
+		Name:      cluster.StatefulSetName(),
+	}
+	statefulSet := &appsv1.StatefulSet{}
+	if err := r.client.Get(ctx, key, statefulSet); err != nil {
+		return errors.Wrap(err, "failed to fetch statefulset")
+	}
+	clientset, err := kubernetes.NewForConfig(r.config)
+	if err != nil {
+		return errors.Wrapf(err, "failed to create kubernetes clientset")
+	}
+
+	if cluster.Spec().RestartType == "Rolling" {
+		// TODO statefulSetIsUpdating is not quite working as expected.
+		// I had to check status.  We should look at the update code in partition update to address this
+		if statefulSetIsUpdating(statefulSet) {
+			return NotReadyErr{Err: errors.New("restart statefulset is updating, waiting for the update to finish")}
+		}
+		status := &statefulSet.Status
+		if status.CurrentReplicas == 0 || status.CurrentReplicas < status.Replicas {
+			log.Info("restart statefulset does not have all replicas up")
+			return NotReadyErr{Err: errors.New("restart cluster statefulset does not have all replicas up")}
+		}
+		if err := r.RollingSts(ctx, cluster, clientset); err != nil {
+			return errors.Wrapf(err, "error restarting statefulset %s.%s", cluster.Namespace(), cluster.StatefulSetName())
+		}
+		log.V(int(zapcore.DebugLevel)).Info("completed rolling cluster restart")
+		return nil
+	}
+
+	if cluster.Spec().RestartType == "FullRestart" {
+		// TODO statefulSetIsUpdating is not quite working as expected.
+		// I had to check status.  We should look at the update code in partition update to address this
+		if statefulSetIsUpdating(statefulSet) {
+			return NotReadyErr{Err: errors.New("restart statefulset is updating, waiting for the update to finish")}
+		}
+
+		status := &statefulSet.Status
+		if status.CurrentReplicas == 0 || status.CurrentReplicas < status.Replicas {
+			log.Info("restart statefulset does not have all replicas up")
+			return NotReadyErr{Err: errors.New("restart cluster statefulset does not have all replicas up")}
+		}
+
+		if err := r.ScaleSts(ctx, statefulSet, log, clientset, int32(0)); err != nil {
+			return errors.Wrapf(err, "error reseting statefulset %s.%s to 0 replicas", cluster.Namespace(), cluster.StatefulSetName())
+		}
+		log.V(int(zapcore.DebugLevel)).Info("completed setting the statefullset replicas to 0")
+
+		replicas := cluster.Spec().Nodes
+		
+		if err := r.ScaleSts(ctx, statefulSet, log, clientset, replicas); err != nil {
+			return errors.Wrapf(err, "error reseting statefulset %s.%s to %v replicas", cluster.Namespace(), cluster.StatefulSetName(), replicas)
+		}
+
+		log.V(int(zapcore.DebugLevel)).Info("completed full cluster restart")
+		return nil
+	}
 
 	log.V(int(zapcore.DebugLevel)).Info("completed cluster restart")
 	return nil
+}
+
+// RollingSts performs a rolling update on the cluster.
+func (r *clusterRestart) RollingSts(ctx context.Context, cluster *resource.Cluster, clientset *kubernetes.Clientset) error {
+	updateRoach := &update.UpdateRoach{
+		StsName:      cluster.StatefulSetName(),
+		StsNamespace: cluster.Namespace(),
+	}
+
+	podUpdateTimeout := 10 * time.Minute
+	podMaxPollingInterval := 30 * time.Minute
+	sleeper := update.NewSleeper(1 * time.Minute)
+
+	k8sCluster := &update.UpdateCluster{
+		Clientset:             clientset,
+		PodUpdateTimeout:      podUpdateTimeout,
+		PodMaxPollingInterval: podMaxPollingInterval,
+		Sleeper:               sleeper,
+	}
+	return update.RollingRestart(ctx, updateRoach, k8sCluster, r.log)
+}
+
+// updateSts updates the size of an STS' VolumeClaimTemplate to match the new size in the CR.
+// In order to update the volume claim template we have to delete the STS without cascading and then
+// create the sts.
+func (r *clusterRestart) ScaleSts(ctx context.Context, sts *appsv1.StatefulSet, l logr.Logger, clientset *kubernetes.Clientset, replicas int32) error {
+	timeNow := metav1.Now()
+	stsName := sts.Name
+	stsNamespace := sts.Namespace
+	sts.Spec.Replicas = &replicas
+	sts.Annotations[resource.CrdbRestartAnnotation] = timeNow.Format(time.RFC3339)
+	_, err := clientset.AppsV1().StatefulSets(stsNamespace).Update(ctx, sts, metav1.UpdateOptions{})
+
+	if err != nil {
+		return handleStsError(err, l, stsName, stsNamespace)
+	}
+	return scale.WaitUntilStatefulSetIsReadyToServe(ctx, clientset, stsNamespace, stsName, int32(replicas))
+}
+
+func handleStsError(err error, l logr.Logger, stsName string, ns string) error {
+	log.V(int(zapcore.DebugLevel)).Info("completed cluster restart")
+	if k8sErrors.IsNotFound(err) {
+		l.Error(err, "sts is not found", "stsName", stsName, "namespace", ns)
+		return errors.Wrapf(err, "sts is not found: %s ns: %s", stsName, ns)
+	} else if statusError, isStatus := err.(*k8sErrors.StatusError); isStatus {
+		l.Error(statusError, fmt.Sprintf("Error getting statefulset %v", statusError.ErrStatus.Message), "stsName", stsName, "namespace", ns)
+		return statusError
+	}
+	l.Error(err, "error getting statefulset", "stsName", stsName, "namspace", ns)
+	return err
 }
