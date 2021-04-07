@@ -104,10 +104,16 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req reconcile.Request
 		return requeueImmediately()
 	}
 
+	// if cluster.Spec.RestartType != "" {
+	// 	cluster.SetTrue(api.ClusterRestartCondition)
+	// }
+
 	//force version validation on mismatch between status and spec
 	if cluster.True(api.CrdbVersionChecked) {
 		if cluster.GetCockroachDBImageName() != cluster.Status().CrdbContainerImage {
 			cluster.SetFalse(api.CrdbVersionChecked)
+			//this will block running cluster restart if the fiels Restart was set
+			cluster.SetFalse(api.ClusterRestartCondition)
 			if err := r.Client.Status().Update(ctx, cluster.Unwrap()); err != nil {
 				log.Error(err, "failed to update cluster status on action")
 				return requeueIfError(err)

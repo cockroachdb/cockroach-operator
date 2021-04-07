@@ -62,7 +62,9 @@ func (r *clusterRestart) GetActionType() api.ActionType {
 }
 
 func (r *clusterRestart) Handles(conds []api.ClusterCondition) bool {
-	return utilfeature.DefaultMutableFeatureGate.Enabled(features.ClusterRestart) && condition.True(api.InitializedCondition, conds) || condition.False(api.InitializedCondition, conds)
+	return utilfeature.DefaultMutableFeatureGate.Enabled(features.ClusterRestart) &&
+		(condition.True(api.InitializedCondition, conds) || condition.False(api.InitializedCondition, conds)) &&
+		condition.True(api.ClusterRestartCondition, conds) && condition.True(api.CrdbVersionChecked, conds)
 }
 
 func (r *clusterRestart) Act(ctx context.Context, cluster *resource.Cluster) error {
@@ -130,8 +132,24 @@ func (r *clusterRestart) Act(ctx context.Context, cluster *resource.Cluster) err
 		log.V(int(zapcore.DebugLevel)).Info("completed full cluster restart")
 		return nil
 	}
+	// we force the saving of the status on the cluster and cancel the loop
+	fetcher := resource.NewKubeFetcher(ctx, cluster.Namespace(), r.client)
+
+	cr := resource.ClusterPlaceholder(cluster.Name())
+	if err := fetcher.Fetch(cr); err != nil {
+		log.Error(err, "failed to retrieve CrdbCluster resource")
+		return err
+	}
+	refreshedCluster := resource.NewCluster(cr)
+	// save the status of the cluster
+	refreshedCluster.SetTrue(api.ClusterRestartCondition)
+	if err := r.client.Status().Update(ctx, refreshedCluster.Unwrap()); err != nil {
+		log.Error(err, "failed saving cluster status on version checker")
+		return err
+	}
 
 	log.V(int(zapcore.DebugLevel)).Info("completed cluster restart")
+	CancelLoop(ctx)
 	return nil
 }
 
