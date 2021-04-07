@@ -20,8 +20,8 @@ package v1alpha1
 type ClusterRestartType string
 
 const (
-	//RollingRestart condition used to run the version checker and sync other actions
+	//RollingRestart  used trigger an rolling  restart
 	RollingRestart ClusterRestartType = "Rolling"
-	//FullRestart condition used to run the version checker and sync other actions
-	FullRestart ClusterRestartType = "FullRestart"
+	//FullCluster used to trigger a full cluster restart
+	FullCluster ClusterRestartType = "FullCluster"
 )

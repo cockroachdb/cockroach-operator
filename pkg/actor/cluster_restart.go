@@ -26,12 +26,12 @@ import (
 	"github.com/cockroachdb/cockroach-operator/pkg/features"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	"github.com/cockroachdb/cockroach-operator/pkg/scale"
-	"github.com/cockroachdb/cockroach-operator/pkg/update"
 	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"go.uber.org/zap/zapcore"
 	appsv1 "k8s.io/api/apps/v1"
+	v1 "k8s.io/api/apps/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -77,66 +77,53 @@ func (r *clusterRestart) Act(ctx context.Context, cluster *resource.Cluster) err
 		Namespace: cluster.Namespace(),
 		Name:      cluster.StatefulSetName(),
 	}
-	statefulSet := &appsv1.StatefulSet{}
-	if err := r.client.Get(ctx, key, statefulSet); err != nil {
-		return errors.Wrap(err, "failed to fetch statefulset")
-	}
 	clientset, err := kubernetes.NewForConfig(r.config)
 	if err != nil {
 		return errors.Wrapf(err, "failed to create kubernetes clientset")
 	}
+	statefulSet := &appsv1.StatefulSet{}
+	if err := r.client.Get(ctx, key, statefulSet); err != nil {
+		return errors.Wrap(err, "failed to fetch statefulset")
+	}
+	// TODO statefulSetIsUpdating is not quite working as expected.
+	// I had to check status.  We should look at the update code in partition update to address this
+	if statefulSetIsUpdating(statefulSet) {
+		return NotReadyErr{Err: errors.New("restart statefulset is updating, waiting for the update to finish")}
+	}
+
+	status := &statefulSet.Status
+	if status.CurrentReplicas == 0 || status.CurrentReplicas < status.Replicas {
+		log.Info("restart statefulset does not have all replicas up")
+		return NotReadyErr{Err: errors.New("restart cluster statefulset does not have all replicas up")}
+	}
 
 	if cluster.Spec().RestartType == api.RollingRestart {
 		log.V(int(zapcore.DebugLevel)).Info("initiating rolling restart action")
-		// TODO statefulSetIsUpdating is not quite working as expected.
-		// I had to check status.  We should look at the update code in partition update to address this
-		if statefulSetIsUpdating(statefulSet) {
-			return NotReadyErr{Err: errors.New("restart statefulset is updating, waiting for the update to finish")}
-		}
-		status := &statefulSet.Status
-		if status.CurrentReplicas == 0 || status.CurrentReplicas < status.Replicas {
-			log.Info("restart statefulset does not have all replicas up")
-			return NotReadyErr{Err: errors.New("restart cluster statefulset does not have all replicas up")}
-		}
-		timeNow := metav1.Now()
-		// stsName := statefulSet.Name
-		// stsNamespace := statefulSet.Namespace
-		//this annotation will trigger the rolling update
-		statefulSet.Annotations[resource.CrdbRestartAnnotation] = timeNow.Format(time.RFC3339)
-		// _, err := clientset.AppsV1().StatefulSets(stsNamespace).Update(ctx, statefulSet, metav1.UpdateOptions{})
-
-		// if err != nil {
-		// 	return handleStsError(err, log, stsName, stsNamespace)
-		// }
-		log.V(int(zapcore.DebugLevel)).Info("BEFORE rolling")
-		if err := r.RollingSts(ctx, cluster, clientset); err != nil {
+		if err := r.rollingSts(ctx, statefulSet.DeepCopy(), clientset, r.log); err != nil {
 			return errors.Wrapf(err, "error restarting statefulset %s.%s", cluster.Namespace(), cluster.StatefulSetName())
 		}
 		log.V(int(zapcore.DebugLevel)).Info("completed rolling cluster restart")
 		return nil
 	}
 
-	if cluster.Spec().RestartType == api.FullRestart {
+	if cluster.Spec().RestartType == api.FullCluster {
+		if err := r.scaleSts(ctx, statefulSet, log, clientset, int32(0)); err != nil {
+			return errors.Wrapf(err, "error reseting statefulset %s.%s to 0 replicas", cluster.Namespace(), cluster.StatefulSetName())
+		}
+		log.V(int(zapcore.DebugLevel)).Info("completed setting the statefullset replicas to 0")
+
+		replicas := cluster.Spec().Nodes
+		//we get the latest version of sts again
+		if err := r.client.Get(ctx, key, statefulSet); err != nil {
+			return errors.Wrap(err, "failed to fetch statefulset")
+		}
 		// TODO statefulSetIsUpdating is not quite working as expected.
 		// I had to check status.  We should look at the update code in partition update to address this
 		if statefulSetIsUpdating(statefulSet) {
 			return NotReadyErr{Err: errors.New("restart statefulset is updating, waiting for the update to finish")}
 		}
 
-		status := &statefulSet.Status
-		if status.CurrentReplicas == 0 || status.CurrentReplicas < status.Replicas {
-			log.Info("restart statefulset does not have all replicas up")
-			return NotReadyErr{Err: errors.New("restart cluster statefulset does not have all replicas up")}
-		}
-
-		if err := r.ScaleSts(ctx, statefulSet, log, clientset, int32(0)); err != nil {
-			return errors.Wrapf(err, "error reseting statefulset %s.%s to 0 replicas", cluster.Namespace(), cluster.StatefulSetName())
-		}
-		log.V(int(zapcore.DebugLevel)).Info("completed setting the statefullset replicas to 0")
-
-		replicas := cluster.Spec().Nodes
-
-		if err := r.ScaleSts(ctx, statefulSet, log, clientset, replicas); err != nil {
+		if err := r.scaleSts(ctx, statefulSet, log, clientset, replicas); err != nil {
 			return errors.Wrapf(err, "error reseting statefulset %s.%s to %v replicas", cluster.Namespace(), cluster.StatefulSetName(), replicas)
 		}
 
@@ -148,35 +135,63 @@ func (r *clusterRestart) Act(ctx context.Context, cluster *resource.Cluster) err
 	return nil
 }
 
-// RollingSts performs a rolling update on the cluster.
-func (r *clusterRestart) RollingSts(ctx context.Context, cluster *resource.Cluster, clientset *kubernetes.Clientset) error {
-	updateRoach := &update.UpdateRoach{
-		StsName:      cluster.StatefulSetName(),
-		StsNamespace: cluster.Namespace(),
-	}
+// rollingSts performs a rolling update on the cluster.
+func (r *clusterRestart) rollingSts(ctx context.Context, sts *appsv1.StatefulSet, clientset *kubernetes.Clientset, l logr.Logger) error {
+	// When a StatefulSet's partition number is set to `n`, only StatefulSet pods
+	// numbered greater or equal to `n` will be updated. The rest will remain untouched.
+	// https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#partitions
+	for partition := *sts.Spec.Replicas - 1; partition >= 0; partition-- {
+		stsName := sts.Name
+		stsNamespace := sts.Namespace
+		replicas := sts.Spec.Replicas
+		timeNow := metav1.Now()
+		refreshedSts, err := clientset.AppsV1().StatefulSets(stsNamespace).Get(ctx, stsName, metav1.GetOptions{})
+		if err != nil {
+			return handleStsError(err, l, stsName, stsNamespace)
+		}
+		sts := refreshedSts.DeepCopy()
+		sts.Annotations[resource.CrdbRestartAnnotation] = timeNow.Format(time.RFC3339)
 
-	podUpdateTimeout := 10 * time.Minute
-	podMaxPollingInterval := 30 * time.Minute
-	sleeper := update.NewSleeper(1 * time.Minute)
+		if sts.Spec.Template.Annotations == nil {
+			sts.Spec.Template.Annotations = make(map[string]string)
+		}
+		sts.Spec.Template.Annotations[resource.CrdbRestartAnnotation] = timeNow.Format(time.RFC3339)
+		sts.Spec.UpdateStrategy.RollingUpdate = &v1.RollingUpdateStatefulSetStrategy{
+			Partition: &partition,
+		}
+		_, err = clientset.AppsV1().StatefulSets(stsNamespace).Update(ctx, sts, metav1.UpdateOptions{})
+		if err != nil {
+			return handleStsError(err, l, stsName, stsNamespace)
+		}
+		// Wait until verificationFunction verifies the update, passing in
+		// the current partition so the function knows which pod to check
+		// the status of.
+		l.V(int(zapcore.DebugLevel)).Info("waiting until partition done restarting", "partition number:", partition)
 
-	k8sCluster := &update.UpdateCluster{
-		Clientset:             clientset,
-		PodUpdateTimeout:      podUpdateTimeout,
-		PodMaxPollingInterval: podMaxPollingInterval,
-		Sleeper:               sleeper,
+		if err := scale.WaitUntilStatefulSetIsReadyToServe(ctx, clientset, stsNamespace, stsName, *replicas); err != nil {
+			return errors.Wrapf(err, "error rolling update stategy on pod %d", int(partition))
+		}
+
+		if partition > 0 {
+			// wait 1 minute between updates
+			duration := 1 * time.Minute
+			l.V(int(zapcore.DebugLevel)).Info("sleeping", "duration", duration.String(), "label", "between restarting pods")
+			time.Sleep(1 * time.Minute)
+		}
 	}
-	return update.RollingRestart(ctx, updateRoach, k8sCluster, r.log)
+	return nil
 }
 
-//ScaleSts updates the replicas of the statefullset to the value from parameters
+//scaleSts updates the replicas of the statefullset to the value from parameters
 //and waits until the statefullset has currentreplicas equal with the desired replicas
 //We will use this in FullRestart logic, by setting replicas to 0 and
 //afterwords setting to the original number of nodes, this way the cluster
 //will load the new CA certs
-func (r *clusterRestart) ScaleSts(ctx context.Context, sts *appsv1.StatefulSet, l logr.Logger, clientset *kubernetes.Clientset, replicas int32) error {
+func (r *clusterRestart) scaleSts(ctx context.Context, sts *appsv1.StatefulSet, l logr.Logger, clientset *kubernetes.Clientset, replicas int32) error {
 	timeNow := metav1.Now()
 	stsName := sts.Name
 	stsNamespace := sts.Namespace
+	r.log.Info("scaleSts", "sts", stsName, "replicas", replicas)
 	sts.Spec.Replicas = &replicas
 	sts.Annotations[resource.CrdbRestartAnnotation] = timeNow.Format(time.RFC3339)
 	_, err := clientset.AppsV1().StatefulSets(stsNamespace).Update(ctx, sts, metav1.UpdateOptions{})
