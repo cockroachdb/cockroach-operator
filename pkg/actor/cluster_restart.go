@@ -34,6 +34,7 @@ import (
 	v1 "k8s.io/api/apps/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	kubetypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
@@ -64,7 +65,7 @@ func (r *clusterRestart) GetActionType() api.ActionType {
 func (r *clusterRestart) Handles(conds []api.ClusterCondition) bool {
 	return utilfeature.DefaultMutableFeatureGate.Enabled(features.ClusterRestart) &&
 		(condition.True(api.InitializedCondition, conds) || condition.False(api.InitializedCondition, conds)) &&
-		condition.True(api.ClusterRestartCondition, conds) && condition.True(api.CrdbVersionChecked, conds)
+		condition.False(api.ClusterRestartCondition, conds) && condition.True(api.CrdbVersionChecked, conds)
 }
 
 func (r *clusterRestart) Act(ctx context.Context, cluster *resource.Cluster) error {
@@ -105,33 +106,15 @@ func (r *clusterRestart) Act(ctx context.Context, cluster *resource.Cluster) err
 			return errors.Wrapf(err, "error restarting statefulset %s.%s", cluster.Namespace(), cluster.StatefulSetName())
 		}
 		log.V(int(zapcore.DebugLevel)).Info("completed rolling cluster restart")
-		return nil
-	}
-
-	if cluster.Spec().RestartType == api.FullCluster {
-		if err := r.scaleSts(ctx, statefulSet, log, clientset, int32(0)); err != nil {
+	} else if cluster.Spec().RestartType == api.FullCluster {
+		if err := r.fullClusterRestart(ctx, statefulSet, log, clientset); err != nil {
 			return errors.Wrapf(err, "error reseting statefulset %s.%s to 0 replicas", cluster.Namespace(), cluster.StatefulSetName())
 		}
-		log.V(int(zapcore.DebugLevel)).Info("completed setting the statefullset replicas to 0")
-
-		replicas := cluster.Spec().Nodes
-		//we get the latest version of sts again
-		if err := r.client.Get(ctx, key, statefulSet); err != nil {
-			return errors.Wrap(err, "failed to fetch statefulset")
-		}
-		// TODO statefulSetIsUpdating is not quite working as expected.
-		// I had to check status.  We should look at the update code in partition update to address this
-		if statefulSetIsUpdating(statefulSet) {
-			return NotReadyErr{Err: errors.New("restart statefulset is updating, waiting for the update to finish")}
-		}
-
-		if err := r.scaleSts(ctx, statefulSet, log, clientset, replicas); err != nil {
-			return errors.Wrapf(err, "error reseting statefulset %s.%s to %v replicas", cluster.Namespace(), cluster.StatefulSetName(), replicas)
-		}
-
 		log.V(int(zapcore.DebugLevel)).Info("completed full cluster restart")
-		return nil
 	}
+	//the object is saved in cluster controller.
+	// //This is the last action
+	// cluster.SetTrue(api.ClusterRestartCondition)
 	// we force the saving of the status on the cluster and cancel the loop
 	fetcher := resource.NewKubeFetcher(ctx, cluster.Namespace(), r.client)
 
@@ -141,20 +124,25 @@ func (r *clusterRestart) Act(ctx context.Context, cluster *resource.Cluster) err
 		return err
 	}
 	refreshedCluster := resource.NewCluster(cr)
-	// save the status of the cluster
+	// save the status of the cluster, we mark as restarted the cluster
 	refreshedCluster.SetTrue(api.ClusterRestartCondition)
+	//reset this... for now
+	refreshedCluster.Spec().RestartType = ""
+	if err := r.client.Update(ctx, refreshedCluster.Unwrap()); err != nil {
+		log.Error(err, "failed resetting the restart cluster field")
+	}
 	if err := r.client.Status().Update(ctx, refreshedCluster.Unwrap()); err != nil {
-		log.Error(err, "failed saving cluster status on version checker")
-		return err
+		log.Error(err, "failed saving cluster status on cluster restart")
+		return nil
 	}
 
 	log.V(int(zapcore.DebugLevel)).Info("completed cluster restart")
-	CancelLoop(ctx)
 	return nil
 }
 
 // rollingSts performs a rolling update on the cluster.
 func (r *clusterRestart) rollingSts(ctx context.Context, sts *appsv1.StatefulSet, clientset *kubernetes.Clientset, l logr.Logger) error {
+	timeNow := metav1.Now()
 	// When a StatefulSet's partition number is set to `n`, only StatefulSet pods
 	// numbered greater or equal to `n` will be updated. The rest will remain untouched.
 	// https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#partitions
@@ -162,7 +150,7 @@ func (r *clusterRestart) rollingSts(ctx context.Context, sts *appsv1.StatefulSet
 		stsName := sts.Name
 		stsNamespace := sts.Namespace
 		replicas := sts.Spec.Replicas
-		timeNow := metav1.Now()
+
 		refreshedSts, err := clientset.AppsV1().StatefulSets(stsNamespace).Get(ctx, stsName, metav1.GetOptions{})
 		if err != nil {
 			return handleStsError(err, l, stsName, stsNamespace)
@@ -190,34 +178,40 @@ func (r *clusterRestart) rollingSts(ctx context.Context, sts *appsv1.StatefulSet
 			return errors.Wrapf(err, "error rolling update stategy on pod %d", int(partition))
 		}
 
-		if partition > 0 {
-			// wait 1 minute between updates
-			duration := 1 * time.Minute
-			l.V(int(zapcore.DebugLevel)).Info("sleeping", "duration", duration.String(), "label", "between restarting pods")
-			time.Sleep(1 * time.Minute)
-		}
+		// wait 1 minute between updates
+		duration := 1 * time.Minute
+		l.V(int(zapcore.DebugLevel)).Info("sleeping", "duration", duration.String(), "label", "between restarting pods")
+		time.Sleep(1 * time.Minute)
 	}
 	return nil
 }
 
-//scaleSts updates the replicas of the statefullset to the value from parameters
-//and waits until the statefullset has currentreplicas equal with the desired replicas
-//We will use this in FullRestart logic, by setting replicas to 0 and
-//afterwords setting to the original number of nodes, this way the cluster
-//will load the new CA certs
-func (r *clusterRestart) scaleSts(ctx context.Context, sts *appsv1.StatefulSet, l logr.Logger, clientset *kubernetes.Clientset, replicas int32) error {
+//fullClusterRestart will delete all the pods of the sts
+//to force the reload of the certificateon the POD
+//used on the CA cert rotation
+func (r *clusterRestart) fullClusterRestart(ctx context.Context, sts *appsv1.StatefulSet, l logr.Logger, clientset *kubernetes.Clientset) error {
+
 	timeNow := metav1.Now()
 	stsName := sts.Name
 	stsNamespace := sts.Namespace
-	r.log.Info("scaleSts", "sts", stsName, "replicas", replicas)
-	sts.Spec.Replicas = &replicas
 	sts.Annotations[resource.CrdbRestartAnnotation] = timeNow.Format(time.RFC3339)
-	_, err := clientset.AppsV1().StatefulSets(stsNamespace).Update(ctx, sts, metav1.UpdateOptions{})
 
+	_, err := clientset.AppsV1().StatefulSets(stsNamespace).Update(ctx, sts, metav1.UpdateOptions{})
 	if err != nil {
 		return handleStsError(err, l, stsName, stsNamespace)
 	}
-	return scale.WaitUntilStatefulSetIsReadyToServe(ctx, clientset, stsNamespace, stsName, int32(replicas))
+	dp := metav1.DeletePropagationForeground
+	err = clientset.CoreV1().Pods(sts.Namespace).DeleteCollection(ctx, metav1.DeleteOptions{
+		PropagationPolicy: &dp,
+	}, metav1.ListOptions{
+		LabelSelector: labels.Set(sts.Spec.Selector.MatchLabels).AsSelector().String(),
+	})
+	if err != nil {
+		l.Error(err, "failed to delete the pods for sts")
+		return err
+	}
+	//waiting for autohealing
+	return scale.WaitUntilStatefulSetIsReadyToServe(ctx, clientset, stsNamespace, stsName, *sts.Spec.Replicas)
 }
 
 func handleStsError(err error, l logr.Logger, stsName string, ns string) error {

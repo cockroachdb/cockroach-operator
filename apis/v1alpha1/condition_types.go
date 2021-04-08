@@ -29,5 +29,5 @@ const (
 	//InitializedCondition string
 	InitializedCondition ClusterConditionType = "Initialized"
 	//ClusterRestartCondition string
-	ClusterRestartCondition ClusterConditionType = "RestartCluster"
+	ClusterRestartCondition ClusterConditionType = "RestartedCluster"
 )

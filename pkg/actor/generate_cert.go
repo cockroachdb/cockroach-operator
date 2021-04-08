@@ -143,13 +143,20 @@ func (rc *generateCert) Act(ctx context.Context, cluster *resource.Cluster) erro
 	refreshedCluster.SetAnnotationCertExpiration(*expirationDatePtr)
 	//save annotation first
 	if err := rc.client.Update(ctx, refreshedCluster.Unwrap()); err != nil {
-		log.Error(err, "failed saving the annotations on request certificate")
-		// TODO we are not failling to continue logic, if a
+		return log.LogAndWrapError(err, "failed saving the annotations on request certificate")
 	}
+
+	//make sure we have the latest object after saving
+	cr = resource.ClusterPlaceholder(cluster.Name())
+	if err := fetcher.Fetch(cr); err != nil {
+		return log.LogAndWrapError(err, "failed to retrieve CrdbCluster resource")
+	}
+	//we always work with a copy
+	refreshedCluster = resource.NewCluster(cr)
 	// save the status of the cluster
 	refreshedCluster.SetTrue(api.CertificateGenerated)
 	if err := rc.client.Status().Update(ctx, refreshedCluster.Unwrap()); err != nil {
-		return log.LogAndWrapError(err, "failed saving cluster status on version checker")
+		return log.LogAndWrapError(err, "failed saving cluster status on generate cert")
 	}
 
 	return nil
