@@ -54,7 +54,7 @@ echo "RH_BUNDLE_METADATA_OPTS=$RH_BUNDLE_METADATA_OPTS"
 [[ -z "$9" ]] && { echo "Error: RH_COCKROACH_DATABASE_IMAGE not set"; exit 1; }
 RH_COCKROACH_DATABASE_IMAGE="$9"
 echo "RH_COCKROACH_DATABASE_IMAGE=$RH_COCKROACH_DATABASE_IMAGE"
-SUPPORTED_VERSIONS=(v20.2.5 v20.1.12 v19.2.12)
+SUPPORTED_VERSIONS=(v20.2.7 v20.1.12 v19.2.12)
 "$opsdk" generate kustomize manifests -q 
 "$kstomize" build config/manifests | "$opsdk" generate bundle -q --overwrite --version ${RH_BUNDLE_VERSION} ${RH_BUNDLE_METADATA_OPTS}
 "$opsdk" bundle validate ./bundle

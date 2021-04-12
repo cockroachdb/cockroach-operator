@@ -34,14 +34,14 @@ metadata:
     capabilities: Full Lifecycle
     categories: Database
     certified: "true"
-    containerImage: us.gcr.io/chris-love-operator-playground/cockroachdb-operator:v1.8.49
-    createdAt: "2021-03-17T13:56:21Z"
+    containerImage: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v1.6.18-rc.2
+    createdAt: "2021-04-09T11:43:00Z"
     description: CockroachDB Operator
     operators.operatorframework.io/builder: operator-sdk-v1.1.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
     repository: https://github.com/cockroachdb/cockroach-operator
     support: Cockroach Labs
-  name: cockroach-operator.v1.2.16
+  name: cockroach-operator.v1.6.18
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -276,8 +276,8 @@ spec:
                   value: registry.connect.redhat.com/cockroachdb/cockroach:v19.2.12
                 - name: RELATED_IMAGE_COCKROACH_v20_1_12
                   value: registry.connect.redhat.com/cockroachdb/cockroach:v20.1.12
-                - name: RELATED_IMAGE_COCKROACH_v20_2_5
-                  value: registry.connect.redhat.com/cockroachdb/cockroach:v20.2.5
+                - name: RELATED_IMAGE_COCKROACH_v20_2_7
+                  value: registry.connect.redhat.com/cockroachdb/cockroach:v20.2.7
                 - name: WATCH_NAMESPACE
                   valueFrom:
                     fieldRef:
@@ -288,7 +288,9 @@ spec:
                       fieldPath: metadata.name
                 - name: OPERATOR_NAME
                   value: cockroachdb
-                image: us.gcr.io/chris-love-operator-playground/cockroachdb-operator:v1.8.49
+                - name: RELATED_IMAGE_COCKROACH_v20_2_5
+                  value: cockroachdb/cockroach:v20.2.5
+                image: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v1.6.18-rc.2
                 imagePullPolicy: IfNotPresent
                 name: cockroach-operator
                 resources:
@@ -331,4 +333,4 @@ spec:
   maturity: beta
   provider:
     name: Cockroach Labs
-  version: 1.2.16
+  version: 1.6.18
