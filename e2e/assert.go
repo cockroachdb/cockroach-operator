@@ -42,9 +42,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apiresource "k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	k8slabels "k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // RequireClusterToBeReadyEventuallyTimeout tests to see if a statefulset has started correctly and
@@ -201,16 +199,9 @@ func fetchStatefulSet(sb testenv.DiffingSandbox, name string) (*appsv1.StatefulS
 }
 
 func fetchPodsInStatefulSet(sb testenv.DiffingSandbox, labels map[string]string) ([]corev1.Pod, error) {
-	matchingLabels := client.MatchingLabels(labels)
-	// create a new clientset to talk to k8s
-	clientset, err := kubernetes.NewForConfig(sb.Mgr.GetConfig())
-	if err != nil {
-		return nil, err
-	}
-	pods, err := clientset.CoreV1().Pods(sb.Namespace).List(context.TODO(), metav1.ListOptions{
-		LabelSelector: k8slabels.Set(matchingLabels).AsSelector().String(),
-	})
-	if err != nil {
+	var pods corev1.PodList
+
+	if err := sb.List(&pods, labels); err != nil {
 		return nil, err
 	}
 
