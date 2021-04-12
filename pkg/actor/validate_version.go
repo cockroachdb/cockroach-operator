@@ -64,7 +64,7 @@ type versionChecker struct {
 func (v *versionChecker) GetActionType() api.ActionType {
 	return api.VersionCheckerAction
 }
-
+//Handles will return true if the conditions to run this action are satisfied 
 func (v *versionChecker) Handles(conds []api.ClusterCondition) bool {
 	return utilfeature.DefaultMutableFeatureGate.Enabled(features.CrdbVersionValidator) && (condition.True(api.InitializedCondition, conds) || condition.False(api.InitializedCondition, conds)) && condition.False(api.CrdbVersionChecked, conds)
 }
@@ -160,7 +160,6 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 				err := InvalidContainerVersionError{Err: errBackoff}
 				return LogError("job image incorrect", err, log)
 			}
-			log.V(int(zapcore.DebugLevel)).Info("step 4")
 			return errors.Wrapf(err, "failed to check the version of the crdb")
 		}
 		podLogOpts := corev1.PodLogOptions{}
@@ -336,7 +335,7 @@ func IsContainerStatusImagePullBackoff(
 	pods, err := clientset.CoreV1().Pods(job.Namespace).List(ctx, metav1.ListOptions{
 		LabelSelector: labels.Set(job.Spec.Selector.MatchLabels).AsSelector().String(),
 	})
-
+    //TO DO: maybe we should check some k8s specific errors here 
 	if err != nil {
 		return LogError("error getting pod in job", err, l)
 	}
