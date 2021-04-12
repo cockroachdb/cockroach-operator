@@ -64,7 +64,8 @@ type versionChecker struct {
 func (v *versionChecker) GetActionType() api.ActionType {
 	return api.VersionCheckerAction
 }
-//Handles will return true if the conditions to run this action are satisfied 
+
+//Handles will return true if the conditions to run this action are satisfied
 func (v *versionChecker) Handles(conds []api.ClusterCondition) bool {
 	return utilfeature.DefaultMutableFeatureGate.Enabled(features.CrdbVersionValidator) && (condition.True(api.InitializedCondition, conds) || condition.False(api.InitializedCondition, conds)) && condition.False(api.CrdbVersionChecked, conds)
 }
@@ -345,7 +346,7 @@ func IsContainerStatusImagePullBackoff(
 	pods, err := clientset.CoreV1().Pods(job.Namespace).List(ctx, metav1.ListOptions{
 		LabelSelector: labels.Set(job.Spec.Selector.MatchLabels).AsSelector().String(),
 	})
-    //TO DO: maybe we should check some k8s specific errors here 
+	//TO DO: maybe we should check some k8s specific errors here
 	if err != nil {
 		return LogError("error getting pod in job", err, l)
 	}
