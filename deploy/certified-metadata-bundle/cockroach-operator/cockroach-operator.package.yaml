@@ -1,5 +1,5 @@
 channels:
-- currentCSV: cockroach-operator.v1.6.19
+- currentCSV: cockroach-operator.v1.6.20
   name: beta
 - currentCSV: cockroach-operator.v1.0.1
   name: stable
