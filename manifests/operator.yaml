@@ -34,7 +34,7 @@ metadata:
   labels:
     app: cockroach-operator
 ---
-# RBAC Definition (ClutserRole, ServiceAccount, and ClusterRoleBinding):
+# RBAC Definition (ClusterRole, ServiceAccount, and ClusterRoleBinding):
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -60,7 +60,7 @@ rules:
     verbs:
       - "*"
 ---
-# RBAC Definition (ClutserRole, ServiceAccount, and ClusterRoleBinding):
+# RBAC Definition (ClusterRole, ServiceAccount, and ClusterRoleBinding):
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
