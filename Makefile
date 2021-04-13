@@ -18,9 +18,9 @@
 #
 
 # values used in workspace-status.sh
-DOCKER_REGISTRY?=cockroachdb
+DOCKER_REGISTRY?=us.gcr.io/chris-love-operator-playground
 DOCKER_IMAGE_REPOSITORY?=cockroachdb-operator
-VERSION?=$(shell cat version.txt)
+VERSION?=v1.9.52
 APP_VERSION?=v$(VERSION)
 GCP_PROJECT?=chris-love-operator-playground
 GCP_ZONE?=us-central1-a
