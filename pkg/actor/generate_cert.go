@@ -18,6 +18,8 @@ package actor
 
 import (
 	"context"
+	"crypto/x509"
+	"encoding/pem"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
@@ -114,10 +116,12 @@ func (rc *generateCert) Act(ctx context.Context, cluster *resource.Cluster) erro
 	if err := rc.generateCA(ctx, log, cluster); err != nil {
 		return log.LogAndWrapError(err, "error generating CA")
 	}
-
+	var expirationDatePtr *string
 	// generate the node certificate for the database to use
-	if err := rc.generateNodeCert(ctx, log, cluster); err != nil {
+	if expirationDate, err := rc.generateNodeCert(ctx, log, cluster); err != nil {
 		return log.LogAndWrapError(err, "error generating Node Certificate")
+	} else {
+		expirationDatePtr = &expirationDate
 	}
 
 	// TODO if we save the node certificate but error on saving the client
@@ -136,10 +140,23 @@ func (rc *generateCert) Act(ctx context.Context, cluster *resource.Cluster) erro
 		return log.LogAndWrapError(err, "failed to retrieve CrdbCluster resource")
 	}
 	refreshedCluster := resource.NewCluster(cr)
+	refreshedCluster.SetAnnotationCertExpiration(*expirationDatePtr)
+	//save annotation first
+	if err := rc.client.Update(ctx, refreshedCluster.Unwrap()); err != nil {
+		return log.LogAndWrapError(err, "failed saving the annotations on request certificate")
+	}
+
+	//make sure we have the latest object after saving
+	cr = resource.ClusterPlaceholder(cluster.Name())
+	if err := fetcher.Fetch(cr); err != nil {
+		return log.LogAndWrapError(err, "failed to retrieve CrdbCluster resource")
+	}
+	//we always work with a copy
+	refreshedCluster = resource.NewCluster(cr)
 	// save the status of the cluster
 	refreshedCluster.SetTrue(api.CertificateGenerated)
 	if err := rc.client.Status().Update(ctx, refreshedCluster.Unwrap()); err != nil {
-		return log.LogAndWrapError(err, "failed saving cluster status on version checker")
+		return log.LogAndWrapError(err, "failed saving cluster status on generate cert")
 	}
 
 	return nil
@@ -165,21 +182,21 @@ func (rc *generateCert) generateCA(ctx context.Context, log *logging.Logging, cl
 // This time a new CA is generated, the Node secret is not updated, but the client certicate is generated
 // using a new CA.
 
-func (rc *generateCert) generateNodeCert(ctx context.Context, log *logging.Logging, cluster *resource.Cluster) error {
+func (rc *generateCert) generateNodeCert(ctx context.Context, log *logging.Logging, cluster *resource.Cluster) (string, error) {
 	log.Debug("generating node certificate")
 
 	// load the secret.  If it exists don't update the cert
 	secret, err := resource.LoadTLSSecret(cluster.NodeTLSSecretName(),
 		resource.NewKubeResource(ctx, rc.client, cluster.Namespace(), kube.DefaultPersister))
 	if kube.IgnoreNotFound(err) != nil {
-		return errors.Wrap(err, "failed to get node TLS secret")
+		return "", errors.Wrap(err, "failed to get node TLS secret")
 	}
 
 	// if the secret is ready then don't update the secret
 	// the Actor should have already generated the secret
 	if secret.Ready() {
 		log.Debug("not updating node certificate as it exists")
-		return nil
+		return rc.getCertificateExpirationDate(ctx, log, secret.Key())
 	}
 
 	// hosts are the various DNS names and IP address that have to exist in the Node certificates
@@ -207,23 +224,23 @@ func (rc *generateCert) generateNodeCert(ctx context.Context, log *logging.Loggi
 		"failed to generate node certificate and key")
 
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	// Read the node certificates into memory
 	ca, err := ioutil.ReadFile(filepath.Join(rc.CertsDir, "ca.crt"))
 	if err != nil {
-		return errors.Wrap(err, "unable to read ca.crt")
+		return "", errors.Wrap(err, "unable to read ca.crt")
 	}
 
 	pemCert, err := ioutil.ReadFile(filepath.Join(rc.CertsDir, "node.crt"))
 	if err != nil {
-		return errors.Wrap(err, "unable to read node.crt")
+		return "", errors.Wrap(err, "unable to read node.crt")
 	}
 
 	pemKey, err := ioutil.ReadFile(filepath.Join(rc.CertsDir, "node.key"))
 	if err != nil {
-		return errors.Wrap(err, "unable to ready node.key")
+		return "", errors.Wrap(err, "unable to ready node.key")
 	}
 
 	// TODO we are not using the TLS secret type, but are using Opaque secrets.
@@ -234,11 +251,11 @@ func (rc *generateCert) generateNodeCert(ctx context.Context, log *logging.Loggi
 		resource.NewKubeResource(ctx, rc.client, cluster.Namespace(), kube.DefaultPersister))
 
 	if err = secret.UpdateCertAndKeyAndCA(pemCert, pemKey, ca, log.GetLog()); err != nil {
-		return errors.Wrap(err, "failed to update node TLS secret certs")
+		return "", errors.Wrap(err, "failed to update node TLS secret certs")
 	}
 
 	log.Debug("generated and saved node certificate and key")
-	return nil
+	return rc.getCertificateExpirationDate(ctx, log, pemCert)
 }
 
 func (rc *generateCert) generateClientCert(ctx context.Context, log *logging.Logging, cluster *resource.Cluster) error {
@@ -253,6 +270,7 @@ func (rc *generateCert) generateClientCert(ctx context.Context, log *logging.Log
 
 	// if the secret is ready then don't update the secret
 	// the Actor should have already generated the secret
+	//but we should read the expiration date
 	if secret.Ready() {
 		log.Debug("not updating client certificate")
 		return nil
@@ -304,4 +322,19 @@ func (rc *generateCert) generateClientCert(ctx context.Context, log *logging.Log
 
 	log.Debug("generated and saved client certificate and key")
 	return nil
+}
+
+func (rc *generateCert) getCertificateExpirationDate(ctx context.Context, log *logging.Logging, pemCert []byte) (string, error) {
+	log.Debug("getExpirationDate from cert")
+	block, _ := pem.Decode(pemCert)
+	if block == nil {
+		return "", errors.New("failed to decode certificate")
+	}
+	cert, err := x509.ParseCertificate(block.Bytes)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to parse certificate")
+	}
+
+	log.Debug("getExpirationDate from cert", "Not before:", cert.NotBefore.Format(time.RFC3339), "Not after:", cert.NotAfter.Format(time.RFC3339))
+	return cert.NotAfter.Format(time.RFC3339), nil
 }

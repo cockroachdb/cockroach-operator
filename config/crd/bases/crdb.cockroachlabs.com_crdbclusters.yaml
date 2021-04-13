@@ -260,6 +260,9 @@ spec:
                     description: 'Requests describes the minimum amount of compute resources required. If Requests is omitted for a container, it defaults to Limits if that is explicitly specified, otherwise to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
                     type: object
                 type: object
+              restartType:
+                description: '(Optional) RestartType if set with value FullCluster restarts the entire cluster. FullCluster option is used when the CA cert is replaced and we need to restart all nodes at once. If the value is set to Rolling it will restart one node at a time. Other values are invalid. Default: ""'
+                type: string
               sqlPort:
                 description: 'The SQL Port number Default: 26257'
                 format: int32
