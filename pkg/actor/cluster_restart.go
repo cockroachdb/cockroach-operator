@@ -62,16 +62,20 @@ func (r *clusterRestart) GetActionType() api.ActionType {
 	return api.ClusterRestartAction
 }
 
+//Handles will return true if the prerequisite are met to run restart
+//like the cluster exists, actin deploy and inizialize, run and the feature gate was enabled
+//for this feature
 func (r *clusterRestart) Handles(conds []api.ClusterCondition) bool {
 	return utilfeature.DefaultMutableFeatureGate.Enabled(features.ClusterRestart) &&
 		(condition.True(api.InitializedCondition, conds) || condition.False(api.InitializedCondition, conds)) &&
-		condition.False(api.ClusterRestartCondition, conds) && condition.True(api.CrdbVersionChecked, conds)
+		condition.True(api.CrdbVersionChecked, conds)
 }
 
 func (r *clusterRestart) Act(ctx context.Context, cluster *resource.Cluster) error {
 	log := r.log.WithValues("CrdbCluster", cluster.ObjectKey())
 	log.V(int(zapcore.DebugLevel)).Info("starting cluster restart action")
-	if cluster.Spec().RestartType == "" {
+	restartType := cluster.GetAnnotationRestartType()
+	if restartType == "" {
 		log.V(int(zapcore.DebugLevel)).Info("No restart cluster action")
 		return nil
 	}
@@ -100,21 +104,20 @@ func (r *clusterRestart) Act(ctx context.Context, cluster *resource.Cluster) err
 		return NotReadyErr{Err: errors.New("restart cluster statefulset does not have all replicas up")}
 	}
 
-	if cluster.Spec().RestartType == api.RollingRestart {
+	if restartType == api.ClusterRestartType(api.RollingRestart).String() {
 		log.V(int(zapcore.DebugLevel)).Info("initiating rolling restart action")
 		if err := r.rollingSts(ctx, statefulSet.DeepCopy(), clientset, r.log); err != nil {
 			return errors.Wrapf(err, "error restarting statefulset %s.%s", cluster.Namespace(), cluster.StatefulSetName())
 		}
 		log.V(int(zapcore.DebugLevel)).Info("completed rolling cluster restart")
-	} else if cluster.Spec().RestartType == api.FullCluster {
+	} else if restartType == api.ClusterRestartType(api.FullCluster).String() {
 		if err := r.fullClusterRestart(ctx, statefulSet, log, clientset); err != nil {
 			return errors.Wrapf(err, "error reseting statefulset %s.%s to 0 replicas", cluster.Namespace(), cluster.StatefulSetName())
 		}
 		log.V(int(zapcore.DebugLevel)).Info("completed full cluster restart")
+	} else {
+		log.V(int(zapcore.DebugLevel)).Info("invalid annotation")
 	}
-	//the object is saved in cluster controller.
-	// //This is the last action
-	// cluster.SetTrue(api.ClusterRestartCondition)
 	// we force the saving of the status on the cluster and cancel the loop
 	fetcher := resource.NewKubeFetcher(ctx, cluster.Namespace(), r.client)
 
@@ -125,9 +128,10 @@ func (r *clusterRestart) Act(ctx context.Context, cluster *resource.Cluster) err
 	}
 	refreshedCluster := resource.NewCluster(cr)
 	// save the status of the cluster, we mark as restarted the cluster
-	refreshedCluster.SetTrue(api.ClusterRestartCondition)
+	refreshedCluster.SetActionFinished(api.ClusterRestartAction)
 	//reset this... for now
-	refreshedCluster.Spec().RestartType = ""
+	refreshedCluster.DeleteRestartTypeAnnotation()
+	//we should patch
 	if err := r.client.Update(ctx, refreshedCluster.Unwrap()); err != nil {
 		log.Error(err, "failed resetting the restart cluster field")
 	}

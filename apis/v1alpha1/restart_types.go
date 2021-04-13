@@ -17,11 +17,24 @@ limitations under the License.
 package v1alpha1
 
 //ClusterRestartType type alias
-type ClusterRestartType string
+type ClusterRestartType int
 
 const (
 	//RollingRestart  used trigger an rolling  restart
-	RollingRestart ClusterRestartType = "Rolling"
+	RollingRestart = iota
 	//FullCluster used to trigger a full cluster restart
-	FullCluster ClusterRestartType = "FullCluster"
+	FullCluster
 )
+
+var states []string = []string{
+	"Unknown",
+	"Rolling",
+	"FullCluster",
+}
+
+func (r ClusterRestartType) String() string {
+	if r < RollingRestart || r > FullCluster {
+		return "Unknown"
+	}
+	return states[r]
+}
