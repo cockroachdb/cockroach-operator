@@ -34,7 +34,7 @@ metadata:
   labels:
     app: cockroach-operator
 ---
-# RBAC Definition (ClutserRole, ServiceAccount, and ClusterRoleBinding):
+# RBAC Definition (ClusterRole, ServiceAccount, and ClusterRoleBinding):
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -60,7 +60,7 @@ rules:
     verbs:
       - "*"
 ---
-# RBAC Definition (ClutserRole, ServiceAccount, and ClusterRoleBinding):
+# RBAC Definition (ClusterRole, ServiceAccount, and ClusterRoleBinding):
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -77,7 +77,6 @@ subjects:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  creationTimestamp: null
   name: cockroach-operator-role
 rules:
   - apiGroups:
@@ -220,7 +219,7 @@ metadata:
   labels:
     app: cockroach-operator
 ---
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: cockroach-operator-default
@@ -257,7 +256,7 @@ spec:
       serviceAccountName: cockroach-operator-sa
       containers:
         - name: cockroach-operator
-          image: us.gcr.io/chris-love-operator-playground/cockroachdb-operator:v1.9.62
+          image: us.gcr.io/chris-love-operator-playground/cockroachdb-operator:v1.9.68
           imagePullPolicy: IfNotPresent
           # uncomment this to enable different new features
           # args: ["-feature-gates","PartitionedUpdate=true,UseDecommission=true,Upgrade=false, CrdbVersionValidator=false"]

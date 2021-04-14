@@ -1,1 +1,11 @@
-/Users/alina/go/src/github.com/cockroachdb/cockroach-operator/PROJECT
+domain: cockroachlabs.com
+layout: go.kubebuilder.io/v2
+projectName: cockroach-operator
+repo: github.com/cockroach-operator
+resources:
+- group: crdb
+  kind: CrdbCluster
+  version: v1alpha1
+version: 3-alpha
+plugins:
+  go.sdk.operatorframework.io/v2-alpha: {}
