@@ -106,10 +106,6 @@ func (b StatefulSetBuilder) Build(obj client.Object) error {
 										Path: "ca.crt",
 									},
 									{
-										Key:  "ca.key",
-										Path: "ca.key",
-									},
-									{
 										Key:  corev1.TLSCertKey,
 										Path: "node.crt",
 									},
