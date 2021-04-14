@@ -254,6 +254,9 @@ func (cluster Cluster) NodeTLSSecretName() string {
 func (cluster Cluster) ClientTLSSecretName() string {
 	return fmt.Sprintf("%s-root", cluster.Name())
 }
+func (cluster Cluster) CASecretName() string {
+	return fmt.Sprintf("%s-ca", cluster.Name())
+}
 
 func (cluster Cluster) Domain() string {
 	return "svc.cluster.local"

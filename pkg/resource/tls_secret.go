@@ -77,12 +77,19 @@ type TLSSecret struct {
 	secret *corev1.Secret
 }
 
+func (s *TLSSecret) ReadyCA() bool {
+	data := s.secret.Data
+
+	if _, ok := data[caKey]; !ok {
+		return false
+	}
+
+	return true
+}
+
 func (s *TLSSecret) Ready() bool {
 	data := s.secret.Data
 	if _, ok := data[caCrtKey]; !ok {
-		return false
-	}
-	if _, ok := data[caKey]; !ok {
 		return false
 	}
 
@@ -123,17 +130,27 @@ func (s *TLSSecret) UpdateCertAndCA(cert, ca []byte, log logr.Logger) error {
 
 // UpdateCertAndKeyAndCA updates three different certificates at the same time.
 // It save the TLSCertKey, the CA, and the TLSPrivateKey in a secret.
-func (s *TLSSecret) UpdateCertAndKeyAndCA(cert, key []byte, ca, cakey []byte, log logr.Logger) error {
+func (s *TLSSecret) UpdateCertAndKeyAndCA(cert, key []byte, ca []byte, log logr.Logger) error {
 	newCert, newCA := append([]byte{}, cert...), append([]byte{}, ca...)
 	newKey := append([]byte{}, key...)
-	newCAKey := append([]byte{}, cakey...)
 
 	_, err := s.Persist(s.secret, func() error {
 		s.secret.Data[corev1.TLSCertKey] = newCert
 		s.secret.Data[caCrtKey] = newCA
-		s.secret.Data[caKey] = newCAKey
 		s.secret.Data[corev1.TLSPrivateKeyKey] = newKey
 
+		return nil
+	})
+
+	return err
+}
+
+// UpdateCAKey updates CA key
+func (s *TLSSecret) UpdateCAKey(cakey []byte, log logr.Logger) error {
+	newCAKey := append([]byte{}, cakey...)
+
+	_, err := s.Persist(s.secret, func() error {
+		s.secret.Data[caKey] = newCAKey
 		return nil
 	})
 

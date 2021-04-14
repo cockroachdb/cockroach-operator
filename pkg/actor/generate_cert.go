@@ -164,7 +164,21 @@ func (rc *generateCert) Act(ctx context.Context, cluster *resource.Cluster) erro
 
 func (rc *generateCert) generateCA(ctx context.Context, log *logging.Logging, cluster *resource.Cluster) error {
 	log.Debug("generating CA")
-	return errors.Wrap(
+	// load the secret.  If it exists don't update the cert
+	secret, err := resource.LoadTLSSecret(cluster.CASecretName(),
+		resource.NewKubeResource(ctx, rc.client, cluster.Namespace(), kube.DefaultPersister))
+
+	if kube.IgnoreNotFound(err) != nil {
+		return errors.Wrap(err, "failed to get node TLS secret")
+	}
+	// if the secret is ready then don't update the secret
+	// the Actor should have already generated the secret
+	if secret.ReadyCA() {
+		log.Debug("not updating node certificate as it exists")
+		return nil
+	}
+
+	err = errors.Wrap(
 		security.CreateCAPair(
 			rc.CertsDir,
 			rc.CAKey,
@@ -173,6 +187,28 @@ func (rc *generateCert) generateCA(ctx context.Context, log *logging.Logging, cl
 			allowCAKeyReuse,
 			overwriteFiles),
 		"failed to generate CA cert and key")
+	if err != nil {
+		return err
+	}
+	// Read the ca key into memory
+	cakey, err := ioutil.ReadFile(rc.CAKey)
+	if err != nil {
+		return errors.Wrap(err, "unable to read ca.key")
+	}
+	if err != nil {
+		return errors.Wrap(err, "unable to read ca.key")
+	}
+
+	// create and save the TLS certificates into a secret
+	secret = resource.CreateTLSSecret(cluster.CASecretName(),
+		resource.NewKubeResource(ctx, rc.client, cluster.Namespace(), kube.DefaultPersister))
+
+	if err = secret.UpdateCAKey(cakey, log.GetLog()); err != nil {
+		return errors.Wrap(err, "failed to update ca key secret ")
+	}
+
+	log.Debug("generated and saved ca key")
+	return nil
 }
 
 // TODO we have an edge case that exists that the actor is not handling properly
@@ -232,11 +268,6 @@ func (rc *generateCert) generateNodeCert(ctx context.Context, log *logging.Loggi
 	if err != nil {
 		return "", errors.Wrap(err, "unable to read ca.crt")
 	}
-	// Read the node certificates into memory
-	cakey, err := ioutil.ReadFile(rc.CAKey)
-	if err != nil {
-		return "", errors.Wrap(err, "unable to read ca.key")
-	}
 
 	pemCert, err := ioutil.ReadFile(filepath.Join(rc.CertsDir, "node.crt"))
 	if err != nil {
@@ -255,7 +286,7 @@ func (rc *generateCert) generateNodeCert(ctx context.Context, log *logging.Loggi
 	secret = resource.CreateTLSSecret(cluster.NodeTLSSecretName(),
 		resource.NewKubeResource(ctx, rc.client, cluster.Namespace(), kube.DefaultPersister))
 
-	if err = secret.UpdateCertAndKeyAndCA(pemCert, pemKey, ca, cakey, log.GetLog()); err != nil {
+	if err = secret.UpdateCertAndKeyAndCA(pemCert, pemKey, ca, log.GetLog()); err != nil {
 		return "", errors.Wrap(err, "failed to update node TLS secret certs")
 	}
 
@@ -306,11 +337,6 @@ func (rc *generateCert) generateClientCert(ctx context.Context, log *logging.Log
 	if err != nil {
 		return errors.Wrap(err, "unable to read ca.crt")
 	}
-	// Load the certificates into memory
-	cakey, err := ioutil.ReadFile(rc.CAKey)
-	if err != nil {
-		return errors.Wrap(err, "unable to read ca.key")
-	}
 
 	pemCert, err := ioutil.ReadFile(filepath.Join(rc.CertsDir, "client.root.crt"))
 	if err != nil {
@@ -326,7 +352,7 @@ func (rc *generateCert) generateClientCert(ctx context.Context, log *logging.Log
 	secret = resource.CreateTLSSecret(cluster.ClientTLSSecretName(),
 		resource.NewKubeResource(ctx, rc.client, cluster.Namespace(), kube.DefaultPersister))
 
-	if err = secret.UpdateCertAndKeyAndCA(pemCert, pemKey, ca, cakey, log.GetLog()); err != nil {
+	if err = secret.UpdateCertAndKeyAndCA(pemCert, pemKey, ca, log.GetLog()); err != nil {
 		return errors.Wrap(err, "failed to update client TLS secret certs")
 	}
 
