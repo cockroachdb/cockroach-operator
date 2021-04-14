@@ -169,12 +169,12 @@ func (rc *generateCert) generateCA(ctx context.Context, log *logging.Logging, cl
 		resource.NewKubeResource(ctx, rc.client, cluster.Namespace(), kube.DefaultPersister))
 
 	if kube.IgnoreNotFound(err) != nil {
-		return errors.Wrap(err, "failed to get node TLS secret")
+		return errors.Wrap(err, "failed to get ca key secret")
 	}
 	// if the secret is ready then don't update the secret
 	// the Actor should have already generated the secret
 	if secret.ReadyCA() {
-		log.Debug("not updating node certificate as it exists")
+		log.Debug("not updating ca key as it exists")
 		return nil
 	}
 
@@ -192,9 +192,6 @@ func (rc *generateCert) generateCA(ctx context.Context, log *logging.Logging, cl
 	}
 	// Read the ca key into memory
 	cakey, err := ioutil.ReadFile(rc.CAKey)
-	if err != nil {
-		return errors.Wrap(err, "unable to read ca.key")
-	}
 	if err != nil {
 		return errors.Wrap(err, "unable to read ca.key")
 	}
