@@ -27,14 +27,10 @@ const (
 )
 
 var states []string = []string{
-	"Unknown",
 	"Rolling",
 	"FullCluster",
 }
 
 func (r ClusterRestartType) String() string {
-	if r < RollingRestart || r > FullCluster {
-		return "Unknown"
-	}
 	return states[r]
 }

@@ -125,7 +125,7 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req reconcile.Request
 	for i, a := range r.Actions {
 		// Ensure the action is applicable to the current resource state
 		if a.Handles(cluster.Status().Conditions) {
-			log.Info(fmt.Sprintf("  ACTION----->%v). %s", i, a.GetActionType()))
+			log.Info(fmt.Sprintf("Running action with index: %v and  name: %s", i, a.GetActionType()))
 			if err := a.Act(ctx, &cluster); err != nil {
 				// Save the error on he Status for each action
 				log.Info("Error on action", "Action", a.GetActionType(), "err", err.Error())
