@@ -65,6 +65,7 @@ func (v *versionChecker) GetActionType() api.ActionType {
 	return api.VersionCheckerAction
 }
 
+//Handles will return true if the conditions to run this action are satisfied
 func (v *versionChecker) Handles(conds []api.ClusterCondition) bool {
 	return utilfeature.DefaultMutableFeatureGate.Enabled(features.CrdbVersionValidator) && (condition.True(api.InitializedCondition, conds) || condition.False(api.InitializedCondition, conds)) && condition.False(api.CrdbVersionChecked, conds)
 }
@@ -87,7 +88,7 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 		}
 		log.V(int(zapcore.DebugLevel)).Info("User set cockroachDBVersion")
 		// we check if the cockroachDBVersion is supported by the operator,
-		// this can return false only for api feild CockroachDBVersion
+		// this can return false only for api field CockroachDBVersion
 		// The supported versions are set as enviroment variables in the operator manifest.
 		if !cluster.IsSupportedImage() {
 			err := ValidationError{Err: errors.New(fmt.Sprintf("crdb version %s not supported", cluster.Spec().CockroachDBVersion))}
@@ -105,11 +106,13 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 	cluster.SetAnnotationVersion(calVersion)
 	cluster.SetCrdbContainerImage(containerImage)
 	cluster.SetAnnotationContainerImage(containerImage)
+	jobName := cluster.JobName()
 	changed, err := (resource.Reconciler{
 		ManagedResource: r,
 		Builder: resource.JobBuilder{
 			Cluster:  cluster,
 			Selector: r.Labels.Selector(),
+			JobName:  jobName,
 		},
 		Owner:  owner,
 		Scheme: v.scheme,
@@ -128,7 +131,6 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 		return nil
 	}
 
-	jobName := cluster.JobName()
 	log.V(int(zapcore.DebugLevel)).Info("version checker", "job", jobName)
 	key := kubetypes.NamespacedName{
 		Namespace: cluster.Namespace(),
@@ -142,9 +144,6 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 		return errors.Wrapf(err, "check version failed to create kubernetes clientset")
 	}
 	if err := v.client.Get(ctx, key, job); err != nil {
-		// if IsJobTerminating(ctx, job, log) {
-		// 	goto ReconcileJob
-		// }
 		err := WaitUntilJobPodIsRunning(ctx, clientset, job, log)
 		if err != nil {
 			log.Error(err, "job not found")
@@ -155,10 +154,15 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 	// check if the job is completed or failed before EXEC
 	if finished, _ := isJobCompletedOrFailed(job); !finished {
 		if err := WaitUntilJobPodIsRunning(ctx, clientset, job, v.log); err != nil {
-			log.Error(err, "error checking version of crdb")
+			// if after 2 minutes the job pod is not ready and container status is ImagePullBackoff
+			// We need to stop requeueing until further changes on the CR
+			image := cluster.GetCockroachDBImageName()
+			if errBackoff := IsContainerStatusImagePullBackoff(ctx, clientset, job, log, image); errBackoff != nil {
+				err := InvalidContainerVersionError{Err: errBackoff}
+				return LogError("job image incorrect", err, log)
+			}
 			return errors.Wrapf(err, "failed to check the version of the crdb")
 		}
-
 		podLogOpts := corev1.PodLogOptions{}
 		//get pod for the job we created
 		pods, err := clientset.CoreV1().Pods(job.Namespace).List(ctx, metav1.ListOptions{
@@ -173,7 +177,16 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 			log.V(int(zapcore.DebugLevel)).Info("No running pods yet for version checker... we will retry later")
 			return nil
 		}
-		podName := pods.Items[0].Name
+		tmpPod := &pods.Items[0]
+		// when we have more jobs take the latest in consideration
+		if len(pods.Items) > 1 {
+			for _, po := range pods.Items {
+				if !po.CreationTimestamp.Before(&tmpPod.CreationTimestamp) {
+					tmpPod = &po
+				}
+			}
+		}
+		podName := tmpPod.Name
 
 		req := clientset.CoreV1().Pods(job.Namespace).GetLogs(podName, &podLogOpts)
 		podLogs, err := req.Stream(ctx)
@@ -317,6 +330,32 @@ func IsJobPodRunning(
 	pod := pods.Items[0]
 	if !kube.IsPodReady(&pod) {
 		return LogError("job pod is not ready yet waiting longer", nil, l)
+	}
+	l.V(int(zapcore.DebugLevel)).Info("job pod is ready")
+	return nil
+}
+
+func IsContainerStatusImagePullBackoff(
+	ctx context.Context,
+	clientset kubernetes.Interface,
+	job *kbatch.Job,
+	l logr.Logger,
+	image string,
+) error {
+	//get pod for the job we created
+	pods, err := clientset.CoreV1().Pods(job.Namespace).List(ctx, metav1.ListOptions{
+		LabelSelector: labels.Set(job.Spec.Selector.MatchLabels).AsSelector().String(),
+	})
+	//TO DO: maybe we should check some k8s specific errors here
+	if err != nil {
+		return LogError("error getting pod in job", err, l)
+	}
+	if len(pods.Items) == 0 {
+		return LogError("job pods are not running.", nil, l)
+	}
+	pod := pods.Items[0]
+	if !kube.IsPodReady(&pod) && kube.IsImagePullBackOff(&pod, image) {
+		return LogError(fmt.Sprintf("Back-off pulling image %s", image), nil, l)
 	}
 	l.V(int(zapcore.DebugLevel)).Info("job pod is ready")
 	return nil

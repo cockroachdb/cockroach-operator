@@ -220,6 +220,16 @@ func IsPodReadyConditionTrue(status corev1.PodStatus) bool {
 	return condition != nil && condition.Status == corev1.ConditionTrue
 }
 
+//IsImagePullBackOff  returns true if a container status has the waiting state with reason ImagePullBackOff
+func IsImagePullBackOff(pod *corev1.Pod, image string) bool {
+	_, containerStatus := GetContainerStatus(&pod.Status, image)
+	if !containerStatus.Ready && containerStatus.State.Waiting != nil &&
+		containerStatus.State.Waiting.Reason == "ImagePullBackOff" {
+		return true
+	}
+	return false
+}
+
 // GetPodReadyCondition extracts the pod ready condition from the given status and returns that.
 // Returns nil if the condition is not present.
 func GetPodReadyCondition(status corev1.PodStatus) *corev1.PodCondition {
@@ -234,6 +244,29 @@ func GetPodCondition(status *corev1.PodStatus, conditionType corev1.PodCondition
 		return -1, nil
 	}
 	return GetPodConditionFromList(status.Conditions, conditionType)
+}
+
+// GetContainerStatus extracts the provided container status from the given status and returns that.
+// Returns nil and -1 if the condition is not present, and the index of the located container status.
+func GetContainerStatus(status *corev1.PodStatus, image string) (int, *corev1.ContainerStatus) {
+	if status == nil {
+		return -1, nil
+	}
+	return GeContainerStatusFromList(status.ContainerStatuses, image)
+}
+
+// GeContainerStatusFromList extracts the provided container status from the given list of condition and
+// returns the index of the condition and the condition. Returns -1 and nil if the containeer status is not present.
+func GeContainerStatusFromList(containerStatuses []corev1.ContainerStatus, image string) (int, *corev1.ContainerStatus) {
+	if containerStatuses == nil {
+		return -1, nil
+	}
+	for i := range containerStatuses {
+		if containerStatuses[i].Image == image {
+			return i, &containerStatuses[i]
+		}
+	}
+	return -1, nil
 }
 
 // GetPodConditionFromList extracts the provided condition from the given list of condition and
