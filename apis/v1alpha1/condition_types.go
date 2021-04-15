@@ -28,6 +28,4 @@ const (
 	DecommissionCondition ClusterConditionType = "Decommission"
 	//InitializedCondition string
 	InitializedCondition ClusterConditionType = "Initialized"
-	//ClusterRestartCondition string
-	ClusterRestartCondition ClusterConditionType = "RestartedCluster"
 )

@@ -22,8 +22,6 @@ type ActionType string
 const (
 	//VersionCheckerAction string
 	VersionCheckerAction ActionType = "VersionCheckerAction"
-	//ClusterRestartAction string
-	ClusterRestartAction ActionType = "ClusterRestart"
 	//DeployAction string
 	DeployAction ActionType = "Deploy"
 	//DecommissionAction string

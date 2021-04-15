@@ -48,12 +48,12 @@ func (e PermanentErr) Error() string {
 	return e.Err.Error()
 }
 
-//ValidationError error used to stop requeue the request on failure
-type ValidationError struct {
+//InvalidContainerVersionError error used to stop requeue the request on failure
+type InvalidContainerVersionError struct {
 	Err error
 }
 
-func (e ValidationError) Error() string {
+func (e InvalidContainerVersionError) Error() string {
 	return e.Err.Error()
 }
 
@@ -106,7 +106,6 @@ func NewOperatorActions(scheme *runtime.Scheme, cl client.Client, config *rest.C
 		newResizePVC(scheme, cl, config),
 		newDeploy(scheme, cl),
 		newInitialize(scheme, cl, config),
-		newClusterRestart(scheme, cl, config),
 	}
 
 }

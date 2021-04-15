@@ -34,7 +34,7 @@ metadata:
   labels:
     app: cockroach-operator
 ---
-# RBAC Definition (ClusterRole, ServiceAccount, and ClusterRoleBinding):
+# RBAC Definition (ClutserRole, ServiceAccount, and ClusterRoleBinding):
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -60,7 +60,7 @@ rules:
     verbs:
       - "*"
 ---
-# RBAC Definition (ClusterRole, ServiceAccount, and ClusterRoleBinding):
+# RBAC Definition (ClutserRole, ServiceAccount, and ClusterRoleBinding):
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -77,6 +77,7 @@ subjects:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
+  creationTimestamp: null
   name: cockroach-operator-role
 rules:
   - apiGroups:
@@ -219,7 +220,7 @@ metadata:
   labels:
     app: cockroach-operator
 ---
-apiVersion: rbac.authorization.k8s.io/v1
+apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: RoleBinding
 metadata:
   name: cockroach-operator-default
@@ -256,16 +257,16 @@ spec:
       serviceAccountName: cockroach-operator-sa
       containers:
         - name: cockroach-operator
-          image: us.gcr.io/chris-love-operator-playground/cockroachdb-operator:v1.9.70
+          image: cockroachdb/cockroach-operator:v1.6.12-rc.2
           imagePullPolicy: IfNotPresent
           # uncomment this to enable different new features
           # args: ["-feature-gates","PartitionedUpdate=true,UseDecommission=true,Upgrade=false, CrdbVersionValidator=false"]
           # this is for openshift only
           # args: ["-feature-gates", "Upgrade=false,ResizePVC=false"]
-
+          
           # different new features are commented out below
           # uncomment them to enable the featureGate
-          args:
+          args: 
             - feature-gates
             - Upgrade=false
             # the below log level accepts "info" "debug" "warn" or "error"
@@ -283,8 +284,8 @@ spec:
                   fieldPath: metadata.name
             - name: OPERATOR_NAME
               value: cockroachdb
-            - name: RELATED_IMAGE_COCKROACH_v20_2_7
-              value: cockroachdb/cockroach:v20.2.7
+            - name: RELATED_IMAGE_COCKROACH_v20_2_5
+              value: cockroachdb/cockroach:v20.2.5
             - name: RELATED_IMAGE_COCKROACH_v20_1_12
               value: cockroachdb/cockroach:v20.1.12
             - name: RELATED_IMAGE_COCKROACH_v19_2_12

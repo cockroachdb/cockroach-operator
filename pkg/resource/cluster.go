@@ -38,9 +38,6 @@ const (
 	CrdbContainerImageAnnotation = "crdb.io/containerimage"
 	CrdbVersionAnnotation        = "crdb.io/version"
 	CrdbHistoryAnnotation        = "crdb.io/history"
-	CrdbRestartAnnotation        = "crdb.io/restart"
-	CrdbCertExpirationAnnotation = "crdb.io/certexpiration"
-	CrdbRestartTypeAnnotation    = "crdb.io/restarttype"
 )
 
 func NewCluster(original *api.CrdbCluster) Cluster {
@@ -100,9 +97,6 @@ func (cluster Cluster) SetCrdbContainerImage(containerimage string) {
 }
 func (cluster Cluster) SetActionFailed(atype api.ActionType, errMsg string) {
 	clusterstatus.SetActionFailed(atype, errMsg, &cluster.cr.Status)
-}
-func (cluster Cluster) ResetActionType(atype api.ActionType) {
-	clusterstatus.ResetActionType(atype, &cluster.cr.Status)
 }
 func (cluster Cluster) SetActionFinished(atype api.ActionType) {
 	clusterstatus.SetActionFinished(atype, &cluster.cr.Status)
@@ -187,10 +181,6 @@ func (cluster Cluster) GetAnnotationContainerImage() string {
 	return cluster.getAnnotation(CrdbContainerImageAnnotation)
 }
 
-func (cluster Cluster) GetAnnotationRestartType() string {
-	return cluster.getAnnotation(CrdbRestartTypeAnnotation)
-}
-
 func (cluster Cluster) GetAnnotationHistory() string {
 	return cluster.getAnnotation(CrdbHistoryAnnotation)
 }
@@ -213,18 +203,6 @@ func (cluster Cluster) SetAnnotationContainerImage(containerimage string) {
 		cluster.cr.Annotations = make(map[string]string)
 	}
 	cluster.cr.Annotations[CrdbContainerImageAnnotation] = containerimage
-}
-func (cluster Cluster) SetAnnotationCertExpiration(certExpiration string) {
-	if cluster.cr.Annotations == nil {
-		cluster.cr.Annotations = make(map[string]string)
-	}
-	cluster.cr.Annotations[CrdbCertExpirationAnnotation] = certExpiration
-}
-func (cluster Cluster) DeleteRestartTypeAnnotation() {
-	if cluster.cr.Annotations == nil {
-		return
-	}
-	delete(cluster.cr.Annotations, CrdbRestartTypeAnnotation)
 }
 
 func (cluster Cluster) GetCockroachDBImageName() string {
@@ -253,9 +231,6 @@ func (cluster Cluster) NodeTLSSecretName() string {
 
 func (cluster Cluster) ClientTLSSecretName() string {
 	return fmt.Sprintf("%s-root", cluster.Name())
-}
-func (cluster Cluster) CASecretName() string {
-	return fmt.Sprintf("%s-ca", cluster.Name())
 }
 
 func (cluster Cluster) Domain() string {

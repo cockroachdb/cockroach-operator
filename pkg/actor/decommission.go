@@ -66,12 +66,7 @@ func (d decommission) Act(ctx context.Context, cluster *resource.Cluster) error 
 
 	log := d.log.WithValues("CrdbCluster", cluster.ObjectKey())
 	log.V(int(zapcore.DebugLevel)).Info("check decommission oportunities")
-	//we are not running decommission logic if a restart must be done
-	restartType := cluster.GetAnnotationRestartType()
-	if restartType != "" {
-		log.V(int(zapcore.DebugLevel)).Info("Not running decommission cluster action")
-		return nil
-	}
+
 	stsName := cluster.StatefulSetName()
 
 	key := kubetypes.NamespacedName{
