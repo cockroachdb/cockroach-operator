@@ -23,7 +23,8 @@ import (
 )
 
 const (
-	caKey = "ca.crt"
+	caCrtKey = "ca.crt"
+	caKey    = "ca.key"
 )
 
 // CreateTLSSecrete returns a TLSSecreat struct that is
@@ -76,9 +77,19 @@ type TLSSecret struct {
 	secret *corev1.Secret
 }
 
+func (s *TLSSecret) ReadyCA() bool {
+	data := s.secret.Data
+
+	if _, ok := data[caKey]; !ok {
+		return false
+	}
+
+	return true
+}
+
 func (s *TLSSecret) Ready() bool {
 	data := s.secret.Data
-	if _, ok := data[caKey]; !ok {
+	if _, ok := data[caCrtKey]; !ok {
 		return false
 	}
 
@@ -109,7 +120,7 @@ func (s *TLSSecret) UpdateCertAndCA(cert, ca []byte, log logr.Logger) error {
 
 	_, err := s.Persist(s.secret, func() error {
 		s.secret.Data[corev1.TLSCertKey] = newCert
-		s.secret.Data[caKey] = newCA
+		s.secret.Data[caCrtKey] = newCA
 
 		return nil
 	})
@@ -125,7 +136,7 @@ func (s *TLSSecret) UpdateCertAndKeyAndCA(cert, key []byte, ca []byte, log logr.
 
 	_, err := s.Persist(s.secret, func() error {
 		s.secret.Data[corev1.TLSCertKey] = newCert
-		s.secret.Data[caKey] = newCA
+		s.secret.Data[caCrtKey] = newCA
 		s.secret.Data[corev1.TLSPrivateKeyKey] = newKey
 
 		return nil
@@ -134,7 +145,22 @@ func (s *TLSSecret) UpdateCertAndKeyAndCA(cert, key []byte, ca []byte, log logr.
 	return err
 }
 
+// UpdateCAKey updates CA key
+func (s *TLSSecret) UpdateCAKey(cakey []byte, log logr.Logger) error {
+	newCAKey := append([]byte{}, cakey...)
+
+	_, err := s.Persist(s.secret, func() error {
+		s.secret.Data[caKey] = newCAKey
+		return nil
+	})
+
+	return err
+}
+
 func (s *TLSSecret) CA() []byte {
+	return s.secret.Data[caCrtKey]
+}
+func (s *TLSSecret) CAKey() []byte {
 	return s.secret.Data[caKey]
 }
 

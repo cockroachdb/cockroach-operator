@@ -104,17 +104,11 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req reconcile.Request
 		}
 		return requeueImmediately()
 	}
-	// // initial trigger for restart cluster action
-	// if cluster.Spec().RestartType != "" {
-	// 	cluster.SetFalse(api.ClusterRestartCondition)
-	// }
 
 	//force version validation on mismatch between status and spec
 	if cluster.True(api.CrdbVersionChecked) {
 		if cluster.GetCockroachDBImageName() != cluster.Status().CrdbContainerImage {
 			cluster.SetFalse(api.CrdbVersionChecked)
-			//this will block running cluster restart if the field Restart is already set and image updated
-			// cluster.SetTrue(api.ClusterRestartCondition)
 			if err := r.Client.Status().Update(ctx, cluster.Unwrap()); err != nil {
 				log.Error(err, "failed to update cluster status on action")
 				return requeueIfError(err)
@@ -131,7 +125,7 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req reconcile.Request
 	for i, a := range r.Actions {
 		// Ensure the action is applicable to the current resource state
 		if a.Handles(cluster.Status().Conditions) {
-			log.Info(fmt.Sprintf("  ACTION----->%v). %s", i, a.GetActionType()))
+			log.Info(fmt.Sprintf("Running action with index: %v and  name: %s", i, a.GetActionType()))
 			if err := a.Act(ctx, &cluster); err != nil {
 				// Save the error on he Status for each action
 				log.Info("Error on action", "Action", a.GetActionType(), "err", err.Error())
