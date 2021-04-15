@@ -18,6 +18,7 @@ package controller
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
@@ -121,9 +122,10 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req reconcile.Request
 
 	// Apply all actions to the cluster. Some actions can stop the loop if it is needed
 	// to refresh the state of the world
-	for _, a := range r.Actions {
+	for i, a := range r.Actions {
 		// Ensure the action is applicable to the current resource state
 		if a.Handles(cluster.Status().Conditions) {
+			log.Info(fmt.Sprintf("Running action with index: %v and  name: %s", i, a.GetActionType()))
 			if err := a.Act(ctx, &cluster); err != nil {
 				// Save the error on he Status for each action
 				log.Info("Error on action", "Action", a.GetActionType(), "err", err.Error())
@@ -135,19 +137,19 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req reconcile.Request
 				}(ctx, &cluster)
 				// Short pause
 				if notReadyErr, ok := err.(actor.NotReadyErr); ok {
-					log.V(int(zapcore.DebugLevel)).Info("requeueing", "reason", notReadyErr.Error())
+					log.V(int(zapcore.DebugLevel)).Info("requeueing", "reason", notReadyErr.Error(), "Action", a.GetActionType())
 					return requeueAfter(5*time.Second, nil)
 				}
 
 				// Long pause
 				if cantRecoverErr, ok := err.(actor.PermanentErr); ok {
-					log.Error(cantRecoverErr, "can't proceed with reconcile")
+					log.Error(cantRecoverErr, "can't proceed with reconcile", "Action", a.GetActionType())
 					return requeueAfter(5*time.Minute, err)
 				}
 
-				// No requeue
-				if invalidContainerVersError, ok := err.(actor.InvalidContainerVersionError); ok {
-					log.Error(invalidContainerVersError, "can't proceed with reconcile")
+				// No requeue until the user makes changes
+				if validationError, ok := err.(actor.ValidationError); ok {
+					log.Error(validationError, "can't proceed with reconcile")
 					return noRequeue()
 				}
 

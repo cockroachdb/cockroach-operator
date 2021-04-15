@@ -82,7 +82,7 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 	// If it is not set then pass through the if statement and check that
 	if cluster.Spec().Image.Name == "" {
 		if cluster.Spec().CockroachDBVersion == "" {
-			err := InvalidContainerVersionError{Err: errors.New("Cockroach image name and cockroachDBVersion api fields are not set, you must set one of them")}
+			err := ValidationError{Err: errors.New("Cockroach image name and cockroachDBVersion api fields are not set, you must set one of them")}
 			log.Error(err, "invalid custom resources")
 			return err
 		}
@@ -91,7 +91,7 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 		// this can return false only for api field CockroachDBVersion
 		// The supported versions are set as enviroment variables in the operator manifest.
 		if !cluster.IsSupportedImage() {
-			err := InvalidContainerVersionError{Err: errors.New(fmt.Sprintf("crdb version %s not supported", cluster.Spec().CockroachDBVersion))}
+			err := ValidationError{Err: errors.New(fmt.Sprintf("crdb version %s not supported", cluster.Spec().CockroachDBVersion))}
 			log.Error(err, "The cockroachDBVersion API value is set to a value that is not supported by the operator. Supported versions are set via the RELATED_IMAGE env variables in the operator manifest.")
 			return err
 		}
@@ -220,7 +220,7 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 		if cluster.Spec().Image.Name == "" {
 			// we check if the image tag version is supported by the operator
 			if _, ok := cluster.LookupSupportedVersion(calVersion); !ok {
-				err := InvalidContainerVersionError{Err: errors.New(fmt.Sprintf("crdb version %s not supported ", calVersion))}
+				err := ValidationError{Err: errors.New(fmt.Sprintf("crdb version %s not supported ", calVersion))}
 				log.Error(err, "crdb version not supported")
 				return err
 			}
@@ -240,11 +240,21 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 			log.V(int(zapcore.DebugLevel)).Info("No update on container image annotation -> nothing changed")
 			return nil
 		}
-		cluster.SetClusterVersion(calVersion)
-		cluster.SetAnnotationVersion(calVersion)
-		cluster.SetCrdbContainerImage(containerImage)
-		cluster.SetAnnotationContainerImage(containerImage)
-		if err := v.client.Update(ctx, cluster.Unwrap()); err != nil {
+		//we refresh the resource to make sure we use the latest version
+		fetcher := resource.NewKubeFetcher(ctx, cluster.Namespace(), v.client)
+
+		cr := resource.ClusterPlaceholder(cluster.Name())
+		if err := fetcher.Fetch(cr); err != nil {
+			log.Error(err, "failed to retrieve CrdbCluster resource")
+			return err
+		}
+
+		refreshedCluster := resource.NewCluster(cr)
+		refreshedCluster.SetClusterVersion(calVersion)
+		refreshedCluster.SetAnnotationVersion(calVersion)
+		refreshedCluster.SetCrdbContainerImage(containerImage)
+		refreshedCluster.SetAnnotationContainerImage(containerImage)
+		if err := v.client.Update(ctx, refreshedCluster.Unwrap()); err != nil {
 			log.Error(err, "failed saving the annotations on version checker")
 			// TODO should we fail here?
 		}

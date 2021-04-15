@@ -10,6 +10,7 @@ go_library(
         "condition_types.go",
         "doc.go",
         "groupversion_info.go",
+        "restart_types.go",
         "volume.go",
         "zz_generated.deepcopy.go",
     ],

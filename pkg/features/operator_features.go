@@ -62,6 +62,11 @@ const (
 	// beta: v1.0
 	// GenerateCerts uses crdb binary to generate self signed certifcates
 	GenerateCerts featuregate.Feature = "GenerateCerts"
+	// owner: @alina
+	// alpha: v0.1
+	// beta: v1.0
+	// RestartCluster uses crdb binary to generate self signed certifcates
+	ClusterRestart featuregate.Feature = "ClusterRestart"
 )
 
 func init() {
@@ -77,6 +82,7 @@ var defaultOperatorFeatureGates = map[featuregate.Feature]featuregate.FeatureSpe
 	ResizePVC:            {Default: true, PreRelease: featuregate.Alpha},
 	CrdbVersionValidator: {Default: true, PreRelease: featuregate.Alpha},
 	GenerateCerts:        {Default: true, PreRelease: featuregate.Alpha},
+	ClusterRestart:       {Default: true, PreRelease: featuregate.Alpha},
 
 	// Deprecated
 	Upgrade: {Default: false, PreRelease: featuregate.Alpha},
