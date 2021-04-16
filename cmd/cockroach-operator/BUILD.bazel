@@ -59,6 +59,8 @@ container_image(
     stamp = True,
     tars = [
         ":licenses",
+    ],
+    layers = [
         ":ubi_update",
     ],
 )
