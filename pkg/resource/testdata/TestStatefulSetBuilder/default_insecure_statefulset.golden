@@ -80,9 +80,23 @@ spec:
       serviceAccountName: cockroach-database-sa
       terminationGracePeriodSeconds: 60
       volumes:
-      - emptyDir: {}
-        name: datadir
+      - name: datadir
+        persistentVolumeClaim:
+          claimName: ""
   updateStrategy:
     rollingUpdate: {}
+  volumeClaimTemplates:
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      creationTimestamp: null
+      name: datadir
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1Gi
+      volumeMode: Filesystem
 status:
   replicas: 0

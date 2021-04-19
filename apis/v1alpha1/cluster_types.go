@@ -205,9 +205,6 @@ type Volume struct {
 	// Directory from the host node's filesystem
 	// +optional
 	HostPath *corev1.HostPathVolumeSource `json:"hostPath,omitempty"`
-	// Temporary folder on the host node's filesystem
-	// +optional
-	EmptyDir *corev1.EmptyDirVolumeSource `json:"emptyDir,omitempty"`
 	// Persistent volume to use
 	// +optional
 	VolumeClaim *VolumeClaim `json:"pvc,omitempty"`
