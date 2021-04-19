@@ -70,7 +70,7 @@ func TestDeploysNotInitalizedClusterAfterVersionChecker(t *testing.T) {
 	cluster := testutil.NewBuilder("cockroachdb").
 		Namespaced("default").
 		WithUID("cockroachdb-uid").
-		WithEmptyDirDataStore().
+		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */).
 		WithNodeCount(1).Cluster()
 	cluster.SetTrue(api.CrdbVersionChecked)
 
