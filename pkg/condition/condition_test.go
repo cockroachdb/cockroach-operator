@@ -40,11 +40,6 @@ func TestInitializesForEmptyConditions(t *testing.T) {
 			Status:             metav1.ConditionFalse,
 			LastTransitionTime: now,
 		},
-		{
-			Type:               "RestartedCluster",
-			Status:             metav1.ConditionFalse,
-			LastTransitionTime: now,
-		},
 	}
 
 	InitConditionsIfNeeded(&status, now)

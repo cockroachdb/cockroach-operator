@@ -56,10 +56,12 @@ container_image(
         "summary": "CockroachDB is a distributed SQL database",
         "description": "CockroachDB is a PostgreSQL wire-compatible distributed SQL database",
     },
+    layers = [
+        ":ubi_update",
+    ],
     stamp = True,
     tars = [
         ":licenses",
-        ":ubi_update",
     ],
 )
 

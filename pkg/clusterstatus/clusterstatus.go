@@ -88,6 +88,15 @@ func SetActionFailed(atype api.ActionType, message string, status *api.CrdbClust
 	status.ClusterStatus = api.ActionStatus(api.Failed).String()
 }
 
+//ResetActionType will delete the actiontype from the slice of operation action
+//this is used to reset if previously an error was thrown and now the action is ok
+//TO DO: each action has it's own states to follow on status
+func ResetActionType(atype api.ActionType, status *api.CrdbClusterStatus) {
+	pos := pos(atype, status.OperatorActions)
+	if pos >= 0 {
+		status.OperatorActions = append(status.OperatorActions[:pos], status.OperatorActions[pos+1:]...)
+	}
+}
 func SetActionFinished(atype api.ActionType, status *api.CrdbClusterStatus) {
 	setActionStatus(atype, api.Finished, status, metav1.Now(), "")
 }

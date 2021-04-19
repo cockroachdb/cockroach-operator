@@ -256,7 +256,7 @@ spec:
       serviceAccountName: cockroach-operator-sa
       containers:
         - name: cockroach-operator
-          image: us.gcr.io/chris-love-operator-playground/cockroachdb-operator:v1.9.51
+          image: cockroachdb/cockroach-operator:v1.7.1
           imagePullPolicy: IfNotPresent
           # uncomment this to enable different new features
           # args: ["-feature-gates","PartitionedUpdate=true,UseDecommission=true,Upgrade=false, CrdbVersionValidator=false"]

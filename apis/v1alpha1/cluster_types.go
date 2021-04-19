@@ -97,13 +97,6 @@ type CrdbClusterSpec struct {
 	// Default: ""
 	// +optional
 	CockroachDBVersion string `json:"cockroachDBVersion,omitempty"`
-	// (Optional) RestartType if set with value FullCluster restarts the entire cluster.
-	// FullCluster option is used when the CA cert is replaced and we need to restart all nodes at once.
-	// If the value is set to Rolling it will restart one node at a time.
-	// Other values are invalid.
-	// Default: ""
-	// +optional
-	RestartType ClusterRestartType `json:"restartType,omitempty"`
 }
 
 // +k8s:openapi-gen=true
