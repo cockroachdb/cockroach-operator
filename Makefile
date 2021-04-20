@@ -183,6 +183,7 @@ release/versionbump:
 
 .PHONY: release/image
 release/image:
+	bazel clean --expunge
 	DOCKER_REGISTRY=$(DOCKER_REGISTRY) \
 	DOCKER_IMAGE_REPOSITORY=$(DOCKER_IMAGE_REPOSITORY) \
 	APP_VERSION=$(APP_VERSION) \
