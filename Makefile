@@ -188,7 +188,7 @@ release/image:
 	DOCKER_IMAGE_REPOSITORY=$(DOCKER_IMAGE_REPOSITORY) \
 	APP_VERSION=$(APP_VERSION) \
 	bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
-		//:push_operator_image
+		//:push_operator_image //:push_operator_image_latest
 
 #
 # RedHat OpenShift targets

@@ -27,6 +27,15 @@ container_push(
 )
 
 container_push(
+    name = "push_operator_image_latest",
+    format = "Docker",
+    image = "//cmd/cockroach-operator:operator_image",
+    registry = "{STABLE_DOCKER_REGISTRY}",
+    repository = "{STABLE_IMAGE_REPOSITORY}",
+    tag = "latest",
+)
+
+container_push(
     name = "push_operator_bundle_image",
     format = "Docker",
     image = "//cmd/cockroach-operator:operator_bundle_image",
