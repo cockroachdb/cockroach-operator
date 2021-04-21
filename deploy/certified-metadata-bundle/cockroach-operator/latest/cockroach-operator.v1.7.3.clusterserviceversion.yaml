@@ -34,14 +34,14 @@ metadata:
     capabilities: Full Lifecycle
     categories: Database
     certified: "true"
-    containerImage: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v1.7.2
-    createdAt: "2021-04-20T11:35:19Z"
+    containerImage: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v1.7.3
+    createdAt: "2021-04-21T11:35:19Z"
     description: CockroachDB Operator
     operators.operatorframework.io/builder: operator-sdk-v1.1.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
     repository: https://github.com/cockroachdb/cockroach-operator
     support: Cockroach Labs
-  name: cockroach-operator.v1.7.2
+  name: cockroach-operator.v1.7.3
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -290,7 +290,7 @@ spec:
                   value: cockroachdb
                 - name: RELATED_IMAGE_COCKROACH_v20_2_7
                   value: cockroachdb/cockroach:v20.2.7
-                image: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v1.7.2
+                image: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v1.7.3
                 imagePullPolicy: IfNotPresent
                 name: cockroach-operator
                 resources:
@@ -333,4 +333,4 @@ spec:
   maturity: beta
   provider:
     name: Cockroach Labs
-  version: 1.7.2
+  version: 1.7.3
