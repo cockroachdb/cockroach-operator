@@ -18,9 +18,9 @@
 #
 
 # values used in workspace-status.sh
-DOCKER_REGISTRY?=cockroachdb
+DOCKER_REGISTRY?=us.gcr.io/chris-love-operator-playground
 DOCKER_IMAGE_REPOSITORY?=cockroachdb-operator
-VERSION?=$(shell cat version.txt)
+VERSION?=1.10.4
 APP_VERSION?=v$(VERSION)
 GCP_PROJECT?=chris-love-operator-playground
 GCP_ZONE?=us-central1-a
@@ -183,7 +183,7 @@ release/versionbump:
 
 .PHONY: release/image
 release/image:
-	bazel clean --expunge
+
 	DOCKER_REGISTRY=$(DOCKER_REGISTRY) \
 	DOCKER_IMAGE_REPOSITORY=$(DOCKER_IMAGE_REPOSITORY) \
 	APP_VERSION=$(APP_VERSION) \

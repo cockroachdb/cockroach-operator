@@ -23,7 +23,7 @@ rules:
     resources:
       - securitycontextconstraints
     resourceNames:
-      - anyuid
+      - nonroot
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -208,7 +208,7 @@ rules:
     resources:
       - securitycontextconstraints
     resourceNames:
-      - anyuid
+      - nonroot
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -256,7 +256,7 @@ spec:
       serviceAccountName: cockroach-operator-sa
       containers:
         - name: cockroach-operator
-          image: cockroachdb/cockroach-operator:v1.7.1
+          image: us.gcr.io/chris-love-operator-playground/cockroachdb-operator:v1.10.4
           imagePullPolicy: IfNotPresent
           # uncomment this to enable different new features
           # args: ["-feature-gates","PartitionedUpdate=true,UseDecommission=true,Upgrade=false, CrdbVersionValidator=false"]
