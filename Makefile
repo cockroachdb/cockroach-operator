@@ -176,7 +176,8 @@ dev/syncdeps:
 .PHONY: release/versionbump
 release/versionbump:
 	$(MAKE) CHANNEL=beta IS_DEFAULT_CHANNEL=0 release/update-pkg-manifest && \
-	sed -i -e 's,\(image: cockroachdb/cockroach-operator:\).*,\1$(APP_VERSION),' manifests/operator.yaml && \
+	sed -i '' -e 's,image: .*,image: cockroachdb/cockroach-operator:$(APP_VERSION),' manifests/operator.yaml && \
+	$(MAKE) CHANNEL=beta IS_DEFAULT_CHANNEL=0 release/opm-build-bundle && \
 	git add . && \
 	git commit -m "Bump version to $(VERSION)"
 
