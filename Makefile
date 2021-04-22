@@ -240,7 +240,7 @@ release/bundle-image:
 	RH_BUNDLE_IMAGE_REPOSITORY=$(RH_BUNDLE_IMAGE_REPOSITORY) \
 	RH_BUNDLE_VERSION=$(RH_BUNDLE_VERSION) \
 	RH_DEPLOY_PATH=$(RH_DEPLOY_FULL_PATH) \
-	RH_BUNDLE_IMAGE_TAG=$(RH_BUNDLE_VERSION) \
+	RH_BUNDLE_IMAGE_TAG=$(APP_VERSION) \
 	bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
 		//:push_operator_bundle_image
 
@@ -248,7 +248,7 @@ release/bundle-image:
 OLM_REPO ?=
 OLM_BUNDLE_REPO ?= cockroachdb-operator-index
 OLM_PACKAGE_NAME ?= cockroachdb-certified
-TAG ?= $(RH_BUNDLE_VERSION)
+TAG ?= $(APP_VERSION)
 #
 # dev opm index build for quay repo
 #
