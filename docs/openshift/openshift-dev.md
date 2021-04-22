@@ -6,7 +6,7 @@ Today, we're going to cover the process of installing CockroachDB on the OpenShi
 
 ## Prerequisites
 
-1. CockroachDB: 20.1.5
+1. CockroachDB: 20.2.7
 2. CockroachDB Kubernetes Operator: 1.7.3
 
 ## Create a CockroachDB namespace
@@ -31,7 +31,7 @@ Click the tile, a self-guided dialogue will appear. Click install, another dialo
 
 ![operator_dialogue](https://user-images.githubusercontent.com/461296/94025412-78a8e100-fd86-11ea-8caa-cb83c1e4bb57.png)
 
-We're going to leave everything as is except for the drop down for namespace. We're going to install the CockroachDB Operator into the namespace we created earlier. Click install.
+We're going to leave everything as is except for the drop down for namespace. We're also going to set cockroachDBVersion to v20.2.7 (not shown). We're going to install the CockroachDB Operator into the namespace we created earlier. Click install.
 
 ![crdb_os1](https://user-images.githubusercontent.com/461296/94025061-19e36780-fd86-11ea-9ec2-9a20bae7d917.png)
 
