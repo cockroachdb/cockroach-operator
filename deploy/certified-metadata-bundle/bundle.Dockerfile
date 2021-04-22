@@ -7,8 +7,8 @@ LABEL operators.operatorframework.io.bundle.package.v1=cockroachdb-certified
 LABEL operators.operatorframework.io.bundle.channels.v1=beta,stable
 LABEL operators.operatorframework.io.bundle.channel.default.v1=stable
 
-LABEL com.redhat.openshift.versions="v4.5,v4.6"
-LABEL com.redhat.delivery.backport=true
+LABEL com.redhat.openshift.versions="v4.6"
+LABEL com.redhat.delivery.backport=false
 LABEL com.redhat.delivery.operator.bundle=true
 
 COPY VERSION/manifests /manifests/

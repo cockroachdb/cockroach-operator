@@ -38,7 +38,7 @@ container_run_and_commit_layer(
     name = "ubi_update",
     commands = [
         "microdnf install yum",
-        "yum -y update-minimal --security --sec-severity=Important --sec-severity=Critical",
+        "yum -v -y update --all",
         "microdnf remove yum && microdnf clean all",
     ],
     image = "@redhat_ubi_minimal//image",

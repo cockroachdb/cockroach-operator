@@ -5,7 +5,16 @@ metadata:
   name: crdb
 spec:
   dataStore:
-    emptyDir: {}
+    pvc:
+      source:
+        claimName: ""
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: "1Gi"
+        volumeMode: Filesystem
     supportsAutoResize: false
   image:
     name: cockroachdb/cockroach:v19.2.6
@@ -104,8 +113,9 @@ spec:
     operator: Exists
     tolerationSeconds: 300
   volumes:
-  - emptyDir: {}
-    name: datadir
+  - name: datadir
+        persistentVolumeClaim:
+          claimName: ""
   - name: certs
     projected:
       defaultMode: 256
@@ -309,8 +319,9 @@ spec:
       serviceAccountName: cockroach-database-sa
       terminationGracePeriodSeconds: 60
       volumes:
-      - emptyDir: {}
-        name: datadir
+      - name: datadir
+        persistentVolumeClaim:
+          claimName: ""
       - name: certs
         projected:
           defaultMode: 256
