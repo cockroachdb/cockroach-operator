@@ -40,9 +40,9 @@ const (
 
 	certsDirName = "certs"
 
-	DbContainerName     = "db"
-	ubiimage            = "registry.access.redhat.com/ubi8/ubi"
-	certCpCmd           = ">- cp -p /cockroach/cockroach-certs-prestage/..data/* /cockroach/cockroach-certs/ && chmod 700 /cockroach/cockroach-certs/*.key"
+	DbContainerName = "db"
+	ubiimage        = "registry.access.redhat.com/ubi8/ubi"
+	certCpCmd       = ">- cp -p /cockroach/cockroach-certs-prestage/..data/* /cockroach/cockroach-certs/ && chmod 700 /cockroach/cockroach-certs/*.key"
 )
 
 type StatefulSetBuilder struct {
@@ -204,10 +204,10 @@ func (b StatefulSetBuilder) makePodTemplate() corev1.PodTemplateSpec {
 // MakeInitContainers creates a slice of corev1.Containers which includes a single
 // corev1.Container that is based on the CR.
 func (b StatefulSetBuilder) MakeInitContainers() []corev1.Container {
-
+	initContainer := fmt.Sprintf("%s-init", DbContainerName)
 	return []corev1.Container{
 		{
-			Name:            DbContainerName,
+			Name:            initContainer,
 			Image:           ubiimage,
 			Command:         []string{"/bin/sh", "-c", certCpCmd},
 			ImagePullPolicy: *b.Spec().Image.PullPolicyName,
@@ -348,9 +348,10 @@ func (b StatefulSetBuilder) joinStr() string {
 }
 func addCertsVolumeMountOnInitContiners(container string, spec *corev1.PodSpec) error {
 	found := false
+	initContainer := fmt.Sprintf("%s-init", container)
 	for i := range spec.InitContainers {
 		c := &spec.InitContainers[i]
-		if c.Name == container {
+		if c.Name == initContainer {
 			found = true
 
 			c.VolumeMounts = append(c.VolumeMounts, corev1.VolumeMount{

@@ -80,10 +80,11 @@ func (v *Volume) applyToPod(name string, container string, path string, spec *co
 	if !found {
 		return fmt.Errorf("failed to find container %s to attach volume", container)
 	}
+	initContainer:= fmt.Sprintf("%s-init",container)
 	//add to init containers
 	for i := range spec.InitContainers {
 		c := &spec.InitContainers[i]
-		if c.Name == container {
+		if c.Name == initContainer {
 			found = true
 			if c.VolumeMounts == nil {
 				c.VolumeMounts = []corev1.VolumeMount{}
