@@ -14,7 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -x
 set -o errexit
 set -o nounset
 set -o pipefail
@@ -66,4 +65,4 @@ gcloud config set project $PROJ
 FULLID="${SA}@${PROJ}.iam.gserviceaccount.com"
 gcloud iam service-accounts delete $FULLID
 
-rm -rf $HOME/.gcp
+rm -rf $HOME/.gcp-$NAME

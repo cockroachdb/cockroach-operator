@@ -117,12 +117,23 @@ https://docs.openshift.com/container-platform/4.7/installing/installing_gcp/inst
 
 Do not delete the folder where the installation was made, in our case `$HOME/openshift-<cluster name>`. If you delete this you will have to decommission manually the infrastructure from GCP.
 
+## Accessing the cluster
+
+Notice that we have variables that will need to be replaced in the following examples.
+
+To access the cluster as the system:admin user when using `oc`, run `export KUBECONFIG=$HOME/openshift-<cluster name>/auth/kubeconfig`.
+Access the OpenShift web-console here: https://console-openshift-console.apps.<cluster name>.<domain>
+Login to the console with user: "kubeadmin", and password: <password>.
+The password is in the `$HOME/openshift-<cluster name>./auth/kubeadmin-password` file.
+
 ## Clean-up
 
-If you want to delete the cluster run this command to decommission infrastructure on GCP:
+Notice that we have variables that will need to be replaced in the following examples.
+
+If you want to delete the cluster run the following commands to decommission infrastructure on GCP:
+
 ```bash
-GOOGLE_CREDENTIALS=~/.gcp/osServiceAccount.json \
-openshift-install destroy cluster --dir ~/oshift --log-level=debug
+openshift-install destroy cluster --dir ~/openshift-<cluster name> --log-level=debug
 ```
 
 If you want to delete the service account run:

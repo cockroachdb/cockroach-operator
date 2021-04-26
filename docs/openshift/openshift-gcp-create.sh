@@ -85,7 +85,7 @@ if [ -z "${NAME}" ]; then
     usage
 fi
 
-mkdir $HOME/.gcp $HOME/openshift-$NAME
+mkdir $HOME/.gcp-$NAME $HOME/openshift-$NAME
 
 SA=open-shift-sa-$NAME
 gcloud config set project $PROJ
@@ -127,7 +127,7 @@ done
 
 # TODO make account token name unique
 # TODO set a variable for install-config
-gcloud iam service-accounts keys create ~/.gcp/osServiceAccount.json --iam-account $FULLID
+gcloud iam service-accounts keys create ~/.gcp-$NAME/osServiceAccount.json --iam-account $FULLID
 PULL_SECRET=$(<${PULL_SECRET})
 
 cat <<EOT >> $HOME/openshift-$NAME/install-config.yaml
@@ -142,7 +142,7 @@ platform:
 pullSecret: '${PULL_SECRET}'
 EOT
 
-GOOGLE_CREDENTIALS=$HOME/.gcp/osServiceAccount.json \
+GOOGLE_CREDENTIALS=$HOME/.gcp-$NAME/osServiceAccount.json \
  openshift-install create cluster --dir $HOME/openshift-$NAME --log-level=debug 
 
 cat << EOF
