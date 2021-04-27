@@ -78,35 +78,66 @@ spec:
         - mountPath: /cockroach/cockroach-data/
           name: datadir
         - mountPath: /cockroach/cockroach-certs/
-          name: certs
+          name: emptydir
+      securityContext:
+        fsGroup: 10001
+        runAsUser: 10001
       serviceAccountName: cockroach-database-sa
       terminationGracePeriodSeconds: 60
       volumes:
       - name: datadir
         persistentVolumeClaim:
           claimName: ""
+      - emptyDir: {}
+        name: emptydir
       - name: certs
         projected:
-          defaultMode: 256
+          defaultMode: 420
           sources:
           - secret:
               items:
               - key: ca.crt
+                mode: 504
                 path: ca.crt
               - key: tls.crt
+                mode: 504
                 path: node.crt
               - key: tls.key
+                mode: 504
                 path: node.key
               name: test-cluster-node
           - secret:
               items:
               - key: tls.crt
+                mode: 504
                 path: client.root.crt
               - key: tls.key
+                mode: 504
                 path: client.root.key
               name: test-cluster-root
+      initContainers:
+        - command:
+          - /bin/sh
+          - -c
+          - '>- cp -p /cockroach/cockroach-certs-prestage/..data/* /cockroach/cockroach-certs/
+            && chmod 700 /cockroach/cockroach-certs/*.key && chown 10001:10001 /cockroach/cockroach-certs/*.key'
+          image: registry.access.redhat.com/ubi8/ubi
+          imagePullPolicy: IfNotPresent
+          name: db-init
+          resources: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsUser: 0
+          volumeMounts:
+          - mountPath: /cockroach/cockroach-certs-prestage/
+            name: certs
+          - mountPath: /cockroach/cockroach-certs/
+            name: emptydir
   updateStrategy:
     rollingUpdate: {}
+  securityContext:
+    fsGroup: 10001
+    runAsUser: 10001
   volumeClaimTemplates:
   - apiVersion: v1
     kind: PersistentVolumeClaim
