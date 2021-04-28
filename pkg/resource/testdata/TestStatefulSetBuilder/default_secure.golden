@@ -92,7 +92,7 @@ spec:
         name: emptydir
       - name: certs
         projected:
-          defaultMode: 420
+          defaultMode: 400
           sources:
           - secret:
               items:
@@ -103,7 +103,7 @@ spec:
                 mode: 504
                 path: node.crt
               - key: tls.key
-                mode: 504
+                mode: 400
                 path: node.key
               name: test-cluster-node
           - secret:
@@ -112,7 +112,7 @@ spec:
                 mode: 504
                 path: client.root.crt
               - key: tls.key
-                mode: 504
+                mode: 400
                 path: client.root.key
               name: test-cluster-root
       initContainers:

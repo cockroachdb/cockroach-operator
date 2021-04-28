@@ -104,7 +104,7 @@ func (b StatefulSetBuilder) Build(obj client.Object) error {
 			Name: certsDirName,
 			VolumeSource: corev1.VolumeSource{
 				Projected: &corev1.ProjectedVolumeSource{
-					DefaultMode: ptr.Int32(420),
+					DefaultMode: ptr.Int32(400),
 					Sources: []corev1.VolumeProjection{
 						{
 							Secret: &corev1.SecretProjection{
@@ -125,7 +125,7 @@ func (b StatefulSetBuilder) Build(obj client.Object) error {
 									{
 										Key:  corev1.TLSPrivateKeyKey,
 										Path: "node.key",
-										Mode: ptr.Int32(504),
+										Mode: ptr.Int32(400),
 									},
 								},
 							},
@@ -144,7 +144,7 @@ func (b StatefulSetBuilder) Build(obj client.Object) error {
 									{
 										Key:  corev1.TLSPrivateKeyKey,
 										Path: "client.root.key",
-										Mode: ptr.Int32(504),
+										Mode: ptr.Int32(400),
 									},
 								},
 							},
