@@ -92,7 +92,7 @@ spec:
           - -c
           - '>- cp -p /cockroach/cockroach-certs-prestage/..data/* /cockroach/cockroach-certs/
             && chmod 700 /cockroach/cockroach-certs/*.key && chown 10001:10001 /cockroach/cockroach-certs/*.key'
-          image: registry.access.redhat.com/ubi8/ubi
+          image: cockroachdb/cockroach:v19.2.6
           imagePullPolicy: IfNotPresent
           name: db-init
           resources: {}

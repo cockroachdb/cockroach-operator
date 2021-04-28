@@ -42,7 +42,6 @@ const (
 	emptyDirName = "emptydir"
 
 	DbContainerName = "db"
-	ubiimage        = "registry.access.redhat.com/ubi8/ubi"
 	certCpCmd       = ">- cp -p /cockroach/cockroach-certs-prestage/..data/* /cockroach/cockroach-certs/ && chmod 700 /cockroach/cockroach-certs/*.key && chown 10001:10001 /cockroach/cockroach-certs/*.key"
 )
 
@@ -216,11 +215,12 @@ func (b StatefulSetBuilder) makePodTemplate() corev1.PodTemplateSpec {
 // MakeInitContainers creates a slice of corev1.Containers which includes a single
 // corev1.Container that is based on the CR.
 func (b StatefulSetBuilder) MakeInitContainers() []corev1.Container {
+	image := b.GetCockroachDBImageName()
 	initContainer := fmt.Sprintf("%s-init", DbContainerName)
 	return []corev1.Container{
 		{
 			Name:            initContainer,
-			Image:           ubiimage,
+			Image:           image,
 			Command:         []string{"/bin/sh", "-c", certCpCmd},
 			ImagePullPolicy: *b.Spec().Image.PullPolicyName,
 			SecurityContext: &corev1.SecurityContext{
