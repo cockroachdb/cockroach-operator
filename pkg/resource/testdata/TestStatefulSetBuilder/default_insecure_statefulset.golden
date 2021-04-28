@@ -45,7 +45,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.name
-        image: cockroachdb/cockroach:v19.2.6
+        image: cockroachdb/cockroach:v20.2.7
         imagePullPolicy: IfNotPresent
         livenessProbe:
           httpGet:
@@ -92,7 +92,7 @@ spec:
           - -c
           - '>- cp -p /cockroach/cockroach-certs-prestage/..data/* /cockroach/cockroach-certs/
             && chmod 700 /cockroach/cockroach-certs/*.key && chown 10001:10001 /cockroach/cockroach-certs/*.key'
-          image: cockroachdb/cockroach:v19.2.6
+          image: cockroachdb/cockroach:v20.2.7
           imagePullPolicy: IfNotPresent
           name: db-init
           resources: {}
