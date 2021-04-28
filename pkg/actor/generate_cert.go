@@ -134,28 +134,19 @@ func (rc *generateCert) Act(ctx context.Context, cluster *resource.Cluster) erro
 
 	// we force the saving of the status on the cluster and cancel the loop
 	fetcher := resource.NewKubeFetcher(ctx, cluster.Namespace(), rc.client)
-
-	cr := resource.ClusterPlaceholder(cluster.Name())
-	if err := fetcher.Fetch(cr); err != nil {
+	newcr := resource.ClusterPlaceholder(cluster.Name())
+	if err := fetcher.Fetch(newcr); err != nil {
 		return log.LogAndWrapError(err, "failed to retrieve CrdbCluster resource")
 	}
-	refreshedCluster := resource.NewCluster(cr)
+	refreshedCluster := resource.NewCluster(newcr)
 	refreshedCluster.SetAnnotationCertExpiration(*expirationDatePtr)
+	refreshedCluster.SetTrue(api.CertificateGenerated)
+	crdbobj := refreshedCluster.Unwrap()
 	//save annotation first
-	if err := rc.client.Update(ctx, refreshedCluster.Unwrap()); err != nil {
+	if err := rc.client.Update(ctx, crdbobj); err != nil {
 		return log.LogAndWrapError(err, "failed saving the annotations on request certificate")
 	}
-
-	//make sure we have the latest object after saving
-	cr = resource.ClusterPlaceholder(cluster.Name())
-	if err := fetcher.Fetch(cr); err != nil {
-		return log.LogAndWrapError(err, "failed to retrieve CrdbCluster resource")
-	}
-	//we always work with a copy
-	refreshedCluster = resource.NewCluster(cr)
-	// save the status of the cluster
-	refreshedCluster.SetTrue(api.CertificateGenerated)
-	if err := rc.client.Status().Update(ctx, refreshedCluster.Unwrap()); err != nil {
+	if err := rc.client.Status().Update(ctx, crdbobj); err != nil {
 		return log.LogAndWrapError(err, "failed saving cluster status on generate cert")
 	}
 
