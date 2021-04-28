@@ -36,7 +36,7 @@ metadata:
     categories: Database
     certified: "true"
     containerImage: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v1.7.5
-    createdAt: "2021-04-28T10:01:09Z"
+    createdAt: "2021-04-28T11:10:31Z"
     description: CockroachDB Operator
     operators.operatorframework.io/builder: operator-sdk-v1.1.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
@@ -319,8 +319,6 @@ spec:
                       fieldPath: metadata.name
                 - name: OPERATOR_NAME
                   value: cockroachdb
-                - name: RELATED_IMAGE_COCKROACH_v19_2_4
-                  value: cockroachdb/cockroach:v20.1.11
                 image: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v1.7.5
                 imagePullPolicy: IfNotPresent
                 name: cockroach-operator
