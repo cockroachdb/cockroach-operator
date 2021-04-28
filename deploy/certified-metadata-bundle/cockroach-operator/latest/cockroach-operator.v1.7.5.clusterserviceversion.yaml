@@ -35,14 +35,14 @@ metadata:
     capabilities: Full Lifecycle
     categories: Database
     certified: "true"
-    containerImage: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v1.7.4
-    createdAt: "2021-04-27T12:01:15Z"
+    containerImage: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v1.7.5
+    createdAt: "2021-04-28T11:10:31Z"
     description: CockroachDB Operator
     operators.operatorframework.io/builder: operator-sdk-v1.1.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
     repository: https://github.com/cockroachdb/cockroach-operator
     support: Cockroach Labs
-  name: cockroach-operator.v1.7.4
+  name: cockroach-operator.v1.7.5
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -275,10 +275,40 @@ spec:
                 env:
                 - name: RELATED_IMAGE_COCKROACH_v19_2_12
                   value: registry.connect.redhat.com/cockroachdb/cockroach:v19.2.12
+                - name: RELATED_IMAGE_COCKROACH_v20_1_11
+                  value: registry.connect.redhat.com/cockroachdb/cockroach:v20.1.11
                 - name: RELATED_IMAGE_COCKROACH_v20_1_12
                   value: registry.connect.redhat.com/cockroachdb/cockroach:v20.1.12
+                - name: RELATED_IMAGE_COCKROACH_v20_1_13
+                  value: registry.connect.redhat.com/cockroachdb/cockroach:v20.1.13
+                - name: RELATED_IMAGE_COCKROACH_v20_1_14
+                  value: registry.connect.redhat.com/cockroachdb/cockroach:v20.1.14
+                - name: RELATED_IMAGE_COCKROACH_v20_1_15
+                  value: registry.connect.redhat.com/cockroachdb/cockroach:v20.1.15
+                - name: RELATED_IMAGE_COCKROACH_v20_1_4
+                  value: registry.connect.redhat.com/cockroachdb/cockroach:v20.1.4
+                - name: RELATED_IMAGE_COCKROACH_v20_1_5
+                  value: registry.connect.redhat.com/cockroachdb/cockroach:v20.1.5
+                - name: RELATED_IMAGE_COCKROACH_v20_1_8
+                  value: registry.connect.redhat.com/cockroachdb/cockroach:v20.1.8
+                - name: RELATED_IMAGE_COCKROACH_v20_2_0
+                  value: registry.connect.redhat.com/cockroachdb/cockroach:v20.2.0
+                - name: RELATED_IMAGE_COCKROACH_v20_2_1
+                  value: registry.connect.redhat.com/cockroachdb/cockroach:v20.2.1
+                - name: RELATED_IMAGE_COCKROACH_v20_2_2
+                  value: registry.connect.redhat.com/cockroachdb/cockroach:v20.2.2
+                - name: RELATED_IMAGE_COCKROACH_v20_2_3
+                  value: registry.connect.redhat.com/cockroachdb/cockroach:v20.2.3
+                - name: RELATED_IMAGE_COCKROACH_v20_2_4
+                  value: registry.connect.redhat.com/cockroachdb/cockroach:v20.2.4
                 - name: RELATED_IMAGE_COCKROACH_v20_2_5
                   value: registry.connect.redhat.com/cockroachdb/cockroach:v20.2.5
+                - name: RELATED_IMAGE_COCKROACH_v20_2_6
+                  value: registry.connect.redhat.com/cockroachdb/cockroach:v20.2.6
+                - name: RELATED_IMAGE_COCKROACH_v20_2_7
+                  value: registry.connect.redhat.com/cockroachdb/cockroach:v20.2.7
+                - name: RELATED_IMAGE_COCKROACH_v20_2_8
+                  value: registry.connect.redhat.com/cockroachdb/cockroach:v20.2.8
                 - name: WATCH_NAMESPACE
                   valueFrom:
                     fieldRef:
@@ -289,37 +319,7 @@ spec:
                       fieldPath: metadata.name
                 - name: OPERATOR_NAME
                   value: cockroachdb
-                - name: RELATED_IMAGE_COCKROACH_v19_2_4
-                  value: cockroachdb/cockroach:v20.1.11
-                - name: RELATED_IMAGE_COCKROACH_v20_1_13
-                  value: cockroachdb/cockroach:v20.1.13
-                - name: RELATED_IMAGE_COCKROACH_v20_1_14
-                  value: cockroachdb/cockroach:v20.1.14
-                - name: RELATED_IMAGE_COCKROACH_v20_1_15
-                  value: cockroachdb/cockroach:v20.1.15
-                - name: RELATED_IMAGE_COCKROACH_v20_1_4
-                  value: cockroachdb/cockroach:v20.1.4
-                - name: RELATED_IMAGE_COCKROACH_v20_1_5
-                  value: cockroachdb/cockroach:v20.1.5
-                - name: RELATED_IMAGE_COCKROACH_v20_1_8
-                  value: cockroachdb/cockroach:v20.1.8
-                - name: RELATED_IMAGE_COCKROACH_v20_2_0
-                  value: cockroachdb/cockroach:v20.2.0
-                - name: RELATED_IMAGE_COCKROACH_v20_2_1
-                  value: cockroachdb/cockroach:v20.2.1
-                - name: RELATED_IMAGE_COCKROACH_v20_2_2
-                  value: cockroachdb/cockroach:v20.2.2
-                - name: RELATED_IMAGE_COCKROACH_v20_2_3
-                  value: cockroachdb/cockroach:v20.2.3
-                - name: RELATED_IMAGE_COCKROACH_v20_2_4
-                  value: cockroachdb/cockroach:v20.2.4
-                - name: RELATED_IMAGE_COCKROACH_v20_2_6
-                  value: cockroachdb/cockroach:v20.2.6
-                - name: RELATED_IMAGE_COCKROACH_v20_2_7
-                  value: cockroachdb/cockroach:v20.2.7
-                - name: RELATED_IMAGE_COCKROACH_v20_2_8
-                  value: cockroachdb/cockroach:v20.2.8
-                image: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v1.7.4
+                image: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v1.7.5
                 imagePullPolicy: IfNotPresent
                 name: cockroach-operator
                 resources:
@@ -362,4 +362,4 @@ spec:
   maturity: beta
   provider:
     name: Cockroach Labs
-  version: 1.7.4
+  version: 1.7.5
