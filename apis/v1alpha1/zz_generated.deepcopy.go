@@ -156,6 +156,13 @@ func (in *CrdbClusterSpec) DeepCopyInto(out *CrdbClusterSpec) {
 	}
 	in.Resources.DeepCopyInto(&out.Resources)
 	in.DataStore.DeepCopyInto(&out.DataStore)
+	if in.PodEnvVariables != nil {
+		in, out := &in.PodEnvVariables, &out.PodEnvVariables
+		*out = make([]v1.EnvVar, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
 	return
 }
 

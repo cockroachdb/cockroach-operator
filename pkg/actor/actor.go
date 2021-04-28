@@ -21,6 +21,7 @@ import (
 
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/features"
+	"github.com/cockroachdb/cockroach-operator/pkg/kube"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
 	"github.com/go-logr/logr"
@@ -99,6 +100,8 @@ func NewOperatorActions(scheme *runtime.Scheme, cl client.Client, config *rest.C
 		certs = newRequestCert(scheme, cl, config)
 	}
 
+	kd := kube.NewKubernetesDistribution()
+
 	// The order of these actors MATTERS.
 	// We need to have update before deploy so that
 	// updates run before the deploy actor, or
@@ -113,11 +116,10 @@ func NewOperatorActions(scheme *runtime.Scheme, cl client.Client, config *rest.C
 		decommission,
 		update,
 		newResizePVC(scheme, cl, config),
-		newDeploy(scheme, cl),
+		newDeploy(scheme, cl, config, kd),
 		newInitialize(scheme, cl, config),
 		newClusterRestart(scheme, cl, config),
 	}
-
 }
 
 //Log var

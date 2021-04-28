@@ -138,6 +138,12 @@ rules:
   - apiGroups:
       - ""
     resources:
+      - nodes
+    verbs:
+      - "get"
+  - apiGroups:
+      - ""
+    resources:
       - configmaps/status
     verbs:
       - "*"
