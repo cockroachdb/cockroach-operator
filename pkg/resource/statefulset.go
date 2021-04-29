@@ -26,6 +26,7 @@ import (
 	"github.com/cockroachdb/cockroach-operator/pkg/ptr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -72,7 +73,7 @@ func (b StatefulSetBuilder) Build(obj client.Object) error {
 		UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
 			RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{},
 		},
-		PodManagementPolicy: appsv1.OrderedReadyPodManagement,
+		PodManagementPolicy: appsv1.ParallelPodManagement,
 		Selector: &metav1.LabelSelector{
 			MatchLabels: b.Selector,
 		},
@@ -244,8 +245,7 @@ func (b StatefulSetBuilder) MakeContainers() []corev1.Container {
 			Image:           image,
 			ImagePullPolicy: *b.Spec().Image.PullPolicyName,
 			Resources:       b.Spec().Resources,
-			Command:         []string{"/cockroach/cockroach.sh"},
-			Args:            b.dbArgs(),
+			Command:         b.commandArgs(),
 			Env:             b.envVars(),
 			Ports: []corev1.ContainerPort{
 				{
@@ -323,8 +323,14 @@ func (b StatefulSetBuilder) clientTLSSecretName() string {
 	return b.Spec().ClientTLSSecret
 }
 
+func (b StatefulSetBuilder) commandArgs() []string {
+	exec := "exec " + strings.Join(b.dbArgs(), " ")
+	return []string{"/bin/bash", "-ecx", exec}
+}
+
 func (b StatefulSetBuilder) dbArgs() []string {
 	aa := []string{
+		"/cockroach/cockroach.sh",
 		"start",
 		"--join=" + b.joinStr(),
 		fmt.Sprintf("--advertise-host=$(POD_NAME).%s.%s",
@@ -332,10 +338,20 @@ func (b StatefulSetBuilder) dbArgs() []string {
 		"--logtostderr=INFO",
 		b.Cluster.SecureMode(),
 		"--http-port=" + fmt.Sprint(*b.Spec().HTTPPort),
-		"--cache=" + b.Spec().Cache,
-		"--max-sql-memory=" + b.Spec().MaxSQLMemory,
 		"--sql-addr=:" + fmt.Sprint(*b.Spec().SQLPort),
 		"--listen-addr=:" + fmt.Sprint(*b.Spec().GRPCPort),
+	}
+
+	if b.Spec().Cache != "" {
+		aa = append(aa, "--cache="+b.Spec().Cache)
+	} else {
+		aa = append(aa, "--cache $(expr $MEMORY_LIMIT_MIB / 4)MiB")
+	}
+
+	if b.Spec().MaxSQLMemory != "" {
+		aa = append(aa, "--max-sql-memory="+b.Spec().MaxSQLMemory)
+	} else {
+		aa = append(aa, "--max-sql-memory $(expr $MEMORY_LIMIT_MIB / 4)MiB")
 	}
 
 	return append(aa, b.Spec().AdditionalArgs...)
@@ -406,8 +422,17 @@ var CRDB_PREFIX string = "CRDB_"
 func (b StatefulSetBuilder) envVars() []corev1.EnvVar {
 	values := make([]corev1.EnvVar, 0)
 
+	one := resource.MustParse("1")
+	oneMi := resource.MustParse("1Mi")
+
 	// append the POD_NAME and the COCKROACH_CHANNEL values
 	values = append(values,
+		// set the telemetry
+		// You can disable the telemetry by setting
+		// CRDB_COCKROACH_SKIP_ENABLING_DIAGNOSTIC_REPORTING=true
+		// in the operator manifest.
+		// Or set COCKROACH_SKIP_ENABLING_DIAGNOSTIC_REPORTING=true
+		// using the podEnvVariables stanza in the CRD
 		corev1.EnvVar{
 			Name:  "COCKROACH_CHANNEL",
 			Value: b.Telemetry,
@@ -417,6 +442,27 @@ func (b StatefulSetBuilder) envVars() []corev1.EnvVar {
 			ValueFrom: &corev1.EnvVarSource{
 				FieldRef: &corev1.ObjectFieldSelector{
 					FieldPath: "metadata.name",
+				},
+			},
+		},
+		// values for used to calc --cache and --max-sql-memory
+		// these values do exist in the CRD and the user can
+		// override them.
+		corev1.EnvVar{
+			Name: "GOMAXPROCS",
+			ValueFrom: &corev1.EnvVarSource{
+				ResourceFieldRef: &corev1.ResourceFieldSelector{
+					Resource: "limits.cpu",
+					Divisor:  one,
+				},
+			},
+		},
+		corev1.EnvVar{
+			Name: "MEMORY_LIMIT_MIB",
+			ValueFrom: &corev1.EnvVarSource{
+				ResourceFieldRef: &corev1.ResourceFieldSelector{
+					Resource: "limits.memory",
+					Divisor:  oneMi,
 				},
 			},
 		},

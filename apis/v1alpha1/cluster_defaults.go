@@ -46,14 +46,6 @@ func SetClusterSpecDefaults(cs *CrdbClusterSpec) {
 		cs.MaxUnavailable = &DefaultMaxUnavailable
 	}
 
-	if cs.Cache == "" {
-		cs.Cache = "25%"
-	}
-
-	if cs.MaxSQLMemory == "" {
-		cs.MaxSQLMemory = "25%"
-	}
-
 	if cs.Image.PullPolicyName == nil {
 		policy := v1.PullIfNotPresent
 		cs.Image.PullPolicyName = &policy
