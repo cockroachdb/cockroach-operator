@@ -40,7 +40,7 @@ spec:
         - /cockroach/cockroach.sh
         env:
         - name: COCKROACH_CHANNEL
-          value: kubernetes-operator
+          value: kubernetes-operator-gke
         - name: POD_NAME
           valueFrom:
             fieldRef:
@@ -77,6 +77,18 @@ spec:
         volumeMounts:
         - mountPath: /cockroach/cockroach-data/
           name: datadir
+      initContainers:
+      - command:
+        - /bin/sh
+        - -c
+        - '>- cp -p /cockroach/cockroach-certs-prestage/..data/* /cockroach/cockroach-certs/ && chmod 700 /cockroach/cockroach-certs/*.key && chown 10001:10001 /cockroach/cockroach-certs/*.key'
+        image: cockroachdb/cockroach:v20.2.7
+        imagePullPolicy: IfNotPresent
+        name: db-init
+        resources: {}
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsUser: 0
       securityContext:
         fsGroup: 10001
         runAsUser: 10001
@@ -86,28 +98,10 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: ""
-      initContainers:
-        - command:
-          - /bin/sh
-          - -c
-          - '>- cp -p /cockroach/cockroach-certs-prestage/..data/* /cockroach/cockroach-certs/
-            && chmod 700 /cockroach/cockroach-certs/*.key && chown 10001:10001 /cockroach/cockroach-certs/*.key'
-          image: cockroachdb/cockroach:v20.2.7
-          imagePullPolicy: IfNotPresent
-          name: db-init
-          resources: {}
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsUser: 0
   updateStrategy:
     rollingUpdate: {}
-  securityContext:
-    fsGroup: 10001
-    runAsUser: 10001
   volumeClaimTemplates:
-  - apiVersion: v1
-    kind: PersistentVolumeClaim
-    metadata:
+  - metadata:
       creationTimestamp: null
       name: datadir
     spec:
@@ -117,5 +111,6 @@ spec:
         requests:
           storage: 1Gi
       volumeMode: Filesystem
+    status: {}
 status:
   replicas: 0

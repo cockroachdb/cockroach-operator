@@ -19,6 +19,7 @@ package resource
 import (
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/cockroachdb/cockroach-operator/pkg/labels"
@@ -48,7 +49,8 @@ const (
 type StatefulSetBuilder struct {
 	*Cluster
 
-	Selector labels.Labels
+	Selector  labels.Labels
+	Telemetry string
 }
 
 func (b StatefulSetBuilder) Build(obj client.Object) error {
@@ -244,20 +246,7 @@ func (b StatefulSetBuilder) MakeContainers() []corev1.Container {
 			Resources:       b.Spec().Resources,
 			Command:         []string{"/cockroach/cockroach.sh"},
 			Args:            b.dbArgs(),
-			Env: []corev1.EnvVar{
-				{
-					Name:  "COCKROACH_CHANNEL",
-					Value: "kubernetes-operator",
-				},
-				{
-					Name: "POD_NAME",
-					ValueFrom: &corev1.EnvVarSource{
-						FieldRef: &corev1.ObjectFieldSelector{
-							FieldPath: "metadata.name",
-						},
-					},
-				},
-			},
+			Env:             b.envVars(),
 			Ports: []corev1.ContainerPort{
 				{
 					Name:          grpcPortName,
@@ -410,4 +399,44 @@ func addCertsVolumeMount(container string, spec *corev1.PodSpec) error {
 	}
 
 	return nil
+}
+
+var CRDB_PREFIX string = "CRDB_"
+
+func (b StatefulSetBuilder) envVars() []corev1.EnvVar {
+	values := make([]corev1.EnvVar, 0)
+
+	// append the POD_NAME and the COCKROACH_CHANNEL values
+	values = append(values,
+		corev1.EnvVar{
+			Name:  "COCKROACH_CHANNEL",
+			Value: b.Telemetry,
+		},
+		corev1.EnvVar{
+			Name: "POD_NAME",
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					FieldPath: "metadata.name",
+				},
+			},
+		},
+	)
+
+	for _, e := range os.Environ() {
+		pair := strings.SplitN(e, "=", 2)
+		if strings.HasPrefix(pair[0], CRDB_PREFIX) {
+			key := strings.ReplaceAll(pair[0], CRDB_PREFIX, "")
+			env := corev1.EnvVar{
+				Name:  key,
+				Value: pair[1],
+			}
+			values = append(values, env)
+		}
+	}
+
+	if len(b.Cluster.Spec().PodEnvVariables) != 0 {
+		values = append(values, b.Cluster.Spec().PodEnvVariables...)
+	}
+
+	return values
 }
