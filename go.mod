@@ -14,6 +14,7 @@ require (
 	github.com/gosimple/slug v1.9.0
 	github.com/jackc/pgx/v4 v4.9.0
 	github.com/lib/pq v1.3.0
+	github.com/octago/sflags v0.2.0
 	github.com/onsi/ginkgo v1.14.1
 	github.com/onsi/gomega v1.10.2
 	github.com/pkg/errors v0.9.1
