@@ -39,8 +39,10 @@ const (
 	DataDirMountPath = "/cockroach/cockroach-data/"
 
 	certsDirName = "certs"
+	emptyDirName = "emptydir"
 
 	DbContainerName = "db"
+	certCpCmd       = ">- cp -p /cockroach/cockroach-certs-prestage/..data/* /cockroach/cockroach-certs/ && chmod 700 /cockroach/cockroach-certs/*.key && chown 10001:10001 /cockroach/cockroach-certs/*.key"
 )
 
 type StatefulSetBuilder struct {
@@ -85,15 +87,24 @@ func (b StatefulSetBuilder) Build(obj client.Object) error {
 	}
 
 	if b.Spec().TLSEnabled {
+		if err := addCertsVolumeMountOnInitContiners(DbContainerName, &ss.Spec.Template.Spec); err != nil {
+			return err
+		}
 		if err := addCertsVolumeMount(DbContainerName, &ss.Spec.Template.Spec); err != nil {
 			return err
 		}
 
 		ss.Spec.Template.Spec.Volumes = append(ss.Spec.Template.Spec.Volumes, corev1.Volume{
+			Name: emptyDirName,
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			}})
+
+		ss.Spec.Template.Spec.Volumes = append(ss.Spec.Template.Spec.Volumes, corev1.Volume{
 			Name: certsDirName,
 			VolumeSource: corev1.VolumeSource{
 				Projected: &corev1.ProjectedVolumeSource{
-					DefaultMode: ptr.Int32(0400),
+					DefaultMode: ptr.Int32(400),
 					Sources: []corev1.VolumeProjection{
 						{
 							Secret: &corev1.SecretProjection{
@@ -104,14 +115,17 @@ func (b StatefulSetBuilder) Build(obj client.Object) error {
 									{
 										Key:  "ca.crt",
 										Path: "ca.crt",
+										Mode: ptr.Int32(504),
 									},
 									{
 										Key:  corev1.TLSCertKey,
 										Path: "node.crt",
+										Mode: ptr.Int32(504),
 									},
 									{
 										Key:  corev1.TLSPrivateKeyKey,
 										Path: "node.key",
+										Mode: ptr.Int32(400),
 									},
 								},
 							},
@@ -125,10 +139,12 @@ func (b StatefulSetBuilder) Build(obj client.Object) error {
 									{
 										Key:  corev1.TLSCertKey,
 										Path: "client.root.crt",
+										Mode: ptr.Int32(504),
 									},
 									{
 										Key:  corev1.TLSPrivateKeyKey,
 										Path: "client.root.key",
+										Mode: ptr.Int32(400),
 									},
 								},
 							},
@@ -172,7 +188,12 @@ func (b StatefulSetBuilder) makePodTemplate() corev1.PodTemplateSpec {
 			Labels: b.Selector,
 		},
 		Spec: corev1.PodSpec{
+			SecurityContext: &corev1.PodSecurityContext{
+				RunAsUser: ptr.Int64(10001),
+				FSGroup:   ptr.Int64(10001),
+			},
 			TerminationGracePeriodSeconds: ptr.Int64(60),
+			InitContainers:                b.MakeInitContainers(),
 			Containers:                    b.MakeContainers(),
 			AutomountServiceAccountToken:  ptr.Bool(false),
 			ServiceAccountName:            "cockroach-database-sa",
@@ -189,6 +210,25 @@ func (b StatefulSetBuilder) makePodTemplate() corev1.PodTemplateSpec {
 	}
 
 	return pod
+}
+
+// MakeInitContainers creates a slice of corev1.Containers which includes a single
+// corev1.Container that is based on the CR.
+func (b StatefulSetBuilder) MakeInitContainers() []corev1.Container {
+	image := b.GetCockroachDBImageName()
+	initContainer := fmt.Sprintf("%s-init", DbContainerName)
+	return []corev1.Container{
+		{
+			Name:            initContainer,
+			Image:           image,
+			Command:         []string{"/bin/sh", "-c", certCpCmd},
+			ImagePullPolicy: *b.Spec().Image.PullPolicyName,
+			SecurityContext: &corev1.SecurityContext{
+				RunAsUser:                ptr.Int64(0),
+				AllowPrivilegeEscalation: ptr.Bool(false),
+			},
+		},
+	}
 }
 
 // MakeContainers creates a slice of corev1.Containers which includes a single
@@ -322,6 +362,33 @@ func (b StatefulSetBuilder) joinStr() string {
 
 	return strings.Join(seeds, ",")
 }
+func addCertsVolumeMountOnInitContiners(container string, spec *corev1.PodSpec) error {
+	found := false
+	initContainer := fmt.Sprintf("%s-init", container)
+	for i := range spec.InitContainers {
+		c := &spec.InitContainers[i]
+		if c.Name == initContainer {
+			found = true
+
+			c.VolumeMounts = append(c.VolumeMounts, corev1.VolumeMount{
+				Name:      certsDirName,
+				MountPath: "/cockroach/cockroach-certs-prestage/",
+			})
+			c.VolumeMounts = append(c.VolumeMounts, corev1.VolumeMount{
+				Name:      emptyDirName,
+				MountPath: "/cockroach/cockroach-certs/",
+			})
+
+			break
+		}
+	}
+
+	if !found {
+		return fmt.Errorf("failed to find container %s to attach volume", container)
+	}
+
+	return nil
+}
 
 func addCertsVolumeMount(container string, spec *corev1.PodSpec) error {
 	found := false
@@ -331,7 +398,7 @@ func addCertsVolumeMount(container string, spec *corev1.PodSpec) error {
 			found = true
 
 			c.VolumeMounts = append(c.VolumeMounts, corev1.VolumeMount{
-				Name:      certsDirName,
+				Name:      emptyDirName,
 				MountPath: "/cockroach/cockroach-certs/",
 			})
 			break
