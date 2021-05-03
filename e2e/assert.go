@@ -70,6 +70,25 @@ func RequireClusterToBeReadyEventuallyTimeout(t *testing.T, sb testenv.DiffingSa
 		}
 		return true, nil
 	})
+
+	if err != nil {
+		ss, err := fetchStatefulSet(sb, cluster.StatefulSetName())
+		if err != nil {
+			t.Logf("error fetching stateful set and not logging pods")
+		}
+
+		if ss == nil {
+			t.Logf("stateful set is not found and not logging pods")
+		}
+
+		if !statefulSetIsReady(ss) {
+			t.Logf("stateful set is not ready logging pods")
+			logErr := logPodLogs(context.TODO(), ss, cluster, sb, t)
+			if logErr != nil {
+				t.Logf("error getting pod logs: %v", logErr)
+			}
+		}
+	}
 	require.NoError(t, err)
 }
 
@@ -476,6 +495,53 @@ func logPods(ctx context.Context, sts *appsv1.StatefulSet, cluster *resource.Clu
 				t.Logf("pods-condition=%v\n", podInfo.Status.Conditions)
 			}
 		*/
+	}
+
+	return nil
+}
+
+func logPodLogs(ctx context.Context, sts *appsv1.StatefulSet, cluster *resource.Cluster,
+	sb testenv.DiffingSandbox, t *testing.T) error {
+	// create a new clientset to talk to k8s
+	clientset, err := kubernetes.NewForConfig(sb.Mgr.GetConfig())
+	if err != nil {
+		return err
+	}
+
+	// the LableSelector I thought worked did not
+	// so I just get all of the Pods in a NS
+	options := metav1.ListOptions{
+		//LabelSelector: "app=" + cluster.StatefulSetName(),
+	}
+
+	// Get all pods
+	podList, err := clientset.CoreV1().Pods(sts.Namespace).List(ctx, options)
+	if err != nil {
+		return err
+	}
+
+	if len(podList.Items) == 0 {
+		t.Log("no pods found")
+	}
+
+	// Print out pretty into on the Pods
+	for _, podInfo := range (*podList).Items {
+		t.Logf("pods-name=%v\n", podInfo.Name)
+		t.Logf("pods-status=%v\n", podInfo.Status.Phase)
+		t.Logf("pods-condition=%v\n", podInfo.Status.Conditions)
+		/*
+			// TODO if pod is running but not ready for some period get pod logs
+			if kube.IsPodReady(&podInfo) {
+				t.Logf("pods-condition=%v\n", podInfo.Status.Conditions)
+			}
+		*/
+		log, err := getPodLog(ctx, podInfo.Name, sts.Namespace, clientset)
+
+		if err != nil {
+			return err
+		}
+
+		t.Log(log)
 	}
 
 	return nil
