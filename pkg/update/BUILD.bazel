@@ -12,9 +12,9 @@ go_library(
     importpath = "github.com/cockroachdb/cockroach-operator/pkg/update",
     visibility = ["//visibility:public"],
     deps = [
+        "//pkg/healthchecker:go_default_library",
         "//pkg/kube:go_default_library",
         "//pkg/resource:go_default_library",
-        "//pkg/healthchecker:go_default_library",
         "@com_github_cenkalti_backoff//:go_default_library",
         "@com_github_cockroachdb_errors//:go_default_library",
         "@com_github_go_logr_logr//:go_default_library",

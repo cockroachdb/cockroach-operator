@@ -78,6 +78,7 @@ filegroup(
         "//pkg/database:all-srcs",
         "//pkg/featuregates:all-srcs",
         "//pkg/features:all-srcs",
+        "//pkg/healthchecker:all-srcs",
         "//pkg/kube:all-srcs",
         "//pkg/labels:all-srcs",
         "//pkg/logging:all-srcs",
