@@ -20,6 +20,7 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//apis/v1alpha1:go_default_library",
+        "//pkg/healthchecker:go_default_library",
         "//pkg/clustersql:go_default_library",
         "//pkg/condition:go_default_library",
         "//pkg/database:go_default_library",
@@ -28,6 +29,7 @@ go_library(
         "//pkg/logging:go_default_library",
         "//pkg/ptr:go_default_library",
         "//pkg/resource:go_default_library",
+       
         "//pkg/scale:go_default_library",
         "//pkg/security:go_default_library",
         "//pkg/tls:go_default_library",

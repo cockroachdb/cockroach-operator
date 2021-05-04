@@ -24,7 +24,9 @@ import (
 
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/condition"
+	"github.com/cockroachdb/cockroach-operator/pkg/database"
 	"github.com/cockroachdb/cockroach-operator/pkg/features"
+	"github.com/cockroachdb/cockroach-operator/pkg/healthchecker"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	"github.com/cockroachdb/cockroach-operator/pkg/scale"
 	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
@@ -91,6 +93,54 @@ func (r *clusterRestart) Act(ctx context.Context, cluster *resource.Cluster) err
 	if err != nil {
 		return errors.Wrapf(err, "failed to create kubernetes clientset")
 	}
+	// test to see if we are running inside of Kubernetes
+	// If we are running inside of k8s we will not find this file.
+	runningInsideK8s := inK8s("/var/run/secrets/kubernetes.io/serviceaccount/token")
+
+	serviceName := cluster.PublicServiceName()
+	if runningInsideK8s {
+		log.V(int(zapcore.DebugLevel)).Info("operator is running inside of kubernetes, connecting to service for db connection")
+	} else {
+		serviceName = fmt.Sprintf("%s-0.%s.%s", cluster.Name(), cluster.Name(), cluster.Namespace())
+		log.V(int(zapcore.DebugLevel)).Info("operator is NOT inside of kubernetes, connnecting to pod ordinal zero for db connection")
+	}
+
+	// The connection needs to use the discovery service name because of the
+	// hostnames in the SSL certificates
+	conn := &database.DBConnection{
+		Ctx:              ctx,
+		Client:           r.client,
+		RestConfig:       r.config,
+		ServiceName:      serviceName,
+		Namespace:        cluster.Namespace(),
+		DatabaseName:     "system", // TODO we need to use variable instead of string
+		Port:             cluster.Spec().SQLPort,
+		RunningInsideK8s: runningInsideK8s,
+	}
+
+	// see https://github.com/cockroachdb/cockroach-operator/issues/204 for above TODO
+
+	if cluster.Spec().TLSEnabled {
+		conn.UseSSL = true
+		conn.ClientCertificateSecretName = cluster.ClientTLSSecretName()
+		conn.RootCertificateSecretName = cluster.NodeTLSSecretName()
+	}
+
+	// TODO we may have an error case where the operator will not finish an update, but will
+	// still try to make a database connection.
+	// see https://github.com/cockroachdb/cockroach-operator/issues/205
+
+	// Create a new database connection for the update.
+	// TODO we may want to create this db connection later
+	// see https://github.com/cockroachdb/cockroach-operator/issues/207
+
+	db, err := database.NewDbConnection(conn)
+	if err != nil {
+		return errors.Wrapf(err, "failed to create database connection")
+	}
+	log.V(int(zapcore.DebugLevel)).Info("opened db connection")
+	defer db.Close()
+	healthChecker := healthchecker.NewHealthChecker(db)
 	statefulSet := &appsv1.StatefulSet{}
 	if err := r.client.Get(ctx, key, statefulSet); err != nil {
 		return errors.Wrap(err, "failed to fetch statefulset")
@@ -109,7 +159,7 @@ func (r *clusterRestart) Act(ctx context.Context, cluster *resource.Cluster) err
 
 	if strings.EqualFold(restartType, api.ClusterRestartType(api.RollingRestart).String()) {
 		log.V(int(zapcore.DebugLevel)).Info("initiating rolling restart action")
-		if err := r.rollingSts(ctx, statefulSet.DeepCopy(), clientset, r.log); err != nil {
+		if err := r.rollingSts(ctx, statefulSet.DeepCopy(), clientset, r.log, healthChecker); err != nil {
 			return errors.Wrapf(err, "error restarting statefulset %s.%s", cluster.Namespace(), cluster.StatefulSetName())
 		}
 		log.V(int(zapcore.DebugLevel)).Info("completed rolling cluster restart")
@@ -119,7 +169,7 @@ func (r *clusterRestart) Act(ctx context.Context, cluster *resource.Cluster) err
 		}
 		//sleep 1 minute to make sure the crdb is up and running
 		log.V(int(zapcore.DebugLevel)).Info("sleeping", "duration", sleepDuration.String(), "label", "after full cluster restart")
-		time.Sleep(sleepDuration)
+		healthChecker.Probe(ctx, log, fmt.Sprintf("waiting after restart for cluster %s", cluster.Name()))
 
 		log.V(int(zapcore.DebugLevel)).Info("completed full cluster restart")
 	} else {
@@ -148,7 +198,10 @@ func (r *clusterRestart) Act(ctx context.Context, cluster *resource.Cluster) err
 }
 
 // rollingSts performs a rolling update on the cluster.
-func (r *clusterRestart) rollingSts(ctx context.Context, sts *appsv1.StatefulSet, clientset *kubernetes.Clientset, l logr.Logger) error {
+func (r *clusterRestart) rollingSts(ctx context.Context, sts *appsv1.StatefulSet,
+	clientset *kubernetes.Clientset,
+	l logr.Logger,
+	healthChecker healthchecker.HealthChecker) error {
 	timeNow := metav1.Now()
 	// When a StatefulSet's partition number is set to `n`, only StatefulSet pods
 	// numbered greater or equal to `n` will be updated. The rest will remain untouched.
@@ -185,9 +238,8 @@ func (r *clusterRestart) rollingSts(ctx context.Context, sts *appsv1.StatefulSet
 			return errors.Wrapf(err, "error rolling update stategy on pod %d", int(partition))
 		}
 
-		// wait 1 minute between updates
-		l.V(int(zapcore.DebugLevel)).Info("sleeping", "duration", sleepDuration.String(), "label", "between restarting pods")
-		time.Sleep(sleepDuration)
+		// wait for all replicas to be up
+		healthChecker.Probe(ctx, l, "between restarting pods")
 	}
 	return nil
 }
