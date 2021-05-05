@@ -25,6 +25,8 @@ import (
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
+	rbac "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -281,4 +283,61 @@ func GetPodConditionFromList(conditions []corev1.PodCondition, conditionType cor
 		}
 	}
 	return -1, nil
+}
+
+func CreateDatabaseServiceAccount(ctx context.Context, clientset *kubernetes.Clientset, namespace string) error {
+	name := "cockroach-database-sa"
+	sa := &v1.ServiceAccount{}
+	sa.Name = name
+
+	if _, err := clientset.CoreV1().ServiceAccounts(namespace).Create(
+		ctx,
+		sa,
+		metav1.CreateOptions{},
+	); err != nil {
+		return err
+	}
+
+	crb := &rbac.ClusterRoleBinding{
+		RoleRef: rbac.RoleRef{
+			Name:     "cockroach-database-role",
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "ClusterRole",
+		},
+		Subjects: []rbac.Subject{
+			{
+				Kind:      "ServiceAccount",
+				Name:      name,
+				Namespace: namespace,
+			},
+		},
+	}
+	crb.Name = "cockroach-database-rolebinding"
+	if _, err := clientset.RbacV1().ClusterRoleBindings().Create(
+		ctx,
+		crb,
+		metav1.CreateOptions{},
+	); err != nil {
+		return err
+	}
+
+	cr := &rbac.ClusterRole{
+		Rules: []rbac.PolicyRule{
+			{
+				Verbs:         []string{"use"},
+				APIGroups:     []string{"security.openshift.io"},
+				Resources:     []string{"securitycontextconstraints"},
+				ResourceNames: []string{"nonroot"},
+			},
+		},
+	}
+	cr.Name = "cockroach-database-role"
+	if _, err := clientset.RbacV1().ClusterRoles().Create(
+		ctx,
+		cr,
+		metav1.CreateOptions{},
+	); err != nil {
+		return err
+	}
+	return nil
 }

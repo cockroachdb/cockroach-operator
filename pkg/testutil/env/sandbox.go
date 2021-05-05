@@ -28,11 +28,13 @@ import (
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/rand"
+	"k8s.io/kubernetes/pkg/apis/rbac"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -153,20 +155,73 @@ func createNamespace(s Sandbox) error {
 		return errors.Wrapf(err, "failed to create namespace: %s", s.Namespace)
 	}
 
+	if err := kube.CreateDatabaseServiceAccount(context.TODO(), s.env.Clientset, s.Namespace); err != nil {
+		return errors.Wrapf(err, "failed to create service account: %s", s.Namespace)
+	}
 	return nil
 }
 
 func createServiceAccount(s Sandbox) error {
-	sa := &corev1.ServiceAccount{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: s.Namespace,
-			Name:      "cockroach-database-sa",
+
+	name := "cockroach-database-sa"
+
+	if _, err := s.env.Clientset.CoreV1().ServiceAccounts(s.Namespace).Create(
+		context.TODO(),
+		&v1.ServiceAccount{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: s.Namespace,
+				Name:      name,
+			},
 		},
+		metav1.CreateOptions{},
+	); err != nil {
+		return err
 	}
 
-	if _, err := s.env.Clientset.CoreV1().ServiceAccounts(s.Namespace).Create(context.TODO(), sa, metav1.CreateOptions{}); err != nil {
-		return errors.Wrapf(err, "failed to create service account cockroach-database-sa in namespace %s", s.Namespace)
+	if _, err := s.env.Clientset.RbacV1().ClusterRoleBindings().Create(
+		context.TODO(),
+		rbac.ClusterRoleBinding{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "cockroach-database-rolebinding",
+			},
+			RoleRef: rbac.RoleRef{
+				Name:     "cockroach-database-role",
+				APIGroup: "rbac.authorization.k8s.io",
+				Kind:     "ClusterRole",
+			},
+			Subjects: []rbac.Subject{
+				{
+					Kind:      "ServiceAccount",
+					Name:      name,
+					Namespace: s.Namespace,
+				},
+			},
+		},
+		metav1.CreateOptions{},
+	); err != nil {
+		return err
 	}
+
+	if _, err := s.env.Clientset.RbacV1().ClusterRoles().Create(
+		context.TODO(),
+		rbac.ClusterRole{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "cockroach-database-role",
+			},
+			Rules: []rbac.PolicyRule{
+				{
+					Verbs:         []string{"use"},
+					APIGroups:     []string{"security.openshift.io"},
+					Resources:     []string{"securitycontextconstraints"},
+					ResourceNames: []string{"nonroot"},
+				},
+			},
+		},
+		metav1.CreateOptions{},
+	); err != nil {
+		return err
+	}
+	return err
 
 	return nil
 }
