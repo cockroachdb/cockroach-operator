@@ -83,36 +83,15 @@ func RequireClusterToBeReadyEventuallyTimeout(t *testing.T, sb testenv.DiffingSa
 
 		if !statefulSetIsReady(ss) {
 			t.Logf("stateful set is not ready logging pods")
+		}
+		if ss != nil {
 			logErr := logPodLogs(context.TODO(), ss, cluster, sb, t)
 			if logErr != nil {
-				t.Logf("error getting pod logs: %v", logErr)
+				t.Logf("error logging the pods %v", logErr)
 			}
 		}
+		err = errors.Wrapf(err, "error waiting for test")
 	}
-	require.NoError(t, err)
-}
-
-func requireClusterToBeReadyEventually(t *testing.T, sb testenv.DiffingSandbox, b testutil.ClusterBuilder) {
-	cluster := b.Cluster()
-
-	err := wait.Poll(10*time.Second, 60*time.Second, func() (bool, error) {
-
-		ss, err := fetchStatefulSet(sb, cluster.StatefulSetName())
-		if err != nil {
-			t.Logf("error fetching stateful set")
-			return false, err
-		}
-
-		if ss == nil {
-			t.Logf("stateful set is not found")
-			return false, nil
-		}
-		if !statefulSetIsReady(ss) {
-			t.Logf("stateful set is not ready")
-			return false, nil
-		}
-		return true, nil
-	})
 	require.NoError(t, err)
 }
 
@@ -138,6 +117,10 @@ func requireDbContainersToUseImage(t *testing.T, sb testenv.DiffingSandbox, cr *
 
 		return res, nil
 	})
+
+	if err != nil {
+		t.Logf("pods are not running correct container version")
+	}
 
 	require.NoError(t, err)
 }
@@ -165,6 +148,7 @@ func clusterIsInitialized(t *testing.T, sb testenv.DiffingSandbox, name string) 
 	}
 
 	if !cmp.Equal(expectedConditions, actualConditions) {
+		t.Logf("cluster is not initialized")
 		return false, nil
 	}
 
@@ -193,6 +177,7 @@ func clusterIsDecommissioned(t *testing.T, sb testenv.DiffingSandbox, name strin
 		actualConditions[i].LastTransitionTime = emptyTime
 	}
 	if !cmp.Equal(expectedConditions, actualConditions) {
+		t.Logf("cluster is not decomissioned")
 		return false, nil
 	}
 
@@ -306,6 +291,9 @@ func requireDecommissionNode(t *testing.T, sb testenv.DiffingSandbox, b testutil
 		}
 		return true, nil
 	})
+	if err != nil {
+		t.Log("timed out waiting for requiring deco'ed node")
+	}
 	require.NoError(t, err)
 }
 
@@ -416,6 +404,10 @@ func requirePVCToResize(t *testing.T, sb testenv.DiffingSandbox, b testutil.Clus
 
 		return resized, nil
 	})
+
+	if err != nil {
+		t.Logf("timed out waiting for PVCs to resize")
+	}
 	require.NoError(t, err)
 }
 
