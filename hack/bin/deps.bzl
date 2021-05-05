@@ -381,8 +381,8 @@ def install_opm():
 def install_openshift():
     http_archive(
        name = "openshift_darwin",
-       sha256 = "7e18c8fb610e955fdd77d5b8dc40c6662db4042c76a155bb824ffd56d0584141",
-       urls = ["https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-install-mac.tar.gz"],
+       sha256 = "ed2144b31aa15bd27cbea11c3e94f7329531775b13b0b1dabb1c0ffa82ca4dc6",
+       urls = ["https://mirror.openshift.com/pub/openshift-v4/clients/ocp/4.7.9/openshift-install-mac-4.7.9.tar.gz"],
        build_file_content = """
 filegroup(
     name = "file",
@@ -396,8 +396,8 @@ filegroup(
 
     http_archive(
         name = "openshift_linux",
-        sha256 = "e515dd3d6a9881f7e7e27e6988624c1c93e091ae7513a5223654dae139e49ea3",
-        urls = ["https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-install-linux.tar.gz"],
+        sha256 = "a41682490aabdb6e0d0ca608f76c91b9db5c4b295febc9d6b9182932d5e34760",
+        urls = ["https://mirror.openshift.com/pub/openshift-v4/clients/ocp/4.7.9/openshift-install-linux-4.7.9.tar.gz"],
         build_file_content = """
 filegroup(
     name = "file",
