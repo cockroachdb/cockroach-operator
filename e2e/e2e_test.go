@@ -20,12 +20,14 @@ import (
 	"flag"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/actor"
 	"github.com/cockroachdb/cockroach-operator/pkg/controller"
+	"github.com/cockroachdb/cockroach-operator/pkg/labels"
 	"github.com/cockroachdb/cockroach-operator/pkg/testutil"
 	testenv "github.com/cockroachdb/cockroach-operator/pkg/testutil/env"
 	"github.com/cockroachdb/cockroach-operator/pkg/testutil/paths"
@@ -34,7 +36,9 @@ import (
 	"go.uber.org/zap/zaptest"
 	corev1 "k8s.io/api/core/v1"
 	apiresource "k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 // TODO parallel seems to be buggy.  Not certain why, but we need to figure out if running with the operator
@@ -366,5 +370,102 @@ func TestPVCResize(t *testing.T) {
 			},
 		},
 	}
+	steps.Run(t)
+}
+func TestRollingRestart(t *testing.T) {
+
+	// Restart cluster nodes in a rolling cadence, one after the other
+
+	if parallel {
+		t.Parallel()
+	}
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+
+	testLog := zapr.NewLogger(zaptest.NewLogger(t))
+
+	actor.Log = testLog
+
+	sb := testenv.NewDiffingSandbox(t, env)
+	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
+
+	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
+		WithImage("cockroachdb/cockroach:v20.2.5").
+		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
+
+	steps := Steps{
+		{
+			name: "creates a 3-node secure cluster",
+			test: func(t *testing.T) {
+				require.NoError(t, sb.Create(builder.Cr()))
+
+				RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
+			},
+		},
+		{
+			name: "restarts the cluster using the rolling functionality",
+			test: func(t *testing.T) {
+				current := builder.Cr()
+				require.NoError(t, sb.Get(current))
+
+				pods, err := fetchPodsInStatefulSet(sb, labels.Common(current).Selector())
+				require.NoError(t, err)
+				require.NotNil(t, pods)
+
+				podCreationTimes := make(map[string]metav1.Time)
+				for _, pod := range pods {
+					if strings.Contains(pod.Name, "-vcheck-") {
+						continue // Skip the validate version pod
+					}
+					podCreationTimes[pod.Name] = pod.CreationTimestamp
+				}
+
+				current.Annotations["crdb.io/restarttype"] = "rolling"
+				require.NoError(t, sb.Update(current))
+
+				// Need to poll for getting rid of the restart annotation
+				err = wait.Poll(10*time.Second, 500*time.Second, func() (done bool, err error) {
+					current = builder.Cr()
+					if err = sb.Get(current); err != nil {
+						return false, err
+					}
+
+					if rt, ok := current.Annotations["crdb.io/restarttype"]; !ok {
+						return true, nil
+					} else if rt == "" { // The annotation was deleted
+						return true, nil
+					}
+
+					return false, nil
+				})
+				require.NoError(t, err)
+
+				// Make sure the cluster is in a good state after the restart is finished
+				RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
+
+				pods, err = fetchPodsInStatefulSet(sb, labels.Common(current).Selector())
+				require.NoError(t, err)
+				require.NotNil(t, pods)
+
+				podRestartTimes := make(map[string]metav1.Time)
+				for _, pod := range pods {
+					if strings.Contains(pod.Name, "-vcheck-") {
+						continue // Skip the validate version pod
+					}
+					podRestartTimes[pod.Name] = pod.CreationTimestamp
+				}
+
+				for name, ts := range podCreationTimes {
+					restartTS, ok := podRestartTimes[name]
+					require.True(t, ok, "Unable to find pod %s", name)
+					require.True(t, ts.Before(&restartTS), "Pod %s did not restart %v not before %v", name, ts, restartTS)
+				}
+
+				t.Log("Done with rolling restart")
+			},
+		},
+	}
+
 	steps.Run(t)
 }
