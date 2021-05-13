@@ -29,12 +29,12 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
+	rbac "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/rand"
-	"k8s.io/kubernetes/pkg/apis/rbac"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -180,7 +180,7 @@ func createServiceAccount(s Sandbox) error {
 
 	if _, err := s.env.Clientset.RbacV1().ClusterRoleBindings().Create(
 		context.TODO(),
-		rbac.ClusterRoleBinding{
+		&rbac.ClusterRoleBinding{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "cockroach-database-rolebinding",
 			},
@@ -204,7 +204,7 @@ func createServiceAccount(s Sandbox) error {
 
 	if _, err := s.env.Clientset.RbacV1().ClusterRoles().Create(
 		context.TODO(),
-		rbac.ClusterRole{
+		&rbac.ClusterRole{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "cockroach-database-role",
 			},
@@ -221,7 +221,6 @@ func createServiceAccount(s Sandbox) error {
 	); err != nil {
 		return err
 	}
-	return err
 
 	return nil
 }
