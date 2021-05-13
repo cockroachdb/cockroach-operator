@@ -26,15 +26,15 @@ spec:
           requests:
             storage: "60Gi"
         volumeMode: Filesystem
-  # resources:
-  #   requests:
-  #     cpu: "2"
-  #     memory: "8Gi"
-  #   limits:
-  #     cpu: "2"
-  #     memory: "8Gi"
+  resources:
+    requests:
+      cpu: "2"
+      memory: "8Gi"
+    limits:
+      cpu: "2"
+      memory: "8Gi"
   tlsEnabled: true
-  # cockroachDBVersion: v20.2.7
+# cockroachDBVersion: v20.2.8
   image:
-    name: cockroachdb/cockroach:v20.2.7
+    name: cockroachdb/cockroach:v20.2.8
   nodes: 3
