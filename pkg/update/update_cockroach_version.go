@@ -63,7 +63,7 @@ type UpdateCluster struct {
 	Clientset             kubernetes.Interface
 	PodUpdateTimeout      time.Duration
 	PodMaxPollingInterval time.Duration
-	HealthCkecker         healthchecker.HealthChecker
+	HealthChecker         healthchecker.HealthChecker
 }
 
 // UpdateClusterCockroachVersion, and allows specifying custom pod timeouts,
@@ -138,7 +138,7 @@ func updateClusterStatefulSets(
 		makeWaitUntilAllPodsReadyFunc(ctx, cluster, update),
 		cluster.PodUpdateTimeout,
 		cluster.PodMaxPollingInterval,
-		cluster.HealthCkecker,
+		cluster.HealthChecker,
 		l)
 	if err != nil {
 		return err

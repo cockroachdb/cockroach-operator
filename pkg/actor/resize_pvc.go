@@ -22,17 +22,13 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff"
-	"github.com/cockroachdb/cockroach-operator/pkg/database"
 	"github.com/cockroachdb/cockroach-operator/pkg/features"
-	"github.com/cockroachdb/cockroach-operator/pkg/healthchecker"
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
 	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
-	"go.uber.org/zap/zapcore"
 
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/condition"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
-	"github.com/cockroachdb/cockroach-operator/pkg/update"
 	"github.com/cockroachdb/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -262,74 +258,4 @@ func (rp *resizePVC) findAndResizePVC(ctx context.Context, sts *appsv1.StatefulS
 
 	log.Info("found and resized all PVCs")
 	return nil
-}
-
-// rollSts performs a rolling update on the cluster. It is NOT used
-func (rp *resizePVC) rollSts(ctx context.Context, cluster *resource.Cluster, clientset *kubernetes.Clientset) error {
-	log := rp.log.WithValues("CrdbCluster", cluster.ObjectKey())
-	updateRoach := &update.UpdateRoach{
-		StsName:      cluster.StatefulSetName(),
-		StsNamespace: cluster.Namespace(),
-	}
-
-	podUpdateTimeout := 10 * time.Minute
-	podMaxPollingInterval := 30 * time.Minute
-
-	// test to see if we are running inside of Kubernetes
-	// If we are running inside of k8s we will not find this file.
-	runningInsideK8s := inK8s("/var/run/secrets/kubernetes.io/serviceaccount/token")
-
-	serviceName := cluster.PublicServiceName()
-	if runningInsideK8s {
-		log.V(int(zapcore.DebugLevel)).Info("operator is running inside of kubernetes, connecting to service for db connection")
-	} else {
-		serviceName = fmt.Sprintf("%s-0.%s.%s", cluster.Name(), cluster.Name(), cluster.Namespace())
-		log.V(int(zapcore.DebugLevel)).Info("operator is NOT inside of kubernetes, connnecting to pod ordinal zero for db connection")
-	}
-
-	// The connection needs to use the discovery service name because of the
-	// hostnames in the SSL certificates
-	conn := &database.DBConnection{
-		Ctx:              ctx,
-		Client:           rp.client,
-		RestConfig:       rp.config,
-		ServiceName:      serviceName,
-		Namespace:        cluster.Namespace(),
-		DatabaseName:     "system", // TODO we need to use variable instead of string
-		Port:             cluster.Spec().SQLPort,
-		RunningInsideK8s: runningInsideK8s,
-	}
-
-	// see https://github.com/cockroachdb/cockroach-operator/issues/204 for above TODO
-
-	if cluster.Spec().TLSEnabled {
-		conn.UseSSL = true
-		conn.ClientCertificateSecretName = cluster.ClientTLSSecretName()
-		conn.RootCertificateSecretName = cluster.NodeTLSSecretName()
-	}
-
-	// TODO we may have an error case where the operator will not finish an update, but will
-	// still try to make a database connection.
-	// see https://github.com/cockroachdb/cockroach-operator/issues/205
-
-	// Create a new database connection for the update.
-	// TODO we may want to create this db connection later
-	// see https://github.com/cockroachdb/cockroach-operator/issues/207
-
-	db, err := database.NewDbConnection(conn)
-	if err != nil {
-		return errors.Wrapf(err, "failed to create database connection")
-	}
-	log.V(int(zapcore.DebugLevel)).Info("opened db connection")
-	defer db.Close()
-	healthchecker := healthchecker.NewHealthChecker(db)
-
-	k8sCluster := &update.UpdateCluster{
-		Clientset:             clientset,
-		PodUpdateTimeout:      podUpdateTimeout,
-		PodMaxPollingInterval: podMaxPollingInterval,
-		HealthCkecker:         healthchecker,
-	}
-
-	return update.RollingRestart(ctx, updateRoach, k8sCluster, rp.log)
 }

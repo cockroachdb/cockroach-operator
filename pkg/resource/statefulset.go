@@ -201,9 +201,16 @@ func (b StatefulSetBuilder) MakeContainers() []corev1.Container {
 			Name:            DbContainerName,
 			Image:           image,
 			ImagePullPolicy: *b.Spec().Image.PullPolicyName,
-			Resources:       b.Spec().Resources,
-			Command:         []string{"/cockroach/cockroach.sh"},
-			Args:            b.dbArgs(),
+			Lifecycle: &corev1.Lifecycle{
+				PreStop: &corev1.Handler{
+					Exec: &corev1.ExecAction{
+						Command: []string{"/cockroach/cockroach drain node $(hostname -f)"},
+					},
+				},
+			},
+			Resources: b.Spec().Resources,
+			Command:   []string{"/cockroach/cockroach.sh"},
+			Args:      b.dbArgs(),
 			Env: []corev1.EnvVar{
 				{
 					Name:  "COCKROACH_CHANNEL",
