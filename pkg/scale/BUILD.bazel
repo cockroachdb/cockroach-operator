@@ -31,7 +31,10 @@ go_library(
 
 go_test(
     name = "go_default_test",
-    srcs = ["persistent_volume_pruner_test.go"],
+    srcs = [
+        "cockroach_statefulset_test.go",
+        "persistent_volume_pruner_test.go",
+    ],
     embed = [":go_default_library"],
     deps = [
         "@com_github_go_logr_logr//:go_default_library",
@@ -41,6 +44,7 @@ go_test(
         "@io_k8s_api//core/v1:go_default_library",
         "@io_k8s_apimachinery//pkg/apis/meta/v1:go_default_library",
         "@io_k8s_apimachinery//pkg/runtime:go_default_library",
+        "@io_k8s_apimachinery//pkg/runtime/schema:go_default_library",
         "@io_k8s_apimachinery//pkg/watch:go_default_library",
         "@io_k8s_client_go//kubernetes/fake:go_default_library",
         "@io_k8s_client_go//testing:go_default_library",
