@@ -137,8 +137,8 @@ test/e2e/gke:
 test/e2e/testrunner-openshift:
 	bazel test --stamp //e2e/... --action_env=KUBECONFIG=$(HOME)/openshift-$(CLUSTER_NAME)/auth/kubeconfig
 
-.PHONY: test/e2e/openshift
-test/e2e/openshift:
+.PHONY: test/e2e/delete-openshift
+test/e2e/delete-openshift:
 	bazel build //hack/bin/... //e2e/kubetest2-openshift/...
 	PATH=${PATH}:bazel-bin/hack/bin:bazel-bin/e2e/kubetest2-openshift/kubetest2-openshift_/ \
 	     bazel-bin/hack/bin/kubetest2 openshift --cluster-name=$(CLUSTER_NAME) \
@@ -146,8 +146,18 @@ test/e2e/openshift:
 	     --gcp-region=$(GCP_REGION) \
 	     --base-domain=$(BASE_DOMAIN) \
 	     --pull-secret-file=$(PULL_SECRET) \
-	     --up --down \
-	     --test=exec -- make test/e2e/testrunner-openshift
+	     --down 
+
+.PHONY: test/e2e/create-openshift
+test/e2e/create-openshift:
+	bazel build //hack/bin/... //e2e/kubetest2-openshift/...
+	PATH=${PATH}:bazel-bin/hack/bin:bazel-bin/e2e/kubetest2-openshift/kubetest2-openshift_/ \
+	     bazel-bin/hack/bin/kubetest2 openshift --cluster-name=$(CLUSTER_NAME) \
+	     --gcp-project-id=$(GCP_PROJECT) \
+	     --gcp-region=$(GCP_REGION) \
+	     --base-domain=$(BASE_DOMAIN) \
+	     --pull-secret-file=$(PULL_SECRET) \
+	     --up 
 
 #
 # Different dev targets
