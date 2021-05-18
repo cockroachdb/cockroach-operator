@@ -19,10 +19,8 @@ package healthchecker
 import (
 	"context"
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/cenkalti/backoff"
@@ -69,15 +67,11 @@ func (s *HealthCheckerImpl) Probe(ctx context.Context, l logr.Logger, logSuffix 
 	stsnamespace := s.cluster.Namespace()
 	podname := fmt.Sprintf("%s-%v", stsname, nodeID)
 
-	//we sleep 1 minunte to ensure the pre-stop hook finished
+	//we sleep 1 minunte because the prestop hook is running and we need to wait
+	//to finish the drain of the node
 	time.Sleep(1 * time.Minute)
-	//SKIP KILL because we just restarted????
-	// err := sendKillSignal(ctx, l, logSuffix, podname, nodeID)
-	// if err != nil {
-	// 	return err
-	// }
 
-	//isready check for all pods from sts
+	//WaitUntilAllStsPodsAreReady waits for all pods from statefulset to be ready
 	err := kube.WaitUntilAllStsPodsAreReady(ctx, s.clientset, l, stsname, stsnamespace, 30*time.Minute, 10*time.Minute)
 	if err != nil {
 		return err
@@ -87,31 +81,16 @@ func (s *HealthCheckerImpl) Probe(ctx context.Context, l logr.Logger, logSuffix 
 	if err != nil {
 		return kube.HandleStsError(err, l, stsname, stsnamespace)
 	}
+
 	//TODO: add goroutine for each partition
 	for partition := *sts.Spec.Replicas - 1; partition >= 0; partition-- {
-		//we check the metric for all the pods
+		//we check the underreplicated  metric for each pod from statefullset
 		err = s.waitUntilUnderReplicatedMetricIsZero(ctx, l, logSuffix, podname, partition)
 		if err != nil {
 			return err
 		}
 	}
 
-	return nil
-}
-
-//sendKillSignal it is not necessary in our scenario... we just restarted the node and run drain as pre-stop hook
-func sendKillSignal(ctx context.Context, l logr.Logger, logSuffix, podname string, nodeID int) error {
-	l.V(int(zapcore.DebugLevel)).Info("sendKillSignal", "label", logSuffix, "pod", podname, "nodeID", nodeID)
-	//assuming that crdb process always start with id 1
-	process, err := os.FindProcess(1)
-	if err != nil {
-		return errors.Wrapf(err, "failed to get process cockroach")
-	}
-	//TODO:Check if process.Kill or process.Signal usage
-	err = process.Signal(syscall.Signal(syscall.SIGKILL))
-	if err != nil {
-		return errors.Wrapf(err, "failed to get kill process cockroach")
-	}
 	return nil
 }
 
@@ -127,6 +106,7 @@ func (s *HealthCheckerImpl) waitUntilUnderReplicatedMetricIsZero(ctx context.Con
 	}
 	return nil
 }
+
 //checkUnderReplicatedMetric uses exec on the pod for now
 func (s *HealthCheckerImpl) checkUnderReplicatedMetric(ctx context.Context, l logr.Logger, logSuffix, podname string, partition int32) error {
 	l.V(int(zapcore.DebugLevel)).Info("checkUnderReplicatedMetric", "label", logSuffix, "podname", podname, "partition", partition)
