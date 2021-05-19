@@ -28,6 +28,7 @@ import (
 
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
+	"github.com/cockroachdb/cockroach-operator/pkg/scale"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"go.uber.org/zap/zapcore"
@@ -38,7 +39,8 @@ import (
 
 const (
 	underreplicatedmetric = "ranges_underreplicated{store=\"%v\"}"
-    cmdunderreplicted     = "curl -ks https://%s.%s.%s.svc.cluster.local:%s/_status/vars | grep 'ranges_underreplicated{'"
+	//TODO: remove the svc.cluster.local
+	cmdunderreplicted = "curl -ks https://%s.%s.%s.svc.cluster.local:%s/_status/vars | grep 'ranges_underreplicated{'"
 )
 
 type HealthChecker interface { // for testing
@@ -66,34 +68,40 @@ func (s *HealthCheckerImpl) Probe(ctx context.Context, l logr.Logger, logSuffix 
 	stsname := s.cluster.StatefulSetName()
 	stsnamespace := s.cluster.Namespace()
 
-	//WaitUntilAllStsPodsAreReady waits for all pods from statefulset to be ready
-	err := kube.WaitUntilAllStsPodsAreReady(ctx, s.clientset, l, stsname, stsnamespace, 3*time.Minute, 10*time.Second)
-	if err != nil {
-		return err
-	}
-
 	sts, err := s.clientset.AppsV1().StatefulSets(stsnamespace).Get(ctx, stsname, metav1.GetOptions{})
 	if err != nil {
 		return kube.HandleStsError(err, l, stsname, stsnamespace)
 	}
 
-	//TODO: add goroutine for each partition
-	for partition := *sts.Spec.Replicas - 1; partition >= 0; partition-- {
-		podName := fmt.Sprintf("%s-%v", stsname, partition)
-		//we check the underreplicated  metric for each pod from statefullset
-		err = s.waitUntilUnderReplicatedMetricIsZero(ctx, l, logSuffix, podName, stsname, stsnamespace, partition)
-		if err != nil {
-			l.V(int(zapcore.DebugLevel)).Info("ALINA","err",err.Error())
-			return err
-		}
+	if err := scale.WaitUntilStatefulSetIsReadyToServe(ctx, s.clientset, stsnamespace, stsname, *sts.Spec.Replicas); err != nil {
+		return errors.Wrapf(err, "error rolling update stategy on pod %d", nodeID)
 	}
 
+	// we check _status/vars on all cockroachdb pods looking for pairs like
+	// ranges_underreplicated{store="1"} 0 and wait if any are non-zero until all are 0.
+	// We can recheck every 10 seconds. We are waiting for this maximum 3 minutes
+	err = s.waitUntilUnderReplicatedMetricIsZero(ctx, l, logSuffix, stsname, stsnamespace, *sts.Spec.Replicas)
+	if err != nil {
+		return err
+	}
+
+	// we will wait 22 seconds and check again  _status/vars on all cockroachdb pods looking for pairs like
+	// ranges_underreplicated{store="1"} 0. This time we do not wait anymore. This suplimentary check
+	// is due to the fact that a node can be evicted in some cases
+	time.Sleep(22 * time.Second)
+
+	err = s.waitUntilUnderReplicatedMetricIsZero(ctx, l, logSuffix, stsname, stsnamespace, *sts.Spec.Replicas)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
-func (s *HealthCheckerImpl) waitUntilUnderReplicatedMetricIsZero(ctx context.Context, l logr.Logger, logSuffix, podname, stsname, stsnamespace string, partition int32) error {
+//waitUntilUnderReplicatedMetricIsZero will check _status/vars on all cockroachdb pods looking for pairs like
+//ranges_underreplicated{store="1"} 0 and wait if any are non-zero until all are 0.
+func (s *HealthCheckerImpl) waitUntilUnderReplicatedMetricIsZero(ctx context.Context, l logr.Logger, logSuffix, stsname, stsnamespace string, replicas int32) error {
 	f := func() error {
-		return s.checkUnderReplicatedMetric(ctx, l, logSuffix, podname, stsname, stsnamespace, partition)
+		return s.checkUnderReplicatedMetricAllPods(ctx, l, logSuffix, stsname, stsnamespace, replicas)
 	}
 	b := backoff.NewExponentialBackOff()
 	b.MaxElapsedTime = 3 * time.Minute
@@ -104,18 +112,19 @@ func (s *HealthCheckerImpl) waitUntilUnderReplicatedMetricIsZero(ctx context.Con
 	return nil
 }
 
-//checkUnderReplicatedMetric uses exec on the pod for now
+//checkUnderReplicatedMetric will check _status/vars on a specific pod looking for pairs like
+//ranges_underreplicated{store="1"} 0
 func (s *HealthCheckerImpl) checkUnderReplicatedMetric(ctx context.Context, l logr.Logger, logSuffix, podname, stsname, stsnamespace string, partition int32) error {
 	l.V(int(zapcore.DebugLevel)).Info("checkUnderReplicatedMetric", "label", logSuffix, "podname", podname, "partition", partition)
 	port := strconv.FormatInt(int64(*s.cluster.Spec().HTTPPort), 10)
-	store := partition+1
+	store := partition + 1
 	underrepmetric := fmt.Sprintf(underreplicatedmetric, int(store))
 	cmd := []string{
 		"/bin/bash",
 		"-c",
 		fmt.Sprintf(cmdunderreplicted, podname, stsname, stsnamespace, port),
 	}
-	l.V(int(zapcore.DebugLevel)).Info("get ranges_underreplicated metric", "node", podname,"underrepmetric",underrepmetric,"cmd",cmd)
+	l.V(int(zapcore.DebugLevel)).Info("get ranges_underreplicated metric", "node", podname, "underrepmetric", underrepmetric, "cmd", cmd)
 	output, stderr, err := kube.ExecInPod(s.scheme, s.config, s.cluster.Namespace(),
 		podname, resource.DbContainerName, cmd)
 	if stderr != "" {
@@ -129,28 +138,43 @@ func (s *HealthCheckerImpl) checkUnderReplicatedMetric(ctx context.Context, l lo
 	return err
 }
 
-func extractMetric(l logr.Logger,output, underepmetric string, partition int32) (int, error) {
-	l.V(int(zapcore.DebugLevel)).Info("extractMetric","output", output,"underepmetric",underepmetric,"partition",partition)
+//checkUnderReplicatedMetric will check _status/vars on all cockroachdb pods looking for pairs like
+//ranges_underreplicated{store="1"} 0
+func (s *HealthCheckerImpl) checkUnderReplicatedMetricAllPods(ctx context.Context, l logr.Logger, logSuffix, stsname, stsnamespace string, replicas int32) error {
+	l.V(int(zapcore.DebugLevel)).Info("checkUnderReplicatedMetric", "label", logSuffix, "replicas", replicas)
+	for partition := replicas - 1; partition >= 0; partition-- {
+		podName := fmt.Sprintf("%s-%v", stsname, partition)
+		if err := s.checkUnderReplicatedMetric(ctx, l, logSuffix, podName, stsname, stsnamespace, partition); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+//extractMetric gets the value of the ranges_underreplicated metric for the specific store
+func extractMetric(l logr.Logger, output, underepmetric string, partition int32) (int, error) {
+	l.V(int(zapcore.DebugLevel)).Info("extractMetric", "output", output, "underepmetric", underepmetric, "partition", partition)
 	if output == "" {
 		l.V(int(zapcore.DebugLevel)).Info("output is empty")
 		return -1, errors.Errorf("non existing ranges_underreplicated metric for partition %v", partition)
 	}
 	if !strings.HasPrefix(output, underepmetric) {
-		msg:= fmt.Sprintf("incorrect format of the output: actual='%s' expected to start with=%s", output, underepmetric)
+		msg := fmt.Sprintf("incorrect format of the output: actual='%s' expected to start with=%s", output, underepmetric)
 		l.V(int(zapcore.DebugLevel)).Info(msg)
 		return -1, errors.New(msg)
 	}
 	out := strings.Split(output, " ")
-	if out != nil && len(out)<=1 {
+	if out != nil && len(out) <= 1 {
 		return -1, errors.Errorf("incorrect format of the output: actual='%s' expected to start with=%s", output, underepmetric)
 	}
-	metric:=strings.TrimSuffix(out[1],"\n")
+	metric := strings.TrimSuffix(out[1], "\n")
 	//the value of the metric should be 0 to return nil
 	if i, err := strconv.Atoi(metric); err != nil {
 		l.V(int(zapcore.DebugLevel)).Info(err.Error())
 		return -1, err
 	} else if i > 0 {
-		l.V(int(zapcore.DebugLevel)).Info("Metric is greater than 0","under_replicated", i)
+		l.V(int(zapcore.DebugLevel)).Info("Metric is greater than 0", "under_replicated", i)
 		return -1, errors.Errorf("under replica is not zero for partition %v", partition)
 	}
 	return 0, nil
