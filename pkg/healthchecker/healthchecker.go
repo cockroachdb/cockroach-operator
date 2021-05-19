@@ -38,7 +38,7 @@ import (
 
 const (
 	underreplicatedmetric = "ranges_underreplicated{store=\"%v\"}"
-	cmdunderreplicted     = "curl -Lk localhost:%s/_status/vars --silent | grep -i '%s'"
+    cmdunderreplicted     = "curl -ks https://%s.%s.%s.svc.cluster.local:%s/_status/vars | grep 'ranges_underreplicated{'"
 )
 
 type HealthChecker interface { // for testing
@@ -65,14 +65,9 @@ func (s *HealthCheckerImpl) Probe(ctx context.Context, l logr.Logger, logSuffix 
 	l.V(int(zapcore.DebugLevel)).Info("Health check probe", "label", logSuffix, "nodeID", nodeID)
 	stsname := s.cluster.StatefulSetName()
 	stsnamespace := s.cluster.Namespace()
-	podname := fmt.Sprintf("%s-%v", stsname, nodeID)
-
-	//we sleep 1 minunte because the prestop hook is running and we need to wait
-	//to finish the drain of the node
-	time.Sleep(1 * time.Minute)
 
 	//WaitUntilAllStsPodsAreReady waits for all pods from statefulset to be ready
-	err := kube.WaitUntilAllStsPodsAreReady(ctx, s.clientset, l, stsname, stsnamespace, 30*time.Minute, 10*time.Minute)
+	err := kube.WaitUntilAllStsPodsAreReady(ctx, s.clientset, l, stsname, stsnamespace, 3*time.Minute, 10*time.Second)
 	if err != nil {
 		return err
 	}
@@ -84,9 +79,11 @@ func (s *HealthCheckerImpl) Probe(ctx context.Context, l logr.Logger, logSuffix 
 
 	//TODO: add goroutine for each partition
 	for partition := *sts.Spec.Replicas - 1; partition >= 0; partition-- {
+		podName := fmt.Sprintf("%s-%v", stsname, partition)
 		//we check the underreplicated  metric for each pod from statefullset
-		err = s.waitUntilUnderReplicatedMetricIsZero(ctx, l, logSuffix, podname, partition)
+		err = s.waitUntilUnderReplicatedMetricIsZero(ctx, l, logSuffix, podName, stsname, stsnamespace, partition)
 		if err != nil {
+			l.V(int(zapcore.DebugLevel)).Info("ALINA","err",err.Error())
 			return err
 		}
 	}
@@ -94,13 +91,13 @@ func (s *HealthCheckerImpl) Probe(ctx context.Context, l logr.Logger, logSuffix 
 	return nil
 }
 
-func (s *HealthCheckerImpl) waitUntilUnderReplicatedMetricIsZero(ctx context.Context, l logr.Logger, logSuffix, podname string, partition int32) error {
+func (s *HealthCheckerImpl) waitUntilUnderReplicatedMetricIsZero(ctx context.Context, l logr.Logger, logSuffix, podname, stsname, stsnamespace string, partition int32) error {
 	f := func() error {
-		return s.checkUnderReplicatedMetric(ctx, l, logSuffix, podname, partition)
+		return s.checkUnderReplicatedMetric(ctx, l, logSuffix, podname, stsname, stsnamespace, partition)
 	}
 	b := backoff.NewExponentialBackOff()
 	b.MaxElapsedTime = 3 * time.Minute
-	b.MaxInterval = 5 * time.Second
+	b.MaxInterval = 10 * time.Second
 	if err := backoff.Retry(f, b); err != nil {
 		return errors.Wrapf(err, "replicas check probe failed for cluster %s", logSuffix)
 	}
@@ -108,14 +105,17 @@ func (s *HealthCheckerImpl) waitUntilUnderReplicatedMetricIsZero(ctx context.Con
 }
 
 //checkUnderReplicatedMetric uses exec on the pod for now
-func (s *HealthCheckerImpl) checkUnderReplicatedMetric(ctx context.Context, l logr.Logger, logSuffix, podname string, partition int32) error {
+func (s *HealthCheckerImpl) checkUnderReplicatedMetric(ctx context.Context, l logr.Logger, logSuffix, podname, stsname, stsnamespace string, partition int32) error {
 	l.V(int(zapcore.DebugLevel)).Info("checkUnderReplicatedMetric", "label", logSuffix, "podname", podname, "partition", partition)
 	port := strconv.FormatInt(int64(*s.cluster.Spec().HTTPPort), 10)
-	underrepmetric := fmt.Sprintf(underreplicatedmetric, partition)
+	store := partition+1
+	underrepmetric := fmt.Sprintf(underreplicatedmetric, int(store))
 	cmd := []string{
-		fmt.Sprintf(cmdunderreplicted, port, underrepmetric),
+		"/bin/bash",
+		"-c",
+		fmt.Sprintf(cmdunderreplicted, podname, stsname, stsnamespace, port),
 	}
-	l.V(int(zapcore.DebugLevel)).Info("get ranges_underreplicated metric", "node", podname)
+	l.V(int(zapcore.DebugLevel)).Info("get ranges_underreplicated metric", "node", podname,"underrepmetric",underrepmetric,"cmd",cmd)
 	output, stderr, err := kube.ExecInPod(s.scheme, s.config, s.cluster.Namespace(),
 		podname, resource.DbContainerName, cmd)
 	if stderr != "" {
@@ -124,25 +124,33 @@ func (s *HealthCheckerImpl) checkUnderReplicatedMetric(ctx context.Context, l lo
 	if err != nil {
 		return errors.Wrapf(err, "health check probe for pod %s failed", podname)
 	}
-	_, err = extractMetric(output, underrepmetric, partition)
+	metric, err := extractMetric(l, output, underrepmetric, partition)
+	l.V(int(zapcore.DebugLevel)).Info("after get ranges_underreplicated metric", "node", podname, "output", output, "metric", metric)
 	return err
 }
 
-func extractMetric(output, underepmetric string, partition int32) (int, error) {
+func extractMetric(l logr.Logger,output, underepmetric string, partition int32) (int, error) {
+	l.V(int(zapcore.DebugLevel)).Info("extractMetric","output", output,"underepmetric",underepmetric,"partition",partition)
 	if output == "" {
+		l.V(int(zapcore.DebugLevel)).Info("output is empty")
 		return -1, errors.Errorf("non existing ranges_underreplicated metric for partition %v", partition)
 	}
-	if strings.HasPrefix(output, underepmetric) {
-		return -1, errors.Errorf("incorrect format of the output: actual='%s' expected to start with=%s", output, underepmetric)
+	if !strings.HasPrefix(output, underepmetric) {
+		msg:= fmt.Sprintf("incorrect format of the output: actual='%s' expected to start with=%s", output, underepmetric)
+		l.V(int(zapcore.DebugLevel)).Info(msg)
+		return -1, errors.New(msg)
 	}
 	out := strings.Split(output, " ")
-	if out != nil && len(out) != 2 {
+	if out != nil && len(out)<=1 {
 		return -1, errors.Errorf("incorrect format of the output: actual='%s' expected to start with=%s", output, underepmetric)
 	}
+	metric:=strings.TrimSuffix(out[1],"\n")
 	//the value of the metric should be 0 to return nil
-	if i, err := strconv.Atoi(out[1]); err != nil {
+	if i, err := strconv.Atoi(metric); err != nil {
+		l.V(int(zapcore.DebugLevel)).Info(err.Error())
 		return -1, err
 	} else if i > 0 {
+		l.V(int(zapcore.DebugLevel)).Info("Metric is greater than 0","under_replicated", i)
 		return -1, errors.Errorf("under replica is not zero for partition %v", partition)
 	}
 	return 0, nil
