@@ -7,7 +7,7 @@ metadata:
   creationTimestamp: null
   name: test-cluster
 spec:
-  podManagementPolicy: OrderedReady
+  podManagementPolicy: Parallel
   replicas: 1
   selector:
     matchLabels:
@@ -25,19 +25,10 @@ spec:
     spec:
       automountServiceAccountToken: false
       containers:
-      - args:
-        - start
-        - --join=test-cluster-0.test-cluster.test-ns:26258
-        - --advertise-host=$(POD_NAME).test-cluster.test-ns
-        - --logtostderr=INFO
-        - --insecure
-        - --http-port=8080
-        - --cache=25%
-        - --max-sql-memory=25%
-        - --sql-addr=:26257
-        - --listen-addr=:26258
-        command:
-        - /cockroach/cockroach.sh
+      - command:
+        - /bin/bash
+        - -ecx
+        - exec /cockroach/cockroach.sh start --join=test-cluster-0.test-cluster.test-ns:26258 --advertise-host=$(POD_NAME).test-cluster.test-ns --logtostderr=INFO --insecure --http-port=8080 --sql-addr=:26257 --listen-addr=:26258 --cache=25% --max-sql-memory=25%
         env:
         - name: COCKROACH_CHANNEL
           value: kubernetes-operator-gke
@@ -45,6 +36,16 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.name
+        - name: GOMAXPROCS
+          valueFrom:
+            resourceFieldRef:
+              divisor: "1"
+              resource: limits.cpu
+        - name: MEMORY_LIMIT_MIB
+          valueFrom:
+            resourceFieldRef:
+              divisor: 1Mi
+              resource: limits.memory
         image: cockroachdb/cockroach:v20.2.7
         imagePullPolicy: IfNotPresent
         livenessProbe:
