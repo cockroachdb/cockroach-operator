@@ -130,7 +130,7 @@ func TestUpgradesMinorVersion(t *testing.T) {
 
 	// We are testing a Minor Version Upgrade with
 	// partition update
-	// Going from 19.2.5 to 19.2.6
+	// Going from v20.2.8 to v20.2.9
 
 	if parallel {
 		t.Parallel()
@@ -147,7 +147,7 @@ func TestUpgradesMinorVersion(t *testing.T) {
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
 
 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
-		WithImage("cockroachdb/cockroach:v19.2.5").
+		WithImage("cockroachdb/cockroach:v20.2.8").
 		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
 
 	steps := Steps{
@@ -155,7 +155,6 @@ func TestUpgradesMinorVersion(t *testing.T) {
 			name: "creates a 1-node secure cluster",
 			test: func(t *testing.T) {
 				require.NoError(t, sb.Create(builder.Cr()))
-
 				RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
 			},
 		},
@@ -165,10 +164,10 @@ func TestUpgradesMinorVersion(t *testing.T) {
 				current := builder.Cr()
 				require.NoError(t, sb.Get(current))
 
-				current.Spec.Image.Name = "cockroachdb/cockroach:v19.2.6"
+				current.Spec.Image.Name = "cockroachdb/cockroach:v20.2.9"
 				require.NoError(t, sb.Update(current))
 
-				RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
+				RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 600*time.Second)
 				requireDbContainersToUseImage(t, sb, current)
 				t.Log("Done with upgrade")
 			},
