@@ -36,5 +36,5 @@ spec:
   tlsEnabled: true
 # cockroachDBVersion: v20.2.8
   image:
-    name: cockroachdb/cockroach:v20.2.8
+    name: cockroachdb/cockroach:v21.1.0
   nodes: 3
