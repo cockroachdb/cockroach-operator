@@ -90,7 +90,7 @@ func NewOperatorActions(scheme *runtime.Scheme, cl client.Client, config *rest.C
 	}
 
 	versionChecker := newVersionChecker(scheme, cl, config)
-    decommission := newDecommission(scheme, cl, config)
+	decommission := newDecommission(scheme, cl, config)
 	var certs Actor
 	// entry point for new GenerateCert
 	// this feature is controlled by a featuregate
