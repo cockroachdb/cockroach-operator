@@ -120,7 +120,7 @@ func (r *clusterRestart) Act(ctx context.Context, cluster *resource.Cluster) err
 		}
 		//sleep 1 minute to make sure the crdb is up and running
 		log.V(int(zapcore.DebugLevel)).Info("sleeping", "duration", sleepDuration.String(), "label", "after full cluster restart")
-		if err := healthChecker.Probe(ctx, log, fmt.Sprintf("waiting after restart for cluster %s", cluster.Name()), 0); err!=nil{
+		if err := healthChecker.Probe(ctx, log, fmt.Sprintf("waiting after restart for cluster %s", cluster.Name()), 0); err != nil {
 			return err
 		}
 		log.V(int(zapcore.DebugLevel)).Info("completed full cluster restart")
@@ -191,7 +191,7 @@ func (r *clusterRestart) rollingSts(ctx context.Context, sts *appsv1.StatefulSet
 		}
 
 		// wait for all replicas to be up
-		if err := healthChecker.Probe(ctx, l, "between restarting pods", int(partition)); err != nil{
+		if err := healthChecker.Probe(ctx, l, "between restarting pods", int(partition)); err != nil {
 			return errors.Wrapf(err, "error health checker for rolling restart on pod %d", int(partition))
 		}
 	}

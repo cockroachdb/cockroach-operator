@@ -216,7 +216,7 @@ func PartitionedRollingUpdateStrategy(perPodVerificationFunc func(*UpdateSts, in
 				if err != nil {
 					return false, handleStsError(err, l, stsName, stsNamespace)
 				}
-				if err := updateTimer.healthChecker.Probe(updateSts.ctx, l, fmt.Sprintf("between updating pods for %s", stsName), int(partition)); err!=nil{
+				if err := updateTimer.healthChecker.Probe(updateSts.ctx, l, fmt.Sprintf("between updating pods for %s", stsName), int(partition)); err != nil {
 					return skipSleep, err
 				}
 			}

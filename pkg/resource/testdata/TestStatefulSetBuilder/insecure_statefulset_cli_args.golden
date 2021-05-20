@@ -74,6 +74,11 @@ spec:
             scheme: HTTP
           initialDelaySeconds: 10
           periodSeconds: 5
+        lifecycle:
+          preStop:
+            exec:
+              command:
+              - /cockroach/cockroach drain node
         resources: {}
         volumeMounts:
         - mountPath: /cockroach/cockroach-data/
