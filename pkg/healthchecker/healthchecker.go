@@ -63,24 +63,24 @@ func NewHealthChecker(cluster *resource.Cluster, clientset *kubernetes.Clientset
 	}
 }
 
-func (s *HealthCheckerImpl) Probe(ctx context.Context, l logr.Logger, logSuffix string, nodeID int) error {
+func (hc *HealthCheckerImpl) Probe(ctx context.Context, l logr.Logger, logSuffix string, nodeID int) error {
 	l.V(int(zapcore.DebugLevel)).Info("Health check probe", "label", logSuffix, "nodeID", nodeID)
-	stsname := s.cluster.StatefulSetName()
-	stsnamespace := s.cluster.Namespace()
+	stsname := hc.cluster.StatefulSetName()
+	stsnamespace := hc.cluster.Namespace()
 
-	sts, err := s.clientset.AppsV1().StatefulSets(stsnamespace).Get(ctx, stsname, metav1.GetOptions{})
+	sts, err := hc.clientset.AppsV1().StatefulSets(stsnamespace).Get(ctx, stsname, metav1.GetOptions{})
 	if err != nil {
 		return kube.HandleStsError(err, l, stsname, stsnamespace)
 	}
 
-	if err := scale.WaitUntilStatefulSetIsReadyToServe(ctx, s.clientset, stsnamespace, stsname, *sts.Spec.Replicas); err != nil {
+	if err := scale.WaitUntilStatefulSetIsReadyToServe(ctx, hc.clientset, stsnamespace, stsname, *sts.Spec.Replicas); err != nil {
 		return errors.Wrapf(err, "error rolling update stategy on pod %d", nodeID)
 	}
 
 	// we check _status/vars on all cockroachdb pods looking for pairs like
 	// ranges_underreplicated{store="1"} 0 and wait if any are non-zero until all are 0.
 	// We can recheck every 10 seconds. We are waiting for this maximum 3 minutes
-	err = s.waitUntilUnderReplicatedMetricIsZero(ctx, l, logSuffix, stsname, stsnamespace, *sts.Spec.Replicas)
+	err = hc.waitUntilUnderReplicatedMetricIsZero(ctx, l, logSuffix, stsname, stsnamespace, *sts.Spec.Replicas)
 	if err != nil {
 		return err
 	}
@@ -90,7 +90,7 @@ func (s *HealthCheckerImpl) Probe(ctx context.Context, l logr.Logger, logSuffix 
 	// is due to the fact that a node can be evicted in some cases
 	time.Sleep(22 * time.Second)
 
-	err = s.waitUntilUnderReplicatedMetricIsZero(ctx, l, logSuffix, stsname, stsnamespace, *sts.Spec.Replicas)
+	err = hc.waitUntilUnderReplicatedMetricIsZero(ctx, l, logSuffix, stsname, stsnamespace, *sts.Spec.Replicas)
 	if err != nil {
 		return err
 	}
@@ -99,9 +99,9 @@ func (s *HealthCheckerImpl) Probe(ctx context.Context, l logr.Logger, logSuffix 
 
 //waitUntilUnderReplicatedMetricIsZero will check _status/vars on all cockroachdb pods looking for pairs like
 //ranges_underreplicated{store="1"} 0 and wait if any are non-zero until all are 0.
-func (s *HealthCheckerImpl) waitUntilUnderReplicatedMetricIsZero(ctx context.Context, l logr.Logger, logSuffix, stsname, stsnamespace string, replicas int32) error {
+func (hc *HealthCheckerImpl) waitUntilUnderReplicatedMetricIsZero(ctx context.Context, l logr.Logger, logSuffix, stsname, stsnamespace string, replicas int32) error {
 	f := func() error {
-		return s.checkUnderReplicatedMetricAllPods(ctx, l, logSuffix, stsname, stsnamespace, replicas)
+		return hc.checkUnderReplicatedMetricAllPods(ctx, l, logSuffix, stsname, stsnamespace, replicas)
 	}
 	b := backoff.NewExponentialBackOff()
 	b.MaxElapsedTime = 3 * time.Minute
@@ -114,9 +114,9 @@ func (s *HealthCheckerImpl) waitUntilUnderReplicatedMetricIsZero(ctx context.Con
 
 //checkUnderReplicatedMetric will check _status/vars on a specific pod looking for pairs like
 //ranges_underreplicated{store="1"} 0
-func (s *HealthCheckerImpl) checkUnderReplicatedMetric(ctx context.Context, l logr.Logger, logSuffix, podname, stsname, stsnamespace string, partition int32) error {
+func (hc *HealthCheckerImpl) checkUnderReplicatedMetric(ctx context.Context, l logr.Logger, logSuffix, podname, stsname, stsnamespace string, partition int32) error {
 	l.V(int(zapcore.DebugLevel)).Info("checkUnderReplicatedMetric", "label", logSuffix, "podname", podname, "partition", partition)
-	port := strconv.FormatInt(int64(*s.cluster.Spec().HTTPPort), 10)
+	port := strconv.FormatInt(int64(*hc.cluster.Spec().HTTPPort), 10)
 	store := partition + 1
 	underrepmetric := fmt.Sprintf(underreplicatedmetric, int(store))
 	cmd := []string{
@@ -125,7 +125,7 @@ func (s *HealthCheckerImpl) checkUnderReplicatedMetric(ctx context.Context, l lo
 		fmt.Sprintf(cmdunderreplicted, podname, stsname, stsnamespace, port),
 	}
 	l.V(int(zapcore.DebugLevel)).Info("get ranges_underreplicated metric", "node", podname, "underrepmetric", underrepmetric, "cmd", cmd)
-	output, stderr, err := kube.ExecInPod(s.scheme, s.config, s.cluster.Namespace(),
+	output, stderr, err := kube.ExecInPod(hc.scheme, hc.config, hc.cluster.Namespace(),
 		podname, resource.DbContainerName, cmd)
 	if stderr != "" {
 		return errors.Errorf("exec in pod %s failed with stderror: %s ", stderr)
@@ -140,11 +140,11 @@ func (s *HealthCheckerImpl) checkUnderReplicatedMetric(ctx context.Context, l lo
 
 //checkUnderReplicatedMetric will check _status/vars on all cockroachdb pods looking for pairs like
 //ranges_underreplicated{store="1"} 0
-func (s *HealthCheckerImpl) checkUnderReplicatedMetricAllPods(ctx context.Context, l logr.Logger, logSuffix, stsname, stsnamespace string, replicas int32) error {
+func (hc *HealthCheckerImpl) checkUnderReplicatedMetricAllPods(ctx context.Context, l logr.Logger, logSuffix, stsname, stsnamespace string, replicas int32) error {
 	l.V(int(zapcore.DebugLevel)).Info("checkUnderReplicatedMetric", "label", logSuffix, "replicas", replicas)
 	for partition := replicas - 1; partition >= 0; partition-- {
 		podName := fmt.Sprintf("%s-%v", stsname, partition)
-		if err := s.checkUnderReplicatedMetric(ctx, l, logSuffix, podName, stsname, stsnamespace, partition); err != nil {
+		if err := hc.checkUnderReplicatedMetric(ctx, l, logSuffix, podName, stsname, stsnamespace, partition); err != nil {
 			return err
 		}
 	}

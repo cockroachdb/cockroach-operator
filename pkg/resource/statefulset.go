@@ -252,25 +252,8 @@ func (b StatefulSetBuilder) MakeContainers() []corev1.Container {
 				},
 			},
 			Resources: b.Spec().Resources,
-			Command:   []string{"/cockroach/cockroach.sh"},
-			Args:      b.dbArgs(),
-			Env: []corev1.EnvVar{
-				{
-					Name:  "COCKROACH_CHANNEL",
-					Value: "kubernetes-operator",
-				},
-				{
-					Name: "POD_NAME",
-					ValueFrom: &corev1.EnvVarSource{
-						FieldRef: &corev1.ObjectFieldSelector{
-							FieldPath: "metadata.name",
-						},
-					},
-				},
-			},
-			Resources:       b.Spec().Resources,
-			Command:         b.commandArgs(),
-			Env:             b.envVars(),
+			Command:   b.commandArgs(),
+			Env:       b.envVars(),
 			Ports: []corev1.ContainerPort{
 				{
 					Name:          grpcPortName,
