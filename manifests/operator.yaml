@@ -262,7 +262,7 @@ spec:
       serviceAccountName: cockroach-operator-sa
       containers:
         - name: cockroach-operator
-          image: cockroachdb/cockroach-operator:v1.7.5
+          image: cockroachdb/cockroach-operator:v1.7.6
           imagePullPolicy: IfNotPresent
           # uncomment this to enable different new features
           # args: ["-feature-gates","PartitionedUpdate=true,UseDecommission=true,Upgrade=false, CrdbVersionValidator=false"]
@@ -301,6 +301,8 @@ spec:
               value: cockroachdb/cockroach:v20.1.14
             - name: RELATED_IMAGE_COCKROACH_v20_1_15
               value: cockroachdb/cockroach:v20.1.15
+            - name: RELATED_IMAGE_COCKROACH_v20_1_16
+              value: cockroachdb/cockroach:v20.1.16
             - name: RELATED_IMAGE_COCKROACH_v20_1_4
               value: cockroachdb/cockroach:v20.1.4
             - name: RELATED_IMAGE_COCKROACH_v20_1_5
@@ -325,6 +327,12 @@ spec:
               value: cockroachdb/cockroach:v20.2.7
             - name: RELATED_IMAGE_COCKROACH_v20_2_8
               value: cockroachdb/cockroach:v20.2.8
+            - name: RELATED_IMAGE_COCKROACH_v20_2_9
+              value: cockroachdb/cockroach:v20.2.9
+            - name: RELATED_IMAGE_COCKROACH_v20_2_10
+              value: cockroachdb/cockroach:v20.2.10
+            - name: RELATED_IMAGE_COCKROACH_v21_1_0
+              value: cockroachdb/cockroach:v21.1.0
           resources:
             requests:
               cpu: 10m
