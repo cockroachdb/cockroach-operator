@@ -33,8 +33,6 @@ func TestSetClusterSpecDefaults(t *testing.T) {
 		GRPCPort:       &DefaultGRPCPort,
 		HTTPPort:       &DefaultHTTPPort,
 		SQLPort:        &DefaultSQLPort,
-		Cache:          "25%",
-		MaxSQLMemory:   "25%",
 		MaxUnavailable: &maxUnavailable,
 		Image: PodImage{
 			PullPolicyName: &policy,
