@@ -110,10 +110,12 @@ func NewOperatorActions(scheme *runtime.Scheme, cl client.Client, config *rest.C
 	// Actors that controlled by featuregates
 	// have the featuregate check above or in there handles
 	// func.
+	// decommission needs to be first, it is not dependant on versionchecker
+
 	return []Actor{
+		decommission,
 		versionChecker,
 		certs,
-		decommission,
 		update,
 		newResizePVC(scheme, cl, config),
 		newDeploy(scheme, cl, config, kd),
