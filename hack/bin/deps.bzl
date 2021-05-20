@@ -33,6 +33,7 @@ def install():
     install_kustomize()
     install_opm()
     install_crdb()
+    install_openshift()
 
     # Install golang.org/x/build as kubernetes/repo-infra requires it for the
     # build-tar bazel target.
@@ -374,6 +375,38 @@ def install_opm():
         executable = 1,
         sha256 = "e3f15fbad17c903c7d69579e934153cb74fbd48ba84e4911d2ecf4e63b9a903d",
         urls = ["https://storage.googleapis.com/crdb-bazel-artifacts/linux/opm"],
+    )
+
+## Fetch openshift-installer
+def install_openshift():
+    http_archive(
+       name = "openshift_darwin",
+       sha256 = "ed2144b31aa15bd27cbea11c3e94f7329531775b13b0b1dabb1c0ffa82ca4dc6",
+       urls = ["https://mirror.openshift.com/pub/openshift-v4/clients/ocp/4.7.9/openshift-install-mac-4.7.9.tar.gz"],
+       build_file_content = """
+filegroup(
+    name = "file",
+    srcs = [
+	"openshift-install",
+    ],
+    visibility = ["//visibility:public"],
+)
+""",
+    )
+
+    http_archive(
+        name = "openshift_linux",
+        sha256 = "a41682490aabdb6e0d0ca608f76c91b9db5c4b295febc9d6b9182932d5e34760",
+        urls = ["https://mirror.openshift.com/pub/openshift-v4/clients/ocp/4.7.9/openshift-install-linux-4.7.9.tar.gz"],
+        build_file_content = """
+filegroup(
+    name = "file",
+    srcs = [
+	"openshift-install",
+    ],
+    visibility = ["//visibility:public"],
+)
+""",
     )
 
 ## Fetch crdb used in our container

@@ -23,7 +23,7 @@ rules:
     resources:
       - securitycontextconstraints
     resourceNames:
-      - anyuid
+      - nonroot
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -138,6 +138,12 @@ rules:
   - apiGroups:
       - ""
     resources:
+      - nodes
+    verbs:
+      - "get"
+  - apiGroups:
+      - ""
+    resources:
       - configmaps/status
     verbs:
       - "*"
@@ -208,7 +214,7 @@ rules:
     resources:
       - securitycontextconstraints
     resourceNames:
-      - anyuid
+      - nonroot
 ---
 apiVersion: v1
 kind: ServiceAccount

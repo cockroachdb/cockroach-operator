@@ -100,6 +100,7 @@ func (init initialize) Act(ctx context.Context, cluster *resource.Cluster) error
 	}
 
 	phase := pods.Items[0].Status.Phase
+	podName := pods.Items[0].Name
 	if phase != corev1.PodRunning {
 		return NotReadyErr{Err: errors.New("pod is not running")}
 	}
@@ -114,7 +115,7 @@ func (init initialize) Act(ctx context.Context, cluster *resource.Cluster) error
 		"--host=localhost:" + port,
 	}
 
-	log.Debug("Executing init in pod")
+	log.Debug(fmt.Sprintf("Executing init in pod %s with phase %s", podName, phase))
 	_, stderr, err := kube.ExecInPod(init.scheme, init.config, cluster.Namespace(),
 		fmt.Sprintf("%s-0", stsName), resource.DbContainerName, cmd)
 	log.Debug("Executed init in pod")

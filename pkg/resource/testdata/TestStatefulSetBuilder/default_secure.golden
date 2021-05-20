@@ -7,7 +7,7 @@ metadata:
   creationTimestamp: null
   name: test-cluster
 spec:
-  podManagementPolicy: OrderedReady
+  podManagementPolicy: Parallel
   replicas: 1
   selector:
     matchLabels:
@@ -25,27 +25,28 @@ spec:
     spec:
       automountServiceAccountToken: false
       containers:
-      - args:
-        - start
-        - --join=test-cluster-0.test-cluster.test-ns:26258
-        - --advertise-host=$(POD_NAME).test-cluster.test-ns
-        - --logtostderr=INFO
-        - --certs-dir=/cockroach/cockroach-certs/
-        - --http-port=8080
-        - --cache=25%
-        - --max-sql-memory=25%
-        - --sql-addr=:26257
-        - --listen-addr=:26258
-        command:
-        - /cockroach/cockroach.sh
+      - command:
+        - /bin/bash
+        - -ecx
+        - exec /cockroach/cockroach.sh start --join=test-cluster-0.test-cluster.test-ns:26258 --advertise-host=$(POD_NAME).test-cluster.test-ns --logtostderr=INFO --certs-dir=/cockroach/cockroach-certs/ --http-port=8080 --sql-addr=:26257 --listen-addr=:26258 --cache=25% --max-sql-memory=25%
         env:
         - name: COCKROACH_CHANNEL
-          value: kubernetes-operator
+          value: kubernetes-operator-gke
         - name: POD_NAME
           valueFrom:
             fieldRef:
               fieldPath: metadata.name
-        image: cockroachdb/cockroach:v19.2.6
+        - name: GOMAXPROCS
+          valueFrom:
+            resourceFieldRef:
+              divisor: "1"
+              resource: limits.cpu
+        - name: MEMORY_LIMIT_MIB
+          valueFrom:
+            resourceFieldRef:
+              divisor: 1Mi
+              resource: limits.memory
+        image: cockroachdb/cockroach:v20.2.7
         imagePullPolicy: IfNotPresent
         livenessProbe:
           httpGet:
@@ -83,39 +84,64 @@ spec:
         - mountPath: /cockroach/cockroach-data/
           name: datadir
         - mountPath: /cockroach/cockroach-certs/
+          name: emptydir
+      initContainers:
+      - command:
+        - /bin/sh
+        - -c
+        - '>- cp -p /cockroach/cockroach-certs-prestage/..data/* /cockroach/cockroach-certs/ && chmod 700 /cockroach/cockroach-certs/*.key && chown 10001:10001 /cockroach/cockroach-certs/*.key'
+        image: cockroachdb/cockroach:v20.2.7
+        imagePullPolicy: IfNotPresent
+        name: db-init
+        resources: {}
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsUser: 0
+        volumeMounts:
+        - mountPath: /cockroach/cockroach-certs-prestage/
           name: certs
+        - mountPath: /cockroach/cockroach-certs/
+          name: emptydir
+      securityContext:
+        fsGroup: 10001
+        runAsUser: 10001
       serviceAccountName: cockroach-database-sa
       terminationGracePeriodSeconds: 60
       volumes:
       - name: datadir
         persistentVolumeClaim:
           claimName: ""
+      - emptyDir: {}
+        name: emptydir
       - name: certs
         projected:
-          defaultMode: 256
+          defaultMode: 400
           sources:
           - secret:
               items:
               - key: ca.crt
+                mode: 504
                 path: ca.crt
               - key: tls.crt
+                mode: 504
                 path: node.crt
               - key: tls.key
+                mode: 400
                 path: node.key
               name: test-cluster-node
           - secret:
               items:
               - key: tls.crt
+                mode: 504
                 path: client.root.crt
               - key: tls.key
+                mode: 400
                 path: client.root.key
               name: test-cluster-root
   updateStrategy:
     rollingUpdate: {}
   volumeClaimTemplates:
-  - apiVersion: v1
-    kind: PersistentVolumeClaim
-    metadata:
+  - metadata:
       creationTimestamp: null
       name: datadir
     spec:
@@ -125,5 +151,6 @@ spec:
         requests:
           storage: 1Gi
       volumeMode: Filesystem
+    status: {}
 status:
   replicas: 0

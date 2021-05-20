@@ -14,6 +14,17 @@ genrule(
 )
 
 genrule(
+    name = "fetch_openshift",
+    srcs = select({
+        ":darwin": ["@openshift_darwin//:file"],
+        ":k8": ["@openshift_linux//:file"],
+    }),
+    outs = ["openshift-install"],
+    cmd = "cp $(SRCS) $@",
+    visibility = ["//visibility:public"],
+)
+
+genrule(
     name = "fetch_faq",
     srcs = select({
         ":darwin": ["@faq_osx//file"],

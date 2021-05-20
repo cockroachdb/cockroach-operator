@@ -19,12 +19,14 @@ package resource
 import (
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/cockroachdb/cockroach-operator/pkg/labels"
 	"github.com/cockroachdb/cockroach-operator/pkg/ptr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -39,14 +41,17 @@ const (
 	DataDirMountPath = "/cockroach/cockroach-data/"
 
 	certsDirName = "certs"
+	emptyDirName = "emptydir"
 
 	DbContainerName = "db"
+	certCpCmd       = ">- cp -p /cockroach/cockroach-certs-prestage/..data/* /cockroach/cockroach-certs/ && chmod 700 /cockroach/cockroach-certs/*.key && chown 10001:10001 /cockroach/cockroach-certs/*.key"
 )
 
 type StatefulSetBuilder struct {
 	*Cluster
 
-	Selector labels.Labels
+	Selector  labels.Labels
+	Telemetry string
 }
 
 func (b StatefulSetBuilder) Build(obj client.Object) error {
@@ -68,7 +73,7 @@ func (b StatefulSetBuilder) Build(obj client.Object) error {
 		UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
 			RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{},
 		},
-		PodManagementPolicy: appsv1.OrderedReadyPodManagement,
+		PodManagementPolicy: appsv1.ParallelPodManagement,
 		Selector: &metav1.LabelSelector{
 			MatchLabels: b.Selector,
 		},
@@ -85,15 +90,24 @@ func (b StatefulSetBuilder) Build(obj client.Object) error {
 	}
 
 	if b.Spec().TLSEnabled {
+		if err := addCertsVolumeMountOnInitContiners(DbContainerName, &ss.Spec.Template.Spec); err != nil {
+			return err
+		}
 		if err := addCertsVolumeMount(DbContainerName, &ss.Spec.Template.Spec); err != nil {
 			return err
 		}
 
 		ss.Spec.Template.Spec.Volumes = append(ss.Spec.Template.Spec.Volumes, corev1.Volume{
+			Name: emptyDirName,
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			}})
+
+		ss.Spec.Template.Spec.Volumes = append(ss.Spec.Template.Spec.Volumes, corev1.Volume{
 			Name: certsDirName,
 			VolumeSource: corev1.VolumeSource{
 				Projected: &corev1.ProjectedVolumeSource{
-					DefaultMode: ptr.Int32(0400),
+					DefaultMode: ptr.Int32(400),
 					Sources: []corev1.VolumeProjection{
 						{
 							Secret: &corev1.SecretProjection{
@@ -104,14 +118,17 @@ func (b StatefulSetBuilder) Build(obj client.Object) error {
 									{
 										Key:  "ca.crt",
 										Path: "ca.crt",
+										Mode: ptr.Int32(504),
 									},
 									{
 										Key:  corev1.TLSCertKey,
 										Path: "node.crt",
+										Mode: ptr.Int32(504),
 									},
 									{
 										Key:  corev1.TLSPrivateKeyKey,
 										Path: "node.key",
+										Mode: ptr.Int32(400),
 									},
 								},
 							},
@@ -125,10 +142,12 @@ func (b StatefulSetBuilder) Build(obj client.Object) error {
 									{
 										Key:  corev1.TLSCertKey,
 										Path: "client.root.crt",
+										Mode: ptr.Int32(504),
 									},
 									{
 										Key:  corev1.TLSPrivateKeyKey,
 										Path: "client.root.key",
+										Mode: ptr.Int32(400),
 									},
 								},
 							},
@@ -172,7 +191,12 @@ func (b StatefulSetBuilder) makePodTemplate() corev1.PodTemplateSpec {
 			Labels: b.Selector,
 		},
 		Spec: corev1.PodSpec{
+			SecurityContext: &corev1.PodSecurityContext{
+				RunAsUser: ptr.Int64(10001),
+				FSGroup:   ptr.Int64(10001),
+			},
 			TerminationGracePeriodSeconds: ptr.Int64(60),
+			InitContainers:                b.MakeInitContainers(),
 			Containers:                    b.MakeContainers(),
 			AutomountServiceAccountToken:  ptr.Bool(false),
 			ServiceAccountName:            "cockroach-database-sa",
@@ -189,6 +213,25 @@ func (b StatefulSetBuilder) makePodTemplate() corev1.PodTemplateSpec {
 	}
 
 	return pod
+}
+
+// MakeInitContainers creates a slice of corev1.Containers which includes a single
+// corev1.Container that is based on the CR.
+func (b StatefulSetBuilder) MakeInitContainers() []corev1.Container {
+	image := b.GetCockroachDBImageName()
+	initContainer := fmt.Sprintf("%s-init", DbContainerName)
+	return []corev1.Container{
+		{
+			Name:            initContainer,
+			Image:           image,
+			Command:         []string{"/bin/sh", "-c", certCpCmd},
+			ImagePullPolicy: *b.Spec().Image.PullPolicyName,
+			SecurityContext: &corev1.SecurityContext{
+				RunAsUser:                ptr.Int64(0),
+				AllowPrivilegeEscalation: ptr.Bool(false),
+			},
+		},
+	}
 }
 
 // MakeContainers creates a slice of corev1.Containers which includes a single
@@ -225,6 +268,9 @@ func (b StatefulSetBuilder) MakeContainers() []corev1.Container {
 					},
 				},
 			},
+			Resources:       b.Spec().Resources,
+			Command:         b.commandArgs(),
+			Env:             b.envVars(),
 			Ports: []corev1.ContainerPort{
 				{
 					Name:          grpcPortName,
@@ -301,8 +347,14 @@ func (b StatefulSetBuilder) clientTLSSecretName() string {
 	return b.Spec().ClientTLSSecret
 }
 
+func (b StatefulSetBuilder) commandArgs() []string {
+	exec := "exec " + strings.Join(b.dbArgs(), " ")
+	return []string{"/bin/bash", "-ecx", exec}
+}
+
 func (b StatefulSetBuilder) dbArgs() []string {
 	aa := []string{
+		"/cockroach/cockroach.sh",
 		"start",
 		"--join=" + b.joinStr(),
 		fmt.Sprintf("--advertise-host=$(POD_NAME).%s.%s",
@@ -310,10 +362,20 @@ func (b StatefulSetBuilder) dbArgs() []string {
 		"--logtostderr=INFO",
 		b.Cluster.SecureMode(),
 		"--http-port=" + fmt.Sprint(*b.Spec().HTTPPort),
-		"--cache=" + b.Spec().Cache,
-		"--max-sql-memory=" + b.Spec().MaxSQLMemory,
 		"--sql-addr=:" + fmt.Sprint(*b.Spec().SQLPort),
 		"--listen-addr=:" + fmt.Sprint(*b.Spec().GRPCPort),
+	}
+
+	if b.Spec().Cache != "" {
+		aa = append(aa, "--cache="+b.Spec().Cache)
+	} else {
+		aa = append(aa, "--cache $(expr $MEMORY_LIMIT_MIB / 4)MiB")
+	}
+
+	if b.Spec().MaxSQLMemory != "" {
+		aa = append(aa, "--max-sql-memory="+b.Spec().MaxSQLMemory)
+	} else {
+		aa = append(aa, "--max-sql-memory $(expr $MEMORY_LIMIT_MIB / 4)MiB")
 	}
 
 	return append(aa, b.Spec().AdditionalArgs...)
@@ -329,6 +391,33 @@ func (b StatefulSetBuilder) joinStr() string {
 
 	return strings.Join(seeds, ",")
 }
+func addCertsVolumeMountOnInitContiners(container string, spec *corev1.PodSpec) error {
+	found := false
+	initContainer := fmt.Sprintf("%s-init", container)
+	for i := range spec.InitContainers {
+		c := &spec.InitContainers[i]
+		if c.Name == initContainer {
+			found = true
+
+			c.VolumeMounts = append(c.VolumeMounts, corev1.VolumeMount{
+				Name:      certsDirName,
+				MountPath: "/cockroach/cockroach-certs-prestage/",
+			})
+			c.VolumeMounts = append(c.VolumeMounts, corev1.VolumeMount{
+				Name:      emptyDirName,
+				MountPath: "/cockroach/cockroach-certs/",
+			})
+
+			break
+		}
+	}
+
+	if !found {
+		return fmt.Errorf("failed to find container %s to attach volume", container)
+	}
+
+	return nil
+}
 
 func addCertsVolumeMount(container string, spec *corev1.PodSpec) error {
 	found := false
@@ -338,7 +427,7 @@ func addCertsVolumeMount(container string, spec *corev1.PodSpec) error {
 			found = true
 
 			c.VolumeMounts = append(c.VolumeMounts, corev1.VolumeMount{
-				Name:      certsDirName,
+				Name:      emptyDirName,
 				MountPath: "/cockroach/cockroach-certs/",
 			})
 			break
@@ -350,4 +439,74 @@ func addCertsVolumeMount(container string, spec *corev1.PodSpec) error {
 	}
 
 	return nil
+}
+
+var CRDB_PREFIX string = "CRDB_"
+
+func (b StatefulSetBuilder) envVars() []corev1.EnvVar {
+	values := make([]corev1.EnvVar, 0)
+
+	one := resource.MustParse("1")
+	oneMi := resource.MustParse("1Mi")
+
+	// append the POD_NAME and the COCKROACH_CHANNEL values
+	values = append(values,
+		// set the telemetry
+		// You can disable the telemetry by setting
+		// CRDB_COCKROACH_SKIP_ENABLING_DIAGNOSTIC_REPORTING=true
+		// in the operator manifest.
+		// Or set COCKROACH_SKIP_ENABLING_DIAGNOSTIC_REPORTING=true
+		// using the podEnvVariables stanza in the CRD
+		corev1.EnvVar{
+			Name:  "COCKROACH_CHANNEL",
+			Value: b.Telemetry,
+		},
+		corev1.EnvVar{
+			Name: "POD_NAME",
+			ValueFrom: &corev1.EnvVarSource{
+				FieldRef: &corev1.ObjectFieldSelector{
+					FieldPath: "metadata.name",
+				},
+			},
+		},
+		// values for used to calc --cache and --max-sql-memory
+		// these values do exist in the CRD and the user can
+		// override them.
+		corev1.EnvVar{
+			Name: "GOMAXPROCS",
+			ValueFrom: &corev1.EnvVarSource{
+				ResourceFieldRef: &corev1.ResourceFieldSelector{
+					Resource: "limits.cpu",
+					Divisor:  one,
+				},
+			},
+		},
+		corev1.EnvVar{
+			Name: "MEMORY_LIMIT_MIB",
+			ValueFrom: &corev1.EnvVarSource{
+				ResourceFieldRef: &corev1.ResourceFieldSelector{
+					Resource: "limits.memory",
+					Divisor:  oneMi,
+				},
+			},
+		},
+	)
+
+	for _, e := range os.Environ() {
+		pair := strings.SplitN(e, "=", 2)
+		if strings.HasPrefix(pair[0], CRDB_PREFIX) {
+			key := strings.ReplaceAll(pair[0], CRDB_PREFIX, "")
+			env := corev1.EnvVar{
+				Name:  key,
+				Value: pair[1],
+			}
+			values = append(values, env)
+		}
+	}
+
+	if len(b.Cluster.Spec().PodEnvVariables) != 0 {
+		values = append(values, b.Cluster.Spec().PodEnvVariables...)
+	}
+
+	return values
 }

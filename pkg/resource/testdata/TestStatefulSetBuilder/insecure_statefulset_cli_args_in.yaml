@@ -31,13 +31,13 @@ spec:
   grpcPort: 26258
   httpPort: 8080
   image:
-    name: cockroachdb/cockroach:v19.2.6
+    name: cockroachdb/cockroach:v20.2.7
   cache: 30%
   maxSQLMemory: 2GB
   additionalArgs:
-  - --temp-dir=/tmp
+    - --temp-dir=/tmp
   nodes: 1
   topology:
     zones:
-    - locality: ""
+      - locality: ""
 status: {}
