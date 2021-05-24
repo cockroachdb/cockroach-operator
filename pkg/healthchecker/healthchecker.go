@@ -38,15 +38,17 @@ import (
 )
 
 const (
-	underreplicatedmetric = "ranges_underreplicated{store=\"%v\"}"
+	underreplicatedmetric = "ranges_underreplicated{store="
 	//TODO: remove the svc.cluster.local
 	cmdunderreplicted = "curl -ks https://%s.%s:%s/_status/vars | grep 'ranges_underreplicated{'"
 )
 
+//HealthChecker interface
 type HealthChecker interface { // for testing
 	Probe(ctx context.Context, l logr.Logger, logSuffix string, partition int) error
 }
 
+//HealthCheckerImpl struct
 type HealthCheckerImpl struct {
 	clientset *kubernetes.Clientset
 	scheme    *runtime.Scheme
@@ -54,6 +56,7 @@ type HealthCheckerImpl struct {
 	config    *rest.Config
 }
 
+//NewHealthChecker ctor
 func NewHealthChecker(cluster *resource.Cluster, clientset *kubernetes.Clientset, scheme *runtime.Scheme, config *rest.Config) *HealthCheckerImpl {
 	return &HealthCheckerImpl{
 		clientset: clientset,
@@ -63,6 +66,8 @@ func NewHealthChecker(cluster *resource.Cluster, clientset *kubernetes.Clientset
 	}
 }
 
+// Probe will check the ranges_underreplicated metric  for value 0 on all pods after the resart of a
+// pod, before continue the rolling update of the next pod
 func (hc *HealthCheckerImpl) Probe(ctx context.Context, l logr.Logger, logSuffix string, nodeID int) error {
 	l.V(int(zapcore.DebugLevel)).Info("Health check probe", "label", logSuffix, "nodeID", nodeID)
 	stsname := hc.cluster.StatefulSetName()
@@ -117,14 +122,12 @@ func (hc *HealthCheckerImpl) waitUntilUnderReplicatedMetricIsZero(ctx context.Co
 func (hc *HealthCheckerImpl) checkUnderReplicatedMetric(ctx context.Context, l logr.Logger, logSuffix, podname, stsname, stsnamespace string, partition int32) error {
 	l.V(int(zapcore.DebugLevel)).Info("checkUnderReplicatedMetric", "label", logSuffix, "podname", podname, "partition", partition)
 	port := strconv.FormatInt(int64(*hc.cluster.Spec().HTTPPort), 10)
-	store := partition + 1
-	underrepmetric := fmt.Sprintf(underreplicatedmetric, int(store))
 	cmd := []string{
 		"/bin/bash",
 		"-c",
 		fmt.Sprintf(cmdunderreplicted, podname, stsname, port),
 	}
-	l.V(int(zapcore.DebugLevel)).Info("get ranges_underreplicated metric", "node", podname, "underrepmetric", underrepmetric, "cmd", cmd)
+	l.V(int(zapcore.DebugLevel)).Info("get ranges_underreplicated metric", "node", podname, "underrepmetric", underreplicatedmetric, "cmd", cmd)
 	output, stderr, err := kube.ExecInPod(hc.scheme, hc.config, hc.cluster.Namespace(),
 		podname, resource.DbContainerName, cmd)
 	if stderr != "" {
@@ -133,7 +136,7 @@ func (hc *HealthCheckerImpl) checkUnderReplicatedMetric(ctx context.Context, l l
 	if err != nil {
 		return errors.Wrapf(err, "health check probe for pod %s failed", podname)
 	}
-	metric, err := extractMetric(l, output, underrepmetric, partition)
+	metric, err := extractMetric(l, output, underreplicatedmetric, partition)
 	l.V(int(zapcore.DebugLevel)).Info("after get ranges_underreplicated metric", "node", podname, "output", output, "metric", metric)
 	return err
 }
