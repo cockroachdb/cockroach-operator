@@ -40,7 +40,7 @@ import (
 const (
 	underreplicatedmetric = "ranges_underreplicated{store=\"%v\"}"
 	//TODO: remove the svc.cluster.local
-	cmdunderreplicted = "curl -ks https://%s.%s.%s.svc.cluster.local:%s/_status/vars | grep 'ranges_underreplicated{'"
+	cmdunderreplicted = "curl -ks https://%s.%s:%s/_status/vars | grep 'ranges_underreplicated{'"
 )
 
 type HealthChecker interface { // for testing
@@ -122,7 +122,7 @@ func (hc *HealthCheckerImpl) checkUnderReplicatedMetric(ctx context.Context, l l
 	cmd := []string{
 		"/bin/bash",
 		"-c",
-		fmt.Sprintf(cmdunderreplicted, podname, stsname, stsnamespace, port),
+		fmt.Sprintf(cmdunderreplicted, podname, stsname, port),
 	}
 	l.V(int(zapcore.DebugLevel)).Info("get ranges_underreplicated metric", "node", podname, "underrepmetric", underrepmetric, "cmd", cmd)
 	output, stderr, err := kube.ExecInPod(hc.scheme, hc.config, hc.cluster.Namespace(),

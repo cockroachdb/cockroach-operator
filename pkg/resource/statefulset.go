@@ -44,7 +44,7 @@ const (
 	emptyDirName = "emptydir"
 
 	DbContainerName = "db"
-	certCpCmd       = ">- cp -p /cockroach/cockroach-certs-prestage/..data/* /cockroach/cockroach-certs/ && chmod 700 /cockroach/cockroach-certs/*.key && chown 10001:10001 /cockroach/cockroach-certs/*.key"
+	certCpCmd       = ">- cp -p /cockroach/cockroach-certs-prestage/..data/* /cockroach/cockroach-certs/ && chmod 700 /cockroach/cockroach-certs/*.key && chown 1000581000:1000581000 /cockroach/cockroach-certs/*.key"
 )
 
 type StatefulSetBuilder struct {
@@ -192,8 +192,8 @@ func (b StatefulSetBuilder) makePodTemplate() corev1.PodTemplateSpec {
 		},
 		Spec: corev1.PodSpec{
 			SecurityContext: &corev1.PodSecurityContext{
-				RunAsUser: ptr.Int64(10001),
-				FSGroup:   ptr.Int64(10001),
+				RunAsUser: ptr.Int64(1000581000),
+				FSGroup:   ptr.Int64(1000581000),
 			},
 			TerminationGracePeriodSeconds: ptr.Int64(60),
 			InitContainers:                b.MakeInitContainers(),
