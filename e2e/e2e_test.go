@@ -167,7 +167,7 @@ func TestUpgradesMinorVersion(t *testing.T) {
 				current.Spec.Image.Name = "cockroachdb/cockroach:v20.2.9"
 				require.NoError(t, sb.Update(current))
 
-				RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 600*time.Second)
+				RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
 				requireDbContainersToUseImage(t, sb, current)
 				t.Log("Done with upgrade")
 			},
@@ -218,7 +218,7 @@ func TestUpgradesMajorVersion20to21(t *testing.T) {
 				current.Spec.Image.Name = "cockroachdb/cockroach:v21.1.0"
 				require.NoError(t, sb.Update(current))
 
-				RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 600*time.Second)
+				RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
 				requireDbContainersToUseImage(t, sb, current)
 				t.Log("Done with major upgrade")
 			},
@@ -256,7 +256,7 @@ func TestUpgradesMajorVersion20_1To20_2(t *testing.T) {
 			test: func(t *testing.T) {
 				require.NoError(t, sb.Create(builder.Cr()))
 
-				RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 600*time.Second)
+				RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
 			},
 		},
 		{
