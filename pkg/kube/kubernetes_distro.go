@@ -20,14 +20,16 @@ import (
 	"context"
 	"strings"
 
-	"github.com/cockroachdb/cockroach-operator/pkg/logging"
+	"github.com/go-logr/logr"
+	"github.com/pkg/errors"
+	"go.uber.org/zap/zapcore"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
 
 type KubernetesDistribution interface {
-	Get(ctx context.Context, config *rest.Config, log *logging.Logging) (string, error)
+	Get(ctx context.Context, config *rest.Config, log logr.Logger) (string, error)
 }
 
 type kubernetesDistribution struct{}
@@ -37,18 +39,24 @@ func NewKubernetesDistribution() KubernetesDistribution {
 }
 
 // Get the Kubernetes Distribution Type
-func (kd kubernetesDistribution) Get(ctx context.Context, config *rest.Config, log *logging.Logging) (string, error) {
-	// TODO RBAC
+func (kd kubernetesDistribution) Get(ctx context.Context, config *rest.Config, log logr.Logger) (string, error) {
+
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		return "", log.LogAndWrapError(err, "cannot create k8s client")
+		msg := "cannot create k8s client"
+		log.Error(err, msg)
+		return "", errors.Wrap(err, msg)
 	}
 
 	nodes, err := clientset.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 	if err != nil {
-		return "", log.LogAndWrapError(err, "cannot get nodes")
+		msg := "cannot get nodes"
+		log.Error(err, msg)
+		return "", errors.Wrap(err, msg)
 	} else if len(nodes.Items) == 0 {
-		return "", log.LogAndWrapError(err, "node length is zero")
+		msg := "nodes length is zero"
+		log.Error(err, msg)
+		return "", errors.Wrap(err, msg)
 	}
 
 	nodeName := nodes.Items[0].Name
@@ -56,7 +64,9 @@ func (kd kubernetesDistribution) Get(ctx context.Context, config *rest.Config, l
 	// Get node object
 	node, err := clientset.CoreV1().Nodes().Get(ctx, nodeName, metav1.GetOptions{})
 	if err != nil {
-		return "", log.LogAndWrapError(err, "cannot get node")
+		msg := "cannot get node"
+		log.Error(err, msg)
+		return "", errors.Wrap(err, msg)
 	}
 
 	// You can read Kubernetes version from either KubeletVersion or KubeProxyVersion
@@ -76,6 +86,7 @@ func (kd kubernetesDistribution) Get(ctx context.Context, config *rest.Config, l
 		}
 	}
 
+	log.V(int(zapcore.WarnLevel)).Info("found unknown kubernetes distribution")
 	return "unknown", nil
 }
 
@@ -86,6 +97,6 @@ func MockKubernetesDistribution() KubernetesDistribution {
 }
 
 // Get the Kubernetes Distribution Type
-func (mock mockKubernetesDistribution) Get(ctx context.Context, config *rest.Config, log *logging.Logging) (string, error) {
+func (mock mockKubernetesDistribution) Get(ctx context.Context, config *rest.Config, log logr.Logger) (string, error) {
 	return "GKE", nil
 }
