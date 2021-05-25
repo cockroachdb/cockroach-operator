@@ -25,11 +25,16 @@ import (
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
 	"github.com/go-logr/logr"
+	"go.uber.org/zap/zapcore"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
+
+// Different logging levels
+var DEBUGLEVEL = int(zapcore.DebugLevel)
+var WARNLEVEL = int(zapcore.WarnLevel)
 
 //NotReadyErr strut
 type NotReadyErr struct {

@@ -11,8 +11,8 @@ go_library(
     importpath = "github.com/cockroachdb/cockroach-operator/pkg/kube",
     visibility = ["//visibility:public"],
     deps = [
-        "//pkg/logging:go_default_library",
         "@com_github_banzaicloud_k8s_objectmatcher//patch:go_default_library",
+        "@com_github_go_logr_logr//:go_default_library",
         "@com_github_pkg_errors//:go_default_library",
         "@io_k8s_api//apps/v1:go_default_library",
         "@io_k8s_api//core/v1:go_default_library",
@@ -28,6 +28,7 @@ go_library(
         "@io_k8s_sigs_controller_runtime//:go_default_library",
         "@io_k8s_sigs_controller_runtime//pkg/client:go_default_library",
         "@io_k8s_sigs_controller_runtime//pkg/controller/controllerutil:go_default_library",
+        "@org_uber_go_zap//zapcore:go_default_library",
     ],
 )
 
