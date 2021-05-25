@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/Masterminds/semver/v3"
@@ -256,4 +257,29 @@ func getStsAnnotation(statefulSet *appsv1.StatefulSet, key string) string {
 	} else {
 		return currentVersion
 	}
+}
+
+func getImageNameNoVersion(image string) string {
+	i := strings.LastIndex(image, ":")
+	if i == -1 {
+		return image
+	}
+
+	return image[:i]
+}
+
+func statefulSetIsUpdating(ss *appsv1.StatefulSet) bool {
+	if ss.Status.ObservedGeneration == 0 {
+		return false
+	}
+
+	if ss.Status.CurrentRevision != ss.Status.UpdateRevision {
+		return true
+	}
+
+	if ss.Generation > ss.Status.ObservedGeneration && *ss.Spec.Replicas == ss.Status.Replicas {
+		return true
+	}
+
+	return false
 }
