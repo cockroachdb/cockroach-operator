@@ -108,8 +108,10 @@ test/e2e/testrunner-gke:
 	bazel run //hack/k8s:k8s -- -type gke
 	K8S_CLUSTER=gke_$(GCP_PROJECT)_$(GCP_ZONE)_$(CLUSTER_NAME) \
 	DEV_REGISTRY=$(DEV_REGISTRY) \
-	bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
-		//manifests:install_operator.apply
+	# TODO this is not working because we create the cluster role binding now
+	# for openshift.  We need to move this to a different target
+	#bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
+	#	//manifests:install_operator.apply
 	bazel test --stamp --test_arg=--pvc=true //e2e/...
 
 # Use this target to run e2e tests with a gke cluster.
