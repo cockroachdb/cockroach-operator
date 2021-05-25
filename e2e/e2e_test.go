@@ -107,7 +107,7 @@ func TestCreatesSecureCluster(t *testing.T) {
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
 
 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
-		WithImage("cockroachdb/cockroach:v20.2.5").
+		WithImage("cockroachdb/cockroach:v20.2.10").
 		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
 
 	create := Step{
@@ -247,7 +247,7 @@ func TestUpgradesMajorVersion20_1To20_2(t *testing.T) {
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
 
 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
-		WithImage("cockroachdb/cockroach:v20.1.12").
+		WithImage("cockroachdb/cockroach:v20.1.16").
 		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
 
 	steps := Steps{
@@ -265,7 +265,7 @@ func TestUpgradesMajorVersion20_1To20_2(t *testing.T) {
 				current := builder.Cr()
 				require.NoError(t, sb.Get(current))
 
-				current.Spec.Image.Name = "cockroachdb/cockroach:v20.2.5"
+				current.Spec.Image.Name = "cockroachdb/cockroach:v20.2.10"
 				require.NoError(t, sb.Update(current))
 
 				RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
@@ -340,7 +340,7 @@ func TestPVCResize(t *testing.T) {
 	sb := testenv.NewDiffingSandbox(t, env)
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
-		WithImage("cockroachdb/cockroach:v20.2.5").
+		WithImage("cockroachdb/cockroach:v20.2.10").
 		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
 	steps := Steps{
 		{
