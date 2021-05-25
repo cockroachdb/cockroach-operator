@@ -26,7 +26,6 @@ go_library(
         "//pkg/features:go_default_library",
         "//pkg/healthchecker:go_default_library",
         "//pkg/kube:go_default_library",
-        "//pkg/logging:go_default_library",
         "//pkg/ptr:go_default_library",
         "//pkg/resource:go_default_library",
         "//pkg/scale:go_default_library",

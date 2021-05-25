@@ -23,7 +23,6 @@ import (
 	"github.com/cockroachdb/cockroach-operator/pkg/condition"
 	"github.com/cockroachdb/cockroach-operator/pkg/features"
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
-	"github.com/cockroachdb/cockroach-operator/pkg/logging"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
 	"github.com/pkg/errors"
@@ -62,8 +61,9 @@ func (d deploy) Handles(conds []api.ClusterCondition) bool {
 }
 
 func (d deploy) Act(ctx context.Context, cluster *resource.Cluster) error {
-	log := logging.NewLogging(d.log.WithValues("CrdbCluster", cluster.ObjectKey()))
-	log.Debug("reconciling resources on deploy action")
+	log := d.log.WithValues("CrdbCluster", cluster.ObjectKey())
+
+	log.V(DEBUGLEVEL).Info("reconciling resources on deploy action")
 
 	r := resource.NewManagedKubeResource(ctx, d.client, cluster, kube.AnnotatingPersister)
 

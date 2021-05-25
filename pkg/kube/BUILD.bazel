@@ -11,7 +11,6 @@ go_library(
     importpath = "github.com/cockroachdb/cockroach-operator/pkg/kube",
     visibility = ["//visibility:public"],
     deps = [
-        "//pkg/logging:go_default_library",
         "@com_github_banzaicloud_k8s_objectmatcher//patch:go_default_library",
         "@com_github_cenkalti_backoff//:go_default_library",
         "@com_github_go_logr_logr//:go_default_library",
