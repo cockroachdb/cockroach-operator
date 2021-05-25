@@ -238,7 +238,6 @@ func (b StatefulSetBuilder) MakeInitContainers() []corev1.Container {
 // corev1.Container that is based on the CR.
 func (b StatefulSetBuilder) MakeContainers() []corev1.Container {
 	image := b.GetCockroachDBImageName()
-
 	return []corev1.Container{
 		{
 			Name:            DbContainerName,
@@ -247,7 +246,7 @@ func (b StatefulSetBuilder) MakeContainers() []corev1.Container {
 			Lifecycle: &corev1.Lifecycle{
 				PreStop: &corev1.Handler{
 					Exec: &corev1.ExecAction{
-						Command: []string{"/cockroach/cockroach", "drain", "node"},
+						Command: []string{"/cockroach/cockroach", "node", "drain", b.SecureMode()},
 					},
 				},
 			},

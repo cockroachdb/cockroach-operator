@@ -48,6 +48,14 @@ spec:
               resource: limits.memory
         image: cockroachdb/cockroach:v20.2.7
         imagePullPolicy: IfNotPresent
+        lifecycle:
+          preStop:
+            exec:
+              command:
+              - /cockroach/cockroach
+              - node
+              - drain
+              - --certs-dir=/cockroach/cockroach-certs/
         livenessProbe:
           httpGet:
             path: /health
@@ -74,11 +82,6 @@ spec:
             scheme: HTTPS
           initialDelaySeconds: 10
           periodSeconds: 5
-        lifecycle:
-          preStop:
-            exec:
-              command:
-              - /cockroach/cockroach drain node
         resources: {}
         volumeMounts:
         - mountPath: /cockroach/cockroach-data/
