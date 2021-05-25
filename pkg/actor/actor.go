@@ -118,13 +118,13 @@ func NewOperatorActions(scheme *runtime.Scheme, cl client.Client, config *rest.C
 	// decommission needs to be first, it is not dependant on versionchecker
 
 	return []Actor{
-		decommission,
 		versionChecker,
 		certs,
 		update,
 		newResizePVC(scheme, cl, config),
 		newDeploy(scheme, cl, config, kd),
 		newInitialize(scheme, cl, config),
+		decommission,
 		newClusterRestart(scheme, cl, config),
 	}
 }

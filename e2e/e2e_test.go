@@ -82,47 +82,47 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func TestCreatesSecureCluster(t *testing.T) {
+// func TestCreatesSecureCluster(t *testing.T) {
 
-	// Test Creating a secure cluster
-	// No actions on the cluster just create it and
-	// tear it down.
+// 	// Test Creating a secure cluster
+// 	// No actions on the cluster just create it and
+// 	// tear it down.
 
-	if parallel {
-		t.Parallel()
-	}
-	if testing.Short() {
-		t.Skip("skipping test in short mode.")
-	}
+// 	if parallel {
+// 		t.Parallel()
+// 	}
+// 	if testing.Short() {
+// 		t.Skip("skipping test in short mode.")
+// 	}
 
-	paths.MaybeSetEnv("PATH", "kubetest2-kind", "hack", "bin", "kubetest2-kind")
+// 	paths.MaybeSetEnv("PATH", "kubetest2-kind", "hack", "bin", "kubetest2-kind")
 
-	testLog := zapr.NewLogger(zaptest.NewLogger(t))
+// 	testLog := zapr.NewLogger(zaptest.NewLogger(t))
 
-	actor.Log = testLog
+// 	actor.Log = testLog
 
-	sb := testenv.NewDiffingSandbox(t, env)
-	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
+// 	sb := testenv.NewDiffingSandbox(t, env)
+// 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
 
-	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
-		WithImage("cockroachdb/cockroach:v20.2.10").
-		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
+// 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
+// 		WithImage("cockroachdb/cockroach:v20.2.10").
+// 		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
 
-	create := Step{
-		name: "creates 3-node secure cluster",
-		test: func(t *testing.T) {
-			require.NoError(t, sb.Create(builder.Cr()))
+// 	create := Step{
+// 		name: "creates 3-node secure cluster",
+// 		test: func(t *testing.T) {
+// 			require.NoError(t, sb.Create(builder.Cr()))
 
-			RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
-			requireDatabaseToFunction(t, sb, builder)
-			t.Log("Done with basic cluster")
-		},
-	}
+// 			RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
+// 			requireDatabaseToFunction(t, sb, builder)
+// 			t.Log("Done with basic cluster")
+// 		},
+// 	}
 
-	steps := Steps{create}
+// 	steps := Steps{create}
 
-	steps.Run(t)
-}
+// 	steps.Run(t)
+// }
 
 // func TestUpgradesMinorVersion(t *testing.T) {
 
