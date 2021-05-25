@@ -109,7 +109,7 @@ func (hc *HealthCheckerImpl) waitUntilUnderReplicatedMetricIsZero(ctx context.Co
 		return hc.checkUnderReplicatedMetricAllPods(ctx, l, logSuffix, stsname, stsnamespace, replicas)
 	}
 	b := backoff.NewExponentialBackOff()
-	b.MaxElapsedTime = 3 * time.Minute
+	b.MaxElapsedTime = 5 * time.Minute
 	b.MaxInterval = 10 * time.Second
 	if err := backoff.Retry(f, b); err != nil {
 		return errors.Wrapf(err, "replicas check probe failed for cluster %s", logSuffix)
