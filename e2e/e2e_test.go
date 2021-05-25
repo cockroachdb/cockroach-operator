@@ -107,7 +107,7 @@ func TestCreatesSecureCluster(t *testing.T) {
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
 
 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
-		WithImage("cockroachdb/cockroach:v20.2.5").
+		WithImage("cockroachdb/cockroach:v20.2.10").
 		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
 
 	create := Step{
@@ -167,7 +167,7 @@ func TestUpgradesMinorVersion(t *testing.T) {
 				current.Spec.Image.Name = "cockroachdb/cockroach:v20.2.9"
 				require.NoError(t, sb.Update(current))
 
-				RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 600*time.Second)
+				RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
 				requireDbContainersToUseImage(t, sb, current)
 				t.Log("Done with upgrade")
 			},
@@ -177,7 +177,7 @@ func TestUpgradesMinorVersion(t *testing.T) {
 	steps.Run(t)
 }
 
-func TestUpgradesMajorVersion19to20(t *testing.T) {
+func TestUpgradesMajorVersion20to21(t *testing.T) {
 
 	// We are doing a major version upgrade here
 	// 19 to 20
@@ -197,7 +197,7 @@ func TestUpgradesMajorVersion19to20(t *testing.T) {
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
 
 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
-		WithImage("cockroachdb/cockroach:v19.2.6").
+		WithImage("cockroachdb/cockroach:v20.2.9").
 		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
 
 	steps := Steps{
@@ -215,7 +215,7 @@ func TestUpgradesMajorVersion19to20(t *testing.T) {
 				current := builder.Cr()
 				require.NoError(t, sb.Get(current))
 
-				current.Spec.Image.Name = "cockroachdb/cockroach:v20.1.1"
+				current.Spec.Image.Name = "cockroachdb/cockroach:v21.1.0"
 				require.NoError(t, sb.Update(current))
 
 				RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
@@ -247,7 +247,7 @@ func TestUpgradesMajorVersion20_1To20_2(t *testing.T) {
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
 
 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
-		WithImage("cockroachdb/cockroach:v20.1.12").
+		WithImage("cockroachdb/cockroach:v20.1.16").
 		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
 
 	steps := Steps{
@@ -265,7 +265,7 @@ func TestUpgradesMajorVersion20_1To20_2(t *testing.T) {
 				current := builder.Cr()
 				require.NoError(t, sb.Get(current))
 
-				current.Spec.Image.Name = "cockroachdb/cockroach:v20.2.5"
+				current.Spec.Image.Name = "cockroachdb/cockroach:v20.2.10"
 				require.NoError(t, sb.Update(current))
 
 				RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
@@ -340,7 +340,7 @@ func TestPVCResize(t *testing.T) {
 	sb := testenv.NewDiffingSandbox(t, env)
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
-		WithImage("cockroachdb/cockroach:v20.2.5").
+		WithImage("cockroachdb/cockroach:v20.2.10").
 		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
 	steps := Steps{
 		{

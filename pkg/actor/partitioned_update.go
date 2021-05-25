@@ -26,6 +26,7 @@ import (
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/condition"
 	"github.com/cockroachdb/cockroach-operator/pkg/database"
+	"github.com/cockroachdb/cockroach-operator/pkg/healthchecker"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	"github.com/cockroachdb/cockroach-operator/pkg/update"
 	"github.com/pkg/errors"
@@ -144,7 +145,6 @@ func (up *partitionedUpdate) Act(ctx context.Context, cluster *resource.Cluster)
 	// see https://github.com/cockroachdb/cockroach-operator/issues/203
 	podUpdateTimeout := 10 * time.Minute
 	podMaxPollingInterval := 30 * time.Minute
-	sleeper := update.NewSleeper(1 * time.Minute)
 
 	clientset, err := kubernetes.NewForConfig(up.config)
 	if err != nil {
@@ -201,7 +201,7 @@ func (up *partitionedUpdate) Act(ctx context.Context, cluster *resource.Cluster)
 
 	// TODO test downgrades
 	// see https://github.com/cockroachdb/cockroach-operator/issues/208
-
+	healthChecker := healthchecker.NewHealthChecker(cluster, clientset, up.scheme, up.config)
 	log.Info("update starting with partitioned update", "old version", currentVersionCalFmtStr, "new version", versionWantedCalFmtStr, "image", containerWanted)
 
 	updateRoach := &update.UpdateRoach{
@@ -217,7 +217,7 @@ func (up *partitionedUpdate) Act(ctx context.Context, cluster *resource.Cluster)
 		Clientset:             clientset,
 		PodUpdateTimeout:      podUpdateTimeout,
 		PodMaxPollingInterval: podMaxPollingInterval,
-		Sleeper:               sleeper,
+		HealthChecker:         healthChecker,
 	}
 
 	err = update.UpdateClusterCockroachVersion(
