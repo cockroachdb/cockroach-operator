@@ -247,7 +247,7 @@ func (b StatefulSetBuilder) MakeContainers() []corev1.Container {
 			Lifecycle: &corev1.Lifecycle{
 				PreStop: &corev1.Handler{
 					Exec: &corev1.ExecAction{
-						Command: []string{"/cockroach/cockroach drain node"},
+						Command: []string{"/cockroach/cockroach", "drain", "node"},
 					},
 				},
 			},
