@@ -26,7 +26,6 @@ import (
 	"github.com/cockroachdb/cockroach-operator/pkg/condition"
 	"github.com/cockroachdb/cockroach-operator/pkg/features"
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
-	"github.com/cockroachdb/cockroach-operator/pkg/logging"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
 	"github.com/pkg/errors"
@@ -67,8 +66,8 @@ func (init initialize) Handles(conds []api.ClusterCondition) bool {
 }
 
 func (init initialize) Act(ctx context.Context, cluster *resource.Cluster) error {
-	log := logging.NewLogging(init.log.WithValues("CrdbCluster", cluster.ObjectKey()))
-	log.Debug("initializing CockroachDB")
+	log := init.log.WithValues("CrdbCluster", cluster.ObjectKey())
+	log.V(DEBUGLEVEL).Info("initializing CockroachDB")
 
 	stsName := cluster.StatefulSetName()
 
@@ -84,7 +83,9 @@ func (init initialize) Act(ctx context.Context, cluster *resource.Cluster) error
 
 	clientset, err := kubernetes.NewForConfig(init.config)
 	if err != nil {
-		return log.LogAndWrapError(err, "cannot create k8s client")
+		msg := "cannot create k8s client"
+		log.Error(err, msg)
+		return errors.Wrap(err, msg)
 	}
 
 	pods, err := clientset.CoreV1().Pods(ss.Namespace).List(ctx, metav1.ListOptions{
@@ -92,7 +93,9 @@ func (init initialize) Act(ctx context.Context, cluster *resource.Cluster) error
 	})
 
 	if err != nil {
-		return log.LogAndWrapError(err, "error getting pods in statefulset")
+		msg := "error getting pods in statefulset"
+		log.Error(err, msg)
+		return errors.Wrap(err, msg)
 	}
 
 	if len(pods.Items) == 0 {
@@ -105,7 +108,7 @@ func (init initialize) Act(ctx context.Context, cluster *resource.Cluster) error
 		return NotReadyErr{Err: errors.New("pod is not running")}
 	}
 
-	log.Debug("Pod is ready")
+	log.V(DEBUGLEVEL).Info("Pod is ready")
 
 	port := strconv.FormatInt(int64(*cluster.Spec().GRPCPort), 10)
 	cmd := []string{
@@ -115,25 +118,27 @@ func (init initialize) Act(ctx context.Context, cluster *resource.Cluster) error
 		"--host=localhost:" + port,
 	}
 
-	log.Debug(fmt.Sprintf("Executing init in pod %s with phase %s", podName, phase))
+	log.V(DEBUGLEVEL).Info(fmt.Sprintf("Executing init in pod %s with phase %s", podName, phase))
 	_, stderr, err := kube.ExecInPod(init.scheme, init.config, cluster.Namespace(),
 		fmt.Sprintf("%s-0", stsName), resource.DbContainerName, cmd)
-	log.Debug("Executed init in pod")
+	log.V(DEBUGLEVEL).Info("Executed init in pod")
 
 	if err != nil && !alreadyInitialized(stderr) {
 		// can happen if container has not finished its startup
 		if strings.Contains(err.Error(), "unable to upgrade connection: container not found") ||
 			strings.Contains(err.Error(), "does not have a host assigned") {
-			log.Debug("pod has not completely started")
+			log.V(DEBUGLEVEL).Info("pod has not completely started")
 			return NotReadyErr{Err: errors.New("pod has not completely started")}
 		}
 
-		return log.LogAndWrapError(err, "failed to initialize the cluster")
+		msg := "failed to initialize the cluster"
+		log.Error(err, msg)
+		return errors.Wrap(err, msg)
 	}
 
 	cluster.SetTrue(api.InitializedCondition)
 
-	log.Debug("completed intializing database")
+	log.V(DEBUGLEVEL).Info("completed intializing database")
 	return nil
 }
 
