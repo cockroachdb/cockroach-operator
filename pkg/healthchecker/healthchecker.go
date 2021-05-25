@@ -173,7 +173,7 @@ func extractMetric(l logr.Logger, output, underepmetric string, partition int32)
 	}
 	metric := strings.TrimSuffix(out[1], "\n")
 	//the value of the metric should be 0 to return nil
-	if i, err := strconv.Atoi(metric); err != nil {
+	if i, err := strconv.ParseFloat(metric, 1); err != nil {
 		l.V(int(zapcore.DebugLevel)).Info(err.Error())
 		return -1, err
 	} else if i > 0 {
