@@ -82,149 +82,149 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-// func TestCreatesSecureCluster(t *testing.T) {
+func TestCreatesSecureCluster(t *testing.T) {
 
-// 	// Test Creating a secure cluster
-// 	// No actions on the cluster just create it and
-// 	// tear it down.
+	// Test Creating a secure cluster
+	// No actions on the cluster just create it and
+	// tear it down.
 
-// 	if parallel {
-// 		t.Parallel()
-// 	}
-// 	if testing.Short() {
-// 		t.Skip("skipping test in short mode.")
-// 	}
+	if parallel {
+		t.Parallel()
+	}
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
 
-// 	paths.MaybeSetEnv("PATH", "kubetest2-kind", "hack", "bin", "kubetest2-kind")
+	paths.MaybeSetEnv("PATH", "kubetest2-kind", "hack", "bin", "kubetest2-kind")
 
-// 	testLog := zapr.NewLogger(zaptest.NewLogger(t))
+	testLog := zapr.NewLogger(zaptest.NewLogger(t))
 
-// 	actor.Log = testLog
+	actor.Log = testLog
 
-// 	sb := testenv.NewDiffingSandbox(t, env)
-// 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
+	sb := testenv.NewDiffingSandbox(t, env)
+	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
 
-// 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
-// 		WithImage("cockroachdb/cockroach:v20.2.10").
-// 		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
+	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
+		WithImage("cockroachdb/cockroach:v20.2.10").
+		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
 
-// 	create := Step{
-// 		name: "creates 3-node secure cluster",
-// 		test: func(t *testing.T) {
-// 			require.NoError(t, sb.Create(builder.Cr()))
+	create := Step{
+		name: "creates 3-node secure cluster",
+		test: func(t *testing.T) {
+			require.NoError(t, sb.Create(builder.Cr()))
 
-// 			RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
-// 			requireDatabaseToFunction(t, sb, builder)
-// 			t.Log("Done with basic cluster")
-// 		},
-// 	}
+			RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
+			requireDatabaseToFunction(t, sb, builder)
+			t.Log("Done with basic cluster")
+		},
+	}
 
-// 	steps := Steps{create}
+	steps := Steps{create}
 
-// 	steps.Run(t)
-// }
+	steps.Run(t)
+}
 
-// func TestUpgradesMinorVersion(t *testing.T) {
+func TestUpgradesMinorVersion(t *testing.T) {
 
-// 	// We are testing a Minor Version Upgrade with
-// 	// partition update
-// 	// Going from v20.2.8 to v20.2.9
+	// We are testing a Minor Version Upgrade with
+	// partition update
+	// Going from v20.2.8 to v20.2.9
 
-// 	if parallel {
-// 		t.Parallel()
-// 	}
-// 	if testing.Short() {
-// 		t.Skip("skipping test in short mode.")
-// 	}
+	if parallel {
+		t.Parallel()
+	}
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
 
-// 	testLog := zapr.NewLogger(zaptest.NewLogger(t))
+	testLog := zapr.NewLogger(zaptest.NewLogger(t))
 
-// 	actor.Log = testLog
+	actor.Log = testLog
 
-// 	sb := testenv.NewDiffingSandbox(t, env)
-// 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
+	sb := testenv.NewDiffingSandbox(t, env)
+	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
 
-// 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
-// 		WithImage("cockroachdb/cockroach:v20.2.8").
-// 		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
+	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
+		WithImage("cockroachdb/cockroach:v20.2.8").
+		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
 
-// 	steps := Steps{
-// 		{
-// 			name: "creates a 1-node secure cluster",
-// 			test: func(t *testing.T) {
-// 				require.NoError(t, sb.Create(builder.Cr()))
-// 				RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
-// 			},
-// 		},
-// 		{
-// 			name: "upgrades the cluster to the next patch version",
-// 			test: func(t *testing.T) {
-// 				current := builder.Cr()
-// 				require.NoError(t, sb.Get(current))
+	steps := Steps{
+		{
+			name: "creates a 1-node secure cluster",
+			test: func(t *testing.T) {
+				require.NoError(t, sb.Create(builder.Cr()))
+				RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
+			},
+		},
+		{
+			name: "upgrades the cluster to the next patch version",
+			test: func(t *testing.T) {
+				current := builder.Cr()
+				require.NoError(t, sb.Get(current))
 
-// 				current.Spec.Image.Name = "cockroachdb/cockroach:v20.2.9"
-// 				require.NoError(t, sb.Update(current))
+				current.Spec.Image.Name = "cockroachdb/cockroach:v20.2.9"
+				require.NoError(t, sb.Update(current))
 
-// 				RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
-// 				requireDbContainersToUseImage(t, sb, current)
-// 				t.Log("Done with upgrade")
-// 			},
-// 		},
-// 	}
+				RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
+				requireDbContainersToUseImage(t, sb, current)
+				t.Log("Done with upgrade")
+			},
+		},
+	}
 
-// 	steps.Run(t)
-// }
+	steps.Run(t)
+}
 
-// func TestUpgradesMajorVersion20to21(t *testing.T) {
+func TestUpgradesMajorVersion20to21(t *testing.T) {
 
-// 	// We are doing a major version upgrade here
-// 	// 19 to 20
+	// We are doing a major version upgrade here
+	// 19 to 20
 
-// 	if parallel {
-// 		t.Parallel()
-// 	}
-// 	if testing.Short() {
-// 		t.Skip("skipping test in short mode.")
-// 	}
+	if parallel {
+		t.Parallel()
+	}
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
 
-// 	testLog := zapr.NewLogger(zaptest.NewLogger(t))
+	testLog := zapr.NewLogger(zaptest.NewLogger(t))
 
-// 	actor.Log = testLog
+	actor.Log = testLog
 
-// 	sb := testenv.NewDiffingSandbox(t, env)
-// 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
+	sb := testenv.NewDiffingSandbox(t, env)
+	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
 
-// 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
-// 		WithImage("cockroachdb/cockroach:v20.2.9").
-// 		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
+	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
+		WithImage("cockroachdb/cockroach:v20.2.9").
+		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
 
-// 	steps := Steps{
-// 		{
-// 			name: "creates a 1-node secure cluster",
-// 			test: func(t *testing.T) {
-// 				require.NoError(t, sb.Create(builder.Cr()))
+	steps := Steps{
+		{
+			name: "creates a 1-node secure cluster",
+			test: func(t *testing.T) {
+				require.NoError(t, sb.Create(builder.Cr()))
 
-// 				RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
-// 			},
-// 		},
-// 		{
-// 			name: "upgrades the cluster to the next minor version",
-// 			test: func(t *testing.T) {
-// 				current := builder.Cr()
-// 				require.NoError(t, sb.Get(current))
+				RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
+			},
+		},
+		{
+			name: "upgrades the cluster to the next minor version",
+			test: func(t *testing.T) {
+				current := builder.Cr()
+				require.NoError(t, sb.Get(current))
 
-// 				current.Spec.Image.Name = "cockroachdb/cockroach:v21.1.0"
-// 				require.NoError(t, sb.Update(current))
+				current.Spec.Image.Name = "cockroachdb/cockroach:v21.1.0"
+				require.NoError(t, sb.Update(current))
 
-// 				RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
-// 				requireDbContainersToUseImage(t, sb, current)
-// 				t.Log("Done with major upgrade")
-// 			},
-// 		},
-// 	}
+				RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
+				requireDbContainersToUseImage(t, sb, current)
+				t.Log("Done with major upgrade")
+			},
+		},
+	}
 
-// 	steps.Run(t)
-// }
+	steps.Run(t)
+}
 
 func TestUpgradesMajorVersion20_1To20_2(t *testing.T) {
 
@@ -276,92 +276,92 @@ func TestUpgradesMajorVersion20_1To20_2(t *testing.T) {
 	steps.Run(t)
 }
 
-// func TestDecommissionFunctionality(t *testing.T) {
+func TestDecommissionFunctionality(t *testing.T) {
 
-// 	// Testing removing and decommisioning a node.  We start at 4 node and then
-// 	// remove the 4th node
+	// Testing removing and decommisioning a node.  We start at 4 node and then
+	// remove the 4th node
 
-// 	if testing.Short() {
-// 		t.Skip("skipping test in short mode.")
-// 	}
-// 	// Does not seem to like running in parallel
-// 	if parallel {
-// 		t.Parallel()
-// 	}
-// 	testLog := zapr.NewLogger(zaptest.NewLogger(t))
-// 	actor.Log = testLog
-// 	sb := testenv.NewDiffingSandbox(t, env)
-// 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
-// 	builder := testutil.NewBuilder("crdb").WithNodeCount(4).WithTLS().
-// 		WithImage("cockroachdb/cockroach:v20.2.5").
-// 		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
-// 	steps := Steps{
-// 		{
-// 			name: "creates a 4-node secure cluster and tests db",
-// 			test: func(t *testing.T) {
-// 				require.NoError(t, sb.Create(builder.Cr()))
-// 				RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
-// 			},
-// 		},
-// 		{
-// 			name: "decommission a node",
-// 			test: func(t *testing.T) {
-// 				current := builder.Cr()
-// 				require.NoError(t, sb.Get(current))
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+	// Does not seem to like running in parallel
+	if parallel {
+		t.Parallel()
+	}
+	testLog := zapr.NewLogger(zaptest.NewLogger(t))
+	actor.Log = testLog
+	sb := testenv.NewDiffingSandbox(t, env)
+	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
+	builder := testutil.NewBuilder("crdb").WithNodeCount(4).WithTLS().
+		WithImage("cockroachdb/cockroach:v20.2.5").
+		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
+	steps := Steps{
+		{
+			name: "creates a 4-node secure cluster and tests db",
+			test: func(t *testing.T) {
+				require.NoError(t, sb.Create(builder.Cr()))
+				RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
+			},
+		},
+		{
+			name: "decommission a node",
+			test: func(t *testing.T) {
+				current := builder.Cr()
+				require.NoError(t, sb.Get(current))
 
-// 				current.Spec.Nodes = 3
-// 				require.NoError(t, sb.Update(current))
-// 				RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
-// 				requireDecommissionNode(t, sb, builder, 3)
-// 				requireDatabaseToFunction(t, sb, builder)
-// 				t.Log("Done with decommision")
-// 			},
-// 		},
-// 	}
-// 	steps.Run(t)
-// }
+				current.Spec.Nodes = 3
+				require.NoError(t, sb.Update(current))
+				RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
+				requireDecommissionNode(t, sb, builder, 3)
+				requireDatabaseToFunction(t, sb, builder)
+				t.Log("Done with decommision")
+			},
+		},
+	}
+	steps.Run(t)
+}
 
-// func TestPVCResize(t *testing.T) {
+func TestPVCResize(t *testing.T) {
 
-// 	// Testing PVCResize
-// 	if !*pvc {
-// 		t.Skip("platform does not support pvc resize")
-// 	}
-// 	if testing.Short() {
-// 		t.Skip("skipping test in short mode.")
-// 	}
-// 	if parallel {
-// 		t.Parallel()
-// 	}
-// 	testLog := zapr.NewLogger(zaptest.NewLogger(t))
-// 	actor.Log = testLog
-// 	sb := testenv.NewDiffingSandbox(t, env)
-// 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
-// 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
-// 		WithImage("cockroachdb/cockroach:v20.2.10").
-// 		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
-// 	steps := Steps{
-// 		{
-// 			name: "creates a 3-node secure cluster db",
-// 			test: func(t *testing.T) {
-// 				require.NoError(t, sb.Create(builder.Cr()))
-// 				RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
-// 			},
-// 		},
-// 		{
-// 			name: "resize PVC",
-// 			test: func(t *testing.T) {
-// 				current := builder.Cr()
-// 				require.NoError(t, sb.Get(current))
-// 				quantity := apiresource.MustParse("2Gi")
-// 				current.Spec.DataStore.VolumeClaim.PersistentVolumeClaimSpec.Resources.Requests[corev1.ResourceStorage] = quantity
-// 				require.NoError(t, sb.Update(current))
-// 				t.Log("updated CR")
+	// Testing PVCResize
+	if !*pvc {
+		t.Skip("platform does not support pvc resize")
+	}
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+	if parallel {
+		t.Parallel()
+	}
+	testLog := zapr.NewLogger(zaptest.NewLogger(t))
+	actor.Log = testLog
+	sb := testenv.NewDiffingSandbox(t, env)
+	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
+	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
+		WithImage("cockroachdb/cockroach:v20.2.10").
+		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
+	steps := Steps{
+		{
+			name: "creates a 3-node secure cluster db",
+			test: func(t *testing.T) {
+				require.NoError(t, sb.Create(builder.Cr()))
+				RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
+			},
+		},
+		{
+			name: "resize PVC",
+			test: func(t *testing.T) {
+				current := builder.Cr()
+				require.NoError(t, sb.Get(current))
+				quantity := apiresource.MustParse("2Gi")
+				current.Spec.DataStore.VolumeClaim.PersistentVolumeClaimSpec.Resources.Requests[corev1.ResourceStorage] = quantity
+				require.NoError(t, sb.Update(current))
+				t.Log("updated CR")
 
-// 				requirePVCToResize(t, sb, builder, quantity)
-// 				t.Log("here resized")
-// 			},
-// 		},
-// 	}
-// 	steps.Run(t)
-// }
+				requirePVCToResize(t, sb, builder, quantity)
+				t.Log("here resized")
+			},
+		},
+	}
+	steps.Run(t)
+}
