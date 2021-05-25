@@ -23,7 +23,9 @@ import (
 	"sort"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/cenkalti/backoff"
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
 	"github.com/pkg/errors"
@@ -169,6 +171,19 @@ func createNamespace(s Sandbox) error {
 	return nil
 }
 
+// backoffFactory is a replacable global for backoff creation. It may be
+// replaced with shorter times to allow testing of Wait___ functions without
+// waiting the entire default period
+var backoffFactory = defaultBackoffFactory
+
+func defaultBackoffFactory(maxTime time.Duration) backoff.BackOff {
+	b := backoff.NewExponentialBackOff()
+	b.MaxElapsedTime = maxTime
+	return b
+}
+
+var defaultTime time.Duration = 5 * time.Minute
+
 func createServiceAccount(s Sandbox) error {
 
 	sa := &corev1.ServiceAccount{
@@ -182,6 +197,30 @@ func createServiceAccount(s Sandbox) error {
 		return errors.Wrapf(err, "failed to create service account cockroach-database-sa in namespace %s", s.Namespace)
 	}
 
+	// The binding might be deleting so we need to do a
+	// backoff retry on the creation
+	err := backoff.Retry(func() error {
+		return createBinding(s)
+	}, backoffFactory(defaultTime))
+
+	if err != nil {
+		return errors.Wrap(err, "failed to create role binding")
+	}
+
+	// The role might be deleting so we need to do a
+	// backoff retry on the creation
+	err = backoff.Retry(func() error {
+		return createRole(s)
+	}, backoffFactory(defaultTime))
+
+	if err != nil {
+		return errors.Wrap(err, "failed to create role")
+	}
+
+	return nil
+}
+
+func createBinding(s Sandbox) error {
 	if _, err := s.env.Clientset.RbacV1().ClusterRoleBindings().Create(
 		context.TODO(),
 		&rbac.ClusterRoleBinding{
@@ -205,7 +244,10 @@ func createServiceAccount(s Sandbox) error {
 	); err != nil {
 		return err
 	}
+	return nil
+}
 
+func createRole(s Sandbox) error {
 	if _, err := s.env.Clientset.RbacV1().ClusterRoles().Create(
 		context.TODO(),
 		&rbac.ClusterRole{
