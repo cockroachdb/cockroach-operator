@@ -42,7 +42,7 @@ const (
 	//TODO: remove the svc.cluster.local
 	cmdunderreplicted   = "curl -ks https://%s.%s:%s/_status/vars | grep 'ranges_underreplicated{'"
 	curlnotfounderr     = "/bin/bash: curl: command not found"
-	sleepBetweenUpdates = 1 * time.Minute
+	sleepBetweenUpdates = 3 * time.Minute
 )
 
 //HealthChecker interface

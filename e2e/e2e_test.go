@@ -267,8 +267,9 @@ func TestUpgradesMajorVersion20_1To20_2(t *testing.T) {
 
 				current.Spec.Image.Name = "cockroachdb/cockroach:v20.2.10"
 				require.NoError(t, sb.Update(current))
-
-				RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
+				// we wait 10 min because we will be waiting 3 min for each pod because
+				// v20.1.16 does not have curl installed
+				RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 600*time.Second)
 				requireDbContainersToUseImage(t, sb, current)
 				t.Log("Done with major upgrade")
 			},
