@@ -92,7 +92,7 @@ func (hc *HealthCheckerImpl) Probe(ctx context.Context, l logr.Logger, logSuffix
 			return nil
 		}
 	}
-	l.V(int(zapcore.DebugLevel)).Info("first wait loop for replicas", "label", logSuffix, "nodeID", nodeID)
+	l.V(int(zapcore.DebugLevel)).Info("first wait loop for range_underreplicated metric", "label", logSuffix, "nodeID", nodeID)
 
 	// we check _status/vars on all cockroachdb pods looking for pairs like
 	// ranges_underreplicated{store="1"} 0 and wait if any are non-zero until all are 0.
@@ -111,7 +111,7 @@ func (hc *HealthCheckerImpl) Probe(ctx context.Context, l logr.Logger, logSuffix
 	// ranges_underreplicated{store="1"} 0. This time we do not wait anymore. This suplimentary check
 	// is due to the fact that a node can be evicted in some cases
 	time.Sleep(22 * time.Second)
-	l.V(int(zapcore.DebugLevel)).Info("second wait loop for replicas", "label", logSuffix, "nodeID", nodeID)
+	l.V(int(zapcore.DebugLevel)).Info("second wait loop for range_underreplicated metric", "label", logSuffix, "nodeID", nodeID)
 	err = hc.waitUntilUnderReplicatedMetricIsZero(ctx, l, logSuffix, stsname, stsnamespace, *sts.Spec.Replicas)
 	if err != nil {
 		//if curl is not installed we already waited 3 minutes retrying on the container so we exit

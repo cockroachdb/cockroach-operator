@@ -207,19 +207,18 @@ func PartitionedRollingUpdateStrategy(perPodVerificationFunc func(*UpdateSts, in
 			if err := waitUntilPerPodVerificationFuncVerifies(updateSts, perPodVerificationFunc, int(partition), updateTimer, l); err != nil {
 				return false, errors.Wrapf(err, "error while running verificationFunc on pod %d", int(partition))
 			}
-			if partition > 0 {
-				// Must refresh STS object, or the next time through the loop
-				// Kubernetes will error out because the object has been updated
-				// since we last read it.
-				var err error
-				sts, err = updateSts.clientset.AppsV1().StatefulSets(stsNamespace).Get(updateSts.ctx, stsName, metav1.GetOptions{})
-				if err != nil {
-					return false, handleStsError(err, l, stsName, stsNamespace)
-				}
-				if err := updateTimer.healthChecker.Probe(updateSts.ctx, l, fmt.Sprintf("between updating pods for %s", stsName), int(partition)); err != nil {
-					return skipSleep, err
-				}
+
+			// Must refresh STS object, or the next time through the loop
+			// Kubernetes will error out because the object has been updated
+			// since we last read it.
+			sts, err = updateSts.clientset.AppsV1().StatefulSets(stsNamespace).Get(updateSts.ctx, stsName, metav1.GetOptions{})
+			if err != nil {
+				return false, handleStsError(err, l, stsName, stsNamespace)
 			}
+			if err := updateTimer.healthChecker.Probe(updateSts.ctx, l, fmt.Sprintf("between updating pods for %s", stsName), int(partition)); err != nil {
+				return skipSleep, err
+			}
+
 		}
 		return skipSleep, nil
 	}
