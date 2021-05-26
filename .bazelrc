@@ -5,4 +5,4 @@ test --test_output=errors
 
 # helpful for dev
 # test --test_output=streamed
-test --test_arg=-test.v
+test --test_arg=-test.v --test_output=streamed

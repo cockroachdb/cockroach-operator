@@ -29,7 +29,6 @@ import (
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/condition"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
-	"github.com/cockroachdb/cockroach-operator/pkg/update"
 	"github.com/cockroachdb/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -259,26 +258,4 @@ func (rp *resizePVC) findAndResizePVC(ctx context.Context, sts *appsv1.StatefulS
 
 	log.Info("found and resized all PVCs")
 	return nil
-}
-
-// rollSts performs a rolling update on the cluster.
-func (rp *resizePVC) rollSts(ctx context.Context, cluster *resource.Cluster, clientset *kubernetes.Clientset) error {
-
-	updateRoach := &update.UpdateRoach{
-		StsName:      cluster.StatefulSetName(),
-		StsNamespace: cluster.Namespace(),
-	}
-
-	podUpdateTimeout := 10 * time.Minute
-	podMaxPollingInterval := 30 * time.Minute
-	sleeper := update.NewSleeper(1 * time.Minute)
-
-	k8sCluster := &update.UpdateCluster{
-		Clientset:             clientset,
-		PodUpdateTimeout:      podUpdateTimeout,
-		PodMaxPollingInterval: podMaxPollingInterval,
-		Sleeper:               sleeper,
-	}
-
-	return update.RollingRestart(ctx, updateRoach, k8sCluster, rp.log)
 }
