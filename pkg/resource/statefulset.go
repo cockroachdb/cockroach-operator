@@ -243,13 +243,13 @@ func (b StatefulSetBuilder) MakeContainers() []corev1.Container {
 			Name:            DbContainerName,
 			Image:           image,
 			ImagePullPolicy: *b.Spec().Image.PullPolicyName,
-			Lifecycle: &corev1.Lifecycle{
-				PreStop: &corev1.Handler{
-					Exec: &corev1.ExecAction{
-						Command: []string{"/cockroach/cockroach", "node", "drain", b.SecureMode()},
-					},
-				},
-			},
+			// Lifecycle: &corev1.Lifecycle{
+			// 	PreStop: &corev1.Handler{
+			// 		Exec: &corev1.ExecAction{
+			// 			Command: []string{"/cockroach/cockroach", "node", "drain", b.SecureMode()},
+			// 		},
+			// 	},
+			// },
 			Resources: b.Spec().Resources,
 			Command:   b.commandArgs(),
 			Env:       b.envVars(),
