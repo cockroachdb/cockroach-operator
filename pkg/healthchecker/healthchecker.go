@@ -40,7 +40,9 @@ import (
 const (
 	underreplicatedmetric = "ranges_underreplicated{store="
 	//TODO: remove the svc.cluster.local
-	cmdunderreplicted = "curl -ks https://%s.%s:%s/_status/vars | grep 'ranges_underreplicated{'"
+	cmdunderreplicted   = "curl -ks https://%s.%s:%s/_status/vars | grep 'ranges_underreplicated{'"
+	curlnotfounderr     = "/bin/bash: curl: command not found"
+	sleepBetweenUpdates = 3 * time.Minute
 )
 
 //HealthChecker interface
@@ -81,6 +83,14 @@ func (hc *HealthCheckerImpl) Probe(ctx context.Context, l logr.Logger, logSuffix
 	if err := scale.WaitUntilStatefulSetIsReadyToServe(ctx, hc.clientset, stsnamespace, stsname, *sts.Spec.Replicas); err != nil {
 		return errors.Wrapf(err, "error rolling update stategy on pod %d", nodeID)
 	}
+	//validate that curl is installed on all pods with the old and the new version
+	if err := hc.checkUnderReplicatedMetricAllPods(ctx, l, logSuffix, stsname, stsnamespace, *sts.Spec.Replicas); err != nil {
+		if _, ok := err.(CurlNotFoundErr); ok {
+			l.V(int(zapcore.DebugLevel)).Info("curlNotInstalled", "label", logSuffix, "nodeID", nodeID, "fallback to sleeping duration:", sleepBetweenUpdates)
+			time.Sleep(sleepBetweenUpdates)
+			return nil
+		}
+	}
 
 	// we check _status/vars on all cockroachdb pods looking for pairs like
 	// ranges_underreplicated{store="1"} 0 and wait if any are non-zero until all are 0.
@@ -88,6 +98,11 @@ func (hc *HealthCheckerImpl) Probe(ctx context.Context, l logr.Logger, logSuffix
 	err = hc.waitUntilUnderReplicatedMetricIsZero(ctx, l, logSuffix, stsname, stsnamespace, *sts.Spec.Replicas)
 	if err != nil {
 		return err
+	}
+	//if curl is not installed we already waited 3 minutes retrying on the container so we exit
+	if _, ok := err.(CurlNotFoundErr); ok {
+		l.V(int(zapcore.DebugLevel)).Info("curlNotInstalled", "label", logSuffix, "nodeID", nodeID)
+		return nil
 	}
 
 	// we will wait 22 seconds and check again  _status/vars on all cockroachdb pods looking for pairs like
@@ -131,7 +146,13 @@ func (hc *HealthCheckerImpl) checkUnderReplicatedMetric(ctx context.Context, l l
 	output, stderr, err := kube.ExecInPod(hc.scheme, hc.config, hc.cluster.Namespace(),
 		podname, resource.DbContainerName, cmd)
 	if stderr != "" {
-		return errors.Errorf("exec in pod %s failed with stderror: %s ", stderr)
+		if strings.ContainsAny(stderr, curlnotfounderr) {
+			l.V(int(zapcore.DebugLevel)).Info("CURL not found", "node", podname)
+			return CurlNotFoundErr{
+				Err: errors.Errorf("exec in pod %s failed with stderror: %s ", podname, stderr),
+			}
+		}
+		return errors.Errorf("exec in pod %s failed with stderror: %s ", podname, stderr)
 	}
 	if err != nil {
 		return errors.Wrapf(err, "health check probe for pod %s failed", podname)
@@ -181,4 +202,13 @@ func extractMetric(l logr.Logger, output, underepmetric string, partition int32)
 		return -1, errors.Errorf("under replica is not zero for partition %v", partition)
 	}
 	return 0, nil
+}
+
+//CurlNotFoundErr struct
+type CurlNotFoundErr struct {
+	Err error
+}
+
+func (e CurlNotFoundErr) Error() string {
+	return e.Err.Error()
 }
