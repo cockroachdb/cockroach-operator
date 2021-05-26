@@ -116,7 +116,7 @@ func (hc *HealthCheckerImpl) Probe(ctx context.Context, l logr.Logger, logSuffix
 	if err != nil {
 		//if curl is not installed we already waited 3 minutes retrying on the container so we exit
 		if _, ok := err.(CurlNotFoundErr); ok {
-			l.V(int(zapcore.DebugLevel)).Info("curlNotInstalled on second waid", "label", logSuffix, "nodeID", nodeID)
+			l.V(int(zapcore.DebugLevel)).Info("curlNotInstalled on second wait", "label", logSuffix, "nodeID", nodeID)
 			return nil
 		}
 		return err
