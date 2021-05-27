@@ -82,7 +82,7 @@ spec:
       - command:
         - /bin/sh
         - -c
-        - '>- cp -p /cockroach/cockroach-certs-prestage/..data/* /cockroach/cockroach-certs/ && chmod 700 /cockroach/cockroach-certs/*.key && chown 10001:10001 /cockroach/cockroach-certs/*.key'
+        - '>- cp -p /cockroach/cockroach-certs-prestage/..data/* /cockroach/cockroach-certs/ && chmod 700 /cockroach/cockroach-certs/*.key && chown 1000581000:1000581000 /cockroach/cockroach-certs/*.key'
         image: cockroachdb/cockroach:v20.2.7
         imagePullPolicy: IfNotPresent
         name: db-init
@@ -91,8 +91,8 @@ spec:
           allowPrivilegeEscalation: false
           runAsUser: 0
       securityContext:
-        fsGroup: 10001
-        runAsUser: 10001
+        fsGroup: 1000581000
+        runAsUser: 1000581000
       serviceAccountName: cockroach-database-sa
       terminationGracePeriodSeconds: 60
       volumes:

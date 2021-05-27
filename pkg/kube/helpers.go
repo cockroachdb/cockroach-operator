@@ -20,9 +20,15 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"time"
+
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 
 	"github.com/banzaicloud/k8s-objectmatcher/patch"
+	"github.com/cenkalti/backoff"
+	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
+	"go.uber.org/zap/zapcore"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -281,4 +287,44 @@ func GetPodConditionFromList(conditions []corev1.PodCondition, conditionType cor
 		}
 	}
 	return -1, nil
+}
+
+// WaitUntilAllStsPodsAreReady waits until all pods in the statefulset are in the
+// ready state. The ready state implies all nodes are passing node liveness.
+func WaitUntilAllStsPodsAreReady(ctx context.Context, clientset *kubernetes.Clientset, l logr.Logger, stsname, stsnamespace string, podUpdateTimeout, podMaxPollingInterval time.Duration) error {
+	l.V(int(zapcore.DebugLevel)).Info("waiting until all pods are in the ready state")
+	f := func() error {
+		sts, err := clientset.AppsV1().StatefulSets(stsnamespace).Get(ctx, stsname, metav1.GetOptions{})
+		if err != nil {
+			return HandleStsError(err, l, stsname, stsnamespace)
+		}
+		got := int(sts.Status.ReadyReplicas)
+		// TODO need to test this
+		// we could also use the number of pods defined by the operator
+		numCRDBPods := int(sts.Status.Replicas)
+		if got != numCRDBPods {
+			l.Error(err, fmt.Sprintf("number of ready replicas is %v, not equal to num CRDB pods %v", got, numCRDBPods))
+			return err
+		}
+
+		l.V(int(zapcore.DebugLevel)).Info("all replicas are ready makeWaitUntilAllPodsReadyFunc update_cockroach_version.go")
+		return nil
+	}
+
+	b := backoff.NewExponentialBackOff()
+	b.MaxElapsedTime = podUpdateTimeout
+	b.MaxInterval = podMaxPollingInterval
+	return backoff.Retry(f, b)
+}
+
+func HandleStsError(err error, l logr.Logger, stsName string, ns string) error {
+	if k8sErrors.IsNotFound(err) {
+		l.Error(err, "sts is not found", "stsName", stsName, "namespace", ns)
+		return errors.Wrapf(err, "sts is not found: %s ns: %s", stsName, ns)
+	} else if statusError, isStatus := err.(*k8sErrors.StatusError); isStatus {
+		l.Error(statusError, fmt.Sprintf("Error getting statefulset %v", statusError.ErrStatus.Message), "stsName", stsName, "namespace", ns)
+		return statusError
+	}
+	l.Error(err, "error getting statefulset", "stsName", stsName, "namspace", ns)
+	return err
 }

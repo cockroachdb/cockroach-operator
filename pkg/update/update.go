@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff"
+	"github.com/cockroachdb/cockroach-operator/pkg/healthchecker"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"go.uber.org/zap/zapcore"
@@ -80,7 +81,7 @@ type UpdateSts struct {
 type UpdateTimer struct {
 	podUpdateTimeout      time.Duration
 	podMaxPollingInterval time.Duration
-	sleeper               Sleeper
+	healthChecker         healthchecker.HealthChecker
 	// TODO check that this func is actually correct
 	waitUntilAllPodsReadyFunc func(context.Context, logr.Logger) error
 }
@@ -93,23 +94,6 @@ func NewUpdateFunctionSuite(
 		updateFunc:         updateFunc,
 		updateStrategyFunc: updateStrategyFunc,
 	}
-}
-
-type Sleeper interface { // for testing
-	Sleep(l logr.Logger, logSuffix string)
-}
-
-type sleeperImpl struct {
-	duration time.Duration
-}
-
-func NewSleeper(duration time.Duration) *sleeperImpl {
-	return &sleeperImpl{duration: duration}
-}
-
-func (s *sleeperImpl) Sleep(l logr.Logger, logSuffix string) {
-	l.V(int(zapcore.DebugLevel)).Info("sleeping", "duration", s.duration.String(), "label", logSuffix)
-	time.Sleep(s.duration)
 }
 
 // TODO rewrite docs
@@ -128,7 +112,7 @@ func UpdateClusterRegionStatefulSet(
 	waitUntilAllPodsReadyFunc func(context.Context, logr.Logger) error,
 	podUpdateTimeout time.Duration,
 	podMaxPollingInterval time.Duration,
-	sleeper Sleeper,
+	healthChecker healthchecker.HealthChecker,
 	l logr.Logger,
 ) (bool, error) {
 	l = l.WithName(namespace)
@@ -157,7 +141,7 @@ func UpdateClusterRegionStatefulSet(
 	updateTimer := &UpdateTimer{
 		podUpdateTimeout:          podUpdateTimeout,
 		podMaxPollingInterval:     podMaxPollingInterval,
-		sleeper:                   sleeper,
+		healthChecker:             healthChecker,
 		waitUntilAllPodsReadyFunc: waitUntilAllPodsReadyFunc,
 	}
 	// updateStrategyFunc is responsible for controlling the rollout of the
@@ -223,16 +207,16 @@ func PartitionedRollingUpdateStrategy(perPodVerificationFunc func(*UpdateSts, in
 			if err := waitUntilPerPodVerificationFuncVerifies(updateSts, perPodVerificationFunc, int(partition), updateTimer, l); err != nil {
 				return false, errors.Wrapf(err, "error while running verificationFunc on pod %d", int(partition))
 			}
-			if partition > 0 {
-				// Must refresh STS object, or the next time through the loop
-				// Kubernetes will error out because the object has been updated
-				// since we last read it.
-				var err error
-				sts, err = updateSts.clientset.AppsV1().StatefulSets(stsNamespace).Get(updateSts.ctx, stsName, metav1.GetOptions{})
-				if err != nil {
-					return false, handleStsError(err, l, stsName, stsNamespace)
-				}
-				updateTimer.sleeper.Sleep(l, "between updating pods")
+
+			// Must refresh STS object, or the next time through the loop
+			// Kubernetes will error out because the object has been updated
+			// since we last read it.
+			sts, err = updateSts.clientset.AppsV1().StatefulSets(stsNamespace).Get(updateSts.ctx, stsName, metav1.GetOptions{})
+			if err != nil {
+				return false, handleStsError(err, l, stsName, stsNamespace)
+			}
+			if err := updateTimer.healthChecker.Probe(updateSts.ctx, l, fmt.Sprintf("between updating pods for %s", stsName), int(partition)); err != nil {
+				return skipSleep, err
 			}
 		}
 		return skipSleep, nil
