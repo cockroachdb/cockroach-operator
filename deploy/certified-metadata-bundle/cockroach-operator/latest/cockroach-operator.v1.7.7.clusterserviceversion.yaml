@@ -11,7 +11,7 @@ metadata:
             "name": "crdb-tls-example"
           },
           "spec": {
-            "cockroachDBVersion": "v21.1.0",
+            "cockroachDBVersion": "v21.1.1",
             "dataStore": {
               "pvc": {
                 "spec": {
@@ -35,14 +35,14 @@ metadata:
     capabilities: Full Lifecycle
     categories: Database
     certified: "true"
-    containerImage: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v1.7.6
-    createdAt: "2021-05-20T14:52:54Z"
+    containerImage: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v1.7.7
+    createdAt: "2021-05-27T15:06:08Z"
     description: CockroachDB Operator
     operators.operatorframework.io/builder: operator-sdk-v1.1.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
     repository: https://github.com/cockroachdb/cockroach-operator
     support: Cockroach Labs
-  name: cockroach-operator.v1.7.6
+  name: cockroach-operator.v1.7.7
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -323,6 +323,8 @@ spec:
                   value: registry.connect.redhat.com/cockroachdb/cockroach:v20.2.10
                 - name: RELATED_IMAGE_COCKROACH_v21_1_0
                   value: registry.connect.redhat.com/cockroachdb/cockroach:v21.1.0
+                - name: RELATED_IMAGE_COCKROACH_v21_1_1
+                  value: registry.connect.redhat.com/cockroachdb/cockroach:v21.1.1
                 - name: WATCH_NAMESPACE
                   valueFrom:
                     fieldRef:
@@ -333,7 +335,7 @@ spec:
                       fieldPath: metadata.name
                 - name: OPERATOR_NAME
                   value: cockroachdb
-                image: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v1.7.6
+                image: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v1.7.7
                 imagePullPolicy: IfNotPresent
                 name: cockroach-operator
                 resources:
@@ -376,4 +378,4 @@ spec:
   maturity: beta
   provider:
     name: Cockroach Labs
-  version: 1.7.6
+  version: 1.7.7
