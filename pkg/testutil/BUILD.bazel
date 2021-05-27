@@ -8,19 +8,27 @@ go_library(
         "cmp.go",
         "fake.go",
         "helpers.go",
+        "require.go",
         "retry.go",
+        "steps.go",
         "validate_headers.go",
     ],
     importpath = "github.com/cockroachdb/cockroach-operator/pkg/testutil",
     visibility = ["//visibility:public"],
     deps = [
         "//apis/v1alpha1:go_default_library",
+        "//pkg/database:go_default_library",
+        "//pkg/kube:go_default_library",
+        "//pkg/labels:go_default_library",
         "//pkg/resource:go_default_library",
+        "//pkg/testutil/env:go_default_library",
         "@com_github_google_go_cmp//cmp:go_default_library",
         "@com_github_google_go_cmp//cmp/cmpopts:go_default_library",
         "@com_github_pkg_errors//:go_default_library",
         "@com_github_stretchr_testify//require:go_default_library",
+        "@io_k8s_api//apps/v1:go_default_library",
         "@io_k8s_api//core/v1:go_default_library",
+        "@io_k8s_apimachinery//pkg/api/errors:go_default_library",
         "@io_k8s_apimachinery//pkg/api/meta:go_default_library",
         "@io_k8s_apimachinery//pkg/api/resource:go_default_library",
         "@io_k8s_apimachinery//pkg/apis/meta/v1:go_default_library",
@@ -29,6 +37,7 @@ go_library(
         "@io_k8s_apimachinery//pkg/runtime/serializer:go_default_library",
         "@io_k8s_apimachinery//pkg/types:go_default_library",
         "@io_k8s_apimachinery//pkg/util/wait:go_default_library",
+        "@io_k8s_client_go//kubernetes:go_default_library",
         "@io_k8s_client_go//kubernetes/scheme:go_default_library",
         "@io_k8s_sigs_controller_runtime//pkg/client:go_default_library",
         "@io_k8s_sigs_controller_runtime//pkg/client/apiutil:go_default_library",
@@ -53,6 +62,13 @@ filegroup(
     ],
     tags = ["automanaged"],
     visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "testutil_test",
+    srcs = ["validate_headers_test.go"],
+    data = glob(["testdata/**"]),
+    embed = [":go_default_library"],
 )
 
 go_test(
