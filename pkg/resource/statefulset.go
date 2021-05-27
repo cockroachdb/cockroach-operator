@@ -44,7 +44,7 @@ const (
 	emptyDirName = "emptydir"
 
 	DbContainerName = "db"
-	certCpCmd       = ">- cp -p /cockroach/cockroach-certs-prestage/..data/* /cockroach/cockroach-certs/ && chmod 700 /cockroach/cockroach-certs/*.key && chown 10001:10001 /cockroach/cockroach-certs/*.key"
+	certCpCmd       = ">- cp -p /cockroach/cockroach-certs-prestage/..data/* /cockroach/cockroach-certs/ && chmod 700 /cockroach/cockroach-certs/*.key && chown 1000581000:1000581000 /cockroach/cockroach-certs/*.key"
 )
 
 type StatefulSetBuilder struct {
@@ -192,8 +192,8 @@ func (b StatefulSetBuilder) makePodTemplate() corev1.PodTemplateSpec {
 		},
 		Spec: corev1.PodSpec{
 			SecurityContext: &corev1.PodSecurityContext{
-				RunAsUser: ptr.Int64(10001),
-				FSGroup:   ptr.Int64(10001),
+				RunAsUser: ptr.Int64(1000581000),
+				FSGroup:   ptr.Int64(1000581000),
 			},
 			TerminationGracePeriodSeconds: ptr.Int64(60),
 			InitContainers:                b.MakeInitContainers(),
@@ -238,15 +238,24 @@ func (b StatefulSetBuilder) MakeInitContainers() []corev1.Container {
 // corev1.Container that is based on the CR.
 func (b StatefulSetBuilder) MakeContainers() []corev1.Container {
 	image := b.GetCockroachDBImageName()
-
 	return []corev1.Container{
 		{
 			Name:            DbContainerName,
 			Image:           image,
 			ImagePullPolicy: *b.Spec().Image.PullPolicyName,
-			Resources:       b.Spec().Resources,
-			Command:         b.commandArgs(),
-			Env:             b.envVars(),
+			Lifecycle: &corev1.Lifecycle{
+				PreStop: &corev1.Handler{
+					Exec: &corev1.ExecAction{
+						Command: []string{
+							"sh", "-c",
+							fmt.Sprintf("/cockroach/cockroach node drain %s || exit 0", b.SecureMode()),
+						},
+					},
+				},
+			},
+			Resources: b.Spec().Resources,
+			Command:   b.commandArgs(),
+			Env:       b.envVars(),
 			Ports: []corev1.ContainerPort{
 				{
 					Name:          grpcPortName,
@@ -263,17 +272,6 @@ func (b StatefulSetBuilder) MakeContainers() []corev1.Container {
 					ContainerPort: *b.Spec().SQLPort,
 					Protocol:      corev1.ProtocolTCP,
 				},
-			},
-			LivenessProbe: &corev1.Probe{
-				Handler: corev1.Handler{
-					HTTPGet: &corev1.HTTPGetAction{
-						Path:   "/health",
-						Port:   intstr.FromString(httpPortName),
-						Scheme: b.probeScheme(),
-					},
-				},
-				InitialDelaySeconds: 30,
-				PeriodSeconds:       5,
 			},
 			ReadinessProbe: &corev1.Probe{
 				Handler: corev1.Handler{

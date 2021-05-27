@@ -23,11 +23,14 @@ import (
 	"sort"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/cenkalti/backoff"
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
+	rbac "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -42,6 +45,12 @@ import (
 const (
 	DefaultNsName = "crdb-test-"
 )
+
+// Names of the various service account and RBAC components that are
+// created via installing the operator manifest.
+var saName = "cockroach-database-sa"
+var bindingName = "cockroach-database-rolebinding"
+var roleName = "cockroach-database-role"
 
 func NewSandbox(t *testing.T, env *ActiveEnv) Sandbox {
 	ns := DefaultNsName + rand.String(6)
@@ -132,6 +141,12 @@ func (s Sandbox) Cleanup() {
 	if err := nss.Delete(context.TODO(), s.Namespace, opts); err != nil {
 		fmt.Println("failed to cleanup namespace", s.Namespace)
 	}
+	if err := s.env.Clientset.RbacV1().ClusterRoleBindings().Delete(context.TODO(), bindingName, opts); err != nil {
+		fmt.Println("failed to cleanup role binding", bindingName)
+	}
+	if err := s.env.Clientset.RbacV1().ClusterRoles().Delete(context.TODO(), roleName, opts); err != nil {
+		fmt.Println("failed to cleanup role", roleName)
+	}
 }
 
 func (s Sandbox) StartManager(t *testing.T, maker func(ctrl.Manager) error) {
@@ -156,16 +171,101 @@ func createNamespace(s Sandbox) error {
 	return nil
 }
 
+// backoffFactory is a replacable global for backoff creation. It may be
+// replaced with shorter times to allow testing of Wait___ functions without
+// waiting the entire default period
+var backoffFactory = defaultBackoffFactory
+
+func defaultBackoffFactory(maxTime time.Duration) backoff.BackOff {
+	b := backoff.NewExponentialBackOff()
+	b.MaxElapsedTime = maxTime
+	return b
+}
+
+var defaultTime time.Duration = 5 * time.Minute
+
 func createServiceAccount(s Sandbox) error {
+
 	sa := &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: s.Namespace,
-			Name:      "cockroach-database-sa",
+			Name:      saName,
 		},
 	}
 
 	if _, err := s.env.Clientset.CoreV1().ServiceAccounts(s.Namespace).Create(context.TODO(), sa, metav1.CreateOptions{}); err != nil {
 		return errors.Wrapf(err, "failed to create service account cockroach-database-sa in namespace %s", s.Namespace)
+	}
+
+	// The binding might be deleting so we need to do a
+	// backoff retry on the creation
+	err := backoff.Retry(func() error {
+		return createBinding(s)
+	}, backoffFactory(defaultTime))
+
+	if err != nil {
+		return errors.Wrap(err, "failed to create role binding")
+	}
+
+	// The role might be deleting so we need to do a
+	// backoff retry on the creation
+	err = backoff.Retry(func() error {
+		return createRole(s)
+	}, backoffFactory(defaultTime))
+
+	if err != nil {
+		return errors.Wrap(err, "failed to create role")
+	}
+
+	return nil
+}
+
+func createBinding(s Sandbox) error {
+	if _, err := s.env.Clientset.RbacV1().ClusterRoleBindings().Create(
+		context.TODO(),
+		&rbac.ClusterRoleBinding{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: bindingName,
+			},
+			RoleRef: rbac.RoleRef{
+				Name:     "cockroach-database-role",
+				APIGroup: "rbac.authorization.k8s.io",
+				Kind:     "ClusterRole",
+			},
+			Subjects: []rbac.Subject{
+				{
+					Kind:      "ServiceAccount",
+					Name:      saName,
+					Namespace: s.Namespace,
+				},
+			},
+		},
+		metav1.CreateOptions{},
+	); err != nil {
+		return err
+	}
+	return nil
+}
+
+func createRole(s Sandbox) error {
+	if _, err := s.env.Clientset.RbacV1().ClusterRoles().Create(
+		context.TODO(),
+		&rbac.ClusterRole{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: roleName,
+			},
+			Rules: []rbac.PolicyRule{
+				{
+					Verbs:         []string{"use"},
+					APIGroups:     []string{"security.openshift.io"},
+					Resources:     []string{"securitycontextconstraints"},
+					ResourceNames: []string{"anyuid"},
+				},
+			},
+		},
+		metav1.CreateOptions{},
+	); err != nil {
+		return err
 	}
 
 	return nil

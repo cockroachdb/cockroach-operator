@@ -20,16 +20,19 @@ import (
 	"context"
 
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
-	"github.com/cockroachdb/cockroach-operator/pkg/features"
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
-	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
 	"github.com/go-logr/logr"
+	"go.uber.org/zap/zapcore"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
+
+// Different logging levels
+var DEBUGLEVEL = int(zapcore.DebugLevel)
+var WARNLEVEL = int(zapcore.WarnLevel)
 
 //NotReadyErr strut
 type NotReadyErr struct {
@@ -79,46 +82,21 @@ type Actor interface {
 // happen before deploy.
 func NewOperatorActions(scheme *runtime.Scheme, cl client.Client, config *rest.Config) []Actor {
 
-	var update Actor
-
-	// entry point for new PartitionUpdate upgrades
-	// this feature is controlled by a featuregate
-	if utilfeature.DefaultMutableFeatureGate.Enabled(features.PartitionedUpdate) {
-		update = newPartitionedUpdate(scheme, cl, config)
-	} else {
-		update = newUpgrade(scheme, cl, config)
-	}
-
-	decommission := newDecommission(scheme, cl, config)
-	versionChecker := newVersionChecker(scheme, cl, config)
-	var certs Actor
-	// entry point for new GenerateCert
-	// this feature is controlled by a featuregate
-	if utilfeature.DefaultMutableFeatureGate.Enabled(features.GenerateCerts) {
-		certs = newGenerateCert(scheme, cl, config)
-	} else {
-		certs = newRequestCert(scheme, cl, config)
-	}
-
-	kd := kube.NewKubernetesDistribution()
-
 	// The order of these actors MATTERS.
 	// We need to have update before deploy so that
 	// updates run before the deploy actor, or
-	// deploy will update the STS container and not
-	// deploy.
-	// Actors that controlled by featuregates
-	// have the featuregate check above or in there handles
-	// func.
-	// decommission needs to be first, it is not dependant on versionchecker
+	// deploy will update the STS container and not deploy.
+	// Decommission needs to be first, it is not dependant on versionchecker.
 
+	// Actors that controlled by featuregates
+	// have the featuregate check above or in there handles func.
 	return []Actor{
-		decommission,
-		versionChecker,
-		certs,
-		update,
+		newDecommission(scheme, cl, config),
+		newVersionChecker(scheme, cl, config),
+		newGenerateCert(scheme, cl, config),
+		newPartitionedUpdate(scheme, cl, config),
 		newResizePVC(scheme, cl, config),
-		newDeploy(scheme, cl, config, kd),
+		newDeploy(scheme, cl, config, kube.NewKubernetesDistribution()),
 		newInitialize(scheme, cl, config),
 		newClusterRestart(scheme, cl, config),
 	}
