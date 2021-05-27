@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package e2e
+package testutil
 
 import (
 	"bytes"
@@ -32,7 +32,6 @@ import (
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
 	"github.com/cockroachdb/cockroach-operator/pkg/labels"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
-	"github.com/cockroachdb/cockroach-operator/pkg/testutil"
 	testenv "github.com/cockroachdb/cockroach-operator/pkg/testutil/env"
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
@@ -47,7 +46,7 @@ import (
 
 // RequireClusterToBeReadyEventuallyTimeout tests to see if a statefulset has started correctly and
 // all of the pods are running.
-func RequireClusterToBeReadyEventuallyTimeout(t *testing.T, sb testenv.DiffingSandbox, b testutil.ClusterBuilder, timeout time.Duration) {
+func RequireClusterToBeReadyEventuallyTimeout(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder, timeout time.Duration) {
 	cluster := b.Cluster()
 
 	err := wait.Poll(10*time.Second, timeout, func() (bool, error) {
@@ -73,7 +72,9 @@ func RequireClusterToBeReadyEventuallyTimeout(t *testing.T, sb testenv.DiffingSa
 	require.NoError(t, err)
 }
 
-func requireClusterToBeReadyEventually(t *testing.T, sb testenv.DiffingSandbox, b testutil.ClusterBuilder) {
+// TODO are we using this??
+
+func RequireClusterToBeReadyEventually(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder) {
 	cluster := b.Cluster()
 
 	err := wait.Poll(10*time.Second, 60*time.Second, func() (bool, error) {
@@ -97,7 +98,8 @@ func requireClusterToBeReadyEventually(t *testing.T, sb testenv.DiffingSandbox, 
 	require.NoError(t, err)
 }
 
-func requireDbContainersToUseImage(t *testing.T, sb testenv.DiffingSandbox, cr *api.CrdbCluster) {
+// RequireDbContainersToUseImage checks that the database is using the correct image
+func RequireDbContainersToUseImage(t *testing.T, sb testenv.DiffingSandbox, cr *api.CrdbCluster) {
 	err := wait.Poll(10*time.Second, 400*time.Second, func() (bool, error) {
 		pods, err := fetchPodsInStatefulSet(sb, labels.Common(cr).Selector())
 		if err != nil {
@@ -222,7 +224,9 @@ func statefulSetIsReady(ss *appsv1.StatefulSet) bool {
 	return ss.Status.ReadyReplicas == ss.Status.Replicas
 }
 
-func requireDownGradeOptionSet(t *testing.T, sb testenv.DiffingSandbox, b testutil.ClusterBuilder, version string) {
+// TODO we are not using this
+
+func RequireDownGradeOptionSet(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder, version string) {
 	sb.Mgr.GetConfig()
 	podName := fmt.Sprintf("%s-0.%s", b.Cluster().Name(), b.Cluster().Name())
 	conn := &database.DBConnection{
@@ -261,7 +265,11 @@ func requireDownGradeOptionSet(t *testing.T, sb testenv.DiffingSandbox, b testut
 	}
 
 }
-func requireDecommissionNode(t *testing.T, sb testenv.DiffingSandbox, b testutil.ClusterBuilder, numNodes int32) {
+
+// TODO I do not think this is correct.  Keith mentioned we need to check something else.
+
+// RequireDecommisionNode requires that proper nodes are decommisioned
+func RequireDecommissionNode(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder, numNodes int32) {
 	cluster := b.Cluster()
 
 	err := wait.Poll(10*time.Second, 400*time.Second, func() (bool, error) {
@@ -290,7 +298,8 @@ func requireDecommissionNode(t *testing.T, sb testenv.DiffingSandbox, b testutil
 	require.NoError(t, err)
 }
 
-func requireDatabaseToFunction(t *testing.T, sb testenv.DiffingSandbox, b testutil.ClusterBuilder) {
+// RequireDatabaseToFunction tests that the database is functioning correctly
+func RequireDatabaseToFunction(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder) {
 	sb.Mgr.GetConfig()
 	podName := fmt.Sprintf("%s-0.%s", b.Cluster().Name(), b.Cluster().Name())
 	conn := &database.DBConnection{
@@ -371,7 +380,8 @@ func getCount(t *testing.T, rows *sql.Rows) (count int) {
 	return count
 }
 
-func requirePVCToResize(t *testing.T, sb testenv.DiffingSandbox, b testutil.ClusterBuilder, quantity apiresource.Quantity) {
+// RequirePVCToResize checks that the PVCs are resized correctly
+func RequirePVCToResize(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder, quantity apiresource.Quantity) {
 	cluster := b.Cluster()
 
 	// TODO rewrite this
