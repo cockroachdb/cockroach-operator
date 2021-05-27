@@ -17,8 +17,18 @@ limitations under the License.
 package healthchecker
 
 import (
+<<<<<<< HEAD
 	"context"
 	"fmt"
+=======
+	"bufio"
+	"context"
+	"crypto/tls"
+	"fmt"
+	"io"
+	"net/http"
+	"os"
+>>>>>>> c9b5da1ba6dea64beef3448843a670abc835e527
 	"strconv"
 	"strings"
 	"time"
@@ -37,6 +47,7 @@ import (
 	"k8s.io/client-go/rest"
 )
 
+<<<<<<< HEAD
 const (
 	underreplicatedmetric = "ranges_underreplicated{store="
 	//TODO: remove the svc.cluster.local
@@ -44,6 +55,9 @@ const (
 	curlnotfounderr     = "/bin/bash: curl: command not found"
 	sleepBetweenUpdates = 3 * time.Minute
 )
+=======
+const underreplicatedmetric = "ranges_underreplicated{store="
+>>>>>>> c9b5da1ba6dea64beef3448843a670abc835e527
 
 //HealthChecker interface
 type HealthChecker interface { // for testing
@@ -83,6 +97,7 @@ func (hc *HealthCheckerImpl) Probe(ctx context.Context, l logr.Logger, logSuffix
 	if err := scale.WaitUntilStatefulSetIsReadyToServe(ctx, hc.clientset, stsnamespace, stsname, *sts.Spec.Replicas); err != nil {
 		return errors.Wrapf(err, "error rolling update stategy on pod %d", nodeID)
 	}
+<<<<<<< HEAD
 	//validate that curl is installed on all pods with the old and the new version
 	if err := hc.checkUnderReplicatedMetricAllPods(ctx, l, logSuffix, stsname, stsnamespace, *sts.Spec.Replicas); err != nil {
 		l.V(int(zapcore.DebugLevel)).Info("curl check failed", "label", logSuffix, "nodeID", nodeID)
@@ -93,17 +108,22 @@ func (hc *HealthCheckerImpl) Probe(ctx context.Context, l logr.Logger, logSuffix
 		}
 	}
 	l.V(int(zapcore.DebugLevel)).Info("first wait loop for range_underreplicated metric", "label", logSuffix, "nodeID", nodeID)
+=======
+>>>>>>> c9b5da1ba6dea64beef3448843a670abc835e527
 
 	// we check _status/vars on all cockroachdb pods looking for pairs like
 	// ranges_underreplicated{store="1"} 0 and wait if any are non-zero until all are 0.
 	// We can recheck every 10 seconds. We are waiting for this maximum 3 minutes
 	err = hc.waitUntilUnderReplicatedMetricIsZero(ctx, l, logSuffix, stsname, stsnamespace, *sts.Spec.Replicas)
 	if err != nil {
+<<<<<<< HEAD
 		//if curl is not installed we already waited 3 minutes retrying on the container so we exit
 		if _, ok := err.(CurlNotFoundErr); ok {
 			l.V(int(zapcore.DebugLevel)).Info("curlNotInstalled on first wait", "label", logSuffix, "nodeID", nodeID)
 			return nil
 		}
+=======
+>>>>>>> c9b5da1ba6dea64beef3448843a670abc835e527
 		return err
 	}
 
@@ -114,11 +134,14 @@ func (hc *HealthCheckerImpl) Probe(ctx context.Context, l logr.Logger, logSuffix
 	l.V(int(zapcore.DebugLevel)).Info("second wait loop for range_underreplicated metric", "label", logSuffix, "nodeID", nodeID)
 	err = hc.waitUntilUnderReplicatedMetricIsZero(ctx, l, logSuffix, stsname, stsnamespace, *sts.Spec.Replicas)
 	if err != nil {
+<<<<<<< HEAD
 		//if curl is not installed we already waited 3 minutes retrying on the container so we exit
 		if _, ok := err.(CurlNotFoundErr); ok {
 			l.V(int(zapcore.DebugLevel)).Info("curlNotInstalled on second wait", "label", logSuffix, "nodeID", nodeID)
 			return nil
 		}
+=======
+>>>>>>> c9b5da1ba6dea64beef3448843a670abc835e527
 		return err
 	}
 	return nil
@@ -139,34 +162,89 @@ func (hc *HealthCheckerImpl) waitUntilUnderReplicatedMetricIsZero(ctx context.Co
 	return nil
 }
 
-//checkUnderReplicatedMetric will check _status/vars on a specific pod looking for pairs like
+//checkUnderReplicatedMetric will make an http get call to _status/vars on a specific pod looking for pairs like
 //ranges_underreplicated{store="1"} 0
 func (hc *HealthCheckerImpl) checkUnderReplicatedMetric(ctx context.Context, l logr.Logger, logSuffix, podname, stsname, stsnamespace string, partition int32) error {
 	l.V(int(zapcore.DebugLevel)).Info("checkUnderReplicatedMetric", "label", logSuffix, "podname", podname, "partition", partition)
 	port := strconv.FormatInt(int64(*hc.cluster.Spec().HTTPPort), 10)
-	cmd := []string{
-		"/bin/bash",
-		"-c",
-		fmt.Sprintf(cmdunderreplicted, podname, stsname, port),
-	}
-	l.V(int(zapcore.DebugLevel)).Info("get ranges_underreplicated metric", "node", podname, "underrepmetric", underreplicatedmetric, "cmd", cmd)
-	output, stderr, err := kube.ExecInPod(hc.scheme, hc.config, hc.cluster.Namespace(),
-		podname, resource.DbContainerName, cmd)
-	if stderr != "" {
-		if strings.ContainsAny(stderr, curlnotfounderr) {
-			l.V(int(zapcore.DebugLevel)).Info("CURL not found", "node", podname)
-			return CurlNotFoundErr{
-				Err: errors.Errorf("exec in pod %s failed with stderror: %s ", podname, stderr),
-			}
+	url := fmt.Sprintf("https://%s.%s.%s:%s/_status/vars", podname, stsname, stsnamespace, port)
+
+	runningInsideK8s := inK8s("/var/run/secrets/kubernetes.io/serviceaccount/token")
+
+	var resp *http.Response
+	var err error
+	// Not running inside of Kubernetes so we need to use
+	// the pod dialer
+	if !runningInsideK8s {
+		podDialer, err := kube.NewPodDialer(hc.config, stsnamespace)
+
+		if err != nil {
+			msg := "creating dialer failed"
+			l.Error(err, msg)
+			return errors.Wrap(err, msg)
 		}
-		return errors.Errorf("exec in pod %s failed with stderror: %s ", podname, stderr)
+		tr := &http.Transport{
+			Dial: podDialer.Dial,
+			// When we generate the certs there is no CA we can
+			// validate against
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		}
+
+		client := http.Client{Transport: tr}
+		resp, err = client.Get(url)
+		if err != nil {
+			msg := "health check failed, http get failed"
+			l.Error(err, msg)
+			return errors.Wrapf(err, msg)
+		}
+	} else {
+
+		// When we generate the certs there is no CA we can
+		// validate against
+		http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+		resp, err = http.Get(url)
+		if err != nil {
+			msg := "health check failed, http get failed"
+			l.Error(err, msg)
+			return errors.Wrapf(err, msg)
+		}
 	}
+
+	defer resp.Body.Close()
+	line, err := findLine(resp.Body)
 	if err != nil {
-		return errors.Wrapf(err, "health check probe for pod %s failed", podname)
+		msg := "health check failed, error finding line in Body"
+		l.Error(err, msg)
+		return errors.Wrapf(err, msg)
 	}
-	metric, err := extractMetric(l, output, underreplicatedmetric, partition)
-	l.V(int(zapcore.DebugLevel)).Info("after get ranges_underreplicated metric", "node", podname, "output", output, "metric", metric)
+
+	if line == "" {
+		msg := "health check failed, failed unable to find metric line in response body"
+		l.Error(err, msg)
+		return errors.Wrapf(err, msg)
+	}
+
+	metric, err := extractMetric(l, line, underreplicatedmetric, partition)
+	l.V(int(zapcore.DebugLevel)).Info("after get ranges_underreplicated metric", "node", podname, "line", line, "metric", metric)
 	return err
+}
+
+// findLine finds the line with the phrase "ranges_underreplicated{" in it
+func findLine(r io.Reader) (string, error) {
+
+	scanner := bufio.NewScanner(r)
+	for scanner.Scan() {
+		text := scanner.Text()
+		if strings.Contains(text, "ranges_underreplicated{") {
+			return text, nil
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		return "", err
+	}
+
+	return "", nil
 }
 
 //checkUnderReplicatedMetric will check _status/vars on all cockroachdb pods looking for pairs like
@@ -211,6 +289,7 @@ func extractMetric(l logr.Logger, output, underepmetric string, partition int32)
 	return 0, nil
 }
 
+<<<<<<< HEAD
 //CurlNotFoundErr struct
 type CurlNotFoundErr struct {
 	Err error
@@ -218,4 +297,13 @@ type CurlNotFoundErr struct {
 
 func (e CurlNotFoundErr) Error() string {
 	return e.Err.Error()
+=======
+// inK8s checks to see if the a file exists
+func inK8s(file string) bool {
+	_, err := os.Stat(file)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return true
+>>>>>>> c9b5da1ba6dea64beef3448843a670abc835e527
 }

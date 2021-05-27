@@ -230,8 +230,6 @@ func TestUpgradesMajorVersion20to21(t *testing.T) {
 
 func TestUpgradesMajorVersion20_1To20_2(t *testing.T) {
 
-	// Major version upgrade 20_1 to 20_2
-
 	if parallel {
 		t.Parallel()
 	}
@@ -269,7 +267,7 @@ func TestUpgradesMajorVersion20_1To20_2(t *testing.T) {
 				require.NoError(t, sb.Update(current))
 				// we wait 10 min because we will be waiting 3 min for each pod because
 				// v20.1.16 does not have curl installed
-				RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 800*time.Second)
+				RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
 				requireDbContainersToUseImage(t, sb, current)
 				t.Log("Done with major upgrade")
 			},
