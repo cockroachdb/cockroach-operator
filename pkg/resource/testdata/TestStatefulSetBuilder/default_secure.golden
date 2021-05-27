@@ -48,13 +48,13 @@ spec:
               resource: limits.memory
         image: cockroachdb/cockroach:v20.2.7
         imagePullPolicy: IfNotPresent
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: http
-            scheme: HTTPS
-          initialDelaySeconds: 30
-          periodSeconds: 5
+        lifecycle:
+          preStop:
+            exec:
+              command:
+              - sh
+              - -c
+              - /cockroach/cockroach node drain --certs-dir=/cockroach/cockroach-certs/ || exit 0
         name: db
         ports:
         - containerPort: 26258
