@@ -243,13 +243,16 @@ func (b StatefulSetBuilder) MakeContainers() []corev1.Container {
 			Name:            DbContainerName,
 			Image:           image,
 			ImagePullPolicy: *b.Spec().Image.PullPolicyName,
-			// Lifecycle: &corev1.Lifecycle{
-			// 	PreStop: &corev1.Handler{
-			// 		Exec: &corev1.ExecAction{
-			// 			Command: []string{"/cockroach/cockroach", "node", "drain", b.SecureMode()},
-			// 		},
-			// 	},
-			// },
+			Lifecycle: &corev1.Lifecycle{
+				PreStop: &corev1.Handler{
+					Exec: &corev1.ExecAction{
+						Command: []string{
+							"sh", "-c",
+							fmt.Sprintf("/cockroach/cockroach node drain %s || exit 0", b.SecureMode()),
+						},
+					},
+				},
+			},
 			Resources: b.Spec().Resources,
 			Command:   b.commandArgs(),
 			Env:       b.envVars(),
@@ -269,17 +272,6 @@ func (b StatefulSetBuilder) MakeContainers() []corev1.Container {
 					ContainerPort: *b.Spec().SQLPort,
 					Protocol:      corev1.ProtocolTCP,
 				},
-			},
-			LivenessProbe: &corev1.Probe{
-				Handler: corev1.Handler{
-					HTTPGet: &corev1.HTTPGetAction{
-						Path:   "/health",
-						Port:   intstr.FromString(httpPortName),
-						Scheme: b.probeScheme(),
-					},
-				},
-				InitialDelaySeconds: 30,
-				PeriodSeconds:       5,
 			},
 			ReadinessProbe: &corev1.Probe{
 				Handler: corev1.Handler{
