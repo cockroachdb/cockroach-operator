@@ -17,10 +17,6 @@ limitations under the License.
 package healthchecker
 
 import (
-<<<<<<< HEAD
-	"context"
-	"fmt"
-=======
 	"bufio"
 	"context"
 	"crypto/tls"
@@ -28,7 +24,6 @@ import (
 	"io"
 	"net/http"
 	"os"
->>>>>>> c9b5da1ba6dea64beef3448843a670abc835e527
 	"strconv"
 	"strings"
 	"time"
@@ -47,17 +42,7 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-<<<<<<< HEAD
-const (
-	underreplicatedmetric = "ranges_underreplicated{store="
-	//TODO: remove the svc.cluster.local
-	cmdunderreplicted   = "curl -ks https://%s.%s:%s/_status/vars | grep 'ranges_underreplicated{'"
-	curlnotfounderr     = "/bin/bash: curl: command not found"
-	sleepBetweenUpdates = 3 * time.Minute
-)
-=======
 const underreplicatedmetric = "ranges_underreplicated{store="
->>>>>>> c9b5da1ba6dea64beef3448843a670abc835e527
 
 //HealthChecker interface
 type HealthChecker interface { // for testing
@@ -97,33 +82,12 @@ func (hc *HealthCheckerImpl) Probe(ctx context.Context, l logr.Logger, logSuffix
 	if err := scale.WaitUntilStatefulSetIsReadyToServe(ctx, hc.clientset, stsnamespace, stsname, *sts.Spec.Replicas); err != nil {
 		return errors.Wrapf(err, "error rolling update stategy on pod %d", nodeID)
 	}
-<<<<<<< HEAD
-	//validate that curl is installed on all pods with the old and the new version
-	if err := hc.checkUnderReplicatedMetricAllPods(ctx, l, logSuffix, stsname, stsnamespace, *sts.Spec.Replicas); err != nil {
-		l.V(int(zapcore.DebugLevel)).Info("curl check failed", "label", logSuffix, "nodeID", nodeID)
-		if _, ok := err.(CurlNotFoundErr); ok {
-			l.V(int(zapcore.DebugLevel)).Info("curlNotInstalled", "label", logSuffix, "nodeID", nodeID, "fallback to sleeping duration:", sleepBetweenUpdates)
-			time.Sleep(sleepBetweenUpdates)
-			return nil
-		}
-	}
-	l.V(int(zapcore.DebugLevel)).Info("first wait loop for range_underreplicated metric", "label", logSuffix, "nodeID", nodeID)
-=======
->>>>>>> c9b5da1ba6dea64beef3448843a670abc835e527
 
 	// we check _status/vars on all cockroachdb pods looking for pairs like
 	// ranges_underreplicated{store="1"} 0 and wait if any are non-zero until all are 0.
 	// We can recheck every 10 seconds. We are waiting for this maximum 3 minutes
 	err = hc.waitUntilUnderReplicatedMetricIsZero(ctx, l, logSuffix, stsname, stsnamespace, *sts.Spec.Replicas)
 	if err != nil {
-<<<<<<< HEAD
-		//if curl is not installed we already waited 3 minutes retrying on the container so we exit
-		if _, ok := err.(CurlNotFoundErr); ok {
-			l.V(int(zapcore.DebugLevel)).Info("curlNotInstalled on first wait", "label", logSuffix, "nodeID", nodeID)
-			return nil
-		}
-=======
->>>>>>> c9b5da1ba6dea64beef3448843a670abc835e527
 		return err
 	}
 
@@ -134,14 +98,6 @@ func (hc *HealthCheckerImpl) Probe(ctx context.Context, l logr.Logger, logSuffix
 	l.V(int(zapcore.DebugLevel)).Info("second wait loop for range_underreplicated metric", "label", logSuffix, "nodeID", nodeID)
 	err = hc.waitUntilUnderReplicatedMetricIsZero(ctx, l, logSuffix, stsname, stsnamespace, *sts.Spec.Replicas)
 	if err != nil {
-<<<<<<< HEAD
-		//if curl is not installed we already waited 3 minutes retrying on the container so we exit
-		if _, ok := err.(CurlNotFoundErr); ok {
-			l.V(int(zapcore.DebugLevel)).Info("curlNotInstalled on second wait", "label", logSuffix, "nodeID", nodeID)
-			return nil
-		}
-=======
->>>>>>> c9b5da1ba6dea64beef3448843a670abc835e527
 		return err
 	}
 	return nil
@@ -289,15 +245,6 @@ func extractMetric(l logr.Logger, output, underepmetric string, partition int32)
 	return 0, nil
 }
 
-<<<<<<< HEAD
-//CurlNotFoundErr struct
-type CurlNotFoundErr struct {
-	Err error
-}
-
-func (e CurlNotFoundErr) Error() string {
-	return e.Err.Error()
-=======
 // inK8s checks to see if the a file exists
 func inK8s(file string) bool {
 	_, err := os.Stat(file)
@@ -305,5 +252,4 @@ func inK8s(file string) bool {
 		return false
 	}
 	return true
->>>>>>> c9b5da1ba6dea64beef3448843a670abc835e527
 }
