@@ -17,11 +17,17 @@ limitations under the License.
 package env
 
 import (
+	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
+	"testing"
 
+	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	customClient "github.com/cockroachdb/cockroach-operator/pkg/client/clientset/versioned"
+	"github.com/cockroachdb/cockroach-operator/pkg/testutil/paths"
 	"github.com/pkg/errors"
+	"k8s.io/apimachinery/pkg/runtime"
 	apiruntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
@@ -114,6 +120,40 @@ type ActiveEnv struct {
 	*k8s
 	scheme    *apiruntime.Scheme
 	resources []schema.GroupVersionResource
+}
+
+func CreateActiveEnvForTest(levels []string) *Env {
+	flag.Parse()
+
+	os.Setenv("USE_EXISTING_CLUSTER", "true")
+	paths.MaybeSetEnv("PATH", "kubetest2-kind", "hack", "bin", "kubetest2-kind")
+
+	// TODO do we need RBAC loaded? Because I do not
+	// think the file existed
+
+	levels = append(levels, "config", "crd", "bases")
+	crd := filepath.Join(levels...)
+
+	if _, err := os.Stat(crd); os.IsNotExist(err) {
+		fmt.Sprintln(err)
+		panic("crd directory does not exist")
+	}
+
+	if _, err := os.Stat(filepath.Join(crd, "crdb.cockroachlabs.com_crdbclusters.yaml")); err != nil {
+		fmt.Sprintln(err)
+		panic("crd file does not exist")
+	}
+
+	e := NewEnv(runtime.NewSchemeBuilder(api.AddToScheme), crd)
+
+	return e
+}
+
+func RunCode(m *testing.M, e *Env) int {
+	e.Start()
+	code := m.Run()
+	e.Stop()
+	return code
 }
 
 func loadResources(k *k8s) ([]schema.GroupVersionResource, error) {

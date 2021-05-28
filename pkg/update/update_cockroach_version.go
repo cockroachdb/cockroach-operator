@@ -26,6 +26,7 @@ import (
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/cenkalti/backoff"
+	"github.com/cockroachdb/cockroach-operator/pkg/healthchecker"
 	"github.com/go-logr/logr"
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
@@ -62,7 +63,7 @@ type UpdateCluster struct {
 	Clientset             kubernetes.Interface
 	PodUpdateTimeout      time.Duration
 	PodMaxPollingInterval time.Duration
-	Sleeper               Sleeper
+	HealthChecker         healthchecker.HealthChecker
 }
 
 // UpdateClusterCockroachVersion, and allows specifying custom pod timeouts,
@@ -137,7 +138,7 @@ func updateClusterStatefulSets(
 		makeWaitUntilAllPodsReadyFunc(ctx, cluster, update),
 		cluster.PodUpdateTimeout,
 		cluster.PodMaxPollingInterval,
-		cluster.Sleeper,
+		cluster.HealthChecker,
 		l)
 	if err != nil {
 		return err

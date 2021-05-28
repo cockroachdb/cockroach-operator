@@ -30,7 +30,6 @@ import (
 	"github.com/cockroachdb/cockroach-operator/pkg/scale"
 	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
 	"github.com/pkg/errors"
-	"go.uber.org/zap/zapcore"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	kubetypes "k8s.io/apimachinery/pkg/types"
@@ -65,11 +64,11 @@ func (d decommission) Handles(conds []api.ClusterCondition) bool {
 func (d decommission) Act(ctx context.Context, cluster *resource.Cluster) error {
 
 	log := d.log.WithValues("CrdbCluster", cluster.ObjectKey())
-	log.V(int(zapcore.DebugLevel)).Info("check decommission oportunities")
+	log.V(DEBUGLEVEL).Info("check decommission oportunities")
 	//we are not running decommission logic if a restart must be done
 	restartType := cluster.GetAnnotationRestartType()
 	if restartType != "" {
-		log.V(int(zapcore.DebugLevel)).Info("Not running decommission cluster action")
+		log.V(DEBUGLEVEL).Info("Not running decommission cluster action")
 		return nil
 	}
 	stsName := cluster.StatefulSetName()
@@ -86,7 +85,7 @@ func (d decommission) Act(ctx context.Context, cluster *resource.Cluster) error 
 	status := &ss.Status
 
 	if status.CurrentReplicas == 0 || status.CurrentReplicas < status.Replicas {
-		log.V(int(zapcore.WarnLevel)).Info("decommission statefulset does not have all replicas up")
+		log.V(WARNLEVEL).Info("decommission statefulset does not have all replicas up")
 		return NotReadyErr{Err: errors.New("decommission statefulset does not have all replicas up")}
 	}
 
@@ -98,7 +97,7 @@ func (d decommission) Act(ctx context.Context, cluster *resource.Cluster) error 
 		log.Error(err, "We cannot decommission if there are less than 3 nodes", "nodes", nodes)
 		return err
 	}
-	log.V(int(zapcore.InfoLevel)).Info("replicas decommisioning", "status.CurrentReplicas", status.CurrentReplicas, "expected", cluster.Spec().Nodes)
+	log.Info("replicas decommisioning", "status.CurrentReplicas", status.CurrentReplicas, "expected", cluster.Spec().Nodes)
 	if status.CurrentReplicas <= cluster.Spec().Nodes {
 		return nil
 	}
@@ -112,10 +111,10 @@ func (d decommission) Act(ctx context.Context, cluster *resource.Cluster) error 
 
 	serviceName := cluster.PublicServiceName()
 	if runningInsideK8s {
-		log.V(int(zapcore.DebugLevel)).Info("operator is running inside of kubernetes, connecting to service for db connection")
+		log.V(DEBUGLEVEL).Info("operator is running inside of kubernetes, connecting to service for db connection")
 	} else {
 		serviceName = fmt.Sprintf("%s-0.%s.%s", cluster.Name(), cluster.Name(), cluster.Namespace())
-		log.V(int(zapcore.DebugLevel)).Info("operator is NOT inside of kubernetes, connnecting to pod ordinal zero for db connection")
+		log.V(DEBUGLEVEL).Info("operator is NOT inside of kubernetes, connnecting to pod ordinal zero for db connection")
 	}
 
 	// The connection needs to use the discovery service name because of the
@@ -141,7 +140,7 @@ func (d decommission) Act(ctx context.Context, cluster *resource.Cluster) error 
 	if err != nil {
 		return errors.Wrapf(err, "failed to create database connection")
 	}
-	log.V(int(zapcore.DebugLevel)).Info("opened db connection")
+	log.V(DEBUGLEVEL).Info("opened db connection")
 	defer db.Close()
 
 	timeout, err := clustersql.RangeMoveDuration(ctx, db)
@@ -175,7 +174,7 @@ func (d decommission) Act(ctx context.Context, cluster *resource.Cluster) error 
 	}
 	// TO DO @alina we will need to save the status foreach action
 	cluster.SetTrue(api.DecommissionCondition)
-	log.V(int(zapcore.DebugLevel)).Info("decommission completed", "cond", ss.Status.Conditions)
+	log.V(DEBUGLEVEL).Info("decommission completed", "cond", ss.Status.Conditions)
 	CancelLoop(ctx)
 	return nil
 }

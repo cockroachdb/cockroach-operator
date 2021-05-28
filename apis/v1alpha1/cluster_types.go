@@ -97,6 +97,10 @@ type CrdbClusterSpec struct {
 	// Default: ""
 	// +optional
 	CockroachDBVersion string `json:"cockroachDBVersion,omitempty"`
+	// (Optional) PodEnvVariables is a slice of Environment Variables that are added to the pods
+	// Default: ""
+	// +optional
+	PodEnvVariables []corev1.EnvVar `json:"podEnvVariables,omitempty"`
 }
 
 // +k8s:openapi-gen=true

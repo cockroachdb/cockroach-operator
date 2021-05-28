@@ -26,14 +26,16 @@ import (
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
 	"github.com/pkg/errors"
-	"go.uber.org/zap/zapcore"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func newDeploy(scheme *runtime.Scheme, cl client.Client) Actor {
+func newDeploy(scheme *runtime.Scheme, cl client.Client, config *rest.Config, kd kube.KubernetesDistribution) Actor {
 	return &deploy{
 		action: newAction("deploy", scheme, cl),
+		config: config,
+		kd:     kd,
 	}
 }
 
@@ -41,6 +43,9 @@ func newDeploy(scheme *runtime.Scheme, cl client.Client) Actor {
 // services, a statefulset and a pod disruption budget
 type deploy struct {
 	action
+	config *rest.Config
+
+	kd kube.KubernetesDistribution
 }
 
 // GetActionType returns the  api.DeployAction value used to set the cluster status errors
@@ -57,11 +62,18 @@ func (d deploy) Handles(conds []api.ClusterCondition) bool {
 
 func (d deploy) Act(ctx context.Context, cluster *resource.Cluster) error {
 	log := d.log.WithValues("CrdbCluster", cluster.ObjectKey())
-	log.V(int(zapcore.DebugLevel)).Info("reconciling resources on deploy action")
+
+	log.V(DEBUGLEVEL).Info("reconciling resources on deploy action")
 
 	r := resource.NewManagedKubeResource(ctx, d.client, cluster, kube.AnnotatingPersister)
 
 	owner := cluster.Unwrap()
+	kubernetesDistro, err := d.kd.Get(ctx, d.config, log)
+	if err != nil {
+		return errors.Wrap(err, "failed to get Kubernetes distribution")
+	}
+
+	kubernetesDistro = "kubernetes-operator-" + kubernetesDistro
 
 	changed, err := (resource.Reconciler{
 		ManagedResource: r,
@@ -77,7 +89,7 @@ func (d deploy) Act(ctx context.Context, cluster *resource.Cluster) error {
 	}
 
 	if changed {
-		log.V(int(zapcore.DebugLevel)).Info("created/updated discovery service, stopping request processing")
+		log.Info("created/updated discovery service, stopping request processing")
 		CancelLoop(ctx)
 		return nil
 	}
@@ -96,15 +108,17 @@ func (d deploy) Act(ctx context.Context, cluster *resource.Cluster) error {
 	}
 
 	if changed {
-		log.V(int(zapcore.DebugLevel)).Info("created/updated public service, stopping request processing")
+		log.Info("created/updated public service, stopping request processing")
 		CancelLoop(ctx)
 		return nil
 	}
+
 	changed, err = (resource.Reconciler{
 		ManagedResource: r,
 		Builder: resource.StatefulSetBuilder{
-			Cluster:  cluster,
-			Selector: r.Labels.Selector(),
+			Cluster:   cluster,
+			Selector:  r.Labels.Selector(),
+			Telemetry: kubernetesDistro,
 		},
 		Owner:  owner,
 		Scheme: d.scheme,
@@ -114,7 +128,7 @@ func (d deploy) Act(ctx context.Context, cluster *resource.Cluster) error {
 	}
 
 	if changed {
-		log.V(int(zapcore.DebugLevel)).Info("created/updated statefulset, stopping request processing")
+		log.Info("created/updated statefulset, stopping request processing")
 		CancelLoop(ctx)
 		return nil
 	}
@@ -136,12 +150,12 @@ func (d deploy) Act(ctx context.Context, cluster *resource.Cluster) error {
 		}
 
 		if changed {
-			log.V(int(zapcore.DebugLevel)).Info("created/updated pdb, stopping request processing")
+			log.Info("created/updated pdb, stopping request processing")
 			CancelLoop(ctx)
 			return nil
 		}
 	}
 
-	log.V(int(zapcore.DebugLevel)).Info("deployed database")
+	log.Info("deployed database")
 	return nil
 }

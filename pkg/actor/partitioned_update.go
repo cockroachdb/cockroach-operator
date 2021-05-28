@@ -20,12 +20,14 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/Masterminds/semver/v3"
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/condition"
 	"github.com/cockroachdb/cockroach-operator/pkg/database"
+	"github.com/cockroachdb/cockroach-operator/pkg/healthchecker"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	"github.com/cockroachdb/cockroach-operator/pkg/update"
 	"github.com/pkg/errors"
@@ -75,11 +77,11 @@ func (up *partitionedUpdate) Act(ctx context.Context, cluster *resource.Cluster)
 	// see https://github.com/cockroachdb/cockroach-operator/issues/202
 
 	log := up.log.WithValues("CrdbCluster", cluster.ObjectKey())
-	log.V(int(zapcore.InfoLevel)).Info("checking update opportunities, using a partitioned update")
+	log.V(DEBUGLEVEL).Info("checking update opportunities, using a partitioned update")
 	//we are not running decommission logic if a restart must be done
 	restartType := cluster.GetAnnotationRestartType()
 	if restartType != "" {
-		log.V(int(zapcore.DebugLevel)).Info("Not running partial update cluster action because restart already runs")
+		log.V(DEBUGLEVEL).Info("Not running partial update cluster action because restart already runs")
 		return nil
 	}
 
@@ -113,7 +115,7 @@ func (up *partitionedUpdate) Act(ctx context.Context, cluster *resource.Cluster)
 	versionWantedCalFmtStr := cluster.GetVersionAnnotation()
 	if versionWantedCalFmtStr == "" {
 		cluster.SetFalse(api.CrdbVersionChecked)
-		log.V(int(zapcore.DebugLevel)).Info("no version annotation found on crd ... waiting for version checker to run")
+		log.V(DEBUGLEVEL).Info("no version annotation found on crd ... waiting for version checker to run")
 		return nil
 	}
 	currentVersionCalFmtStr := statefulSet.Annotations[resource.CrdbVersionAnnotation]
@@ -144,7 +146,6 @@ func (up *partitionedUpdate) Act(ctx context.Context, cluster *resource.Cluster)
 	// see https://github.com/cockroachdb/cockroach-operator/issues/203
 	podUpdateTimeout := 10 * time.Minute
 	podMaxPollingInterval := 30 * time.Minute
-	sleeper := update.NewSleeper(1 * time.Minute)
 
 	clientset, err := kubernetes.NewForConfig(up.config)
 	if err != nil {
@@ -157,10 +158,10 @@ func (up *partitionedUpdate) Act(ctx context.Context, cluster *resource.Cluster)
 
 	serviceName := cluster.PublicServiceName()
 	if runningInsideK8s {
-		log.V(int(zapcore.DebugLevel)).Info("operator is running inside of kubernetes, connecting to service for db connection")
+		log.V(DEBUGLEVEL).Info("operator is running inside of kubernetes, connecting to service for db connection")
 	} else {
 		serviceName = fmt.Sprintf("%s-0.%s.%s", cluster.Name(), cluster.Name(), cluster.Namespace())
-		log.V(int(zapcore.DebugLevel)).Info("operator is NOT inside of kubernetes, connnecting to pod ordinal zero for db connection")
+		log.V(DEBUGLEVEL).Info("operator is NOT inside of kubernetes, connnecting to pod ordinal zero for db connection")
 	}
 
 	// The connection needs to use the discovery service name because of the
@@ -201,7 +202,7 @@ func (up *partitionedUpdate) Act(ctx context.Context, cluster *resource.Cluster)
 
 	// TODO test downgrades
 	// see https://github.com/cockroachdb/cockroach-operator/issues/208
-
+	healthChecker := healthchecker.NewHealthChecker(cluster, clientset, up.scheme, up.config)
 	log.V(int(zapcore.InfoLevel)).Info("update starting with partitioned update", "old version", currentVersionCalFmtStr, "new version", versionWantedCalFmtStr, "image", containerWanted)
 
 	updateRoach := &update.UpdateRoach{
@@ -217,7 +218,7 @@ func (up *partitionedUpdate) Act(ctx context.Context, cluster *resource.Cluster)
 		Clientset:             clientset,
 		PodUpdateTimeout:      podUpdateTimeout,
 		PodMaxPollingInterval: podMaxPollingInterval,
-		Sleeper:               sleeper,
+		HealthChecker:         healthChecker,
 	}
 
 	err = update.UpdateClusterCockroachVersion(
@@ -237,7 +238,7 @@ func (up *partitionedUpdate) Act(ctx context.Context, cluster *resource.Cluster)
 	}
 
 	// TODO set status that we are completed.
-	log.V(int(zapcore.DebugLevel)).Info("update completed with partitioned update", "new version", versionWantedCalFmtStr)
+	log.V(DEBUGLEVEL).Info("update completed with partitioned update", "new version", versionWantedCalFmtStr)
 	CancelLoop(ctx)
 	return nil
 }
@@ -256,4 +257,29 @@ func getStsAnnotation(statefulSet *appsv1.StatefulSet, key string) string {
 	} else {
 		return currentVersion
 	}
+}
+
+func getImageNameNoVersion(image string) string {
+	i := strings.LastIndex(image, ":")
+	if i == -1 {
+		return image
+	}
+
+	return image[:i]
+}
+
+func statefulSetIsUpdating(ss *appsv1.StatefulSet) bool {
+	if ss.Status.ObservedGeneration == 0 {
+		return false
+	}
+
+	if ss.Status.CurrentRevision != ss.Status.UpdateRevision {
+		return true
+	}
+
+	if ss.Generation > ss.Status.ObservedGeneration && *ss.Spec.Replicas == ss.Status.Replicas {
+		return true
+	}
+
+	return false
 }

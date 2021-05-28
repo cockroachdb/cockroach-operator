@@ -28,6 +28,11 @@ CLUSTER_NAME?=bazel-test
 DEV_REGISTRY?=gcr.io/$(GCP_PROJECT)
 COCKROACH_DATABASE_VERSION=v20.2.5
 
+# used for running e2e tests with OpenShift
+PULL_SECRET?=
+GCP_REGION?=
+BASE_DOMAIN?=
+
 #
 # Unit Testing Targets
 #
@@ -70,12 +75,13 @@ test/e2e-short:
 # This target is used by kubetest2-tester-exec when running a kind test
 # This target exportis the kubeconfig from kind and then runs
 # k8s:k8s -type kind which checks to see if kind is up and running.
-# Then bazel e2e testing is run.
-.PHONY: test/e2e/testrunner-kind
-test/e2e/testrunner-kind:
+# Then bazel e2e testing is run. 
+# An example of calling this is using make test/e2e/testrunner-kind-upgrades
+test/e2e/testrunner-kind-%: PACKAGE=$*
+test/e2e/testrunner-kind-%:
 	bazel-bin/hack/bin/kind export kubeconfig --name $(CLUSTER_NAME)
 	bazel run //hack/k8s:k8s -- -type kind
-	bazel test --stamp //e2e/...
+	bazel test --stamp //e2e/$(PACKAGE)/... --test_arg=-test.parallel=8 --test_arg=parallel=true
 
 # Use this target to run e2e tests using a kind k8s cluster.
 # This target uses kind to start a k8s cluster  and runs the e2e tests
@@ -86,11 +92,11 @@ test/e2e/testrunner-kind:
 # test/e2e/testrunner-kind.
 # After the tests run the cluster is deleted.
 # If you need a unique cluster name override CLUSTER_NAME.
-.PHONY: test/e2e/kind
-test/e2e/kind:
+test/e2e/kind-%: PACKAGE=$*
+test/e2e/kind-%:
 	bazel build //hack/bin/...
 	PATH=${PATH}:bazel-bin/hack/bin kubetest2 kind --cluster-name=$(CLUSTER_NAME) \
-		--up --down -v 10 --test=exec -- make test/e2e/testrunner-kind
+		--up --down -v 10 --test=exec -- make test/e2e/testrunner-kind-$(PACKAGE)
 
 # This target is used by kubetest2-tester-exec when running a gke test
 # k8s:k8s -type gke which checks to see if gke is up and running.
@@ -103,9 +109,14 @@ test/e2e/testrunner-gke:
 	bazel run //hack/k8s:k8s -- -type gke
 	K8S_CLUSTER=gke_$(GCP_PROJECT)_$(GCP_ZONE)_$(CLUSTER_NAME) \
 	DEV_REGISTRY=$(DEV_REGISTRY) \
-	bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
-		//manifests:install_operator.apply
-	bazel test --stamp --test_arg=--pvc=true //e2e/...
+	# TODO this is not working because we create the cluster role binding now
+	# for openshift.  We need to move this to a different target
+	#bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
+	#	//manifests:install_operator.apply
+	bazel test --stamp --test_arg=--pvc=true //e2e/upgrades/...
+	bazel test --stamp --test_arg=--pvc=true //e2e/create/...
+	bazel test --stamp --test_arg=--pvc=true //e2e/pvcresize/...
+	bazel test --stamp --test_arg=--pvc=true //e2e/decommision/...
 
 # Use this target to run e2e tests with a gke cluster.
 # This target uses kind to start a gke k8s cluster  and runs the e2e tests
@@ -127,6 +138,35 @@ test/e2e/gke:
 		--zone=$(GCP_ZONE) --project=$(GCP_PROJECT) \
 		--version latest --up --down -v 10 --ignore-gcp-ssh-key \
 		--test=exec -- make test/e2e/testrunner-gke
+
+.PHONY: test/e2e/testrunner-openshift
+test/e2e/testrunner-openshift:
+	bazel test --stamp //e2e/upgrades/...  --action_env=KUBECONFIG=$(HOME)/openshift-$(CLUSTER_NAME)/auth/kubeconfig
+	bazel test --stamp //e2e/create/...  --action_env=KUBECONFIG=$(HOME)/openshift-$(CLUSTER_NAME)/auth/kubeconfig
+	bazel test --stamp //e2e/pvcresize/...  --action_env=KUBECONFIG=$(HOME)/openshift-$(CLUSTER_NAME)/auth/kubeconfig
+	bazel test --stamp //e2e/decommision/...  --action_env=KUBECONFIG=$(HOME)/openshift-$(CLUSTER_NAME)/auth/kubeconfig
+
+.PHONY: test/e2e/delete-openshift
+test/e2e/delete-openshift:
+	bazel build //hack/bin/... //e2e/kubetest2-openshift/...
+	PATH=${PATH}:bazel-bin/hack/bin:bazel-bin/e2e/kubetest2-openshift/kubetest2-openshift_/ \
+	     bazel-bin/hack/bin/kubetest2 openshift --cluster-name=$(CLUSTER_NAME) \
+	     --gcp-project-id=$(GCP_PROJECT) \
+	     --gcp-region=$(GCP_REGION) \
+	     --base-domain=$(BASE_DOMAIN) \
+	     --pull-secret-file=$(PULL_SECRET) \
+	     --down 
+
+.PHONY: test/e2e/create-openshift
+test/e2e/create-openshift:
+	bazel build //hack/bin/... //e2e/kubetest2-openshift/...
+	PATH=${PATH}:bazel-bin/hack/bin:bazel-bin/e2e/kubetest2-openshift/kubetest2-openshift_/ \
+	     bazel-bin/hack/bin/kubetest2 openshift --cluster-name=$(CLUSTER_NAME) \
+	     --gcp-project-id=$(GCP_PROJECT) \
+	     --gcp-region=$(GCP_REGION) \
+	     --base-domain=$(BASE_DOMAIN) \
+	     --pull-secret-file=$(PULL_SECRET) \
+	     --up 
 
 #
 # Different dev targets
