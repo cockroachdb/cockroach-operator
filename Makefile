@@ -164,6 +164,17 @@ test/e2e/openshift:
 	     --pull-secret-file=$(PULL_SECRET) \
 	     --up --down --test=exec -- make test/e2e/testrunner-openshift
 
+# This testrunner launchs the openshift packaging e2e test
+# and requires an existing openshift cluster and the kubeconfig
+# located in the usual place.
+.PHONY: test/e2e/testrunner-openshift-packaging
+test/e2e/testrunner-openshift-packaging: test/openshift-package
+	bazel build //hack/bin:oc
+	bazel test --stamp //e2e/openshift/... --cache_test_results=no \
+		--action_env=KUBECONFIG=$(HOME)/openshift-$(CLUSTER_NAME)/auth/kubeconfig \
+		--action_env=APP_VERSION=$(APP_VERSION) \
+		--action_env=DOCKER_REGISTRY=$(DOCKER_REGISTRY)
+
 #
 # Different dev targets
 #
@@ -236,6 +247,8 @@ release/gen-files: release/gen-templates
 
 .PHONY: release/image
 release/image:
+	# TODO this bazel clean is here because we need to pull the latest image from redhat registry every time
+	# but this removes all caching and makes compile time for developers LONG.
 	bazel clean --expunge
 	DOCKER_REGISTRY=$(DOCKER_REGISTRY) \
 	DOCKER_IMAGE_REPOSITORY=$(DOCKER_IMAGE_REPOSITORY) \
@@ -278,7 +291,6 @@ PKG_MAN_OPTS ?= "$(PKG_FROM_VERSION) $(PKG_CHANNELS) $(PKG_IS_DEFAULT_CHANNEL)"
 release/update-pkg-manifest:dev/generate
 	bazel run  //hack:update-pkg-manifest  -- $(RH_BUNDLE_VERSION) $(RH_OPERATOR_IMAGE) $(PKG_MAN_OPTS) $(RH_COCKROACH_DATABASE_IMAGE)
 
-
 #  Build the packagemanifests
 .PHONY: release/opm-build-bundle
 release/opm-build-bundle:
@@ -297,22 +309,35 @@ release/bundle-image:
 	bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
 		//:push_operator_bundle_image
 
+# This target:
+# 1. Updates CRD and CSV files 
+# 2. Pushes the operator image to a registry
+# 3. Builds the OpenShift bundle
+# 4. Pushes the OpenShift bundle to a registry
+# 5. Run opm to create and push the OpenShift index container to a registry
+# 6. Removes the newly created OpenShift files so that it can run again. 
+#
+# The following env variables are used for the above process.
+#
+# APP_VERSION
+# VERSION
+# RH_BUNDLE_VERSION
+# RH_OPERATOR_IMAGE
+# DOCKER_REGISTRY
+#
+# See hack/openshift-test-packaging.sh for more information on running this target.
+.PHONY: test/openshift-package
+test/openshift-package: release/update-pkg-manifest release/image release/opm-build-bundle test/push-openshift-images
+	VERSION=$(VERSION) \
+	hack/cleanup-packaging.sh 
 
-OLM_REPO ?=
-OLM_BUNDLE_REPO ?= cockroachdb-operator-index
-OLM_PACKAGE_NAME ?= cockroachdb-certified
-TAG ?= $(APP_VERSION)
-#
-# dev opm index build for quay repo
-#
-.PHONY: dev/opm-build-index
-dev/opm-build-index:
-	RH_BUNDLE_REGISTRY=$(RH_BUNDLE_REGISTRY) \
-	RH_BUNDLE_IMAGE_REPOSITORY=$(RH_BUNDLE_IMAGE_REPOSITORY) \
-	RH_BUNDLE_VERSION=$(RH_BUNDLE_VERSION) \
-	RH_DEPLOY_PATH=$(RH_DEPLOY_FULL_PATH) \
+# This target pushes the OpenShift bundle, then uses opm to push the index bundle.
+.PHONY: test/push-openshift-images
+test/push-openshift-images:
+	APP_VERSION=$(APP_VERSION) \
+	DOCKER_REGISTRY=$(DOCKER_REGISTRY) \
 	bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
-		//hack:opm-build-index $(OLM_REPO) $(OLM_BUNDLE_REPO) $(TAG) $(RH_BUNDLE_VERSION) $(RH_COCKROACH_DATABASE_IMAGE)
+		//hack:push-openshift-images
 
 CHANNELS?=beta,stable
 DEFAULT_CHANNEL?=stable
