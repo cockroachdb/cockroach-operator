@@ -72,7 +72,7 @@ func (v *versionChecker) Handles(conds []api.ClusterCondition) bool {
 
 func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) error {
 	log := v.log.WithValues("CrdbCluster", cluster.ObjectKey())
-	log.V(int(zapcore.DebugLevel)).Info("starting to check the crdb version of the container provided")
+	log.V(DEBUGLEVEL).Info("starting to check the crdb version of the container provided")
 
 	r := resource.NewManagedKubeResource(ctx, v.client, cluster, kube.AnnotatingPersister)
 	owner := cluster.Unwrap()
@@ -86,7 +86,7 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 			log.Error(err, "invalid custom resources")
 			return err
 		}
-		log.V(int(zapcore.DebugLevel)).Info("User set cockroachDBVersion")
+		log.V(DEBUGLEVEL).Info("User set cockroachDBVersion")
 		// we check if the cockroachDBVersion is supported by the operator,
 		// this can return false only for api field CockroachDBVersion
 		// The supported versions are set as enviroment variables in the operator manifest.

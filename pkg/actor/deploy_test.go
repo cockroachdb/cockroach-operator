@@ -22,6 +22,7 @@ import (
 
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/actor"
+	"github.com/cockroachdb/cockroach-operator/pkg/kube"
 	"github.com/cockroachdb/cockroach-operator/pkg/testutil"
 	"github.com/go-logr/zapr"
 	"github.com/pkg/errors"
@@ -74,7 +75,8 @@ func TestDeploysNotInitalizedClusterAfterVersionChecker(t *testing.T) {
 		WithNodeCount(1).Cluster()
 	cluster.SetTrue(api.CrdbVersionChecked)
 
-	deploy := actor.NewDeploy(scheme, client)
+	mock := kube.MockKubernetesDistribution()
+	deploy := actor.NewDeploy(scheme, client, nil, mock)
 	t.Log(cluster.Status().Conditions)
 	require.True(t, deploy.Handles(cluster.Status().Conditions))
 

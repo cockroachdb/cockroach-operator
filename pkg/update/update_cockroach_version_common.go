@@ -85,7 +85,11 @@ func makeIsCRBPodIsRunningNewVersionFunction(
 			l.Error(statusError, fmt.Sprintf("status error getting pod %v", statusError.ErrStatus.Message))
 			return statusError
 		} else if err != nil { // this is an error
-			l.Error(err, "error getting pod")
+			// TODO uncertain why this is logging is throwing an error
+			// l.Error(err, "error getting pod")
+			// using this line instead of the one above since the above line is throwing an error
+			// during e2e testing
+			l.V(int(zapcore.ErrorLevel)).Info("error findinging Pod", "podName", podName, "namespace", stsNamespace)
 			return err
 		}
 

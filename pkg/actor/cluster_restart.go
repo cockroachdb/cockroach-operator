@@ -25,12 +25,12 @@ import (
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/condition"
 	"github.com/cockroachdb/cockroach-operator/pkg/features"
+	"github.com/cockroachdb/cockroach-operator/pkg/healthchecker"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	"github.com/cockroachdb/cockroach-operator/pkg/scale"
 	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
-	"go.uber.org/zap/zapcore"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/apps/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
@@ -76,10 +76,10 @@ func (r *clusterRestart) Handles(conds []api.ClusterCondition) bool {
 
 func (r *clusterRestart) Act(ctx context.Context, cluster *resource.Cluster) error {
 	log := r.log.WithValues("CrdbCluster", cluster.ObjectKey())
-	log.V(int(zapcore.DebugLevel)).Info("starting cluster restart action")
+	log.V(DEBUGLEVEL).Info("starting cluster restart action")
 	restartType := cluster.GetAnnotationRestartType()
 	if restartType == "" {
-		log.V(int(zapcore.DebugLevel)).Info("No restart cluster action")
+		log.V(DEBUGLEVEL).Info("No restart cluster action")
 		return nil
 	}
 	// Get the sts and compare the sts size to the size in the CR
@@ -91,6 +91,7 @@ func (r *clusterRestart) Act(ctx context.Context, cluster *resource.Cluster) err
 	if err != nil {
 		return errors.Wrapf(err, "failed to create kubernetes clientset")
 	}
+
 	statefulSet := &appsv1.StatefulSet{}
 	if err := r.client.Get(ctx, key, statefulSet); err != nil {
 		return errors.Wrap(err, "failed to fetch statefulset")
@@ -100,31 +101,31 @@ func (r *clusterRestart) Act(ctx context.Context, cluster *resource.Cluster) err
 	if statefulSetIsUpdating(statefulSet) {
 		return NotReadyErr{Err: errors.New("restart statefulset is updating, waiting for the update to finish")}
 	}
-
 	status := &statefulSet.Status
 	if status.CurrentReplicas == 0 || status.CurrentReplicas < status.Replicas {
 		log.Info("restart statefulset does not have all replicas up")
 		return NotReadyErr{Err: errors.New("restart cluster statefulset does not have all replicas up")}
 	}
-
+	healthChecker := healthchecker.NewHealthChecker(cluster, clientset, r.scheme, r.config)
 	if strings.EqualFold(restartType, api.ClusterRestartType(api.RollingRestart).String()) {
-		log.V(int(zapcore.DebugLevel)).Info("initiating rolling restart action")
-		if err := r.rollingSts(ctx, statefulSet.DeepCopy(), clientset, r.log); err != nil {
+		log.V(DEBUGLEVEL).Info("initiating rolling restart action")
+		if err := r.rollingSts(ctx, statefulSet.DeepCopy(), clientset, r.log, healthChecker); err != nil {
 			return errors.Wrapf(err, "error restarting statefulset %s.%s", cluster.Namespace(), cluster.StatefulSetName())
 		}
-		log.V(int(zapcore.DebugLevel)).Info("completed rolling cluster restart")
+		log.V(DEBUGLEVEL).Info("completed rolling cluster restart")
 	} else if strings.EqualFold(restartType, api.ClusterRestartType(api.FullCluster).String()) {
 		if err := r.fullClusterRestart(ctx, statefulSet, log, clientset); err != nil {
 			return errors.Wrapf(err, "error reseting statefulset %s.%s to 0 replicas", cluster.Namespace(), cluster.StatefulSetName())
 		}
 		//sleep 1 minute to make sure the crdb is up and running
-		log.V(int(zapcore.DebugLevel)).Info("sleeping", "duration", sleepDuration.String(), "label", "after full cluster restart")
-		time.Sleep(sleepDuration)
-
-		log.V(int(zapcore.DebugLevel)).Info("completed full cluster restart")
+		log.V(DEBUGLEVEL).Info("sleeping", "duration", sleepDuration.String(), "label", "after full cluster restart")
+		if err := healthChecker.Probe(ctx, log, fmt.Sprintf("waiting after restart for cluster %s", cluster.Name()), 0); err != nil {
+			return err
+		}
+		log.V(DEBUGLEVEL).Info("completed full cluster restart")
 	} else {
 		err := ValidationError{Err: errors.New("invalid annotation value, please use Rolling or FullCluster values")}
-		log.V(int(zapcore.DebugLevel)).Info("invalid annotation for cluster restart")
+		log.V(DEBUGLEVEL).Info("invalid annotation for cluster restart")
 		return err
 	}
 	// we force the saving of the status on the cluster and cancel the loop
@@ -142,13 +143,16 @@ func (r *clusterRestart) Act(ctx context.Context, cluster *resource.Cluster) err
 	if err := r.client.Update(ctx, refreshedCluster.Unwrap()); err != nil {
 		log.Error(err, "failed reseting the restart cluster field")
 	}
-	log.V(int(zapcore.DebugLevel)).Info("completed cluster restart")
+	log.V(DEBUGLEVEL).Info("completed cluster restart")
 	CancelLoop(ctx)
 	return nil
 }
 
 // rollingSts performs a rolling update on the cluster.
-func (r *clusterRestart) rollingSts(ctx context.Context, sts *appsv1.StatefulSet, clientset *kubernetes.Clientset, l logr.Logger) error {
+func (r *clusterRestart) rollingSts(ctx context.Context, sts *appsv1.StatefulSet,
+	clientset *kubernetes.Clientset,
+	l logr.Logger,
+	healthChecker healthchecker.HealthChecker) error {
 	timeNow := metav1.Now()
 	// When a StatefulSet's partition number is set to `n`, only StatefulSet pods
 	// numbered greater or equal to `n` will be updated. The rest will remain untouched.
@@ -179,15 +183,16 @@ func (r *clusterRestart) rollingSts(ctx context.Context, sts *appsv1.StatefulSet
 		// Wait until verificationFunction verifies the update, passing in
 		// the current partition so the function knows which pod to check
 		// the status of.
-		l.V(int(zapcore.DebugLevel)).Info("waiting until partition done restarting", "partition number:", partition)
+		l.V(DEBUGLEVEL).Info("waiting until partition done restarting", "partition number:", partition)
 
 		if err := scale.WaitUntilStatefulSetIsReadyToServe(ctx, clientset, stsNamespace, stsName, *replicas); err != nil {
 			return errors.Wrapf(err, "error rolling update stategy on pod %d", int(partition))
 		}
 
-		// wait 1 minute between updates
-		l.V(int(zapcore.DebugLevel)).Info("sleeping", "duration", sleepDuration.String(), "label", "between restarting pods")
-		time.Sleep(sleepDuration)
+		// wait for all replicas to be up
+		if err := healthChecker.Probe(ctx, l, "between restarting pods", int(partition)); err != nil {
+			return errors.Wrapf(err, "error health checker for rolling restart on pod %d", int(partition))
+		}
 	}
 	return nil
 }
