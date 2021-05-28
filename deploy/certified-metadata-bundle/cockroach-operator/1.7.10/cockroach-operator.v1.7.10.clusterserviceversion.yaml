@@ -42,7 +42,7 @@ metadata:
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
     repository: https://github.com/cockroachdb/cockroach-operator
     support: Cockroach Labs
-  name: cockroach-operator.v1.7.9
+  name: cockroach-operator.v1.7.10
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -362,4 +362,4 @@ spec:
   maturity: beta
   provider:
     name: Cockroach Labs
-  version: 1.7.9
+  version: 1.7.10
