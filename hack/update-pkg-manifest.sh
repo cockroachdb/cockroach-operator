@@ -57,7 +57,6 @@ echo "RH_PKG_MAN_OPTS=$RH_PKG_MAN_OPTS"
 RH_COCKROACH_DATABASE_IMAGE="$8"
 echo "RH_COCKROACH_DATABASE_IMAGE=$RH_COCKROACH_DATABASE_IMAGE"
 DEPLOY_PATH="deploy/certified-metadata-bundle/cockroach-operator"
-SUPPORTED_VERSIONS=(v19.2.12 v20.1.11 v20.1.12 v20.1.13 v20.1.14 v20.1.15 v20.1.16 v20.1.4 v20.1.5 v20.1.8 v20.2.0 v20.2.1 v20.2.2 v20.2.3 v20.2.4 v20.2.5 v20.2.6 v20.2.7 v20.2.8 v20.2.9 v20.2.10 v21.1.0 v21.1.1)
 DEPLOY_CERTIFICATION_PATH="deploy/certified-metadata-bundle"
 if [ -d "${DEPLOY_PATH}/${RH_BUNDLE_VERSION}" ]
 then
@@ -69,7 +68,7 @@ rm -rf ${DEPLOY_PATH}/${RH_BUNDLE_VERSION}
 "$kstomize" build config/manifests | "$opsdk" generate packagemanifests -q --version ${RH_BUNDLE_VERSION} ${RH_PKG_MAN_OPTS} --output-dir ${DEPLOY_PATH} --input-dir ${DEPLOY_PATH} --verbose
 # cat ${DEPLOY_PATH}/${RH_BUNDLE_VERSION}/cockroach-operator.clusterserviceversion.yaml | sed -e "s+RH_COCKROACH_OP_IMAGE_PLACEHOLDER+${RH_COCKROACH_OP_IMG}+g" -e "s+RH_COCKROACH_DB_IMAGE_PLACEHOLDER+${RH_COCKROACH_DATABASE_IMAGE}+g" -e "s+CREATED_AT_PLACEHOLDER+"$(date +"%FT%H:%M:%SZ")"+g"> ${DEPLOY_PATH}/${RH_BUNDLE_VERSION}/csv.yaml
 cat ${DEPLOY_PATH}/${RH_BUNDLE_VERSION}/cockroach-operator.clusterserviceversion.yaml | sed "s+RH_COCKROACH_OP_IMAGE_PLACEHOLDER+${RH_COCKROACH_OP_IMG}+g; s+CREATED_AT_PLACEHOLDER+"$(date +"%FT%H:%M:%SZ")"+g"> ${DEPLOY_PATH}/${RH_BUNDLE_VERSION}/csv.yaml
-for v in "${SUPPORTED_VERSIONS[@]}"
+for v in $(grep -v '#' ${REPO_ROOT}/crdb-versions.txt)
 do
   vrs=${v//./_}
   ENV_VAR_PLACEHOLDER="RH_COCKROACH_DB_IMAGE_PLACEHOLDER_${vrs}"

@@ -28,8 +28,6 @@ spec:
             - info
             # - debug
           env:
-            - name: RELATED_IMAGE_COCKROACH_v19_2_12
-              value: RH_COCKROACH_DB_IMAGE_PLACEHOLDER_v19_2_12
             - name: RELATED_IMAGE_COCKROACH_v20_1_11
               value: RH_COCKROACH_DB_IMAGE_PLACEHOLDER_v20_1_11
             - name: RELATED_IMAGE_COCKROACH_v20_1_12
