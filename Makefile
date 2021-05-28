@@ -116,7 +116,7 @@ test/e2e/testrunner-gke:
 	bazel test --stamp --test_arg=--pvc=true //e2e/upgrades/...
 	bazel test --stamp --test_arg=--pvc=true //e2e/create/...
 	bazel test --stamp --test_arg=--pvc=true //e2e/pvcresize/...
-	bazel test --stamp --test_arg=--pvc=true //e2e/decommision/...
+	bazel test --stamp --test_arg=--pvc=true //e2e/decomission/...
 
 # Use this target to run e2e tests with a gke cluster.
 # This target uses kind to start a gke k8s cluster  and runs the e2e tests
@@ -143,8 +143,7 @@ test/e2e/gke:
 test/e2e/testrunner-openshift:
 	bazel test --stamp //e2e/upgrades/...  --action_env=KUBECONFIG=$(HOME)/openshift-$(CLUSTER_NAME)/auth/kubeconfig
 	bazel test --stamp //e2e/create/...  --action_env=KUBECONFIG=$(HOME)/openshift-$(CLUSTER_NAME)/auth/kubeconfig
-	bazel test --stamp //e2e/pvcresize/...  --action_env=KUBECONFIG=$(HOME)/openshift-$(CLUSTER_NAME)/auth/kubeconfig
-	bazel test --stamp //e2e/decommision/...  --action_env=KUBECONFIG=$(HOME)/openshift-$(CLUSTER_NAME)/auth/kubeconfig
+	bazel test --stamp //e2e/decomission/...  --action_env=KUBECONFIG=$(HOME)/openshift-$(CLUSTER_NAME)/auth/kubeconfig
 
 .PHONY: test/e2e/delete-openshift
 test/e2e/delete-openshift:
