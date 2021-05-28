@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: CI
+name: Tests
 
 on:
   # Triggers the workflow on push or pull request events but only for the master branch
@@ -31,57 +31,6 @@ on:
   workflow_dispatch:
 
 jobs:
-  e2e-kind-upgrades:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        bazel: ["4.0.0"]
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Setup Bazel
-        uses: abhinavsingh/setup-bazel@v3
-        with:
-          version: ${{ matrix.bazel }}
-
-      - name: End-to-end (kind)
-        run: make test/e2e/kind-upgrades
-
-  e2e-kind-create:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        bazel: ["4.0.0"]
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Setup Bazel
-        uses: abhinavsingh/setup-bazel@v3
-        with:
-          version: ${{ matrix.bazel }}
-
-      - name: End-to-end (kind)
-        run: make test/e2e/kind-create
-
-  e2e-kind-decomission:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        bazel: ["4.0.0"]
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Setup Bazel
-        uses: abhinavsingh/setup-bazel@v3
-        with:
-          version: ${{ matrix.bazel }}
-
-      - name: End-to-end (kind)
-        run: make test/e2e/kind-decomission
-
   tests:
     runs-on: ubuntu-latest
     strategy:
@@ -97,4 +46,4 @@ jobs:
           version: ${{ matrix.bazel }}
 
       - name: Tests
-        run: make test/all 
+        run: make test/all
