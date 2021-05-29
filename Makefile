@@ -75,7 +75,7 @@ test/e2e-short:
 # This target is used by kubetest2-tester-exec when running a kind test
 # This target exportis the kubeconfig from kind and then runs
 # k8s:k8s -type kind which checks to see if kind is up and running.
-# Then bazel e2e testing is run. 
+# Then bazel e2e testing is run.
 # An example of calling this is using make test/e2e/testrunner-kind-upgrades
 test/e2e/testrunner-kind-%: PACKAGE=$*
 test/e2e/testrunner-kind-%:
@@ -154,7 +154,7 @@ test/e2e/delete-openshift:
 	     --gcp-region=$(GCP_REGION) \
 	     --base-domain=$(BASE_DOMAIN) \
 	     --pull-secret-file=$(PULL_SECRET) \
-	     --down 
+	     --down
 
 .PHONY: test/e2e/create-openshift
 test/e2e/create-openshift:
@@ -165,7 +165,7 @@ test/e2e/create-openshift:
 	     --gcp-region=$(GCP_REGION) \
 	     --base-domain=$(BASE_DOMAIN) \
 	     --pull-secret-file=$(PULL_SECRET) \
-	     --up 
+	     --up
 
 #
 # Different dev targets
@@ -214,8 +214,19 @@ dev/syncdeps:
 
 .PHONY: release/versionbump
 release/versionbump:
+	bazel run //hack/versionbump:versionbump -- patch $(VERSION) > $(PWD)/version.txt
+	# Reload make so it rereads version.txt
+	$(MAKE) release/gen-files
+
+.PHONY: release/gen-files
+release/gen-files:
+	for target in manifests/operator.yaml manifests/patches/deployment_patch.yaml \
+		config/samples/crdb-tls-example.yaml examples/example.yaml; do \
+		bazel run //hack/crdbversions:crdbversions -- -operator-version $(APP_VERSION) \
+			-crdb-versions $(PWD)/crdb-versions.yaml \
+			-template $(PWD)/$$target.in > $(PWD)/$$target; \
+	done
 	$(MAKE) CHANNEL=beta IS_DEFAULT_CHANNEL=0 release/update-pkg-manifest && \
-	sed -i '' -e 's,image: .*,image: cockroachdb/cockroach-operator:$(APP_VERSION),' manifests/operator.yaml && \
 	$(MAKE) CHANNEL=beta IS_DEFAULT_CHANNEL=0 release/opm-build-bundle && \
 	git add . && \
 	git commit -m "Bump version to $(VERSION)"

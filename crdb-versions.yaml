@@ -1,0 +1,39 @@
+# Copyright 2021 The Cockroach Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# Supported CockroachDB versions.
+
+CrdbVersions:
+  - v20.1.11
+  - v20.1.12
+  - v20.1.13
+  - v20.1.14
+  - v20.1.15
+  - v20.1.16
+  - v20.1.4
+  - v20.1.5
+  - v20.1.8
+  - v20.2.0
+  - v20.2.1
+  - v20.2.2
+  - v20.2.3
+  - v20.2.4
+  - v20.2.5
+  - v20.2.6
+  - v20.2.7
+  - v20.2.8
+  - v20.2.9
+  - v20.2.10
+  - v21.1.0
+  - v21.1.1
