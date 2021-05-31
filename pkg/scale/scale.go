@@ -45,22 +45,6 @@ type Scaler struct {
 // ErrDecommissioningStalled will be returned  and the node will be left in a
 // decommissioning  state.
 func (s *Scaler) EnsureScale(ctx context.Context, scale uint) error {
-	// Before doing any scaling, prune any PVCs that are not currently in use.
-	// This only needs to be done when scaling up but the operation is a noop
-	// if there are no PVCs not currently in use.
-	// As of v20.2.0, CRDB nodes may not be recommissioned. To account for
-	// this, PVCs must be removed (pruned) before scaling up to avoid reusing a
-	// previously decommissioned node.
-	// Prune MUST be called before scaling as older clusters may have dangling
-	// PVCs.
-	// All underlying PVs and the storageclasses they were created with should
-	// make use of reclaim policy = delete. A reclaim policy of retain is fine
-	// but will result in wasted money, recycle should be considered unsafe and
-	// is officially deprecated by kubernetes.
-	if err := s.PVCPruner.Prune(ctx); err != nil {
-		return errors.Wrap(err, "initial PVC pruning")
-	}
-
 	// NOTE: Scaling down 3 -> 1 does not currently work (gracefully).
 	// See https://github.com/cockroachlabs/managed-service/issues/2751 for more details
 	// NOTE: Scaling up 1 -> 3 will not update monitoring, so SREs will not be alerted of issues.
@@ -99,6 +83,21 @@ func (s *Scaler) EnsureScale(ctx context.Context, scale uint) error {
 		if crdbScale, err = s.CRDB.Replicas(ctx); err != nil {
 			return err
 		}
+	}
+	// Before doing any scaling, prune any PVCs that are not currently in use.
+	// This only needs to be done when scaling up but the operation is a noop
+	// if there are no PVCs not currently in use.
+	// As of v20.2.0, CRDB nodes may not be recommissioned. To account for
+	// this, PVCs must be removed (pruned) before scaling up to avoid reusing a
+	// previously decommissioned node.
+	// Prune MUST be called before scaling as older clusters may have dangling
+	// PVCs.
+	// All underlying PVs and the storageclasses they were created with should
+	// make use of reclaim policy = delete. A reclaim policy of retain is fine
+	// but will result in wasted money, recycle should be considered unsafe and
+	// is officially deprecated by kubernetes.
+	if err := s.PVCPruner.Prune(ctx); err != nil {
+		return errors.Wrap(err, "initial PVC pruning")
 	}
 
 	// Scale up one node at a time to:
