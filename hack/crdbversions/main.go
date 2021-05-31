@@ -21,6 +21,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"text/template"
@@ -28,6 +29,17 @@ import (
 	"github.com/Masterminds/semver/v3"
 	"gopkg.in/yaml.v2"
 )
+
+type target struct {
+	template, output string
+}
+
+var targets = []target{
+	{"manifests/operator.yaml.in", "manifests/operator.yaml"},
+	{"manifests/patches/deployment_patch.yaml.in", "manifests/patches/deployment_patch.yaml"},
+	{"config/samples/crdb-tls-example.yaml.in", "config/samples/crdb-tls-example.yaml"},
+	{"examples/example.yaml.in", "examples/example.yaml"},
+}
 
 // crdb-versions.yaml structure
 type crdbVersions struct {
@@ -49,10 +61,10 @@ func main() {
 	log.SetFlags(0)
 	crdbVersionsFile := flag.String("crdb-versions", "", "YAML file with CRDB versions")
 	operatorVersion := flag.String("operator-version", "", "Current operator version")
-	templateFile := flag.String("template", "", "Template file")
+	repoRoot := flag.String("repo-root", "", "Git repository root")
 	flag.Parse()
 
-	if *crdbVersionsFile == "" || *operatorVersion == "" || *templateFile == "" {
+	if *crdbVersionsFile == "" || *operatorVersion == "" || *repoRoot == "" {
 		flag.PrintDefaults()
 		os.Exit(1)
 	}
@@ -90,6 +102,20 @@ func main() {
 		)
 	}
 
-	tpl := template.Must(template.ParseFiles(*templateFile))
-	tpl.Execute(os.Stdout, templateData)
+	for _, genData := range targets {
+		if err := generateFile(templateData, *repoRoot, genData.template, genData.output); err != nil {
+			log.Fatalf("Cannot generate %s: %s", genData.output, err)
+		}
+	}
+}
+
+func generateFile(templateData templateData, repoRoot, tplFile, output string) error {
+	tpl := template.Must(template.ParseFiles(filepath.Join(repoRoot, tplFile)))
+	outputAbs := filepath.Join(repoRoot, output)
+	out, err := os.Create(outputAbs)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+	return tpl.Execute(out, templateData)
 }

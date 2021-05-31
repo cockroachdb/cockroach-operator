@@ -220,12 +220,7 @@ release/versionbump:
 
 .PHONY: release/gen-files
 release/gen-files:
-	for target in manifests/operator.yaml manifests/patches/deployment_patch.yaml \
-		config/samples/crdb-tls-example.yaml examples/example.yaml; do \
-		bazel run //hack/crdbversions:crdbversions -- -operator-version $(APP_VERSION) \
-			-crdb-versions $(PWD)/crdb-versions.yaml \
-			-template $(PWD)/$$target.in > $(PWD)/$$target; \
-	done
+	bazel run //hack/crdbversions:crdbversions -- -operator-version $(APP_VERSION) -crdb-versions $(PWD)/crdb-versions.yaml -repo-root $(PWD)
 	$(MAKE) CHANNEL=beta IS_DEFAULT_CHANNEL=0 release/update-pkg-manifest && \
 	$(MAKE) CHANNEL=beta IS_DEFAULT_CHANNEL=0 release/opm-build-bundle && \
 	git add . && \
