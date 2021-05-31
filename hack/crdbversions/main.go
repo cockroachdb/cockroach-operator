@@ -47,17 +47,17 @@ type Version struct {
 
 func main() {
 	log.SetFlags(0)
-	crdbVersiosFile := flag.String("crdb-versions", "", "YAML file with CRDB versions")
+	crdbVersionsFile := flag.String("crdb-versions", "", "YAML file with CRDB versions")
 	operatorVersion := flag.String("operator-version", "", "Current operator version")
 	templateFile := flag.String("template", "", "Template file")
 	flag.Parse()
 
-	if *crdbVersiosFile == "" || *operatorVersion == "" || *templateFile == "" {
+	if *crdbVersionsFile == "" || *operatorVersion == "" || *templateFile == "" {
 		flag.PrintDefaults()
 		os.Exit(1)
 	}
 
-	contents, err := ioutil.ReadFile(*crdbVersiosFile)
+	contents, err := ioutil.ReadFile(*crdbVersionsFile)
 	if err != nil {
 		log.Fatalf("Cannot open CRDB version file: %s", err)
 	}
