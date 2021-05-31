@@ -120,8 +120,8 @@ func TestUpgradesMajorVersion20to21WithCockroachDbVersion(t *testing.T) {
 
 	sb := testenv.NewDiffingSandbox(t, env)
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
-	os.Setenv("RELATED_IMAGE_COCKROACH_v21_1_0", "registry.connect.redhat.com/cockroachdb/cockroach@sha256:0ef0234b6fd42977b8a9eda2c59ca8194cc1c8cf6425b99d7bf8fde8feb826c5")
-	os.Setenv("RELATED_IMAGE_COCKROACH_v20_2_10", "registry.connect.redhat.com/cockroachdb/cockroach:v20.2.10")
+	os.Setenv("RELATED_IMAGE_COCKROACH_v21_1_1", "cockroachdb/cockroach@sha256:7c84559a33db90b52f8179c904818525e45852b683bd6272f61dcf54c103f5b1")
+	os.Setenv("RELATED_IMAGE_COCKROACH_v20_2_10", "cockroachdb/cockroach@sha256:a1ef571ff3b47b395084d2f29abbc7706be36a826a618a794697d90a03615ada")
 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
 		WithCockroachDBVersion("v20.2.10").
 		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
@@ -140,7 +140,7 @@ func TestUpgradesMajorVersion20to21WithCockroachDbVersion(t *testing.T) {
 				current := builder.Cr()
 				require.NoError(t, sb.Get(current))
 
-				current.Spec.CockroachDBVersion = "v21.1.0"
+				current.Spec.CockroachDBVersion = "v21.1.1"
 				require.NoError(t, sb.Update(current))
 
 				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
