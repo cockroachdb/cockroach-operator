@@ -130,7 +130,7 @@ func (up *partitionedUpdate) Act(ctx context.Context, cluster *resource.Cluster)
 		log.Info("no version changes needed")
 		return nil
 	}
-
+	//somehow the image can be a sha256
 	containerWanted = getImageNameNoVersion(containerWanted)
 
 	currentVersion, err := semver.NewVersion(currentVersionCalFmtStr)
@@ -260,6 +260,10 @@ func getStsAnnotation(statefulSet *appsv1.StatefulSet, key string) string {
 }
 
 func getImageNameNoVersion(image string) string {
+	// if somehow this arrives as sha256 we do not extract version
+	if strings.Contains(image, "@sha256") {
+		return image
+	}
 	i := strings.LastIndex(image, ":")
 	if i == -1 {
 		return image

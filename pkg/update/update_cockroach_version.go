@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"strings"
 	"time"
 
 	"database/sql"
@@ -98,8 +99,10 @@ func UpdateClusterCockroachVersion(
 			return errors.Wrapf(err, "setting downgrade option for major roll forward failed")
 		}
 	}
-
-	wantImage := fmt.Sprintf("%s:%s", update.WantImageName, update.WantVersion.Original())
+	var wantImage string = update.WantImageName
+	if !strings.Contains(update.WantImageName, "@sha256") {
+		wantImage = fmt.Sprintf("%s:%s", update.WantImageName, update.WantVersion.Original())
+	}
 
 	updateFunction := makeUpdateCockroachVersionFunction(wantImage, update.WantVersion.Original(), update.CurrentVersion.Original())
 	perPodVerificationFunction := makeIsCRBPodIsRunningNewVersionFunction(

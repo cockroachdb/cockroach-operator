@@ -100,6 +100,59 @@ func TestUpgradesMinorVersion(t *testing.T) {
 	steps.Run(t)
 }
 
+// TestUpgradesMinorVersion tests a minor version bump
+func TestUpgradesMajorVersion20to21WithCockroachDbVersion(t *testing.T) {
+
+	// We are testing a Minor Version Upgrade with
+	// partition update
+	// Going from v20.2.10 to v21.1.0
+
+	if parallel {
+		t.Parallel()
+	}
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+
+	testLog := zapr.NewLogger(zaptest.NewLogger(t))
+
+	actor.Log = testLog
+
+	sb := testenv.NewDiffingSandbox(t, env)
+	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
+	os.Setenv("RELATED_IMAGE_COCKROACH_v21_1_0", "registry.connect.redhat.com/cockroachdb/cockroach@sha256:0ef0234b6fd42977b8a9eda2c59ca8194cc1c8cf6425b99d7bf8fde8feb826c5")
+	os.Setenv("RELATED_IMAGE_COCKROACH_v20_2_10", "registry.connect.redhat.com/cockroachdb/cockroach:v20.2.10")
+	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
+		WithCockroachDBVersion("v20.2.10").
+		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
+
+	steps := testutil.Steps{
+		{
+			Name: "creates a 1-node secure cluster",
+			Test: func(t *testing.T) {
+				require.NoError(t, sb.Create(builder.Cr()))
+				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
+			},
+		},
+		{
+			Name: "upgrades the cluster to the next patch version",
+			Test: func(t *testing.T) {
+				current := builder.Cr()
+				require.NoError(t, sb.Get(current))
+
+				current.Spec.CockroachDBVersion = "v21.1.0"
+				require.NoError(t, sb.Update(current))
+
+				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
+				testutil.RequireDbContainersToUseImage(t, sb, current)
+				t.Log("Done with upgrade")
+			},
+		},
+	}
+
+	steps.Run(t)
+}
+
 // TestUpgradesMajorVersion20to21 tests a major version upgrade
 func TestUpgradesMajorVersion20to21(t *testing.T) {
 
