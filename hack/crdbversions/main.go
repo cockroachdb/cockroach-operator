@@ -34,10 +34,10 @@ import (
 
 // List of templates and destinations
 var targets = []struct{ template, output string }{
-	{"manifests/operator.yaml.in", "manifests/operator.yaml"},
-	{"manifests/patches/deployment_patch.yaml.in", "manifests/patches/deployment_patch.yaml"},
-	{"config/samples/crdb-tls-example.yaml.in", "config/samples/crdb-tls-example.yaml"},
-	{"examples/example.yaml.in", "examples/example.yaml"},
+	{"config/templates/operator.yaml.in", "manifests/operator.yaml"},
+	{"config/templates/deployment_patch.yaml.in", "manifests/patches/deployment_patch.yaml"},
+	{"config/templates/crdb-tls-example.yaml.in", "config/samples/crdb-tls-example.yaml"},
+	{"config/templates/example.yaml.in", "examples/example.yaml"},
 }
 
 // crdb-versions.yaml structure
