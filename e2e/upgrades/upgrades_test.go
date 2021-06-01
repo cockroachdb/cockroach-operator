@@ -105,7 +105,8 @@ func TestUpgradesMajorVersion20to21WithCockroachDbVersion(t *testing.T) {
 
 	// We are testing a Minor Version Upgrade with
 	// partition update
-	// Going from v20.2.10 to v21.1.0
+	// Going from v20.2.10 to v21.1.0 using related images in sha256 image format
+	// and cockroachDBVersion field.
 
 	if parallel {
 		t.Parallel()
@@ -120,6 +121,7 @@ func TestUpgradesMajorVersion20to21WithCockroachDbVersion(t *testing.T) {
 
 	sb := testenv.NewDiffingSandbox(t, env)
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
+	//related images must be in sha256 format
 	os.Setenv("RELATED_IMAGE_COCKROACH_v21_1_1", "cockroachdb/cockroach@sha256:7c84559a33db90b52f8179c904818525e45852b683bd6272f61dcf54c103f5b1")
 	os.Setenv("RELATED_IMAGE_COCKROACH_v20_2_10", "cockroachdb/cockroach@sha256:a1ef571ff3b47b395084d2f29abbc7706be36a826a618a794697d90a03615ada")
 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
@@ -135,7 +137,7 @@ func TestUpgradesMajorVersion20to21WithCockroachDbVersion(t *testing.T) {
 			},
 		},
 		{
-			Name: "upgrades the cluster to the next patch version",
+			Name: "upgrades the cluster to the next patch version using image in sha256 format",
 			Test: func(t *testing.T) {
 				current := builder.Cr()
 				require.NoError(t, sb.Get(current))
