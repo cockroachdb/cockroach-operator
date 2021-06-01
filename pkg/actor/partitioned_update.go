@@ -130,7 +130,6 @@ func (up *partitionedUpdate) Act(ctx context.Context, cluster *resource.Cluster)
 		log.Info("no version changes needed")
 		return nil
 	}
-	//somehow the image can be a sha256
 	containerWanted = getImageNameNoVersion(containerWanted)
 
 	currentVersion, err := semver.NewVersion(currentVersionCalFmtStr)
