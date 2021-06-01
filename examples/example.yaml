@@ -11,6 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
+# Generated, do not edit
+#
 
 apiVersion: crdb.cockroachlabs.com/v1alpha1
 kind: CrdbCluster
@@ -34,7 +37,7 @@ spec:
       cpu: "2"
       memory: "8Gi"
   tlsEnabled: true
-# cockroachDBVersion: v20.2.8
+# cockroachDBVersion: v21.1.1
   image:
     name: cockroachdb/cockroach:v21.1.1
   nodes: 3

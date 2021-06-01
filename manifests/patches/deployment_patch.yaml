@@ -11,6 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
+# Generated, do not edit
+#
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -28,6 +31,12 @@ spec:
             - info
             # - debug
           env:
+            - name: RELATED_IMAGE_COCKROACH_v20_1_4
+              value: RH_COCKROACH_DB_IMAGE_PLACEHOLDER_v20_1_4
+            - name: RELATED_IMAGE_COCKROACH_v20_1_5
+              value: RH_COCKROACH_DB_IMAGE_PLACEHOLDER_v20_1_5
+            - name: RELATED_IMAGE_COCKROACH_v20_1_8
+              value: RH_COCKROACH_DB_IMAGE_PLACEHOLDER_v20_1_8
             - name: RELATED_IMAGE_COCKROACH_v20_1_11
               value: RH_COCKROACH_DB_IMAGE_PLACEHOLDER_v20_1_11
             - name: RELATED_IMAGE_COCKROACH_v20_1_12
@@ -40,12 +49,6 @@ spec:
               value: RH_COCKROACH_DB_IMAGE_PLACEHOLDER_v20_1_15
             - name: RELATED_IMAGE_COCKROACH_v20_1_16
               value: RH_COCKROACH_DB_IMAGE_PLACEHOLDER_v20_1_16
-            - name: RELATED_IMAGE_COCKROACH_v20_1_4
-              value: RH_COCKROACH_DB_IMAGE_PLACEHOLDER_v20_1_4
-            - name: RELATED_IMAGE_COCKROACH_v20_1_5
-              value: RH_COCKROACH_DB_IMAGE_PLACEHOLDER_v20_1_5
-            - name: RELATED_IMAGE_COCKROACH_v20_1_8
-              value: RH_COCKROACH_DB_IMAGE_PLACEHOLDER_v20_1_8
             - name: RELATED_IMAGE_COCKROACH_v20_2_0
               value: RH_COCKROACH_DB_IMAGE_PLACEHOLDER_v20_2_0
             - name: RELATED_IMAGE_COCKROACH_v20_2_1

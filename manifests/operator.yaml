@@ -11,6 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
+# Generated, do not edit
+#
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -289,6 +292,12 @@ spec:
                   fieldPath: metadata.name
             - name: OPERATOR_NAME
               value: cockroachdb
+            - name: RELATED_IMAGE_COCKROACH_v20_1_4
+              value: cockroachdb/cockroach:v20.1.4
+            - name: RELATED_IMAGE_COCKROACH_v20_1_5
+              value: cockroachdb/cockroach:v20.1.5
+            - name: RELATED_IMAGE_COCKROACH_v20_1_8
+              value: cockroachdb/cockroach:v20.1.8
             - name: RELATED_IMAGE_COCKROACH_v20_1_11
               value: cockroachdb/cockroach:v20.1.11
             - name: RELATED_IMAGE_COCKROACH_v20_1_12
@@ -301,12 +310,6 @@ spec:
               value: cockroachdb/cockroach:v20.1.15
             - name: RELATED_IMAGE_COCKROACH_v20_1_16
               value: cockroachdb/cockroach:v20.1.16
-            - name: RELATED_IMAGE_COCKROACH_v20_1_4
-              value: cockroachdb/cockroach:v20.1.4
-            - name: RELATED_IMAGE_COCKROACH_v20_1_5
-              value: cockroachdb/cockroach:v20.1.5
-            - name: RELATED_IMAGE_COCKROACH_v20_1_8
-              value: cockroachdb/cockroach:v20.1.8
             - name: RELATED_IMAGE_COCKROACH_v20_2_0
               value: cockroachdb/cockroach:v20.2.0
             - name: RELATED_IMAGE_COCKROACH_v20_2_1
