@@ -293,8 +293,8 @@ spec:
             - name: OPERATOR_NAME
               value: cockroachdb
 {{- range .CrdbVersions }}
-            - name: RELATED_IMAGE_COCKROACH_{{ .UnderscoreVersion }}
-              value: cockroachdb/cockroach:{{ .Version }}
+            - name: RELATED_IMAGE_COCKROACH_{{ underscore .}}
+              value: cockroachdb/cockroach{{ if not (stable .) }}-unstable{{end}}:{{ .Original }}
 {{- end }}
           resources:
             requests:

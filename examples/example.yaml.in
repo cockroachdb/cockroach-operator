@@ -37,7 +37,7 @@ spec:
       cpu: "2"
       memory: "8Gi"
   tlsEnabled: true
-# cockroachDBVersion: {{ .LatestCrdbVersion }}
+# cockroachDBVersion: {{ .LatestStableCrdbVersion }}
   image:
-    name: cockroachdb/cockroach:{{ .LatestCrdbVersion }}
+    name: cockroachdb/cockroach:{{ .LatestStableCrdbVersion }}
   nodes: 3

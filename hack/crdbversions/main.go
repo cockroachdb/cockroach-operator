@@ -18,6 +18,8 @@ package main
 
 import (
 	"flag"
+	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -30,11 +32,8 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-type target struct {
-	template, output string
-}
-
-var targets = []target{
+// List of templates and destinations
+var targets = []struct{ template, output string }{
 	{"manifests/operator.yaml.in", "manifests/operator.yaml"},
 	{"manifests/patches/deployment_patch.yaml.in", "manifests/patches/deployment_patch.yaml"},
 	{"config/samples/crdb-tls-example.yaml.in", "config/samples/crdb-tls-example.yaml"},
@@ -47,14 +46,73 @@ type crdbVersions struct {
 }
 
 type templateData struct {
-	CrdbVersions      []Version
-	LatestCrdbVersion string
-	OperatorVersion   string
-	GeneratedWarning  string
+	CrdbVersions            []*semver.Version
+	LatestStableCrdbVersion string
+	OperatorVersion         string
+	GeneratedWarning        string
 }
 
-type Version struct {
-	Version, UnderscoreVersion string
+// readCrdbVersions reads CRDB versions from a YAML file and sorts them
+// according to the semantic version sorting rules
+func readCrdbVersions(r io.Reader) ([]*semver.Version, error) {
+	contents, err := io.ReadAll(r)
+	if err != nil {
+		return nil, fmt.Errorf("cannot open CRDB version file: %w", err)
+	}
+	var versions crdbVersions
+	if err := yaml.Unmarshal(contents, &versions); err != nil {
+		return nil, fmt.Errorf("cannot parse CRDB version file: %w", err)
+	}
+	var vs []*semver.Version
+	for _, raw := range versions.CrdbVersions {
+		v, err := semver.NewVersion(raw)
+		if err != nil {
+			return nil, fmt.Errorf("cannot convert version `%s`: %w", r, err)
+		}
+		vs = append(vs, v)
+	}
+	sort.Sort(semver.Collection(vs))
+	return vs, nil
+}
+
+func generateTemplateData(crdbVersions []*semver.Version, operatorVersion string) (templateData, error) {
+	var data templateData
+	data.OperatorVersion = operatorVersion
+	data.GeneratedWarning = "Generated, do not edit"
+	data.CrdbVersions = crdbVersions
+	var stableVersions []*semver.Version
+	for _, v := range data.CrdbVersions {
+		if isStable(*v) {
+			stableVersions = append(stableVersions, v)
+		}
+	}
+	if len(stableVersions) == 0 {
+		return templateData{}, fmt.Errorf("cannot find stable versions")
+	}
+	latestStable := stableVersions[len(stableVersions)-1]
+	data.LatestStableCrdbVersion = latestStable.Original()
+	return data, nil
+}
+
+func isStable(v semver.Version) bool {
+	return v.Prerelease() == "" && v.Metadata() == ""
+}
+
+func dotsToUnderscore(v semver.Version) string {
+	return strings.ReplaceAll(v.Original(), ".", "_")
+}
+
+func generateFile(name string, tplText string, output io.Writer, data templateData) error {
+	// Teamplate functions
+	funcs := template.FuncMap{
+		"underscore": dotsToUnderscore,
+		"stable":     isStable,
+	}
+	tpl, err := template.New(name).Funcs(funcs).Parse(tplText)
+	if err != nil {
+		return fmt.Errorf("cannot parse `%s`: %w", name, err)
+	}
+	return tpl.Execute(output, data)
 }
 
 func main() {
@@ -69,53 +127,38 @@ func main() {
 		os.Exit(1)
 	}
 
-	contents, err := ioutil.ReadFile(*crdbVersionsFile)
+	f, err := os.Open(*crdbVersionsFile)
 	if err != nil {
-		log.Fatalf("Cannot open CRDB version file: %s", err)
+		log.Fatalf("Cannot open versions file: %s", err)
 	}
-	var versions crdbVersions
-	if err := yaml.Unmarshal(contents, &versions); err != nil {
-		log.Fatalf("Cannot parse CRDB version file: %s", err)
+	defer f.Close()
+
+	vs, err := readCrdbVersions(f)
+	if err != nil {
+		log.Fatalf("Cannot read versions file: %s", err)
 	}
-	// Collect all version in order to sort them
-	vs := make([]*semver.Version, len(versions.CrdbVersions))
-	for i, r := range versions.CrdbVersions {
-		v, err := semver.NewVersion(r)
+
+	data, err := generateTemplateData(vs, *operatorVersion)
+	if err != nil {
+		log.Fatalf("Cannot generate template data: %s", err)
+	}
+
+	for _, f := range targets {
+		tplFile := filepath.Join(*repoRoot, f.template)
+		outputFile := filepath.Join(*repoRoot, f.output)
+		name := filepath.Base(outputFile)
+		tplContents, err := ioutil.ReadFile(tplFile)
 		if err != nil {
-			log.Fatalf("Cannot convert version `%s`: %s", r, err)
+			log.Fatalf("Cannot read template file `%s`: %s", tplFile, err)
 		}
-		vs[i] = v
-	}
-	sort.Sort(semver.Collection(vs))
-	latestVersion := vs[len(vs)-1]
+		output, err := os.Create(outputFile)
+		if err != nil {
+			log.Fatalf("Cannot create `%s`: %s", outputFile, err)
+		}
+		defer output.Close()
 
-	var templateData templateData
-	templateData.LatestCrdbVersion = latestVersion.Original()
-	templateData.OperatorVersion = *operatorVersion
-	templateData.GeneratedWarning = "Generated, do not edit"
-	for _, v := range vs {
-		templateData.CrdbVersions = append(templateData.CrdbVersions,
-			Version{
-				Version:           v.Original(),
-				UnderscoreVersion: strings.ReplaceAll(v.Original(), ".", "_"),
-			},
-		)
-	}
-
-	for _, genData := range targets {
-		if err := generateFile(templateData, *repoRoot, genData.template, genData.output); err != nil {
-			log.Fatalf("Cannot generate %s: %s", genData.output, err)
+		if err := generateFile(name, string(tplContents), output, data); err != nil {
+			log.Fatalf("Cannot generate %s: %s", f.output, err)
 		}
 	}
-}
-
-func generateFile(templateData templateData, repoRoot, tplFile, output string) error {
-	tpl := template.Must(template.ParseFiles(filepath.Join(repoRoot, tplFile)))
-	outputAbs := filepath.Join(repoRoot, output)
-	out, err := os.Create(outputAbs)
-	if err != nil {
-		return err
-	}
-	defer out.Close()
-	return tpl.Execute(out, templateData)
 }

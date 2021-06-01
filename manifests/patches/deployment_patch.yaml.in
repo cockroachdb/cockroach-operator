@@ -31,8 +31,8 @@ spec:
             - info
             # - debug
           env:
-{{- range .CrdbVersions }}
-            - name: RELATED_IMAGE_COCKROACH_{{ .UnderscoreVersion }}
-              value: RH_COCKROACH_DB_IMAGE_PLACEHOLDER_{{ .UnderscoreVersion }}
-{{- end }}
+{{- range .CrdbVersions}}{{if stable . }}
+            - name: RELATED_IMAGE_COCKROACH_{{ underscore . }}
+              value: RH_COCKROACH_DB_IMAGE_PLACEHOLDER_{{ underscore . }}
+{{- end }}{{ end }}
           image: RH_COCKROACH_OP_IMAGE_PLACEHOLDER
