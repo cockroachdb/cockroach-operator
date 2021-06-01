@@ -119,7 +119,9 @@ func RequireDbContainersToUseImage(t *testing.T, sb testenv.DiffingSandbox, cr *
 			}
 			if cr.Spec.Image.Name == "" {
 				version := strings.ReplaceAll(cr.Spec.CockroachDBVersion, ".", "_")
+				t.Logf("_______version %s", version)
 				image := os.Getenv(fmt.Sprintf("RELATED_IMAGE_COCKROACH_%s", version))
+				t.Logf("_______image %s", image)
 				return c.Image == image
 			}
 			return c.Image == cr.Spec.Image.Name
