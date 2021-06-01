@@ -100,6 +100,9 @@ func UpdateClusterCockroachVersion(
 		}
 	}
 	var wantImage string = update.WantImageName
+	//if the image is already in the sha256 format  we keep it as it is
+	//otherwise we build the concatenate the image with the version to
+	//obtain the correct format
 	if !strings.Contains(update.WantImageName, "@sha256") {
 		wantImage = fmt.Sprintf("%s:%s", update.WantImageName, update.WantVersion.Original())
 	}

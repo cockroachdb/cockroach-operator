@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package upgrades
+package upgradessha256
 
 import (
 	"flag"
@@ -68,9 +68,12 @@ func TestUpgradesMinorVersion(t *testing.T) {
 
 	sb := testenv.NewDiffingSandbox(t, env)
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
+	//set related image env var in sha256 format
+	os.Setenv("RELATED_IMAGE_COCKROACH_v20.2.8", "cockroachdb/cockroach@sha256:162d653fe76cc6f7a9800ce1de40f03fd80467ee937f782630bd404c92e2a277")
+	os.Setenv("RELATED_IMAGE_COCKROACH_v20.2.9", "cockroachdb/cockroach@sha256:d32411676b1c6583257a40818a6038ca7f906fe883b2ad1b1eea3986dd33526c")
 
 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
-		WithImage("cockroachdb/cockroach:v20.2.8").
+		WithCockroachDBVersion("v20.2.8").
 		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
 
 	steps := testutil.Steps{
@@ -87,7 +90,7 @@ func TestUpgradesMinorVersion(t *testing.T) {
 				current := builder.Cr()
 				require.NoError(t, sb.Get(current))
 
-				current.Spec.Image.Name = "cockroachdb/cockroach:v20.2.9"
+				current.Spec.CockroachDBVersion = "v20.2.9"
 				require.NoError(t, sb.Update(current))
 
 				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
@@ -98,13 +101,18 @@ func TestUpgradesMinorVersion(t *testing.T) {
 	}
 
 	steps.Run(t)
+	//clean
+	os.Unsetenv("RELATED_IMAGE_COCKROACH_v20.2.8")
+	os.Unsetenv("RELATED_IMAGE_COCKROACH_v20.2.9")
 }
 
-// TestUpgradesMajorVersion20to21 tests a major version upgrade
+// TestUpgradesMajorVersion20to21 tests major Version Upgrade
 func TestUpgradesMajorVersion20to21(t *testing.T) {
 
-	// We are doing a major version upgrade here
-	// 20 to 21
+	// We are testing a Major Version Upgrade with
+	// partition update
+	// Going from v20.2.10 to v21.1.0 using related images in sha256 image format
+	// and cockroachDBVersion field.
 
 	if parallel {
 		t.Parallel()
@@ -119,37 +127,41 @@ func TestUpgradesMajorVersion20to21(t *testing.T) {
 
 	sb := testenv.NewDiffingSandbox(t, env)
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
-
+	//related images must be in sha256 format
+	os.Setenv("RELATED_IMAGE_COCKROACH_v21_1_1", "cockroachdb/cockroach@sha256:7c84559a33db90b52f8179c904818525e45852b683bd6272f61dcf54c103f5b1")
+	os.Setenv("RELATED_IMAGE_COCKROACH_v20_2_10", "cockroachdb/cockroach@sha256:a1ef571ff3b47b395084d2f29abbc7706be36a826a618a794697d90a03615ada")
 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
-		WithImage("cockroachdb/cockroach:v20.2.9").
+		WithCockroachDBVersion("v20.2.10").
 		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
 
 	steps := testutil.Steps{
 		{
-			Name: "creates a 1-node secure cluster",
+			Name: "creates a 3-nodes secure cluster",
 			Test: func(t *testing.T) {
 				require.NoError(t, sb.Create(builder.Cr()))
-
 				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
 			},
 		},
 		{
-			Name: "upgrades the cluster to the next minor version",
+			Name: "upgrades the cluster to the next patch version using related image in sha256 format",
 			Test: func(t *testing.T) {
 				current := builder.Cr()
 				require.NoError(t, sb.Get(current))
 
-				current.Spec.Image.Name = "cockroachdb/cockroach:v21.1.0"
+				current.Spec.CockroachDBVersion = "v21.1.1"
 				require.NoError(t, sb.Update(current))
 
 				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
 				testutil.RequireDbContainersToUseImage(t, sb, current)
-				t.Log("Done with major upgrade")
+				t.Log("Done with upgrade")
 			},
 		},
 	}
 
 	steps.Run(t)
+	//clean
+	os.Unsetenv("RELATED_IMAGE_COCKROACH_v21_1_1")
+	os.Unsetenv("RELATED_IMAGE_COCKROACH_v20_2_10")
 }
 
 // TestUpgradesMajorVersion20_1To20_2 is another major version upgrade
@@ -168,9 +180,12 @@ func TestUpgradesMajorVersion20_1To20_2(t *testing.T) {
 
 	sb := testenv.NewDiffingSandbox(t, env)
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
+	//set related image env var in sha256 format
+	os.Setenv("RELATED_IMAGE_COCKROACH_v20_2_10", "cockroachdb/cockroach@sha256:a1ef571ff3b47b395084d2f29abbc7706be36a826a618a794697d90a03615ada")
+	os.Setenv("RELATED_IMAGE_COCKROACH_v20.1.16", "cockroachdb/cockroach@sha256:73edc4b4b473d0461de39092a8e4b1939b5c4edc557d0a5666de07a7290d70d8")
 
 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
-		WithImage("cockroachdb/cockroach:v20.1.16").
+		WithCockroachDBVersion("v20.1.16").
 		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
 
 	steps := testutil.Steps{
@@ -188,10 +203,8 @@ func TestUpgradesMajorVersion20_1To20_2(t *testing.T) {
 				current := builder.Cr()
 				require.NoError(t, sb.Get(current))
 
-				current.Spec.Image.Name = "cockroachdb/cockroach:v20.2.10"
+				current.Spec.CockroachDBVersion = "v20.2.10"
 				require.NoError(t, sb.Update(current))
-				// we wait 10 min because we will be waiting 3 min for each pod because
-				// v20.1.16 does not have curl installed
 				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
 				testutil.RequireDbContainersToUseImage(t, sb, current)
 				t.Log("Done with major upgrade")
@@ -200,4 +213,8 @@ func TestUpgradesMajorVersion20_1To20_2(t *testing.T) {
 	}
 
 	steps.Run(t)
+	//clean
+	os.Unsetenv("RELATED_IMAGE_COCKROACH_v20_2_10")
+	os.Unsetenv("RELATED_IMAGE_COCKROACH_v20.1.16")
+
 }
