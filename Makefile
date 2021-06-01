@@ -218,9 +218,12 @@ release/versionbump:
 	# Reload make so it rereads version.txt
 	$(MAKE) release/gen-files
 
-.PHONY: release/gen-files
-release/gen-files:
+.PHONY: release/gen-templates
+release/gen-templates:
 	bazel run //hack/crdbversions:crdbversions -- -operator-version $(APP_VERSION) -crdb-versions $(PWD)/crdb-versions.yaml -repo-root $(PWD)
+
+.PHONY: release/gen-files
+release/gen-files: release/gen-templates
 	$(MAKE) CHANNEL=beta IS_DEFAULT_CHANNEL=0 release/update-pkg-manifest && \
 	$(MAKE) CHANNEL=beta IS_DEFAULT_CHANNEL=0 release/opm-build-bundle && \
 	git add . && \
