@@ -38,8 +38,7 @@ func NewBuilder(name string) ClusterBuilder {
 				Annotations: make(map[string]string),
 			},
 			Spec: api.CrdbClusterSpec{
-				Image: api.PodImage{
-				},
+				Image: api.PodImage{},
 			},
 		},
 	}
