@@ -47,5 +47,5 @@ jobs:
 
       - name: Tests
         run: |
-          make test/all
+          make release/gen-templates
           git diff --quiet || {echo "Error: tree is dirty"; git diff; exit 1}
