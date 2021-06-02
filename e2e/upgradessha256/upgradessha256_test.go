@@ -213,7 +213,7 @@ func TestUpgradesMajorVersion20_1To20_2(t *testing.T) {
 	}
 
 	steps.Run(t)
-	//clean
+	//clean env var
 	os.Unsetenv("RELATED_IMAGE_COCKROACH_v20_2_10")
 	os.Unsetenv("RELATED_IMAGE_COCKROACH_v20_1_16")
 
