@@ -318,7 +318,7 @@ func makeDrainStatusChecker(t *testing.T, sb testenv.DiffingSandbox, b ClusterBu
 	cluster := b.Cluster()
 	port := strconv.FormatInt(int64(*cluster.Spec().GRPCPort), 10)
 	host := fmt.Sprintf("--host=localhost:%v", port)
-	cmd := []string{"./cockroach", "node", "status", "--decommission", "--format=csv", cluster.SecureMode(), host}
+	cmd := []string{"/cockroach/cockroach", "node", "status", "--decommission", "--format=csv", cluster.SecureMode(), host}
 
 	stdout, stderror, err := kube.ExecInPod(sb.Mgr.GetScheme(), sb.Mgr.GetConfig(), cluster.Namespace(),
 		fmt.Sprintf("%s-0", cluster.StatefulSetName()), resource.DbContainerName, cmd)
