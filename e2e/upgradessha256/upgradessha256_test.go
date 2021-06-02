@@ -69,8 +69,8 @@ func TestUpgradesMinorVersion(t *testing.T) {
 	sb := testenv.NewDiffingSandbox(t, env)
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
 	//set related image env var in sha256 format
-	os.Setenv("RELATED_IMAGE_COCKROACH_v20.2.8", "cockroachdb/cockroach@sha256:162d653fe76cc6f7a9800ce1de40f03fd80467ee937f782630bd404c92e2a277")
-	os.Setenv("RELATED_IMAGE_COCKROACH_v20.2.9", "cockroachdb/cockroach@sha256:d32411676b1c6583257a40818a6038ca7f906fe883b2ad1b1eea3986dd33526c")
+	os.Setenv("RELATED_IMAGE_COCKROACH_v20_2_8", "cockroachdb/cockroach@sha256:162d653fe76cc6f7a9800ce1de40f03fd80467ee937f782630bd404c92e2a277")
+	os.Setenv("RELATED_IMAGE_COCKROACH_v20_2_9", "cockroachdb/cockroach@sha256:d32411676b1c6583257a40818a6038ca7f906fe883b2ad1b1eea3986dd33526c")
 
 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
 		WithCockroachDBVersion("v20.2.8").
@@ -102,8 +102,8 @@ func TestUpgradesMinorVersion(t *testing.T) {
 
 	steps.Run(t)
 	//clean
-	os.Unsetenv("RELATED_IMAGE_COCKROACH_v20.2.8")
-	os.Unsetenv("RELATED_IMAGE_COCKROACH_v20.2.9")
+	os.Unsetenv("RELATED_IMAGE_COCKROACH_v20_2_8")
+	os.Unsetenv("RELATED_IMAGE_COCKROACH_v20_2_9")
 }
 
 // TestUpgradesMajorVersion20to21 tests major Version Upgrade
@@ -182,7 +182,7 @@ func TestUpgradesMajorVersion20_1To20_2(t *testing.T) {
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
 	//set related image env var in sha256 format
 	os.Setenv("RELATED_IMAGE_COCKROACH_v20_2_10", "cockroachdb/cockroach@sha256:a1ef571ff3b47b395084d2f29abbc7706be36a826a618a794697d90a03615ada")
-	os.Setenv("RELATED_IMAGE_COCKROACH_v20.1.16", "cockroachdb/cockroach@sha256:73edc4b4b473d0461de39092a8e4b1939b5c4edc557d0a5666de07a7290d70d8")
+	os.Setenv("RELATED_IMAGE_COCKROACH_v20_1_16", "cockroachdb/cockroach@sha256:73edc4b4b473d0461de39092a8e4b1939b5c4edc557d0a5666de07a7290d70d8")
 
 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
 		WithCockroachDBVersion("v20.1.16").
@@ -215,6 +215,6 @@ func TestUpgradesMajorVersion20_1To20_2(t *testing.T) {
 	steps.Run(t)
 	//clean
 	os.Unsetenv("RELATED_IMAGE_COCKROACH_v20_2_10")
-	os.Unsetenv("RELATED_IMAGE_COCKROACH_v20.1.16")
+	os.Unsetenv("RELATED_IMAGE_COCKROACH_v20_1_16")
 
 }
