@@ -180,7 +180,7 @@ func TestUpgradesMajorVersion20_1To20_2(t *testing.T) {
 
 	sb := testenv.NewDiffingSandbox(t, env)
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
-	//set related image env var in sha256 format
+	//set related image env var in sha256 format 
 	os.Setenv("RELATED_IMAGE_COCKROACH_v20_2_10", "cockroachdb/cockroach@sha256:a1ef571ff3b47b395084d2f29abbc7706be36a826a618a794697d90a03615ada")
 	os.Setenv("RELATED_IMAGE_COCKROACH_v20_1_16", "cockroachdb/cockroach@sha256:73edc4b4b473d0461de39092a8e4b1939b5c4edc557d0a5666de07a7290d70d8")
 
