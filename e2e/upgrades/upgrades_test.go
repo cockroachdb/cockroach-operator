@@ -75,7 +75,7 @@ func TestUpgradesMinorVersion(t *testing.T) {
 
 	steps := testutil.Steps{
 		{
-			Name: "creates a 3-nodes secure cluster",
+			Name: "creates a 3-node secure cluster",
 			Test: func(t *testing.T) {
 				require.NoError(t, sb.Create(builder.Cr()))
 				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
