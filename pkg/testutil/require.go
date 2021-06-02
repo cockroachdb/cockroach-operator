@@ -20,8 +20,11 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"encoding/csv"
 	"fmt"
 	"io"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -293,9 +296,60 @@ func RequireDecommissionNode(t *testing.T, sb testenv.DiffingSandbox, b ClusterB
 			t.Log("statefulset replicas do not match")
 			return false, nil
 		}
-		return true, nil
+		id := 1
+		replicas, err := makeDrainStatusChecker(t, sb, b, uint(id))
+		if err != nil {
+			t.Logf("makeDrainStatusChecker failed due to error %v\n", err)
+			return false, err
+		}
+
+		// Node has finished draining successfully
+		if replicas == 0 {
+			t.Logf("Node has finished draining successfully\n")
+			return true, nil
+		}
+		t.Logf("node %d has not completed draining yet\n", id)
+		return false, nil
 	})
 	require.NoError(t, err)
+}
+
+func makeDrainStatusChecker(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder, id uint) (uint64, error) {
+	cluster := b.Cluster()
+	cmd := []string{"./cockroach", "node", "status", "--decommission", "--format=csv", cluster.SecureMode()}
+
+	stdout, _, err := kube.ExecInPod(sb.Mgr.GetScheme(), sb.Mgr.GetConfig(), cluster.Namespace(),
+		fmt.Sprintf("%s-0", cluster.StatefulSetName()), resource.DbContainerName, cmd)
+	if err != nil {
+		return 0, err
+	}
+	r := csv.NewReader(strings.NewReader(stdout))
+	// skip header
+	if _, err := r.Read(); err != nil {
+		return 0, err
+	}
+
+	record, err := r.Read()
+	if err != nil {
+		return 0, errors.Wrapf(err, "failed to get node draining status, id=%d", id)
+	}
+
+	isLive, replicasStr, isDecommissioning := record[8], record[9], record[10]
+	t.Logf("draining node do to decommission \n")
+	t.Logf("id = %d\n ", id)
+	t.Logf("isLive = %s\n ", isLive)
+	t.Logf("replicas = %s\n", replicasStr)
+	t.Logf("isDecommissioning = %v\n", isDecommissioning)
+
+	if isLive != "true" || isDecommissioning != "true" {
+		return 0, errors.New("unexpected node status")
+	}
+
+	replicas, err := strconv.ParseUint(replicasStr, 10, 64)
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to parse replicas number")
+	}
+	return replicas, nil
 }
 
 // RequireDatabaseToFunction tests that the database is functioning correctly
