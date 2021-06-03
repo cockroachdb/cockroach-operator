@@ -65,6 +65,7 @@ filegroup(
         "//deploy/certified-metadata-bundle/cockroach-operator/latest/metadata:all-srcs",
         "//e2e/create:all-srcs",
         "//e2e/decomission:all-srcs",
+        "//e2e/kubetest2-openshift:all-srcs",
         "//e2e/pvcresize:all-srcs",
         "//e2e/upgrades:all-srcs",
         "//examples:all-srcs",
