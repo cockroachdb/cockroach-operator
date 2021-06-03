@@ -26,6 +26,7 @@ import (
 	"github.com/cockroachdb/cockroach-operator/pkg/controller"
 	"github.com/cockroachdb/cockroach-operator/pkg/testutil"
 	testenv "github.com/cockroachdb/cockroach-operator/pkg/testutil/env"
+	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
 	"github.com/go-logr/zapr"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zaptest"
@@ -35,9 +36,6 @@ import (
 // deployed in the cluster helps
 // We may have a threadsafe problem where one test starts messing with another test
 var parallel = *flag.Bool("parallel", false, "run tests in parallel")
-
-// run the pvc test
-var pvc = flag.Bool("pvc", false, "run pvc test")
 
 // TODO should we make this an atomic that is created by evn pkg?
 var env *testenv.ActiveEnv
@@ -51,10 +49,15 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
+// TestDecomissionFunctionality creates a cluster of 4 nodes and then decomissions on of the CRDB nodes.
+// It then checks that the cluster is stable and that decomissioning is successful.
 func TestDecommissionFunctionality(t *testing.T) {
 
 	// Testing removing and decommisioning a node.  We start at 4 node and then
 	// remove the 4th node
+
+	// turn on featuregate since Decommission is disabled by default currently
+	utilfeature.DefaultMutableFeatureGate.Set("UseDecommission=true")
 
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
