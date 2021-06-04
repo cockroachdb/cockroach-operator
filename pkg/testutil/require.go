@@ -296,6 +296,12 @@ func RequireDecommissionNode(t *testing.T, sb testenv.DiffingSandbox, b ClusterB
 			t.Log("statefulset replicas do not match")
 			return false, nil
 		}
+		err = makeDrainStatusChecker(t, sb, b, uint64(numNodes))
+		if err != nil {
+			t.Logf("makeDrainStatusChecker failed due to error %v\n", err)
+			logPods(context.TODO(), sts, cluster, sb, t)
+			return false, err
+		}
 		return true, nil
 	})
 	require.NoError(t, err)
@@ -319,13 +325,13 @@ func makeDrainStatusChecker(t *testing.T, sb testenv.DiffingSandbox, b ClusterBu
 	cmd := []string{"/cockroach/cockroach", "node", "status", "--decommission", "--format=csv", cluster.SecureMode(), fmt.Sprintf("--port=%d", *cluster.Spec().GRPCPort)}
 
 	stdout, stderror, err := kube.ExecInPod(sb.Mgr.GetScheme(), sb.Mgr.GetConfig(), cluster.Namespace(),
-		fmt.Sprintf("%s-0", cluster.StatefulSetName()), resource.DbContainerName, cmd)
+		fmt.Sprintf("%s-1", cluster.StatefulSetName()), resource.DbContainerName, cmd)
 	if err != nil {
-		t.Logf("exec cmd = %s on pod= %s-0 exit with error %v and stdError %s", cmd, cluster.StatefulSetName(), err, stderror)
+		t.Logf("exec cmd = %s on pod= %s-1 exit with error %v and stdError %s", cmd, cluster.StatefulSetName(), err, stderror)
 		return err
 	}
 	if stderror != "" {
-		t.Logf("exec cmd = %s on pod= %s-0 exit with error %v and stdError %s", cmd, cluster.StatefulSetName(), err, stderror)
+		t.Logf("exec cmd = %s on pod= %s-1 exit with error %v and stdError %s", cmd, cluster.StatefulSetName(), err, stderror)
 		return err
 	}
 	r := csv.NewReader(strings.NewReader(stdout))
