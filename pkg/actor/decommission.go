@@ -57,8 +57,12 @@ func (d decommission) GetActionType() api.ActionType {
 	return api.DecommissionAction
 }
 
+// Handles returns true if the Actor is enabled or can run
 func (d decommission) Handles(conds []api.ClusterCondition) bool {
-	return condition.True(api.InitializedCondition, conds) && utilfeature.DefaultMutableFeatureGate.Enabled(features.Decommission)
+	if !utilfeature.DefaultMutableFeatureGate.Enabled(features.Decommission) {
+		return false
+	}
+	return condition.True(api.InitializedCondition, conds)
 }
 
 func (d decommission) Act(ctx context.Context, cluster *resource.Cluster) error {
