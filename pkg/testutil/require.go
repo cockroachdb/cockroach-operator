@@ -316,7 +316,7 @@ func RequireDecommisionDrainStatusNode(t *testing.T, sb testenv.DiffingSandbox, 
 
 func makeDrainStatusChecker(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder, numNodes uint64) error {
 	cluster := b.Cluster()
-	cmd := []string{"/cockroach/cockroach", "node", "status", "--decommission", "--format=csv", cluster.SecureMode(), fmt.Sprintf("--port=%d", cluster.Spec().GRPCPort)}
+	cmd := []string{"/cockroach/cockroach", "node", "status", "--decommission", "--format=csv", cluster.SecureMode(), fmt.Sprintf("--port=%d", *cluster.Spec().GRPCPort)}
 
 	stdout, stderror, err := kube.ExecInPod(sb.Mgr.GetScheme(), sb.Mgr.GetConfig(), cluster.Namespace(),
 		fmt.Sprintf("%s-0", cluster.StatefulSetName()), resource.DbContainerName, cmd)
