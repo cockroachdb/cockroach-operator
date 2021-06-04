@@ -35,6 +35,7 @@ import (
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
 	"github.com/cockroachdb/cockroach-operator/pkg/labels"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
+	"github.com/cockroachdb/cockroach-operator/pkg/scale"
 	testenv "github.com/cockroachdb/cockroach-operator/pkg/testutil/env"
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
@@ -323,15 +324,26 @@ func RequireDecommisionDrainStatusNode(t *testing.T, sb testenv.DiffingSandbox, 
 func makeDrainStatusChecker(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder, numNodes uint64) error {
 	cluster := b.Cluster()
 	cmd := []string{"/cockroach/cockroach", "node", "status", "--decommission", "--format=csv", cluster.SecureMode(), fmt.Sprintf("--port=%d", *cluster.Spec().GRPCPort)}
-
-	stdout, stderror, err := kube.ExecInPod(sb.Mgr.GetScheme(), sb.Mgr.GetConfig(), cluster.Namespace(),
-		fmt.Sprintf("%s-1", cluster.StatefulSetName()), resource.DbContainerName, cmd)
+	clientset, err := kubernetes.NewForConfig(sb.Mgr.GetConfig())
 	if err != nil {
-		t.Logf("exec cmd = %s on pod= %s-1 exit with error %v and stdError %s", cmd, cluster.StatefulSetName(), err, stderror)
+		t.Logf("exec cmd = %s on pod= %s-0 err %s", cmd, cluster.StatefulSetName(), err)
+		return err
+	}
+	executor := &scale.CockroachExecutor{
+		Namespace:   cluster.Namespace(),
+		StatefulSet: cluster.StatefulSetName(),
+		Config:      sb.Mgr.GetConfig(),
+		ClientSet:   clientset,
+	}
+	stdout, stderror, err := executor.Exec(context.TODO(), 0, cmd)
+	// stdout, stderror, err := kube.ExecInPod(sb.Mgr.GetScheme(), sb.Mgr.GetConfig(), cluster.Namespace(),
+	// fmt.Sprintf("%s-0", cluster.StatefulSetName()), resource.DbContainerName, cmd)
+	if err != nil {
+		t.Logf("exec cmd = %s on pod= %s-0 exit with error %v and stdError %s", cmd, cluster.StatefulSetName(), err, stderror)
 		return err
 	}
 	if stderror != "" {
-		t.Logf("exec cmd = %s on pod= %s-1 exit with error %v and stdError %s", cmd, cluster.StatefulSetName(), err, stderror)
+		t.Logf("exec cmd = %s on pod= %s-0 exit with error %v and stdError %s", cmd, cluster.StatefulSetName(), err, stderror)
 		return err
 	}
 	r := csv.NewReader(strings.NewReader(stdout))
