@@ -296,8 +296,15 @@ func RequireDecommissionNode(t *testing.T, sb testenv.DiffingSandbox, b ClusterB
 			t.Log("statefulset replicas do not match")
 			return false, nil
 		}
+		return true, nil
+	})
+	require.NoError(t, err)
+}
 
-		err = makeDrainStatusChecker(t, sb, b, uint64(numNodes))
+// RequireDecommisionDrainStatusNode checks that proper nodes are decommisioned using node status cmd
+func RequireDecommisionDrainStatusNode(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder, numNodes int32) {
+	err := wait.Poll(10*time.Second, 400*time.Second, func() (bool, error) {
+		err := makeDrainStatusChecker(t, sb, b, uint64(numNodes))
 		if err != nil {
 			t.Logf("makeDrainStatusChecker failed due to error %v\n", err)
 			return false, err
