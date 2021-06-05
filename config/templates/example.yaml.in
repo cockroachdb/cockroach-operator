@@ -1,4 +1,4 @@
-# Copyright 2021 The Cockroach Authors
+# Copyright {{ .Year }} The Cockroach Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@ spec:
       cpu: "2"
       memory: "8Gi"
   tlsEnabled: true
+{{- /* .LatestStableCrdbVersion: latest stable version of CockroachDB */}}
 # cockroachDBVersion: {{ .LatestStableCrdbVersion }}
   image:
     name: cockroachdb/cockroach:{{ .LatestStableCrdbVersion }}

@@ -209,16 +209,23 @@ dev/syncdeps:
 # Release targets
 #
 
+# This target reads the current version from version.txt, increments the patch
+# part of the version, saves the result in the same file, and calls make with
+# the next release-specific target in a separate shell in order to reread the
+# new version.
 .PHONY: release/versionbump
 release/versionbump:
 	bazel run //hack/versionbump:versionbump -- patch $(VERSION) > $(PWD)/version.txt
-	# Reload make so it rereads version.txt
 	$(MAKE) release/gen-files
 
+# Generate various config files, which usually contain the current operator
+# version, latest CRDB version, a list of supported CRDB versions, etc.
 .PHONY: release/gen-templates
 release/gen-templates:
 	bazel run //hack/crdbversions:crdbversions -- -operator-version $(APP_VERSION) -crdb-versions $(PWD)/crdb-versions.yaml -repo-root $(PWD)
 
+# Generate various manifest files for OpenShift. We run this target after the
+# operator version is changed. The results are committed to Git.
 .PHONY: release/gen-files
 release/gen-files: release/gen-templates
 	$(MAKE) CHANNEL=beta IS_DEFAULT_CHANNEL=0 release/update-pkg-manifest && \

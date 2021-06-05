@@ -14,6 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// This program generates various YAML files based on predefined list of
+// templates. crdb-versions.yaml is used to define supported CockroachDB
+// versions.
+
 package main
 
 import (
@@ -27,6 +31,7 @@ import (
 	"sort"
 	"strings"
 	"text/template"
+	"time"
 
 	"github.com/Masterminds/semver/v3"
 	"gopkg.in/yaml.v2"
@@ -50,6 +55,7 @@ type templateData struct {
 	LatestStableCrdbVersion string
 	OperatorVersion         string
 	GeneratedWarning        string
+	Year                    string
 }
 
 // readCrdbVersions reads CRDB versions from a YAML file and sorts them
@@ -77,8 +83,8 @@ func readCrdbVersions(r io.Reader) ([]*semver.Version, error) {
 
 func generateTemplateData(crdbVersions []*semver.Version, operatorVersion string) (templateData, error) {
 	var data templateData
+	data.Year = fmt.Sprint(time.Now().Year())
 	data.OperatorVersion = operatorVersion
-	data.GeneratedWarning = "Generated, do not edit"
 	data.CrdbVersions = crdbVersions
 	var stableVersions []*semver.Version
 	for _, v := range data.CrdbVersions {
@@ -98,12 +104,12 @@ func isStable(v semver.Version) bool {
 	return v.Prerelease() == "" && v.Metadata() == ""
 }
 
-func dotsToUnderscore(v semver.Version) string {
-	return strings.ReplaceAll(v.Original(), ".", "_")
+func dotsToUnderscore(v string) string {
+	return strings.ReplaceAll(v, ".", "_")
 }
 
 func generateFile(name string, tplText string, output io.Writer, data templateData) error {
-	// Teamplate functions
+	// Template functions
 	funcs := template.FuncMap{
 		"underscore": dotsToUnderscore,
 		"stable":     isStable,
@@ -113,6 +119,20 @@ func generateFile(name string, tplText string, output io.Writer, data templateDa
 		return fmt.Errorf("cannot parse `%s`: %w", name, err)
 	}
 	return tpl.Execute(output, data)
+}
+
+// verifyYamlLoads tries to open a YAML file and parses its content in order to
+// verify that the generated file doesn't have any syntax errors
+func verifyYamlLoads(fName string) error {
+	contents, err := ioutil.ReadFile(fName)
+	if err != nil {
+		return fmt.Errorf("cannot read file `%s`: %w", fName, err)
+	}
+	var data struct{}
+	if err := yaml.Unmarshal(contents, &data); err != nil {
+		return fmt.Errorf("cannot parse YAML file: %w", err)
+	}
+	return nil
 }
 
 func main() {
@@ -146,6 +166,7 @@ func main() {
 	for _, f := range targets {
 		tplFile := filepath.Join(*repoRoot, f.template)
 		outputFile := filepath.Join(*repoRoot, f.output)
+		log.Printf("generating `%s` from `%s`", outputFile, tplFile)
 		name := filepath.Base(outputFile)
 		tplContents, err := ioutil.ReadFile(tplFile)
 		if err != nil {
@@ -155,10 +176,17 @@ func main() {
 		if err != nil {
 			log.Fatalf("Cannot create `%s`: %s", outputFile, err)
 		}
-		defer output.Close()
 
+		data.GeneratedWarning = fmt.Sprintf("Generated, do not edit. Please edit this file instead: %s", f.template)
 		if err := generateFile(name, string(tplContents), output, data); err != nil {
 			log.Fatalf("Cannot generate %s: %s", f.output, err)
+		}
+		if err := output.Close(); err != nil {
+			log.Fatalf("Cannot close `%s`: %s", outputFile, err)
+		}
+		log.Printf("verifying `%s`", outputFile)
+		if err := verifyYamlLoads(outputFile); err != nil {
+			log.Fatalf("Cannot load YAML `%s`: %s", outputFile, err)
 		}
 	}
 }

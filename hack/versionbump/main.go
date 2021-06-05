@@ -14,6 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+// This program helps bumping semantic version passed as a command line
+// argument. It can bump major, minor or patch parts of the version.
 package main
 
 import (

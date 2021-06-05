@@ -61,11 +61,7 @@ func TestDotsToUndescore(t *testing.T) {
 		{"1.2.3-alpha.-1", "1_2_3-alpha_-1"},
 	}
 	for _, tc := range tests {
-		v, err := semver.NewVersion(tc.version)
-		if err != nil {
-			t.Fatalf("error parsing %q: %s", tc.version, err)
-		}
-		got := dotsToUnderscore(*v)
+		got := dotsToUnderscore(tc.version)
 		if got != tc.expected {
 			t.Errorf("expected %q for dotsToUnderscore(`%s`), got %s", tc.expected, tc.version, got)
 		}
@@ -129,7 +125,7 @@ func TestGenerateFile(t *testing.T) {
 		data.CrdbVersions = append(data.CrdbVersions, v)
 	}
 	// test custom function
-	tplText := "{{range .CrdbVersions}}{{if stable .}}{{ underscore . }} {{end}}{{end}}{{range .CrdbVersions}}{{underscore .}} {{ end }}"
+	tplText := "{{range .CrdbVersions}}{{if stable .}}{{ underscore .Original }} {{end}}{{end}}{{range .CrdbVersions}}{{underscore .Original}} {{ end }}"
 	expected := "1_2_3 1_2_3 1_2_3+test_01 1_2_3-alpha_-1 "
 	var output bytes.Buffer
 	err := generateFile("name", tplText, &output, data)

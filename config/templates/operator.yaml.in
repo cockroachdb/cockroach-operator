@@ -1,4 +1,4 @@
-# Copyright 2021 The Cockroach Authors
+# Copyright {{ .Year }} The Cockroach Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -293,7 +293,21 @@ spec:
             - name: OPERATOR_NAME
               value: cockroachdb
 {{- range .CrdbVersions }}
-            - name: RELATED_IMAGE_COCKROACH_{{ underscore .}}
+            {{- /*
+                .CrdbVersions: a slice of CockroachDB versions. Every item uses
+                semver.Version as its type. See https://github.com/Masterminds/semver for
+                available methods. We use the `Original()` method, which preserves the
+                leading "v" in the output.
+                The `stable` template function is used to determine if the
+                version is stable or alpha/beta/rc.
+                The `underscore` template function replaces all dots with underscores.
+            */}}
+            - name: RELATED_IMAGE_COCKROACH_{{ underscore .Original}}
+              {{- /*
+                Stable CockroachDB docker images published in
+                cockroachdb/cockroach, and unstable versions go to
+                cockroachdb/cockroach-unstable.
+              */}}
               value: cockroachdb/cockroach{{ if not (stable .) }}-unstable{{end}}:{{ .Original }}
 {{- end }}
           resources:
