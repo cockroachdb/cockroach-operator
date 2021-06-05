@@ -13,6 +13,11 @@
 # limitations under the License.
 #
 # Supported CockroachDB versions.
+#
+# This file contains a list of CockroachDB versions that are supported by the
+# operator. hack/crdbversions/main.go uses this list to generate various
+# manifests.
+# Please update this file when CockroachDB releases new versions.
 
 CrdbVersions:
   - v20.1.11
