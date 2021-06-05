@@ -60,6 +60,7 @@ const (
 	// owner: @chrislovecnm
 	// alpha: v0.1
 	// beta: v1.0
+	// GA: v1.7.7
 	// GenerateCerts uses crdb binary to generate self signed certifcates
 	GenerateCerts featuregate.Feature = "GenerateCerts"
 	// owner: @alina
@@ -77,13 +78,11 @@ func init() {
 // To add a new feature, define a key for it above and add it here. The features will be
 // available throughout Kubernetes binaries.
 var defaultOperatorFeatureGates = map[featuregate.Feature]featuregate.FeatureSpec{
-	PartitionedUpdate:    {Default: true, PreRelease: featuregate.Alpha},
-	Decommission:         {Default: true, PreRelease: featuregate.Alpha},
-	ResizePVC:            {Default: true, PreRelease: featuregate.Alpha},
-	CrdbVersionValidator: {Default: true, PreRelease: featuregate.Alpha},
-	GenerateCerts:        {Default: true, PreRelease: featuregate.Alpha},
-	ClusterRestart:       {Default: true, PreRelease: featuregate.Alpha},
-
-	// Deprecated
-	Upgrade: {Default: false, PreRelease: featuregate.Alpha},
+	PartitionedUpdate: {Default: true, PreRelease: featuregate.Beta},
+	// Turing of Decomission because of design bug at this point
+	Decommission:         {Default: false, PreRelease: featuregate.Alpha},
+	ResizePVC:            {Default: true, PreRelease: featuregate.Beta},
+	CrdbVersionValidator: {Default: true, PreRelease: featuregate.Beta},
+	GenerateCerts:        {Default: true, PreRelease: featuregate.GA},
+	ClusterRestart:       {Default: true, PreRelease: featuregate.Beta},
 }

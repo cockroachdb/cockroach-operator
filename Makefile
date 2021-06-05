@@ -145,8 +145,16 @@ test/e2e/testrunner-openshift:
 	bazel test --stamp //e2e/create/...  --action_env=KUBECONFIG=$(HOME)/openshift-$(CLUSTER_NAME)/auth/kubeconfig
 	bazel test --stamp //e2e/decomission/...  --action_env=KUBECONFIG=$(HOME)/openshift-$(CLUSTER_NAME)/auth/kubeconfig
 
-.PHONY: test/e2e/delete-openshift
-test/e2e/delete-openshift:
+# Use this target to run e2e tests with a openshift cluster.
+# This target uses kind to start a openshift cluster and runs the e2e tests
+# against that cluster. A full TLD is required to creat an openshift clutser.
+# This target runs kubetest2 openshift that starts a openshift cluster
+# Then kubetest2 tester exec is run which runs the make target
+# test/e2e/testrunner-openshift.  After the tests run the cluster is deleted.
+# See the instructions in the kubetes2-openshift on running the
+# provider.
+.PHONY: test/e2e/openshift
+test/e2e/openshift:
 	bazel build //hack/bin/... //e2e/kubetest2-openshift/...
 	PATH=${PATH}:bazel-bin/hack/bin:bazel-bin/e2e/kubetest2-openshift/kubetest2-openshift_/ \
 	     bazel-bin/hack/bin/kubetest2 openshift --cluster-name=$(CLUSTER_NAME) \
@@ -154,18 +162,7 @@ test/e2e/delete-openshift:
 	     --gcp-region=$(GCP_REGION) \
 	     --base-domain=$(BASE_DOMAIN) \
 	     --pull-secret-file=$(PULL_SECRET) \
-	     --down
-
-.PHONY: test/e2e/create-openshift
-test/e2e/create-openshift:
-	bazel build //hack/bin/... //e2e/kubetest2-openshift/...
-	PATH=${PATH}:bazel-bin/hack/bin:bazel-bin/e2e/kubetest2-openshift/kubetest2-openshift_/ \
-	     bazel-bin/hack/bin/kubetest2 openshift --cluster-name=$(CLUSTER_NAME) \
-	     --gcp-project-id=$(GCP_PROJECT) \
-	     --gcp-region=$(GCP_REGION) \
-	     --base-domain=$(BASE_DOMAIN) \
-	     --pull-secret-file=$(PULL_SECRET) \
-	     --up
+	     --up --down --test=exec -- make test/e2e/testrunner-openshift
 
 #
 # Different dev targets
