@@ -21,7 +21,6 @@ go_library(
         "//pkg/kube:go_default_library",
         "//pkg/labels:go_default_library",
         "//pkg/resource:go_default_library",
-        "//pkg/scale:go_default_library",
         "//pkg/testutil/env:go_default_library",
         "@com_github_google_go_cmp//cmp:go_default_library",
         "@com_github_google_go_cmp//cmp/cmpopts:go_default_library",
