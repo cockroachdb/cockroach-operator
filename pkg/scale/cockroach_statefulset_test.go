@@ -34,10 +34,14 @@ import (
 func TestStatefulSetIsRunning(t *testing.T) {
 	var stsReplicas int32
 	stsReplicas = 3
+	cltSet := fakeclient.NewSimpleClientset()
+
+	// Test error if no statefulset exists
+	require.Errorf(t, StatefulSetIsRunning(context.TODO(), cltSet, "crdb", "crdb-sts"),
+		"failed to get statefulset: %s", "crdb-sts")
 
 	sts := statefulSet(stsReplicas)
 
-	cltSet := fakeclient.NewSimpleClientset()
 	require.NoError(t, cltSet.Tracker().Add(&sts))
 
 	cltSet.PrependReactor("*", "*", func(action clienttesting.Action) (handled bool, ret runtime.Object, err error) {
@@ -72,7 +76,8 @@ func TestStatefulSetIsRunning(t *testing.T) {
 	})
 
 	// No replicas running
-	require.Errorf(t, StatefulSetIsRunning(context.TODO(), cltSet, "crdb", "crdb-sts"), "statefulset replicas not yet reconciled. have %d expected %d",
+	require.Errorf(t, StatefulSetIsRunning(context.TODO(), cltSet, "crdb", "crdb-sts"),
+		"statefulset replicas not yet reconciled. have %d expected %d",
 		sts.Status.Replicas,
 		sts.Spec.Replicas)
 

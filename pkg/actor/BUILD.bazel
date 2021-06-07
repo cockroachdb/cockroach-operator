@@ -55,8 +55,8 @@ go_library(
 go_test(
     name = "go_default_test",
     srcs = [
-        "decommission_test.go",
         "cluster_restart_test.go",
+        "decommission_test.go",
         "deploy_test.go",
         "export_test.go",
         "partitioned_update_test.go",

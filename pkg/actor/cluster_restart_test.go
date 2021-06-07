@@ -47,6 +47,8 @@ func TestClusterRestartHandles(t *testing.T) {
 	var conditions []api.ClusterCondition
 
 	t.Run("Handle func passes", func(t *testing.T) {
+		// For restart to be a valid action the CRDB cluster needs the initialized condition to be true OR false
+		// and have had its CRDB Version checked
 		conditions = []api.ClusterCondition{
 			{
 				Type:               api.InitializedCondition,
@@ -123,12 +125,12 @@ func TestClusterRestartHandles(t *testing.T) {
 
 func TestClusterReadyForRestart(t *testing.T) {
 	ssStatus := appsv1.StatefulSetStatus{
-		Replicas:        2,
-		CurrentReplicas: 2,
+		Replicas:        5,
+		CurrentReplicas: 5,
 	}
 	require.NoError(t, statefulSetReplicasAvailable(&ssStatus))
 
-	ssStatus.CurrentReplicas = 1
+	ssStatus.CurrentReplicas = 3
 	require.Error(t, statefulSetReplicasAvailable(&ssStatus))
 }
 
