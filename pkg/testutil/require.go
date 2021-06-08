@@ -22,6 +22,8 @@ import (
 	"database/sql"
 	"fmt"
 	"io"
+	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -115,7 +117,11 @@ func RequireDbContainersToUseImage(t *testing.T, sb testenv.DiffingSandbox, cr *
 			if err != nil {
 				return false
 			}
-
+			if cr.Spec.Image.Name == "" {
+				version := strings.ReplaceAll(cr.Spec.CockroachDBVersion, ".", "_")
+				image := os.Getenv(fmt.Sprintf("RELATED_IMAGE_COCKROACH_%s", version))
+				return c.Image == image
+			}
 			return c.Image == cr.Spec.Image.Name
 		})
 
