@@ -324,10 +324,10 @@ func makeDrainStatusChecker(t *testing.T, sb testenv.DiffingSandbox, b ClusterBu
 	cluster := b.Cluster()
 	cmd := []string{"/cockroach/cockroach", "node", "status", "--decommission", "--format=csv", cluster.SecureMode()}
 	podname := fmt.Sprintf("%s-0", cluster.StatefulSetName())
-	stdout, stderror, err := kube.ExecInPod(sb.Mgr.GetScheme(), sb.Mgr.GetConfig(), cluster.Namespace(),
+	stdout, stderror, err := kube.ExecInPod(sb.Mgr.GetScheme(), sb.Mgr.GetConfig(), sb.Namespace,
 		podname, resource.DbContainerName, cmd)
 	if err != nil || stderror != "" {
-		t.Logf("exec cmd = %s on pod=%s exit with error %v and stdError %s and ns %s", cmd, podname, err, stderror, cluster.Namespace())
+		t.Logf("exec cmd = %s on pod=%s exit with error %v and stdError %s and ns %s", cmd, podname, err, stderror, sb.Namespace)
 		return err
 	}
 	r := csv.NewReader(strings.NewReader(stdout))
