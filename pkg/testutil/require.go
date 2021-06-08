@@ -275,7 +275,7 @@ func RequireDownGradeOptionSet(t *testing.T, sb testenv.DiffingSandbox, b Cluste
 func RequireDecommissionNode(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder, numNodes int32) {
 	cluster := b.Cluster()
 
-	err := wait.Poll(10*time.Second, 400*time.Second, func() (bool, error) {
+	err := wait.Poll(10*time.Second, 700*time.Second, func() (bool, error) {
 		sts, err := fetchStatefulSet(sb, cluster.StatefulSetName())
 		if err != nil {
 			t.Logf("statefulset is not found %v", err)
