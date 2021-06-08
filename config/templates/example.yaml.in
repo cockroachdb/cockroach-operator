@@ -1,4 +1,4 @@
-# Copyright 2021 The Cockroach Authors
+# Copyright {{ .Year }} The Cockroach Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Generated, do not edit. Please edit this file instead: config/templates/example.yaml.in
+# {{ .GeneratedWarning }}
 #
 
 apiVersion: crdb.cockroachlabs.com/v1alpha1
@@ -37,7 +37,8 @@ spec:
       cpu: "2"
       memory: "8Gi"
   tlsEnabled: true
-# cockroachDBVersion: v21.1.1
+{{- /* .LatestStableCrdbVersion: latest stable version of CockroachDB */}}
+# cockroachDBVersion: {{ .LatestStableCrdbVersion }}
   image:
-    name: cockroachdb/cockroach:v21.1.1
+    name: cockroachdb/cockroach:{{ .LatestStableCrdbVersion }}
   nodes: 3
