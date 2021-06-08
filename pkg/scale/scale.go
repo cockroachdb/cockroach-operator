@@ -44,7 +44,7 @@ type Scaler struct {
 // In some cases, it may not be possible to full drain a node. In such cases a
 // ErrDecommissioningStalled will be returned  and the node will be left in a
 // decommissioning  state.
-func (s *Scaler) EnsureScale(ctx context.Context, scale uint) error {
+func (s *Scaler) EnsureScale(ctx context.Context, scale uint, gRPCPort int32) error {
 	// Before doing any scaling, prune any PVCs that are not currently in use.
 	// This only needs to be done when scaling up but the operation is a noop
 	// if there are no PVCs not currently in use.
@@ -84,7 +84,7 @@ func (s *Scaler) EnsureScale(ctx context.Context, scale uint) error {
 		// TODO (chrisseto): If decommissioning fails due to a timeout
 		// recommission that node before failing this job.
 		// Making use of the on finish hook is likely ideal?
-		if err := s.Drainer.Decommission(ctx, oneOff); err != nil {
+		if err := s.Drainer.Decommission(ctx, oneOff, gRPCPort); err != nil {
 			return err
 		}
 

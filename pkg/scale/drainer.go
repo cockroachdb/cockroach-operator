@@ -44,7 +44,7 @@ var (
 
 //Drainer interface
 type Drainer interface {
-	Decommission(ctx context.Context, replica uint) error
+	Decommission(ctx context.Context, replica uint, gRPCPort int32) error
 }
 
 // CockroachNodeDrainer does decommissioning of nodes in the CockroachDB cluster
@@ -75,7 +75,7 @@ func NewCockroachNodeDrainer(logger logr.Logger, namespace, ssname string, confi
 }
 
 // Decommission commands the node to start training process and watches for it to complete or fail after timeout
-func (d *CockroachNodeDrainer) Decommission(ctx context.Context, replica uint) error {
+func (d *CockroachNodeDrainer) Decommission(ctx context.Context, replica uint, gRPCPort int32) error {
 	lastNodeID, err := d.findNodeID(ctx, replica, d.Executor.StatefulSet)
 	if err != nil {
 		return err
@@ -83,7 +83,7 @@ func (d *CockroachNodeDrainer) Decommission(ctx context.Context, replica uint) e
 
 	d.Logger.V(int(zapcore.InfoLevel)).Info("draining node", "NodeID", lastNodeID)
 
-	if err := d.executeDrainCmd(ctx, lastNodeID); err != nil {
+	if err := d.executeDrainCmd(ctx, lastNodeID, gRPCPort); err != nil {
 		return err
 	}
 
@@ -193,9 +193,9 @@ func (d *CockroachNodeDrainer) makeDrainStatusChecker(id uint) func(ctx context.
 	}
 }
 
-func (d *CockroachNodeDrainer) executeDrainCmd(ctx context.Context, id uint) error {
+func (d *CockroachNodeDrainer) executeDrainCmd(ctx context.Context, id uint, gRPCPort int32) error {
 	cmd := []string{
-		"./cockroach", "node", "decommission", fmt.Sprintf("%d", id), "--wait=none",
+		"./cockroach", "node", "decommission", fmt.Sprintf("%d", id), "--wait=none", fmt.Sprintf("--port=%d", gRPCPort),
 	}
 
 	if d.Secure {
