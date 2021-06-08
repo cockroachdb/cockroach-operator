@@ -300,7 +300,7 @@ func RequireDecommissionNode(t *testing.T, sb testenv.DiffingSandbox, b ClusterB
 		if err != nil {
 			t.Logf("makeDrainStatusChecker failed due to error %v\n", err)
 			logPods(context.TODO(), sts, cluster, sb, t)
-			return false, err
+			return false, nil
 		}
 		return true, nil
 	})
