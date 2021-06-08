@@ -75,7 +75,7 @@ test/e2e-short:
 # This target is used by kubetest2-tester-exec when running a kind test
 # This target exportis the kubeconfig from kind and then runs
 # k8s:k8s -type kind which checks to see if kind is up and running.
-# Then bazel e2e testing is run. 
+# Then bazel e2e testing is run.
 # An example of calling this is using make test/e2e/testrunner-kind-upgrades
 test/e2e/testrunner-kind-%: PACKAGE=$*
 test/e2e/testrunner-kind-%:
@@ -209,10 +209,26 @@ dev/syncdeps:
 # Release targets
 #
 
+# This target reads the current version from version.txt, increments the patch
+# part of the version, saves the result in the same file, and calls make with
+# the next release-specific target in a separate shell in order to reread the
+# new version.
 .PHONY: release/versionbump
 release/versionbump:
+	bazel run //hack/versionbump:versionbump -- patch $(VERSION) > $(PWD)/version.txt
+	$(MAKE) release/gen-files
+
+# Generate various config files, which usually contain the current operator
+# version, latest CRDB version, a list of supported CRDB versions, etc.
+.PHONY: release/gen-templates
+release/gen-templates:
+	bazel run //hack/crdbversions:crdbversions -- -operator-version $(APP_VERSION) -crdb-versions $(PWD)/crdb-versions.yaml -repo-root $(PWD)
+
+# Generate various manifest files for OpenShift. We run this target after the
+# operator version is changed. The results are committed to Git.
+.PHONY: release/gen-files
+release/gen-files: release/gen-templates
 	$(MAKE) CHANNEL=beta IS_DEFAULT_CHANNEL=0 release/update-pkg-manifest && \
-	sed -i '' -e 's,image: .*,image: cockroachdb/cockroach-operator:$(APP_VERSION),' manifests/operator.yaml && \
 	$(MAKE) CHANNEL=beta IS_DEFAULT_CHANNEL=0 release/opm-build-bundle && \
 	git add . && \
 	git commit -m "Bump version to $(VERSION)"
