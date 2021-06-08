@@ -262,6 +262,8 @@ filegroup(
         "//hack/bin:all-srcs",
         "//hack/boilerplate:all-srcs",
         "//hack/build:all-srcs",
+        "//hack/crdbversions:all-srcs",
+        "//hack/versionbump:all-srcs",
         "//hack/gke:all-srcs",
         "//hack/k8s:all-srcs",
     ],
