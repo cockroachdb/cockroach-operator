@@ -91,7 +91,6 @@ func TestDecommissionFunctionality(t *testing.T) {
 				require.NoError(t, sb.Update(current))
 				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
 				testutil.RequireDecommissionNode(t, sb, builder, 3)
-				// testutil.RequireDecommisionDrainStatusNode(t, sb, builder, 3)
 				testutil.RequireDatabaseToFunction(t, sb, builder)
 				t.Log("Done with decommision")
 			},

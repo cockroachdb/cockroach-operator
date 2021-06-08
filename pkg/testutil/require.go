@@ -296,6 +296,7 @@ func RequireDecommissionNode(t *testing.T, sb testenv.DiffingSandbox, b ClusterB
 			t.Log("statefulset replicas do not match")
 			return false, nil
 		}
+		//
 		err = makeDrainStatusChecker(t, sb, b, uint64(numNodes))
 		if err != nil {
 			t.Logf("makeDrainStatusChecker failed due to error %v\n", err)
@@ -306,18 +307,6 @@ func RequireDecommissionNode(t *testing.T, sb testenv.DiffingSandbox, b ClusterB
 	require.NoError(t, err)
 }
 
-// RequireDecommisionDrainStatusNode checks that proper nodes are decommisioned using node status cmd
-func RequireDecommisionDrainStatusNode(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder, numNodes int32) {
-	err := wait.Poll(10*time.Second, 400*time.Second, func() (bool, error) {
-		err := makeDrainStatusChecker(t, sb, b, uint64(numNodes))
-		if err != nil {
-			t.Logf("makeDrainStatusChecker failed due to error %v\n", err)
-			return false, nil
-		}
-		return true, nil
-	})
-	require.NoError(t, err)
-}
 
 func makeDrainStatusChecker(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder, numNodes uint64) error {
 	cluster := b.Cluster()
@@ -352,13 +341,15 @@ func makeDrainStatusChecker(t *testing.T, sb testenv.DiffingSandbox, b ClusterBu
 		if id <= numNodes {
 			continue
 		}
-		t.Logf("draining node do to decommission \n")
-		t.Logf("id = %s\n ", idStr)
-		t.Logf("isLive = %s\n ", isLive)
-		t.Logf("replicas = %s\n", replicasStr)
-		t.Logf("isDecommissioning = %v\n", isDecommissioning)
+		t.Logf("draining node do to decommission test\n")
+		t.Logf("id=%s\n ", idStr)
+		t.Logf("isLive=%s\n ", isLive)
+		t.Logf("replicas=%s\n", replicasStr)
+		t.Logf("isDecommissioning=%v\n", isDecommissioning)
 
-		if isLive != "true" || isDecommissioning != "true" {
+		// we are not checking isLive != "true"  on tests because the operator exits with islive=true
+		// and when the checks for the test run the node is already decommissioned so isLive can be false 
+		if isDecommissioning != "true" {
 			return errors.New("unexpected node status")
 		}
 
@@ -366,7 +357,8 @@ func makeDrainStatusChecker(t *testing.T, sb testenv.DiffingSandbox, b ClusterBu
 		if err != nil {
 			return errors.Wrap(err, "failed to parse replicas number")
 		}
-		// Node has finished draining successfully
+		// Node has finished draining successfully if replicas=0
+		// otherwise we will signal an error, so the backoff logic retry until replicas=0 or timeout
 		if replicas != 0 {
 			return errors.Wrap(err, fmt.Sprintf("node %d has not completed draining yet", id))
 		}
