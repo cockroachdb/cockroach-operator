@@ -19,6 +19,7 @@ go_test(
         "//pkg/controller:go_default_library",
         "//pkg/testutil:go_default_library",
         "//pkg/testutil/env:go_default_library",
+        "//pkg/utilfeature:go_default_library",
         "@com_github_go_logr_zapr//:go_default_library",
         "@com_github_stretchr_testify//require:go_default_library",
         "@org_uber_go_zap//zaptest:go_default_library",
@@ -34,10 +35,7 @@ filegroup(
 
 filegroup(
     name = "all-srcs",
-    srcs = [
-        ":package-srcs",
-        "//e2e/kubetest2-openshift:all-srcs",
-    ],
+    srcs = [":package-srcs"],
     tags = ["automanaged"],
     visibility = ["//visibility:public"],
 )

@@ -1,0 +1,48 @@
+# Copyright {{ .Year }} The Cockroach Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# {{ .GeneratedWarning }}
+#
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cockroach-operator
+spec:
+  template:
+    spec:
+      containers:
+        - name: cockroach-operator
+          args:
+            - feature-gates
+            - Upgrade=false,ResizePVC=true
+            # the below log level accepts "info" "debug" "warn" or "error"
+            - -zap-log-level
+            - info
+            # - debug
+          env:
+{{- range .CrdbVersions}}{{if stable . }}
+            {{- /*
+                .CrdbVersions: a slice of CockroachDB versions. Every item uses
+                semver.Version as its type. See https://github.com/Masterminds/semver for
+                available methods. We use the `Original()` method, which preserves the
+                leading "v" in the output.
+                The `stable` template function is used to determine if the
+                version is stable or alpha/beta/rc. We publish only stable
+                versions to RedHat Connect.
+                The `underscore` template function replaces all dots with underscores.
+            */}}
+            - name: RELATED_IMAGE_COCKROACH_{{ underscore .Original }}
+              value: RH_COCKROACH_DB_IMAGE_PLACEHOLDER_{{ underscore .Original }}
+{{- end }}{{ end }}
+          image: RH_COCKROACH_OP_IMAGE_PLACEHOLDER

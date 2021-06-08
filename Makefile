@@ -75,7 +75,7 @@ test/e2e-short:
 # This target is used by kubetest2-tester-exec when running a kind test
 # This target exportis the kubeconfig from kind and then runs
 # k8s:k8s -type kind which checks to see if kind is up and running.
-# Then bazel e2e testing is run. 
+# Then bazel e2e testing is run.
 # An example of calling this is using make test/e2e/testrunner-kind-upgrades
 test/e2e/testrunner-kind-%: PACKAGE=$*
 test/e2e/testrunner-kind-%:
@@ -145,8 +145,16 @@ test/e2e/testrunner-openshift:
 	bazel test --stamp //e2e/create/...  --action_env=KUBECONFIG=$(HOME)/openshift-$(CLUSTER_NAME)/auth/kubeconfig
 	bazel test --stamp //e2e/decomission/...  --action_env=KUBECONFIG=$(HOME)/openshift-$(CLUSTER_NAME)/auth/kubeconfig
 
-.PHONY: test/e2e/delete-openshift
-test/e2e/delete-openshift:
+# Use this target to run e2e tests with a openshift cluster.
+# This target uses kind to start a openshift cluster and runs the e2e tests
+# against that cluster. A full TLD is required to creat an openshift clutser.
+# This target runs kubetest2 openshift that starts a openshift cluster
+# Then kubetest2 tester exec is run which runs the make target
+# test/e2e/testrunner-openshift.  After the tests run the cluster is deleted.
+# See the instructions in the kubetes2-openshift on running the
+# provider.
+.PHONY: test/e2e/openshift
+test/e2e/openshift:
 	bazel build //hack/bin/... //e2e/kubetest2-openshift/...
 	PATH=${PATH}:bazel-bin/hack/bin:bazel-bin/e2e/kubetest2-openshift/kubetest2-openshift_/ \
 	     bazel-bin/hack/bin/kubetest2 openshift --cluster-name=$(CLUSTER_NAME) \
@@ -154,18 +162,7 @@ test/e2e/delete-openshift:
 	     --gcp-region=$(GCP_REGION) \
 	     --base-domain=$(BASE_DOMAIN) \
 	     --pull-secret-file=$(PULL_SECRET) \
-	     --down 
-
-.PHONY: test/e2e/create-openshift
-test/e2e/create-openshift:
-	bazel build //hack/bin/... //e2e/kubetest2-openshift/...
-	PATH=${PATH}:bazel-bin/hack/bin:bazel-bin/e2e/kubetest2-openshift/kubetest2-openshift_/ \
-	     bazel-bin/hack/bin/kubetest2 openshift --cluster-name=$(CLUSTER_NAME) \
-	     --gcp-project-id=$(GCP_PROJECT) \
-	     --gcp-region=$(GCP_REGION) \
-	     --base-domain=$(BASE_DOMAIN) \
-	     --pull-secret-file=$(PULL_SECRET) \
-	     --up 
+	     --up --down --test=exec -- make test/e2e/testrunner-openshift
 
 #
 # Different dev targets
@@ -212,10 +209,26 @@ dev/syncdeps:
 # Release targets
 #
 
+# This target reads the current version from version.txt, increments the patch
+# part of the version, saves the result in the same file, and calls make with
+# the next release-specific target in a separate shell in order to reread the
+# new version.
 .PHONY: release/versionbump
 release/versionbump:
+	bazel run //hack/versionbump:versionbump -- patch $(VERSION) > $(PWD)/version.txt
+	$(MAKE) release/gen-files
+
+# Generate various config files, which usually contain the current operator
+# version, latest CRDB version, a list of supported CRDB versions, etc.
+.PHONY: release/gen-templates
+release/gen-templates:
+	bazel run //hack/crdbversions:crdbversions -- -operator-version $(APP_VERSION) -crdb-versions $(PWD)/crdb-versions.yaml -repo-root $(PWD)
+
+# Generate various manifest files for OpenShift. We run this target after the
+# operator version is changed. The results are committed to Git.
+.PHONY: release/gen-files
+release/gen-files: release/gen-templates
 	$(MAKE) CHANNEL=beta IS_DEFAULT_CHANNEL=0 release/update-pkg-manifest && \
-	sed -i '' -e 's,image: .*,image: cockroachdb/cockroach-operator:$(APP_VERSION),' manifests/operator.yaml && \
 	$(MAKE) CHANNEL=beta IS_DEFAULT_CHANNEL=0 release/opm-build-bundle && \
 	git add . && \
 	git commit -m "Bump version to $(VERSION)"

@@ -59,7 +59,7 @@ echo "RH_COCKROACH_DATABASE_IMAGE=$RH_COCKROACH_DATABASE_IMAGE"
 "$opsdk" bundle validate ./bundle
 
 cat bundle/manifests/cockroach-operator.clusterserviceversion.yaml | sed "s+RH_COCKROACH_OP_IMAGE_PLACEHOLDER+${RH_COCKROACH_OP_IMG}+g; s+CREATED_AT_PLACEHOLDER+"$(date +"%FT%H:%M:%SZ")"+g"> bundle/manifests/cockroach-operator.clusterserviceversion.yaml
-for v in $(grep -v '#' ${REPO_ROOT}/crdb-versions.txt)
+for v in $("$faq" -r '.CrdbVersions' "${REPO_ROOT}/crdb-versions.yaml" | cut -d ' ' -f2)
 do
   vrs=${v//./_}
   ENV_VAR_PLACEHOLDER="RH_COCKROACH_DB_IMAGE_PLACEHOLDER_${vrs}"
