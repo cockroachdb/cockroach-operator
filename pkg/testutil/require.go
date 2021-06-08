@@ -307,7 +307,6 @@ func RequireDecommissionNode(t *testing.T, sb testenv.DiffingSandbox, b ClusterB
 	require.NoError(t, err)
 }
 
-
 func makeDrainStatusChecker(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder, numNodes uint64) error {
 	cluster := b.Cluster()
 	cmd := []string{"/cockroach/cockroach", "node", "status", "--decommission", "--format=csv", cluster.SecureMode()}
@@ -348,7 +347,7 @@ func makeDrainStatusChecker(t *testing.T, sb testenv.DiffingSandbox, b ClusterBu
 		t.Logf("isDecommissioning=%v\n", isDecommissioning)
 
 		// we are not checking isLive != "true"  on tests because the operator exits with islive=true
-		// and when the checks for the test run the node is already decommissioned so isLive can be false 
+		// and when the checks for the test run the node is already decommissioned so isLive can be false
 		if isDecommissioning != "true" {
 			return errors.New("unexpected node status")
 		}
