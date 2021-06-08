@@ -39,3 +39,10 @@ go_test(
         "@com_github_masterminds_semver_v3//:go_default_library",
     ],
 )
+
+go_test(
+    name = "go_default_test",
+    srcs = ["main_test.go"],
+    embed = [":go_default_library"],
+    deps = ["@com_github_masterminds_semver_v3//:go_default_library"],
+)
