@@ -68,6 +68,7 @@ filegroup(
         "//e2e/kubetest2-openshift:all-srcs",
         "//e2e/pvcresize:all-srcs",
         "//e2e/upgrades:all-srcs",
+        "//e2e/upgradessha256:all-srcs",
         "//examples:all-srcs",
         "//hack:all-srcs",
         "//manifests:all-srcs",
