@@ -37,7 +37,7 @@ spec:
       cpu: "2"
       memory: "8Gi"
   tlsEnabled: true
-# cockroachDBVersion: v21.1.1
+# cockroachDBVersion: v21.1.2
   image:
-    name: cockroachdb/cockroach:v21.1.1
+    name: cockroachdb/cockroach:v21.1.2
   nodes: 3
