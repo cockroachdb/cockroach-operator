@@ -275,7 +275,7 @@ func RequireDownGradeOptionSet(t *testing.T, sb testenv.DiffingSandbox, b Cluste
 func RequireDecommissionNode(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder, numNodes int32) {
 	cluster := b.Cluster()
 
-	err := wait.Poll(10*time.Second, 700*time.Second, func() (bool, error) {
+	err := wait.Poll(10*time.Second, 400*time.Second, func() (bool, error) {
 		sts, err := fetchStatefulSet(sb, cluster.StatefulSetName())
 		if err != nil {
 			t.Logf("statefulset is not found %v", err)
@@ -313,7 +313,7 @@ func RequireDecommisionDrainStatusNode(t *testing.T, sb testenv.DiffingSandbox, 
 		err := makeDrainStatusChecker(t, sb, b, uint64(numNodes))
 		if err != nil {
 			t.Logf("makeDrainStatusChecker failed due to error %v\n", err)
-			return false, err
+			return false, nil
 		}
 		return true, nil
 	})
@@ -323,15 +323,11 @@ func RequireDecommisionDrainStatusNode(t *testing.T, sb testenv.DiffingSandbox, 
 func makeDrainStatusChecker(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder, numNodes uint64) error {
 	cluster := b.Cluster()
 	cmd := []string{"/cockroach/cockroach", "node", "status", "--decommission", "--format=csv", cluster.SecureMode()}
-
+	podname := fmt.Sprintf("%s-0", cluster.StatefulSetName())
 	stdout, stderror, err := kube.ExecInPod(sb.Mgr.GetScheme(), sb.Mgr.GetConfig(), cluster.Namespace(),
-		fmt.Sprintf("%s-0", cluster.StatefulSetName()), resource.DbContainerName, cmd)
-	if err != nil {
-		t.Logf("exec cmd = %s on pod= %s-0 exit with error %v and stdError %s", cmd, cluster.StatefulSetName(), err, stderror)
-		return err
-	}
-	if stderror != "" {
-		t.Logf("exec cmd = %s on pod= %s-0 exit with error %v and stdError %s", cmd, cluster.StatefulSetName(), err, stderror)
+		podname, resource.DbContainerName, cmd)
+	if err != nil || stderror != "" {
+		t.Logf("exec cmd = %s on pod=%s exit with error %v and stdError %s and ns %s", cmd, podname, err, stderror, cluster.Namespace())
 		return err
 	}
 	r := csv.NewReader(strings.NewReader(stdout))
