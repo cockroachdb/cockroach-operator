@@ -308,7 +308,11 @@ spec:
                 cockroachdb/cockroach, and unstable versions go to
                 cockroachdb/cockroach-unstable.
               */}}
-              value: cockroachdb/cockroach{{ if not (stable .) }}-unstable{{end}}:{{ .Original }}
+              value: {{ if stable . -}}
+                        cockroachdb/cockroach:{{.Original}}
+                     {{- else -}}
+                        cockroachdb/cockroach-unstable:{{.Original}}
+                     {{- end }}
 {{- end }}
           resources:
             requests:
