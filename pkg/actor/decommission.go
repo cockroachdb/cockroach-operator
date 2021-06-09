@@ -170,7 +170,7 @@ func (d decommission) Act(ctx context.Context, cluster *resource.Cluster) error 
 		Drainer:   drainer,
 		PVCPruner: &pvcPruner,
 	}
-	if err := scaler.EnsureScale(ctx, nodes, *cluster.Spec().GRPCPort); err != nil {
+	if err := scaler.EnsureScale(ctx, nodes, *cluster.Spec().GRPCPort, utilfeature.DefaultMutableFeatureGate.Enabled(features.PVCPruner)); err != nil {
 		/// now check if the decommisiionStaleErr and update status
 		log.Error(err, "decomission failed")
 		cluster.SetFalse(api.DecommissionCondition)

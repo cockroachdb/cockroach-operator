@@ -44,7 +44,7 @@ type Scaler struct {
 // In some cases, it may not be possible to full drain a node. In such cases a
 // ErrDecommissioningStalled will be returned  and the node will be left in a
 // decommissioning  state.
-func (s *Scaler) EnsureScale(ctx context.Context, scale uint, gRPCPort int32) error {
+func (s *Scaler) EnsureScale(ctx context.Context, scale uint, gRPCPort int32, usePVCPruner bool) error {
 	// Before doing any scaling, prune any PVCs that are not currently in use.
 	// This only needs to be done when scaling up but the operation is a noop
 	// if there are no PVCs not currently in use.
@@ -57,8 +57,10 @@ func (s *Scaler) EnsureScale(ctx context.Context, scale uint, gRPCPort int32) er
 	// make use of reclaim policy = delete. A reclaim policy of retain is fine
 	// but will result in wasted money, recycle should be considered unsafe and
 	// is officially deprecated by kubernetes.
-	if err := s.PVCPruner.Prune(ctx); err != nil {
-		return errors.Wrap(err, "initial PVC pruning")
+	if usePVCPruner {
+		if err := s.PVCPruner.Prune(ctx); err != nil {
+			return errors.Wrap(err, "initial PVC pruning")
+		}
 	}
 
 	// NOTE: Scaling down 3 -> 1 does not currently work (gracefully).
