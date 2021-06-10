@@ -7,6 +7,10 @@ The CockroachDB Kubernetes Operator deploys CockroachDB on a Kubernetes cluster.
 - Scaling the cluster
 - Performing a rolling upgrade
 
+## Build Status
+
+GKE Nightly: [![GKE Nightly](https://teamcity.cockroachdb.com/guestAuth/app/rest/builds/buildType:Cockroach_CockroachOperator_Nightlies_GkeNightly/statusIcon)](https://teamcity.cockroachdb.com/viewType.html?buildTypeId=Cockroach_CockroachOperator_Nightlies_GkeNightly)
+
 ## Limitations
 
 - This project is in beta and is not production-ready.
