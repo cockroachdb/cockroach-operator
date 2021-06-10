@@ -71,8 +71,8 @@ const (
 	// owner: @alina
 	// alpha: v0.1
 	// beta: v1.0
-	// PVCPruner uses crdb binary to prune PVC on decommission
-	PVCPruner featuregate.Feature = "PVCPruner"
+	// AutoPrunePVC uses crdb binary to prune PVC on decommission
+	AutoPrunePVC featuregate.Feature = "AutoPrunePVC"
 )
 
 func init() {
@@ -90,5 +90,5 @@ var defaultOperatorFeatureGates = map[featuregate.Feature]featuregate.FeatureSpe
 	CrdbVersionValidator: {Default: true, PreRelease: featuregate.Beta},
 	GenerateCerts:        {Default: true, PreRelease: featuregate.GA},
 	ClusterRestart:       {Default: true, PreRelease: featuregate.Beta},
-	PVCPruner:            {Default: false, PreRelease: featuregate.Beta},
+	AutoPrunePVC:         {Default: false, PreRelease: featuregate.Beta},
 }
