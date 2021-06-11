@@ -170,11 +170,12 @@ func (d decommission) Act(ctx context.Context, cluster *resource.Cluster) error 
 		Drainer:   drainer,
 		PVCPruner: &pvcPruner,
 	}
-	if err := scaler.EnsureScale(ctx, nodes); err != nil {
+	if err := scaler.EnsureScale(ctx, nodes, *cluster.Spec().GRPCPort, utilfeature.DefaultMutableFeatureGate.Enabled(features.AutoPrunePVC)); err != nil {
 		/// now check if the decommisiionStaleErr and update status
 		log.Error(err, "decomission failed")
 		cluster.SetFalse(api.DecommissionCondition)
-		return nil
+		CancelLoop(ctx)
+		return err
 	}
 	// TO DO @alina we will need to save the status foreach action
 	cluster.SetTrue(api.DecommissionCondition)

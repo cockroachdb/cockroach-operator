@@ -20,8 +20,12 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"encoding/csv"
 	"fmt"
 	"io"
+	"os"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -115,7 +119,11 @@ func RequireDbContainersToUseImage(t *testing.T, sb testenv.DiffingSandbox, cr *
 			if err != nil {
 				return false
 			}
-
+			if cr.Spec.Image.Name == "" {
+				version := strings.ReplaceAll(cr.Spec.CockroachDBVersion, ".", "_")
+				image := os.Getenv(fmt.Sprintf("RELATED_IMAGE_COCKROACH_%s", version))
+				return c.Image == image
+			}
 			return c.Image == cr.Spec.Image.Name
 		})
 
@@ -272,7 +280,7 @@ func RequireDownGradeOptionSet(t *testing.T, sb testenv.DiffingSandbox, b Cluste
 func RequireDecommissionNode(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder, numNodes int32) {
 	cluster := b.Cluster()
 
-	err := wait.Poll(10*time.Second, 400*time.Second, func() (bool, error) {
+	err := wait.Poll(10*time.Second, 700*time.Second, func() (bool, error) {
 		sts, err := fetchStatefulSet(sb, cluster.StatefulSetName())
 		if err != nil {
 			t.Logf("statefulset is not found %v", err)
@@ -293,9 +301,74 @@ func RequireDecommissionNode(t *testing.T, sb testenv.DiffingSandbox, b ClusterB
 			t.Log("statefulset replicas do not match")
 			return false, nil
 		}
+		//
+		err = makeDrainStatusChecker(t, sb, b, uint64(numNodes))
+		if err != nil {
+			t.Logf("makeDrainStatusChecker failed due to error %v\n", err)
+			return false, nil
+		}
 		return true, nil
 	})
 	require.NoError(t, err)
+}
+
+func makeDrainStatusChecker(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder, numNodes uint64) error {
+	cluster := b.Cluster()
+	cmd := []string{"/cockroach/cockroach", "node", "status", "--decommission", "--format=csv", cluster.SecureMode()}
+	podname := fmt.Sprintf("%s-0", cluster.StatefulSetName())
+	stdout, stderror, err := kube.ExecInPod(sb.Mgr.GetScheme(), sb.Mgr.GetConfig(), sb.Namespace,
+		podname, resource.DbContainerName, cmd)
+	if err != nil || stderror != "" {
+		t.Logf("exec cmd = %s on pod=%s exit with error %v and stdError %s and ns %s", cmd, podname, err, stderror, sb.Namespace)
+		return err
+	}
+	r := csv.NewReader(strings.NewReader(stdout))
+	// skip header
+	if _, err := r.Read(); err != nil {
+		return err
+	}
+	for {
+		record, err := r.Read()
+		if err == io.EOF {
+			break
+		}
+
+		if err != nil {
+			return errors.Wrapf(err, "failed to get node draining status")
+		}
+
+		idStr, isLive, replicasStr, isDecommissioning := record[0], record[8], record[9], record[10]
+		id, err := strconv.ParseUint(idStr, 10, 32)
+		if err != nil {
+			return errors.Wrap(err, "failed to extract node id from string")
+		}
+		if id <= numNodes {
+			continue
+		}
+		t.Logf("draining node do to decommission test\n")
+		t.Logf("id=%s\n ", idStr)
+		t.Logf("isLive=%s\n ", isLive)
+		t.Logf("replicas=%s\n", replicasStr)
+		t.Logf("isDecommissioning=%v\n", isDecommissioning)
+
+		// we are not checking isLive != "true"  on tests because the operator exits with islive=true
+		// and when the checks for the test run the node is already decommissioned so isLive can be false
+		if isDecommissioning != "true" {
+			return errors.New("unexpected node status")
+		}
+
+		replicas, err := strconv.ParseUint(replicasStr, 10, 64)
+		if err != nil {
+			return errors.Wrap(err, "failed to parse replicas number")
+		}
+		// Node has finished draining successfully if replicas=0
+		// otherwise we will signal an error, so the backoff logic retry until replicas=0 or timeout
+		if replicas != 0 {
+			return errors.Wrap(err, fmt.Sprintf("node %d has not completed draining yet", id))
+		}
+	}
+
+	return nil
 }
 
 // RequireDatabaseToFunction tests that the database is functioning correctly

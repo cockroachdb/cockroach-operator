@@ -229,7 +229,7 @@ func IsPodReadyConditionTrue(status corev1.PodStatus) bool {
 //IsImagePullBackOff  returns true if a container status has the waiting state with reason ImagePullBackOff
 func IsImagePullBackOff(pod *corev1.Pod, image string) bool {
 	_, containerStatus := GetContainerStatus(&pod.Status, image)
-	if !containerStatus.Ready && containerStatus.State.Waiting != nil &&
+	if containerStatus != nil && !containerStatus.Ready && containerStatus.State.Waiting != nil &&
 		containerStatus.State.Waiting.Reason == "ImagePullBackOff" {
 		return true
 	}

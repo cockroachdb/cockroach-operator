@@ -30,6 +30,7 @@ import (
 func TestDecommisionFeatureFlag(t *testing.T) {
 	// FeatureGate is currently disabled
 	assert.False(t, utilfeature.DefaultMutableFeatureGate.Enabled(features.Decommission))
+	assert.False(t, utilfeature.DefaultMutableFeatureGate.Enabled(features.AutoPrunePVC))
 
 	cluster := testutil.NewBuilder("cockroachdb").
 		Namespaced("default").

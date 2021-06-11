@@ -11,5 +11,5 @@ LABEL com.redhat.openshift.versions="v4.6"
 LABEL com.redhat.delivery.backport=false
 LABEL com.redhat.delivery.operator.bundle=true
 
-COPY 1.7.12/manifests /manifests/
-COPY 1.7.12/metadata /metadata/
+COPY 1.7.11/manifests /manifests/
+COPY 1.7.11/metadata /metadata/
