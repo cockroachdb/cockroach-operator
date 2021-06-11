@@ -327,26 +327,36 @@ func makeDrainStatusChecker(t *testing.T, sb testenv.DiffingSandbox, b ClusterBu
 	if _, err := r.Read(); err != nil {
 		return err
 	}
+	// We are using the host to filter the decommissioned node.
+	// Currently the id does not match the pod index because of the 
+	// pod parallel strategy
+	host := fmt.Sprintf("%s-%d.%s.%s", cluster.StatefulSetName(),
+		numNodes, cluster.StatefulSetName(), sb.Namespace)
 	for {
 		record, err := r.Read()
 		if err == io.EOF {
 			break
 		}
+		
+		idStr, address := record[0], record[1]
 
-		if err != nil {
-			return errors.Wrapf(err, "failed to get node draining status")
+		if !strings.Contains(address, host){
+			continue
 		}
-
-		idStr, isLive, replicasStr, isDecommissioning := record[0], record[8], record[9], record[10]
+		//if the address is for the last pod that was decommissioned we are checking the replicas
 		id, err := strconv.ParseUint(idStr, 10, 32)
 		if err != nil {
 			return errors.Wrap(err, "failed to extract node id from string")
 		}
-		if id <= numNodes {
-			continue
+		
+		if err != nil {
+			return errors.Wrapf(err, "failed to get node draining status")
 		}
+
+		isLive, replicasStr, isDecommissioning :=  record[8], record[9], record[10]
 		t.Logf("draining node do to decommission test\n")
 		t.Logf("id=%s\n ", idStr)
+		t.Logf("address=%s\n ", address)
 		t.Logf("isLive=%s\n ", isLive)
 		t.Logf("replicas=%s\n", replicasStr)
 		t.Logf("isDecommissioning=%v\n", isDecommissioning)
