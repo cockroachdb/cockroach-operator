@@ -130,7 +130,7 @@ func StatefulSetIsRunning(ctx context.Context, clientset kubernetes.Interface, n
 		return errors.Errorf(
 			"statefulset replicas not yet reconciled. have %d expected %d",
 			sts.Status.Replicas,
-			sts.Spec.Replicas,
+			*sts.Spec.Replicas,
 		)
 	}
 

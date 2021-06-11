@@ -101,10 +101,11 @@ func (r *clusterRestart) Act(ctx context.Context, cluster *resource.Cluster) err
 	if statefulSetIsUpdating(statefulSet) {
 		return NotReadyErr{Err: errors.New("restart statefulset is updating, waiting for the update to finish")}
 	}
-	status := &statefulSet.Status
-	if status.CurrentReplicas == 0 || status.CurrentReplicas < status.Replicas {
+
+	err = statefulSetReplicasAvailable(&statefulSet.Status)
+	if err != nil {
 		log.Info("restart statefulset does not have all replicas up")
-		return NotReadyErr{Err: errors.New("restart cluster statefulset does not have all replicas up")}
+		return err
 	}
 	healthChecker := healthchecker.NewHealthChecker(cluster, clientset, r.scheme, r.config)
 	if strings.EqualFold(restartType, api.ClusterRestartType(api.RollingRestart).String()) {
@@ -148,9 +149,16 @@ func (r *clusterRestart) Act(ctx context.Context, cluster *resource.Cluster) err
 	return nil
 }
 
+func statefulSetReplicasAvailable(status *v1.StatefulSetStatus) error {
+	if status.CurrentReplicas == 0 || status.CurrentReplicas < status.Replicas {
+		return NotReadyErr{Err: errors.New("restart cluster statefulset does not have all replicas up")}
+	}
+	return nil
+}
+
 // rollingSts performs a rolling update on the cluster.
 func (r *clusterRestart) rollingSts(ctx context.Context, sts *appsv1.StatefulSet,
-	clientset *kubernetes.Clientset,
+	clientset kubernetes.Interface,
 	l logr.Logger,
 	healthChecker healthchecker.HealthChecker) error {
 	timeNow := metav1.Now()
@@ -200,7 +208,7 @@ func (r *clusterRestart) rollingSts(ctx context.Context, sts *appsv1.StatefulSet
 //fullClusterRestart will delete all the pods of the sts
 //to force the reload of the certificateon the POD
 //used on the CA cert rotation
-func (r *clusterRestart) fullClusterRestart(ctx context.Context, sts *appsv1.StatefulSet, l logr.Logger, clientset *kubernetes.Clientset) error {
+func (r *clusterRestart) fullClusterRestart(ctx context.Context, sts *appsv1.StatefulSet, l logr.Logger, clientset kubernetes.Interface) error {
 
 	timeNow := metav1.Now()
 	stsName := sts.Name
