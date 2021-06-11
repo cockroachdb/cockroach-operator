@@ -68,6 +68,11 @@ const (
 	// beta: v1.0
 	// RestartCluster uses crdb binary to generate self signed certifcates
 	ClusterRestart featuregate.Feature = "ClusterRestart"
+	// owner: @alina
+	// alpha: v0.1
+	// beta: v1.0
+	// AutoPrunePVC uses crdb binary to prune PVC on decommission
+	AutoPrunePVC featuregate.Feature = "AutoPrunePVC"
 )
 
 func init() {
@@ -85,4 +90,5 @@ var defaultOperatorFeatureGates = map[featuregate.Feature]featuregate.FeatureSpe
 	CrdbVersionValidator: {Default: true, PreRelease: featuregate.Beta},
 	GenerateCerts:        {Default: true, PreRelease: featuregate.GA},
 	ClusterRestart:       {Default: true, PreRelease: featuregate.Beta},
+	AutoPrunePVC:         {Default: false, PreRelease: featuregate.Beta},
 }
