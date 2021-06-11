@@ -349,10 +349,6 @@ func makeDrainStatusChecker(t *testing.T, sb testenv.DiffingSandbox, b ClusterBu
 			return errors.Wrap(err, "failed to extract node id from string")
 		}
 
-		if err != nil {
-			return errors.Wrapf(err, "failed to get node draining status")
-		}
-
 		isLive, replicasStr, isDecommissioning := record[8], record[9], record[10]
 		t.Logf("draining node do to decommission test\n")
 		t.Logf("id=%s\n ", idStr)
