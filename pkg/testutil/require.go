@@ -338,6 +338,10 @@ func makeDrainStatusChecker(t *testing.T, sb testenv.DiffingSandbox, b ClusterBu
 			break
 		}
 
+		if err != nil {
+			return errors.Wrapf(err, "failed to get node draining status")
+		}
+
 		idStr, address := record[0], record[1]
 
 		if !strings.Contains(address, host) {
