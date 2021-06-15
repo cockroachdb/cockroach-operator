@@ -57,15 +57,17 @@ cockroach-operator-6f7b86ffc4-9ppkv   1/1     Running   0          54s
 
 Download the [`example.yaml`](https://github.com/cockroachdb/cockroach-operator/blob/master/examples/example.yaml) custom resource.
 
+> **Note:** The latest stable CockroachDB release is specified by default in `image.name`.
+
 ### Resource requests and limits
 
-By default, the Operator allocates 2 CPUs and 8Gi memory to CockroachDB in the Kubernetes pods. These resources are appropriate for `n2-standard-4` machines.
+By default, the Operator allocates 2 CPUs and 8Gi memory to CockroachDB in the Kubernetes pods. These resources are appropriate for `n2-standard-4` (GCP) and `m5.xlarge` (AWS) machines.
 
 On a production deployment, you should modify the `resources.requests` object in the custom resource with values appropriate for your workload. For details, see the [CockroachDB documentation](https://www.cockroachlabs.com/docs/stable/operate-cockroachdb-kubernetes.html#allocate-resources).
 
 ### Certificate signing
 
-By default, the Operator generates and approves 1 root and 1 node certificate for the cluster.
+The Operator generates and approves 1 root and 1 node certificate for the cluster.
 
 ### Apply the custom resource
 
@@ -133,7 +135,7 @@ Access the DB Console at `https://localhost:8080`.
 
 ### Scale the CockroachDB cluster
 
-To scale the cluster up and down, modify `nodes` in the custom resource. For details, see the [CockroachDB documentation](https://www.cockroachlabs.com/docs/v21.1/operate-cockroachdb-kubernetes#scale-the-cluster).
+To scale the cluster up and down, modify `nodes` in the custom resource. For details, see the [CockroachDB documentation](https://www.cockroachlabs.com/docs/stable/operate-cockroachdb-kubernetes#scale-the-cluster).
 
 Do **not** scale down to fewer than 3 nodes. This is considered an anti-pattern on CockroachDB and will cause errors.
 
@@ -141,7 +143,7 @@ Do **not** scale down to fewer than 3 nodes. This is considered an anti-pattern 
 
 ### Upgrade the CockroachDB cluster
 
-Perform a rolling upgrade by changing `image.name` in the custom resource. For details, see the [CockroachDB documentation](https://www.cockroachlabs.com/docs/v21.1/operate-cockroachdb-kubernetes#upgrade-the-cluster).
+Perform a rolling upgrade by changing `image.name` in the custom resource. For details, see the [CockroachDB documentation](https://www.cockroachlabs.com/docs/stable/operate-cockroachdb-kubernetes#upgrade-the-cluster).
 
 ## Stop the CockroachDB cluster
 
