@@ -146,7 +146,7 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 			return err
 		}
 		if err := WaitUntilJobPodIsRunning(ctx, clientset, job, log); err != nil {
-			log.Error(err, "job not found")
+			log.Error(err, "job pod not found")
 			return err
 		}
 	}
@@ -348,6 +348,15 @@ func IsJobPodRunning(
 	job *kbatch.Job,
 	l logr.Logger,
 ) error {
+	if job == nil {
+		return LogError("job is nil", errors.New("job cannot be nil"), l)
+	}
+	if job.Spec.Selector == nil {
+		return LogError("job.Spec.Selector is nil", errors.New("job.Spec.Selector cannot be nil"), l)
+	}
+	if job.Spec.Selector.MatchLabels == nil {
+		return LogError("job.Spec.Selector.MatchLabels is nil", errors.New("job.Spec.Selector.MatchLabels cannot be nil"), l)
+	}
 	//get pod for the job we created
 	pods, err := clientset.CoreV1().Pods(job.Namespace).List(ctx, metav1.ListOptions{
 		LabelSelector: labels.Set(job.Spec.Selector.MatchLabels).AsSelector().String(),
