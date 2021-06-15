@@ -148,9 +148,11 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 		return errors.Wrapf(err, "check version failed to create kubernetes clientset")
 	}
 
-	// if job, err := clientset.BatchV1().Jobs(cluster.Namespace()).Get(ctx, jobName, metav1.GetOptions{}); err != nil {
+	if job, err := clientset.BatchV1().Jobs(cluster.Namespace()).Get(ctx, jobName, metav1.GetOptions{}); err != nil {
+		log.V(int(zapcore.DebugLevel)).Info(fmt.Sprintf("got job1 = %+v", job))
+		log.Error(err, "job get")
+	}
 	if err := v.client.Get(ctx, key, job); err != nil {
-		log.Error(err, "what an error")
 		log.V(int(zapcore.DebugLevel)).Info(fmt.Sprintf("got job = %+v", job))
 		// if err := WaitUntilJobExists(ctx, clientset, job, log, jobName, cluster.Namespace()); err != nil {
 		// 	log.Error(err, "job not found")
