@@ -40,7 +40,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
-	kubetypes "k8s.io/apimachinery/pkg/types"
+
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -132,10 +132,6 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 	}
 
 	log.V(int(zapcore.DebugLevel)).Info("version checker", "job", jobName)
-	key := kubetypes.NamespacedName{
-		Namespace: cluster.Namespace(),
-		Name:      jobName,
-	}
 	job := &kbatch.Job{}
 
 	clientset, err := kubernetes.NewForConfig(v.config)
@@ -143,9 +139,13 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 		log.Error(err, "cannot create k8s client")
 		return errors.Wrapf(err, "check version failed to create kubernetes clientset")
 	}
-	if err := v.client.Get(ctx, key, job); err != nil {
-		err := WaitUntilJobPodIsRunning(ctx, clientset, job, log)
-		if err != nil {
+
+	if job, err := clientset.BatchV1().Jobs(cluster.Namespace()).Get(ctx, jobName, metav1.GetOptions{}); err != nil {
+		if err := WaitUntilJobExists(ctx, clientset, job, log, jobName, cluster.Namespace()); err != nil {
+			log.Error(err, "job not found")
+			return err
+		}
+		if err := WaitUntilJobPodIsRunning(ctx, clientset, job, log); err != nil {
 			log.Error(err, "job not found")
 			return err
 		}
@@ -308,6 +308,38 @@ func isJobCompletedOrFailed(job *kbatch.Job) (bool, kbatch.JobConditionType) {
 		}
 	}
 	return false, ""
+}
+
+func JobExists(
+	ctx context.Context,
+	clientset kubernetes.Interface,
+	job *kbatch.Job,
+	l logr.Logger,
+	jobName, jobNamespace string,
+) error {
+	//get pod for the job we created
+	job, err := clientset.BatchV1().Jobs(jobNamespace).Get(ctx, jobName, metav1.GetOptions{})
+	if err != nil {
+		return LogError("job is not created yet waiting longer", err, l)
+	}
+
+	l.V(int(zapcore.DebugLevel)).Info("job was retrieved... we can continue")
+	return nil
+}
+func WaitUntilJobExists(ctx context.Context, clientset kubernetes.Interface, job *kbatch.Job, l logr.Logger, jobName, jobNamespace string) error {
+	if job == nil {
+		return errors.New("job cannot be nil")
+	}
+	f := func() error {
+		return JobExists(ctx, clientset, job, l, jobName, jobNamespace)
+	}
+	b := backoff.NewExponentialBackOff()
+	b.MaxElapsedTime = 120 * time.Second
+	b.MaxInterval = 10 * time.Second
+	if err := backoff.Retry(f, b); err != nil {
+		return errors.Wrapf(err, "job  %s is not running %s", job.Name)
+	}
+	return nil
 }
 
 func IsJobPodRunning(
