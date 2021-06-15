@@ -41,6 +41,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 
+	kubetypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -107,6 +108,7 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 	cluster.SetCrdbContainerImage(containerImage)
 	cluster.SetAnnotationContainerImage(containerImage)
 	jobName := cluster.JobName()
+	log.V(int(zapcore.DebugLevel)).Info(fmt.Sprintf("Reconcile jobName= %s", jobName))
 	changed, err := (resource.Reconciler{
 		ManagedResource: r,
 		Builder: resource.JobBuilder{
@@ -117,6 +119,8 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 		Owner:  owner,
 		Scheme: v.scheme,
 	}).Reconcile()
+	log.V(int(zapcore.DebugLevel)).Info(fmt.Sprintf("r.Labels.Selector() = %+v", r.Labels.Selector()))
+
 	if err != nil && kube.IgnoreNotFound(err) == nil {
 		err := errors.Wrap(err, "failed to reconcile job not found")
 		log.Error(err, "failed to reconcile job")
@@ -133,6 +137,10 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 
 	log.V(int(zapcore.DebugLevel)).Info("version checker", "job", jobName)
 	job := &kbatch.Job{}
+	key := kubetypes.NamespacedName{
+		Namespace: cluster.Namespace(),
+		Name:      jobName,
+	}
 
 	clientset, err := kubernetes.NewForConfig(v.config)
 	if err != nil {
@@ -140,11 +148,14 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 		return errors.Wrapf(err, "check version failed to create kubernetes clientset")
 	}
 
-	if job, err := clientset.BatchV1().Jobs(cluster.Namespace()).Get(ctx, jobName, metav1.GetOptions{}); err != nil {
-		if err := WaitUntilJobExists(ctx, clientset, job, log, jobName, cluster.Namespace()); err != nil {
-			log.Error(err, "job not found")
-			return err
-		}
+	// if job, err := clientset.BatchV1().Jobs(cluster.Namespace()).Get(ctx, jobName, metav1.GetOptions{}); err != nil {
+	if err := v.client.Get(ctx, key, job); err != nil {
+		log.Error(err, "what an error")
+		log.V(int(zapcore.DebugLevel)).Info(fmt.Sprintf("got job = %+v", job))
+		// if err := WaitUntilJobExists(ctx, clientset, job, log, jobName, cluster.Namespace()); err != nil {
+		// 	log.Error(err, "job not found")
+		// 	return err
+		// }
 		if err := WaitUntilJobPodIsRunning(ctx, clientset, job, log); err != nil {
 			log.Error(err, "job pod not found")
 			return err
