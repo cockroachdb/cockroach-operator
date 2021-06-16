@@ -25,6 +25,17 @@ genrule(
 )
 
 genrule(
+    name = "fetch_oc",
+    srcs = select({
+        ":darwin": ["@oc_darwin//:file"],
+        ":k8": ["@oc_linux//:file"],
+    }),
+    outs = ["oc"],
+    cmd = "cp $(SRCS) $@",
+    visibility = ["//visibility:public"],
+)
+
+genrule(
     name = "fetch_faq",
     srcs = select({
         ":darwin": ["@faq_osx//file"],

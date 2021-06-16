@@ -23,7 +23,7 @@ def install():
     install_staticcheck()
     #install_helm()
     install_kubectl()
-    install_oc3()
+    install_oc()
     install_kind()
     install_kubetest2()
     install_kubetest2_kind()
@@ -224,22 +224,39 @@ def install_kubectl():
 
 
 # Define rules for different oc versions
-def install_oc3():
+def install_oc():
     http_archive(
-        name = "oc_3_11_linux",
-        sha256 = "4b0f07428ba854174c58d2e38287e5402964c9a9355f6c359d1242efd0990da3",
-        urls = ["https://github.com/openshift/origin/releases/download/v3.11.0/openshift-origin-client-tools-v3.11.0-0cbc58b-linux-64bit.tar.gz"],
+        name = "oc_linux",
+        sha256 = "d3b62b7de6df34b75336fc4720e334b8073cc93dba09c07f2e6a8e7147c0c99a",
+        urls = ["https://mirror.openshift.com/pub/openshift-v4/clients/ocp/4.7.15/openshift-client-linux-4.7.15.tar.gz"],
         build_file_content =
          """
 filegroup(
      name = "file",
      srcs = [
-        "openshift-origin-client-tools-v3.11.0-0cbc58b-linux-64bit/oc",
+        "oc",
      ],
      visibility = ["//visibility:public"],
 )
     """,
     )
+
+    http_archive(
+        name = "oc_darwin",
+        sha256 = "835218ded58cdda11f83c7e777a79a36c97c30c00c72f28a5ee29d8fb7e8830e",
+        urls = ["https://mirror.openshift.com/pub/openshift-v4/clients/ocp/4.7.15/openshift-client-mac-4.7.15.tar.gz"],
+        build_file_content =
+         """
+filegroup(
+     name = "file",
+     srcs = [
+        "oc",
+     ],
+     visibility = ["//visibility:public"],
+)
+    """,
+    )
+
 ## Fetch kind images used during e2e tests
 def install_kind():
     # install kind binary
