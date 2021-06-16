@@ -368,7 +368,7 @@ func isJobPodRunning(
 	}
 	pod := pods.Items[0]
 	if !kube.IsPodReady(&pod) {
-		msg := "job pod is not ready yet waiting longer"
+		msg := fmt.Sprintf("job pod %s is not ready yet waiting longer", pod.ObjectMeta.Name)
 		l.V(DEBUGLEVEL).Info(msg)
 		return errors.New(msg)
 	}
