@@ -403,8 +403,9 @@ func IsJobPodRunning(
 	}
 	pod := pods.Items[0]
 	if !kube.IsPodReady(&pod) {
-		l.V(DEBUGLEVEL).Info("job pod is not ready yet waiting longer")
-		return err
+		msg := "job pod is not ready yet waiting longer"
+		l.V(DEBUGLEVEL).Info(msg)
+		return errors.New(msg)
 	}
 	l.V(DEBUGLEVEL).Info("job pod is ready")
 	return nil
@@ -421,12 +422,18 @@ func IsContainerStatusImagePullBackoff(
 	pods, err := clientset.CoreV1().Pods(job.Namespace).List(ctx, metav1.ListOptions{
 		LabelSelector: labels.Set(job.Spec.Selector.MatchLabels).AsSelector().String(),
 	})
-	//TO DO: maybe we should check some k8s specific errors here
-	if err != nil {
-		msg := "error getting pod in job"
-		l.V(DEBUGLEVEL).Info(msg)
-		return errors.Wrapf(err, msg)
+
+	if k8sErrors.IsNotFound(err) { // this is not an error
+		l.V(DEBUGLEVEL).Info("cannot find pods for vcheck job", "jobName", job.ObjectMeta.Name, "namespace", job.Namespace)
+		return err
+	} else if statusError, isStatus := err.(*k8sErrors.StatusError); isStatus { // this is an error
+		l.Error(statusError, fmt.Sprintf("status error getting pod %v", statusError.ErrStatus.Message))
+		return err
+	} else if err != nil {
+		l.V(int(zapcore.ErrorLevel)).Info("error finding pods for vcheck job", "jobName", job.ObjectMeta.Name, "namespace", job.Namespace)
+		return err
 	}
+
 	if len(pods.Items) == 0 {
 		l.V(DEBUGLEVEL).Info("job pods are not running.")
 		return nil
