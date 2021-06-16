@@ -72,6 +72,15 @@ func (v *versionChecker) Handles(conds []api.ClusterCondition) bool {
 	return utilfeature.DefaultMutableFeatureGate.Enabled(features.CrdbVersionValidator) && (condition.True(api.InitializedCondition, conds) || condition.False(api.InitializedCondition, conds)) && condition.False(api.CrdbVersionChecked, conds)
 }
 
+// Act will create a job that will try to extract the crdb version using the image field or the CockroachDBVersion field
+// Initially version checker job was created to have a unique name, the same name as the CR
+// This was the mechanism that assured a single job was created for each CR
+// To run the tests in parallel we change the name of the job to use a timestamp
+// We want to run different test scenarios in parallel with the same CR.
+// But for the crdb container to run in our version checker we need also requestcerts action.
+// The timestamp from the nameing of the job will ensure for a short period that the name of the job will be the same,
+// We need a better mechanism to avoid creation of duplicate version checkers when the requestcerts finish
+// and version checker needs to complete the work.
 func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) error {
 	log := v.log.WithValues("CrdbCluster", cluster.ObjectKey())
 	log.V(DEBUGLEVEL).Info("starting to check the crdb version of the container provided")
@@ -128,7 +137,9 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 	} else if err != nil {
 		log.Error(err, "failed to reconcile job only err")
 	}
-
+	// we comment this because after reconcile the object it is modified in k8s and
+	// this will trigger a restart.
+	// TODO: we need to delete this lines
 	// if changed {
 	// 	log.V(DEBUGLEVEL).Info("created/updated job, stopping request processing")
 	// 	CancelLoop(ctx)
@@ -146,27 +157,34 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 		log.Error(err, "cannot create k8s client")
 		return errors.Wrapf(err, "check version failed to create kubernetes clientset")
 	}
+	// sometimes the Get will return an error and an empty job struct.
+	// this is especially valid for kind cluster in our e2e
+	// To fix this we added the waitUntilJobExists func that will wait for the job
+	// to be available from k8s api.
 	if err := v.client.Get(ctx, key, job); err != nil {
 		msg := fmt.Sprintf("failure: retrieved job%+v", *job)
 		log.Error(err, msg)
 		// now job object is an empty struct and we neeed to make sure it will be populated here
-		if err := WaitUntilJobExists(ctx, clientset, job, log, jobName, cluster.Namespace()); err != nil {
+		if err := waitUntilJobExists(ctx, clientset, job, log, jobName, cluster.Namespace()); err != nil {
 			log.Error(err, "job not found")
 			return err
 		}
-		if err := WaitUntilJobPodIsRunning(ctx, clientset, job, log); err != nil {
+		// after geting the job from previous line we will make sure that the
+		// job pod it is running before continuing
+		if err := waitUntilJobPodIsRunning(ctx, clientset, job, log); err != nil {
 			log.Error(err, "job pod not found")
 			return err
 		}
 	}
 
-	// check if the job is completed or failed before EXEC
+	// check if the job is completed or failed before getting the logs from the pod
 	if finished, _ := isJobCompletedOrFailed(job); !finished {
-		if err := WaitUntilJobPodIsRunning(ctx, clientset, job, v.log); err != nil {
+		//we check first to see that the job pod it is running
+		if err := waitUntilJobPodIsRunning(ctx, clientset, job, v.log); err != nil {
 			// if after 2 minutes the job pod is not ready and container status is ImagePullBackoff
 			// We need to stop requeueing until further changes on the CR
 			image := cluster.GetCockroachDBImageName()
-			if errBackoff := IsContainerStatusImagePullBackoff(ctx, clientset, job, log, image); errBackoff != nil {
+			if errBackoff := isContainerStatusImagePullBackoff(ctx, clientset, job, log, image); errBackoff != nil {
 				err := InvalidContainerVersionError{Err: errBackoff}
 				msg := "job image incorrect"
 				log.V(DEBUGLEVEL).Info(msg)
@@ -312,6 +330,7 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 	return nil
 }
 
+//isJobCompletedOrFailed checks if a job is in state completed of failed
 func isJobCompletedOrFailed(job *kbatch.Job) (bool, kbatch.JobConditionType) {
 	for _, c := range job.Status.Conditions {
 		if (c.Type == kbatch.JobComplete || c.Type == kbatch.JobFailed) && c.Status == corev1.ConditionTrue {
@@ -321,7 +340,8 @@ func isJobCompletedOrFailed(job *kbatch.Job) (bool, kbatch.JobConditionType) {
 	return false, ""
 }
 
-func JobExists(
+// jobExists checks if a job object was already created
+func jobExists(
 	ctx context.Context,
 	clientset kubernetes.Interface,
 	job *kbatch.Job,
@@ -345,12 +365,14 @@ func JobExists(
 	l.V(DEBUGLEVEL).Info(fmt.Sprintf("job '%+v' was retrieved... we can continue", job))
 	return nil
 }
-func WaitUntilJobExists(ctx context.Context, clientset kubernetes.Interface, job *kbatch.Job, l logr.Logger, jobName, jobNamespace string) error {
+
+// waitUntilJobExists will wait until the version checker job can be retrieved from k8s api
+func waitUntilJobExists(ctx context.Context, clientset kubernetes.Interface, job *kbatch.Job, l logr.Logger, jobName, jobNamespace string) error {
 	if job == nil {
 		return errors.New("job cannot be nil")
 	}
 	f := func() error {
-		return JobExists(ctx, clientset, job, l, jobName, jobNamespace)
+		return jobExists(ctx, clientset, job, l, jobName, jobNamespace)
 	}
 	b := backoff.NewExponentialBackOff()
 	b.MaxElapsedTime = 120 * time.Second
@@ -361,7 +383,8 @@ func WaitUntilJobExists(ctx context.Context, clientset kubernetes.Interface, job
 	return nil
 }
 
-func IsJobPodRunning(
+//isJobPodRunning checks that the version checker pod it is in state running
+func isJobPodRunning(
 	ctx context.Context,
 	clientset kubernetes.Interface,
 	job *kbatch.Job,
@@ -411,7 +434,8 @@ func IsJobPodRunning(
 	return nil
 }
 
-func IsContainerStatusImagePullBackoff(
+//isContainerStatusImagePullBackoff checks that the container status is ImagePullBackOff
+func isContainerStatusImagePullBackoff(
 	ctx context.Context,
 	clientset kubernetes.Interface,
 	job *kbatch.Job,
@@ -447,12 +471,13 @@ func IsContainerStatusImagePullBackoff(
 	return nil
 }
 
-func WaitUntilJobPodIsRunning(ctx context.Context, clientset kubernetes.Interface, job *kbatch.Job, l logr.Logger) error {
+// waitUntilJobPodIsRunning will retry until the versionchecker pod it is running
+func waitUntilJobPodIsRunning(ctx context.Context, clientset kubernetes.Interface, job *kbatch.Job, l logr.Logger) error {
 	if job == nil {
 		return errors.New("job cannot be nil")
 	}
 	f := func() error {
-		return IsJobPodRunning(ctx, clientset, job, l)
+		return isJobPodRunning(ctx, clientset, job, l)
 	}
 	b := backoff.NewExponentialBackOff()
 	b.MaxElapsedTime = 120 * time.Second
