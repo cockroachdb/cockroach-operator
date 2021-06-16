@@ -120,7 +120,6 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 		Owner:  owner,
 		Scheme: v.scheme,
 	}).Reconcile()
-	log.V(DEBUGLEVEL).Info(fmt.Sprintf("r.Labels.Selector() = %+v", r.Labels.Selector()))
 
 	if err != nil && kube.IgnoreNotFound(err) == nil {
 		err := errors.Wrap(err, "failed to reconcile job not found")
@@ -135,7 +134,6 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 	// 	CancelLoop(ctx)
 	// 	return nil
 	// }
-
 	log.V(DEBUGLEVEL).Info("version checker", "job", jobName)
 	job := &kbatch.Job{}
 	key := kubetypes.NamespacedName{
@@ -151,7 +149,7 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 	if err := v.client.Get(ctx, key, job); err != nil {
 		msg := fmt.Sprintf("failure: retrieved job%+v", *job)
 		log.Error(err, msg)
-
+		// now job object is an empty struct and we neeed to make sure it will be populated here
 		if err := WaitUntilJobExists(ctx, clientset, job, log, jobName, cluster.Namespace()); err != nil {
 			log.Error(err, "job not found")
 			return err
@@ -164,8 +162,6 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 
 	// check if the job is completed or failed before EXEC
 	if finished, _ := isJobCompletedOrFailed(job); !finished {
-		msg := fmt.Sprintf("job '%+v'is not completed and neither finished", *job)
-		log.V(DEBUGLEVEL).Info(msg)
 		if err := WaitUntilJobPodIsRunning(ctx, clientset, job, v.log); err != nil {
 			// if after 2 minutes the job pod is not ready and container status is ImagePullBackoff
 			// We need to stop requeueing until further changes on the CR
@@ -339,7 +335,7 @@ func JobExists(
 		l.V(DEBUGLEVEL).Info("cannot find vcheck job", "jobName", jobName, "namespace", job.Namespace)
 		return err
 	} else if statusError, isStatus := err.(*k8sErrors.StatusError); isStatus { // this is an error
-		l.Error(statusError, fmt.Sprintf("status error getting pod %v", statusError.ErrStatus.Message))
+		l.Error(statusError, fmt.Sprintf("status error getting vcheck job %v", statusError.ErrStatus.Message))
 		return err
 	} else if err != nil {
 		l.V(int(zapcore.ErrorLevel)).Info("error finding vcheck job", "jobName", jobName, "namespace", job.Namespace)
