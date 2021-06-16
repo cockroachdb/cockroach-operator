@@ -56,16 +56,3 @@ rm -rf ./latest/*.yaml
 cp -R ./${VERSION}/manifests/*.yaml ./latest/manifests
 cp -R ./${VERSION}/manifests/*.yaml ./latest
 cp -R ./${VERSION}/metadata/*.yaml ./latest/metadata
-
-
-
-
-
-
-
-
- 
-
-
-
-
