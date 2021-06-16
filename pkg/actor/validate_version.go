@@ -157,30 +157,25 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 		log.Error(err, "cannot create k8s client")
 		return errors.Wrapf(err, "check version failed to create kubernetes clientset")
 	}
-	// sometimes the Get will return an error and an empty job struct.
+	// sometimes the Get on the job will return an error and an empty job struct.
 	// this is especially valid for kind cluster in our e2e
-	// To fix this we added the waitUntilJobExists func that will wait for the job
-	// to be available from k8s api.
+	// To fix this we wait for the pod of the job to run and than get the job.
+	if err := waitUntilJobPodIsRunning(ctx, clientset, jobName, job.Namespace, r.Labels.Selector(), log); err != nil {
+		log.Error(err, "job pod not found")
+		return err
+	}
+
+	//we get the job after we checked that the pod is running
 	if err := v.client.Get(ctx, key, job); err != nil {
 		msg := fmt.Sprintf("failure: retrieved job%+v", *job)
 		log.Error(err, msg)
-		// now job object is an empty struct and we neeed to make sure it will be populated here
-		if err := waitUntilJobExists(ctx, clientset, job, log, jobName, cluster.Namespace()); err != nil {
-			log.Error(err, "job not found")
-			return err
-		}
-		// after geting the job from previous line we will make sure that the
-		// job pod it is running before continuing
-		if err := waitUntilJobPodIsRunning(ctx, clientset, job, log); err != nil {
-			log.Error(err, "job pod not found")
-			return err
-		}
+		return err
 	}
 
 	// check if the job is completed or failed before getting the logs from the pod
 	if finished, _ := isJobCompletedOrFailed(job); !finished {
 		//we check first to see that the job pod it is running
-		if err := waitUntilJobPodIsRunning(ctx, clientset, job, v.log); err != nil {
+		if err := waitUntilJobPodIsRunning(ctx, clientset, jobName, job.Namespace, r.Labels.Selector(), v.log); err != nil {
 			// if after 2 minutes the job pod is not ready and container status is ImagePullBackoff
 			// We need to stop requeueing until further changes on the CR
 			image := cluster.GetCockroachDBImageName()
@@ -340,83 +335,30 @@ func isJobCompletedOrFailed(job *kbatch.Job) (bool, kbatch.JobConditionType) {
 	return false, ""
 }
 
-// jobExists checks if a job object was already created
-func jobExists(
-	ctx context.Context,
-	clientset kubernetes.Interface,
-	job *kbatch.Job,
-	l logr.Logger,
-	jobName, jobNamespace string,
-) error {
-	var err error
-	//get pod for the job we created
-	job, err = clientset.BatchV1().Jobs(jobNamespace).Get(ctx, jobName, metav1.GetOptions{})
-	if k8sErrors.IsNotFound(err) { // this is not an error
-		l.V(DEBUGLEVEL).Info("cannot find vcheck job", "jobName", jobName, "namespace", job.Namespace)
-		return err
-	} else if statusError, isStatus := err.(*k8sErrors.StatusError); isStatus { // this is an error
-		l.Error(statusError, fmt.Sprintf("status error getting vcheck job %v", statusError.ErrStatus.Message))
-		return err
-	} else if err != nil {
-		l.V(int(zapcore.ErrorLevel)).Info("error finding vcheck job", "jobName", jobName, "namespace", job.Namespace)
-		return err
-	}
-
-	l.V(DEBUGLEVEL).Info(fmt.Sprintf("job '%+v' was retrieved... we can continue", job))
-	return nil
-}
-
-// waitUntilJobExists will wait until the version checker job can be retrieved from k8s api
-func waitUntilJobExists(ctx context.Context, clientset kubernetes.Interface, job *kbatch.Job, l logr.Logger, jobName, jobNamespace string) error {
-	if job == nil {
-		return errors.New("job cannot be nil")
-	}
-	f := func() error {
-		return jobExists(ctx, clientset, job, l, jobName, jobNamespace)
-	}
-	b := backoff.NewExponentialBackOff()
-	b.MaxElapsedTime = 120 * time.Second
-	b.MaxInterval = 10 * time.Second
-	if err := backoff.Retry(f, b); err != nil {
-		return errors.Wrapf(err, "job  %s is not running %s", job.Name)
-	}
-	return nil
-}
-
 //isJobPodRunning checks that the version checker pod it is in state running
 func isJobPodRunning(
 	ctx context.Context,
 	clientset kubernetes.Interface,
-	job *kbatch.Job,
+	jobName, jobNamespace string,
+	labelsSel map[string]string,
 	l logr.Logger,
 ) error {
-	if job == nil {
-		msg := "job is nil"
-		l.V(DEBUGLEVEL).Info(msg)
-		return errors.Wrapf(errors.New("job cannot be nil"), msg)
+	labelSelector := metav1.LabelSelector{
+		MatchLabels: labelsSel,
 	}
-	if job.Spec.Selector == nil {
-		msg := "job.Spec.Selector is nil"
-		l.V(DEBUGLEVEL).Info(msg)
-		return errors.Wrapf(errors.New("job.Spec.Selector cannot be nil"), msg)
-	}
-	if job.Spec.Selector.MatchLabels == nil {
-		msg := "job.Spec.Selector.MatchLabels is nil"
-		l.V(DEBUGLEVEL).Info(msg)
-		return errors.Wrapf(errors.New("job.Spec.Selector.MatchLabels cannot be nil"), msg)
-	}
+
 	//get pod for the job we created
-	pods, err := clientset.CoreV1().Pods(job.Namespace).List(ctx, metav1.ListOptions{
-		LabelSelector: labels.Set(job.Spec.Selector.MatchLabels).AsSelector().String(),
+	pods, err := clientset.CoreV1().Pods(jobNamespace).List(ctx, metav1.ListOptions{
+		LabelSelector: labels.Set(labelSelector.MatchLabels).AsSelector().String(),
 	})
 	if k8sErrors.IsNotFound(err) { // this is not an error
-		l.V(DEBUGLEVEL).Info("cannot find pods for vcheck job", "jobName", job.ObjectMeta.Name, "namespace", job.Namespace)
+		l.V(DEBUGLEVEL).Info("cannot find pods for vcheck job", "jobName", jobName, "namespace", jobNamespace)
 		return err
 	} else if statusError, isStatus := err.(*k8sErrors.StatusError); isStatus { // this is an error
 		l.Error(statusError, fmt.Sprintf("status error getting pod %v", statusError.ErrStatus.Message))
 		return err
 	} else if err != nil {
-		l.V(int(zapcore.ErrorLevel)).Info("error finding pods for vcheck job", "jobName", job.ObjectMeta.Name, "namespace", job.Namespace)
+		l.V(int(zapcore.ErrorLevel)).Info("error finding pods for vcheck job", "jobName", jobName, "namespace", jobNamespace)
 		return err
 	}
 
@@ -472,18 +414,18 @@ func isContainerStatusImagePullBackoff(
 }
 
 // waitUntilJobPodIsRunning will retry until the versionchecker pod it is running
-func waitUntilJobPodIsRunning(ctx context.Context, clientset kubernetes.Interface, job *kbatch.Job, l logr.Logger) error {
-	if job == nil {
-		return errors.New("job cannot be nil")
+func waitUntilJobPodIsRunning(ctx context.Context, clientset kubernetes.Interface, jobName, jobNamespace string, labelSelector map[string]string, l logr.Logger) error {
+	if labelSelector == nil {
+		return errors.New("selector cannot be nil")
 	}
 	f := func() error {
-		return isJobPodRunning(ctx, clientset, job, l)
+		return isJobPodRunning(ctx, clientset, jobName, jobNamespace, labelSelector, l)
 	}
 	b := backoff.NewExponentialBackOff()
 	b.MaxElapsedTime = 120 * time.Second
 	b.MaxInterval = 10 * time.Second
 	if err := backoff.Retry(f, b); err != nil {
-		return errors.Wrapf(err, "pod is not running for job: %s", job.Name)
+		return errors.Wrapf(err, "pod is not running for job: %s", jobName)
 	}
 	return nil
 }
