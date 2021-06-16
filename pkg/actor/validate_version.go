@@ -34,7 +34,6 @@ import (
 	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
-	"go.uber.org/zap/zapcore"
 	kbatch "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -96,9 +95,9 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 			log.Error(err, "The cockroachDBVersion API value is set to a value that is not supported by the operator. Supported versions are set via the RELATED_IMAGE env variables in the operator manifest.")
 			return err
 		}
-		log.V(int(zapcore.DebugLevel)).Info(fmt.Sprintf("supported CockroachDBVersion %s", cluster.Spec().CockroachDBVersion))
+		log.V(DEBUGLEVEL).Info(fmt.Sprintf("supported CockroachDBVersion %s", cluster.Spec().CockroachDBVersion))
 	} else {
-		log.V(int(zapcore.DebugLevel)).Info("User set image.name, using that field instead of cockroachDBVersion")
+		log.V(DEBUGLEVEL).Info("User set image.name, using that field instead of cockroachDBVersion")
 	}
 
 	var calVersion, containerImage string
@@ -108,8 +107,8 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 	cluster.SetCrdbContainerImage(containerImage)
 	cluster.SetAnnotationContainerImage(containerImage)
 	jobName := cluster.JobName()
-	log.V(int(zapcore.DebugLevel)).Info(fmt.Sprintf("Reconcile jobName= %s", jobName))
-	changed, err := (resource.Reconciler{
+	log.V(DEBUGLEVEL).Info(fmt.Sprintf("Reconcile jobName= %s", jobName))
+	_, err := (resource.Reconciler{
 		ManagedResource: r,
 		Builder: resource.JobBuilder{
 			Cluster:  cluster,
@@ -119,7 +118,7 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 		Owner:  owner,
 		Scheme: v.scheme,
 	}).Reconcile()
-	log.V(int(zapcore.DebugLevel)).Info(fmt.Sprintf("r.Labels.Selector() = %+v", r.Labels.Selector()))
+	log.V(DEBUGLEVEL).Info(fmt.Sprintf("r.Labels.Selector() = %+v", r.Labels.Selector()))
 
 	if err != nil && kube.IgnoreNotFound(err) == nil {
 		err := errors.Wrap(err, "failed to reconcile job not found")
@@ -129,13 +128,13 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 		log.Error(err, "failed to reconcile job only err")
 	}
 
-	if changed {
-		log.V(int(zapcore.DebugLevel)).Info("created/updated job, stopping request processing")
-		CancelLoop(ctx)
-		return nil
-	}
+	// if changed {
+	// 	log.V(DEBUGLEVEL).Info("created/updated job, stopping request processing")
+	// 	CancelLoop(ctx)
+	// 	return nil
+	// }
 
-	log.V(int(zapcore.DebugLevel)).Info("version checker", "job", jobName)
+	log.V(DEBUGLEVEL).Info("version checker", "job", jobName)
 	job := &kbatch.Job{}
 	key := kubetypes.NamespacedName{
 		Namespace: cluster.Namespace(),
@@ -148,6 +147,7 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 		return errors.Wrapf(err, "check version failed to create kubernetes clientset")
 	}
 	if err := v.client.Get(ctx, key, job); err != nil {
+		log.V(DEBUGLEVEL).Info(fmt.Sprintf("failure: retrieved job%+v", *job))
 		if err := WaitUntilJobExists(ctx, clientset, job, log, jobName, cluster.Namespace()); err != nil {
 			log.Error(err, "job not found")
 			return err
@@ -166,7 +166,9 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 			image := cluster.GetCockroachDBImageName()
 			if errBackoff := IsContainerStatusImagePullBackoff(ctx, clientset, job, log, image); errBackoff != nil {
 				err := InvalidContainerVersionError{Err: errBackoff}
-				return LogError("job image incorrect", err, log)
+				msg := "job image incorrect"
+				log.V(DEBUGLEVEL).Info(msg)
+				return errors.Wrapf(err, msg)
 			}
 			return errors.Wrapf(err, "failed to check the version of the crdb")
 		}
@@ -181,7 +183,7 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 			return errors.Wrapf(err, "failed to list running pod for job")
 		}
 		if len(pods.Items) == 0 {
-			log.V(int(zapcore.DebugLevel)).Info("No running pods yet for version checker... we will retry later")
+			log.V(DEBUGLEVEL).Info("No running pods yet for version checker... we will retry later")
 			return nil
 		}
 		tmpPod := &pods.Items[0]
@@ -240,11 +242,11 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 		}
 		containerImage = dbContainer.Image
 		if strings.EqualFold(cluster.GetVersionAnnotation(), calVersion) {
-			log.V(int(zapcore.DebugLevel)).Info("No update on version annotation -> nothing changed")
+			log.V(DEBUGLEVEL).Info("No update on version annotation -> nothing changed")
 			return nil
 		}
 		if strings.EqualFold(cluster.GetAnnotationContainerImage(), containerImage) {
-			log.V(int(zapcore.DebugLevel)).Info("No update on container image annotation -> nothing changed")
+			log.V(DEBUGLEVEL).Info("No update on container image annotation -> nothing changed")
 			return nil
 		}
 		//we refresh the resource to make sure we use the latest version
@@ -303,7 +305,7 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 		log.Error(err, "failed saving cluster status on version checker")
 		return err
 	}
-	log.V(int(zapcore.DebugLevel)).Info("completed version checker", "calVersion", calVersion, "containerImage", containerImage)
+	log.V(DEBUGLEVEL).Info("completed version checker", "calVersion", calVersion, "containerImage", containerImage)
 	CancelLoop(ctx)
 	return nil
 }
@@ -327,10 +329,12 @@ func JobExists(
 	//get pod for the job we created
 	job, err := clientset.BatchV1().Jobs(jobNamespace).Get(ctx, jobName, metav1.GetOptions{})
 	if err != nil {
-		return LogError("job is not created yet waiting longer", err, l)
+		msg := "job is not created yet waiting longer"
+		l.V(DEBUGLEVEL).Info(msg)
+		return errors.Wrapf(err, msg)
 	}
 
-	l.V(int(zapcore.DebugLevel)).Info("job was retrieved... we can continue")
+	l.V(DEBUGLEVEL).Info("job was retrieved... we can continue")
 	return nil
 }
 func WaitUntilJobExists(ctx context.Context, clientset kubernetes.Interface, job *kbatch.Job, l logr.Logger, jobName, jobNamespace string) error {
@@ -356,13 +360,19 @@ func IsJobPodRunning(
 	l logr.Logger,
 ) error {
 	if job == nil {
-		return LogError("job is nil", errors.New("job cannot be nil"), l)
+		msg := "job is nil"
+		l.V(DEBUGLEVEL).Info(msg)
+		return errors.Wrapf(errors.New("job cannot be nil"), msg)
 	}
 	if job.Spec.Selector == nil {
-		return LogError("job.Spec.Selector is nil", errors.New("job.Spec.Selector cannot be nil"), l)
+		msg := "job.Spec.Selector is nil"
+		l.V(DEBUGLEVEL).Info(msg)
+		return errors.Wrapf(errors.New("job.Spec.Selector cannot be nil"), msg)
 	}
 	if job.Spec.Selector.MatchLabels == nil {
-		return LogError("job.Spec.Selector.MatchLabels is nil", errors.New("job.Spec.Selector.MatchLabels cannot be nil"), l)
+		msg := "job.Spec.Selector.MatchLabels is nil"
+		l.V(DEBUGLEVEL).Info(msg)
+		return errors.Wrapf(errors.New("job.Spec.Selector.MatchLabels cannot be nil"), msg)
 	}
 	//get pod for the job we created
 	pods, err := clientset.CoreV1().Pods(job.Namespace).List(ctx, metav1.ListOptions{
@@ -370,16 +380,20 @@ func IsJobPodRunning(
 	})
 
 	if err != nil {
-		return LogError("error getting pod in job", err, l)
+		msg := "error getting pod in job"
+		l.V(DEBUGLEVEL).Info(msg)
+		return errors.Wrapf(err, msg)
 	}
 	if len(pods.Items) == 0 {
-		return LogError("job pods are not running yet waiting longer", nil, l)
+		l.V(DEBUGLEVEL).Info("job pods are not running yet waiting longer")
+		return nil
 	}
 	pod := pods.Items[0]
 	if !kube.IsPodReady(&pod) {
-		return LogError("job pod is not ready yet waiting longer", nil, l)
+		l.V(DEBUGLEVEL).Info("job pod is not ready yet waiting longer")
+		return nil
 	}
-	l.V(int(zapcore.DebugLevel)).Info("job pod is ready")
+	l.V(DEBUGLEVEL).Info("job pod is ready")
 	return nil
 }
 
@@ -396,16 +410,20 @@ func IsContainerStatusImagePullBackoff(
 	})
 	//TO DO: maybe we should check some k8s specific errors here
 	if err != nil {
-		return LogError("error getting pod in job", err, l)
+		msg := "error getting pod in job"
+		l.V(DEBUGLEVEL).Info(msg)
+		return errors.Wrapf(err, msg)
 	}
 	if len(pods.Items) == 0 {
-		return LogError("job pods are not running.", nil, l)
+		l.V(DEBUGLEVEL).Info("job pods are not running.")
+		return nil
 	}
 	pod := pods.Items[0]
 	if !kube.IsPodReady(&pod) && kube.IsImagePullBackOff(&pod, image) {
-		return LogError(fmt.Sprintf("Back-off pulling image %s", image), nil, l)
+		l.V(DEBUGLEVEL).Info(fmt.Sprintf("Back-off pulling image %s", image))
+		return nil
 	}
-	l.V(int(zapcore.DebugLevel)).Info("job pod is ready")
+	l.V(int(DEBUGLEVEL)).Info("job pod is ready")
 	return nil
 }
 
@@ -423,12 +441,4 @@ func WaitUntilJobPodIsRunning(ctx context.Context, clientset kubernetes.Interfac
 		return errors.Wrapf(err, "pod is not running for job: %s", job.Name)
 	}
 	return nil
-}
-
-func LogError(msg string, err error, l logr.Logger) error {
-	l.V(int(zapcore.DebugLevel)).Info(msg)
-	if err == nil {
-		return errors.New(msg)
-	}
-	return errors.Wrapf(err, msg)
 }
