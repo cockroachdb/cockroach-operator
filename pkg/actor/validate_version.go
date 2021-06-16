@@ -372,7 +372,8 @@ func isJobPodRunning(
 		l.V(DEBUGLEVEL).Info(msg)
 		return errors.New(msg)
 	}
-	l.V(DEBUGLEVEL).Info("job pod is ready")
+	msg := fmt.Sprintf("job pod '%+v' is ready", pod)
+	l.V(DEBUGLEVEL).Info(msg)
 	return nil
 }
 
