@@ -34,8 +34,10 @@ import (
 	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
+	"go.uber.org/zap/zapcore"
 	kbatch "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -147,7 +149,9 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 		return errors.Wrapf(err, "check version failed to create kubernetes clientset")
 	}
 	if err := v.client.Get(ctx, key, job); err != nil {
-		log.V(DEBUGLEVEL).Info(fmt.Sprintf("failure: retrieved job%+v", *job))
+		msg := fmt.Sprintf("failure: retrieved job%+v", *job)
+		log.Error(err, msg)
+
 		if err := WaitUntilJobExists(ctx, clientset, job, log, jobName, cluster.Namespace()); err != nil {
 			log.Error(err, "job not found")
 			return err
@@ -160,6 +164,8 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 
 	// check if the job is completed or failed before EXEC
 	if finished, _ := isJobCompletedOrFailed(job); !finished {
+		msg := fmt.Sprintf("job '%+v'is not completed and neither finished", *job)
+		log.V(DEBUGLEVEL).Info(msg)
 		if err := WaitUntilJobPodIsRunning(ctx, clientset, job, v.log); err != nil {
 			// if after 2 minutes the job pod is not ready and container status is ImagePullBackoff
 			// We need to stop requeueing until further changes on the CR
@@ -328,10 +334,15 @@ func JobExists(
 ) error {
 	//get pod for the job we created
 	job, err := clientset.BatchV1().Jobs(jobNamespace).Get(ctx, jobName, metav1.GetOptions{})
-	if err != nil {
-		msg := "job is not created yet waiting longer"
-		l.V(DEBUGLEVEL).Info(msg)
-		return errors.Wrapf(err, msg)
+	if k8sErrors.IsNotFound(err) { // this is not an error
+		l.V(DEBUGLEVEL).Info("cannot find vcheck job", "jobName", jobName, "namespace", job.Namespace)
+		return err
+	} else if statusError, isStatus := err.(*k8sErrors.StatusError); isStatus { // this is an error
+		l.Error(statusError, fmt.Sprintf("status error getting pod %v", statusError.ErrStatus.Message))
+		return err
+	} else if err != nil {
+		l.V(int(zapcore.ErrorLevel)).Info("error finding vcheck job", "jobName", jobName, "namespace", job.Namespace)
+		return err
 	}
 
 	l.V(DEBUGLEVEL).Info("job was retrieved... we can continue")
@@ -378,20 +389,25 @@ func IsJobPodRunning(
 	pods, err := clientset.CoreV1().Pods(job.Namespace).List(ctx, metav1.ListOptions{
 		LabelSelector: labels.Set(job.Spec.Selector.MatchLabels).AsSelector().String(),
 	})
-
-	if err != nil {
-		msg := "error getting pod in job"
-		l.V(DEBUGLEVEL).Info(msg)
-		return errors.Wrapf(err, msg)
+	if k8sErrors.IsNotFound(err) { // this is not an error
+		l.V(DEBUGLEVEL).Info("cannot find pods for vcheck job", "jobName", job.ObjectMeta.Name, "namespace", job.Namespace)
+		return err
+	} else if statusError, isStatus := err.(*k8sErrors.StatusError); isStatus { // this is an error
+		l.Error(statusError, fmt.Sprintf("status error getting pod %v", statusError.ErrStatus.Message))
+		return err
+	} else if err != nil {
+		l.V(int(zapcore.ErrorLevel)).Info("error finding pods for vcheck job", "jobName", job.ObjectMeta.Name, "namespace", job.Namespace)
+		return err
 	}
+
 	if len(pods.Items) == 0 {
 		l.V(DEBUGLEVEL).Info("job pods are not running yet waiting longer")
-		return nil
+		return err
 	}
 	pod := pods.Items[0]
 	if !kube.IsPodReady(&pod) {
 		l.V(DEBUGLEVEL).Info("job pod is not ready yet waiting longer")
-		return nil
+		return err
 	}
 	l.V(DEBUGLEVEL).Info("job pod is ready")
 	return nil
