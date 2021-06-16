@@ -305,6 +305,10 @@ func (b StatefulSetBuilder) probeScheme() corev1.URIScheme {
 	return corev1.URISchemeHTTP
 }
 
+// TODO we need to check that both the NodeTLSSecret and
+// ClientTLSSecret are set and throw an error.
+//
+
 func (b StatefulSetBuilder) nodeTLSSecretName() string {
 	if b.Spec().NodeTLSSecret == "" {
 		return b.Cluster.NodeTLSSecretName()
@@ -314,7 +318,7 @@ func (b StatefulSetBuilder) nodeTLSSecretName() string {
 }
 
 func (b StatefulSetBuilder) clientTLSSecretName() string {
-	if b.Spec().NodeTLSSecret == "" {
+	if b.Spec().ClientTLSSecret == "" {
 		return b.Cluster.ClientTLSSecretName()
 	}
 
