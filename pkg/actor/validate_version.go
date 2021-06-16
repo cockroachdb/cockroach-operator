@@ -332,8 +332,9 @@ func JobExists(
 	l logr.Logger,
 	jobName, jobNamespace string,
 ) error {
+	var err error
 	//get pod for the job we created
-	job, err := clientset.BatchV1().Jobs(jobNamespace).Get(ctx, jobName, metav1.GetOptions{})
+	job, err = clientset.BatchV1().Jobs(jobNamespace).Get(ctx, jobName, metav1.GetOptions{})
 	if k8sErrors.IsNotFound(err) { // this is not an error
 		l.V(DEBUGLEVEL).Info("cannot find vcheck job", "jobName", jobName, "namespace", job.Namespace)
 		return err
@@ -345,7 +346,7 @@ func JobExists(
 		return err
 	}
 
-	l.V(DEBUGLEVEL).Info("job was retrieved... we can continue")
+	l.V(DEBUGLEVEL).Info(fmt.Sprintf("job '%+v' was retrieved... we can continue", job))
 	return nil
 }
 func WaitUntilJobExists(ctx context.Context, clientset kubernetes.Interface, job *kbatch.Job, l logr.Logger, jobName, jobNamespace string) error {
