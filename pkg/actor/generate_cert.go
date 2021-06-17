@@ -33,8 +33,10 @@ import (
 	"github.com/cockroachdb/cockroach-operator/pkg/util"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -150,13 +152,67 @@ func (rc *generateCert) Act(ctx context.Context, cluster *resource.Cluster) erro
 	refreshedCluster.SetAnnotationCertExpiration(*expirationDatePtr)
 	refreshedCluster.SetTrue(api.CertificateGenerated)
 	crdbobj := refreshedCluster.Unwrap()
+
 	//save annotation first
-	if err := rc.client.Update(ctx, crdbobj); err != nil {
+	err := rc.client.Update(ctx, crdbobj)
+	if err != nil && k8sErrors.IsConflict(err) {
+		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+
+			if err := fetcher.Fetch(newcr); err != nil {
+				msg := "failed to retrieve CrdbCluster resource"
+				log.Error(err, msg)
+				return errors.Wrap(err, msg)
+			}
+			refreshedCluster := resource.NewCluster(newcr)
+			refreshedCluster.SetAnnotationCertExpiration(*expirationDatePtr)
+			refreshedCluster.SetTrue(api.CertificateGenerated)
+			crdbobj := refreshedCluster.Unwrap()
+			//save annotation first
+
+			err = rc.client.Update(ctx, crdbobj)
+			if err != nil {
+				msg := "failed updating the annotations on request certificate will try again"
+				log.Error(err, msg)
+				return errors.Wrap(err, msg)
+			}
+			return err
+		})
+		if err != nil {
+			msg := "failed saving the annotations on request certificate"
+			log.Error(err, msg)
+			return errors.Wrap(err, msg)
+		}
+	} else if err != nil {
 		msg := "failed saving the annotations on request certificate"
 		log.Error(err, msg)
 		return errors.Wrap(err, msg)
 	}
-	if err := rc.client.Status().Update(ctx, crdbobj); err != nil {
+
+	err = rc.client.Status().Update(ctx, crdbobj)
+	// retrying if we have a conflict
+	if err != nil && k8sErrors.IsConflict(err) {
+		err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			if err := fetcher.Fetch(newcr); err != nil {
+				msg := "failed to retrieve CrdbCluster resource"
+				log.Error(err, msg)
+				return errors.Wrap(err, msg)
+			}
+			refreshedCluster := resource.NewCluster(newcr)
+			crdbobj := refreshedCluster.Unwrap()
+			err = rc.client.Status().Update(ctx, crdbobj)
+			if err != nil {
+				msg := "failed saving the status on generate cert"
+				log.Error(err, msg)
+				return errors.Wrap(err, msg)
+			}
+			return err
+		})
+		if err != nil {
+			msg := "failed saving the status on generate cert"
+			log.Error(err, msg)
+			return errors.Wrap(err, msg)
+		}
+	} else if err != nil {
 		msg := "failed saving cluster status on generate cert"
 		log.Error(err, msg)
 		return errors.Wrap(err, msg)

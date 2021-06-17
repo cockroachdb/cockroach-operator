@@ -222,10 +222,10 @@ sh_binary(
     ],
 )
 
-# opm-build-index is used on DEV only-> quay.io registry to add a new version iof the operator in the catalogsource
+# push-openshift-images is used on DEV only - push images to registry provided
 sh_binary(
-    name = "opm-build-index",
-    srcs = ["opm-build-index.sh"],
+    name = "push-openshift-images",
+    srcs = ["push-openshift-images.sh"],
     args = [
         "$(location %s)" % OPM,
     ],

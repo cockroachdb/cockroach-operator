@@ -30,6 +30,7 @@ import (
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/util/retry"
 )
 
 const (
@@ -196,7 +197,26 @@ func PartitionedRollingUpdateStrategy(perPodVerificationFunc func(*UpdateSts, in
 			}
 
 			_, err := updateSts.clientset.AppsV1().StatefulSets(stsNamespace).Update(updateSts.ctx, sts, metav1.UpdateOptions{})
-			if err != nil {
+			if err != nil && k8sErrors.IsConflict(err) {
+				// we have a conflict on the update so we need to retry updating the sts
+				err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+					sts, err := updateSts.clientset.AppsV1().StatefulSets(stsNamespace).Get(updateSts.ctx, sts.Name, metav1.GetOptions{})
+					if err != nil {
+						return err
+					}
+
+					sts.Spec.UpdateStrategy.RollingUpdate = &v1.RollingUpdateStatefulSetStrategy{
+						Partition: &partition,
+					}
+					_, err = updateSts.clientset.AppsV1().StatefulSets(stsNamespace).Update(updateSts.ctx, sts, metav1.UpdateOptions{})
+					return err
+				})
+				if err != nil {
+					// May be conflict if max retries were hit, or may be something unrelated
+					// like permissions or a network error
+					return false, handleStsError(err, l, stsName, stsNamespace)
+				}
+			} else if err != nil {
 				return false, handleStsError(err, l, stsName, stsNamespace)
 			}
 
