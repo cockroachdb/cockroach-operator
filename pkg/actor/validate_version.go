@@ -344,7 +344,7 @@ func isJobPodRunning(
 	l logr.Logger,
 ) error {
 	labelSelector := metav1.LabelSelector{
-		MatchLabels: labelsSel,
+		MatchLabels:      labelsSel,
 	}
 
 	//get pod for the job we created
@@ -363,10 +363,21 @@ func isJobPodRunning(
 	}
 
 	if len(pods.Items) == 0 {
+		l.V(DEBUGLEVEL).Info("pods are not running yet waiting longer")
+		return err
+	}
+	//the selector will get all the pods including crdb, we need to filter only for job pods
+	vcheckpods := make([]corev1.Pod, 0)
+	for _, po := range pods.Items {
+		if strings.HasPrefix(po.Name, jobName) {
+			vcheckpods = append(vcheckpods, po)
+		}
+	}
+	if len(vcheckpods) == 0 {
 		l.V(DEBUGLEVEL).Info("job pods are not running yet waiting longer")
 		return err
 	}
-	pod := pods.Items[0]
+	pod := vcheckpods[0]
 	if !kube.IsPodReady(&pod) {
 		msg := fmt.Sprintf("job pod %s is not ready yet waiting longer", pod.ObjectMeta.Name)
 		l.V(DEBUGLEVEL).Info(msg)
