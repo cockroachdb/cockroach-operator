@@ -344,7 +344,7 @@ func isJobPodRunning(
 	l logr.Logger,
 ) error {
 	labelSelector := metav1.LabelSelector{
-		MatchLabels:      labelsSel,
+		MatchLabels: labelsSel,
 	}
 
 	//get pod for the job we created
