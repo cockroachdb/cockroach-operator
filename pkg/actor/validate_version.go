@@ -201,7 +201,7 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 			log.V(DEBUGLEVEL).Info("No running pods yet for version checker... we will retry later")
 			return nil
 		}
-		log.V(DEBUGLEVEL).Info("We found %v pods to extract logs", len(pods.Items))
+		log.V(DEBUGLEVEL).Info(fmt.Sprintf("We found %v pods to extract logs", len(pods.Items)))
 		//the selector will get all the pods including crdb, we need to filter only for job pods
 		vcheckpods := make([]corev1.Pod, 0)
 		for _, po := range pods.Items {
