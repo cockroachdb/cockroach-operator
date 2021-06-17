@@ -201,21 +201,40 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 			log.V(DEBUGLEVEL).Info("No running pods yet for version checker... we will retry later")
 			return nil
 		}
-		tmpPod := &pods.Items[0]
+		log.V(DEBUGLEVEL).Info("We found %v pods to extract logs", len(pods.Items))
+		//the selector will get all the pods including crdb, we need to filter only for job pods
+		vcheckpods := make([]corev1.Pod, 0)
+		for _, po := range pods.Items {
+			if strings.HasPrefix(po.Name, jobName) {
+				vcheckpods = append(vcheckpods, po)
+			}
+		}
+		if len(vcheckpods) == 0 {
+			log.V(DEBUGLEVEL).Info("No running pods yet for version checker... retry")
+			return nil
+		}
+		pod := vcheckpods[0]
+		if !kube.IsPodReady(&pod) {
+			msg := fmt.Sprintf("job pod %s is not ready ... retry", pod.Name)
+			log.V(DEBUGLEVEL).Info(msg)
+			return nil
+		}
+
+		tmpPod := &vcheckpods[0]
 		// when we have more jobs take the latest in consideration
-		if len(pods.Items) > 1 {
-			for _, po := range pods.Items {
+		if len(vcheckpods) > 1 {
+			for _, po := range vcheckpods {
 				if !po.CreationTimestamp.Before(&tmpPod.CreationTimestamp) {
 					tmpPod = &po
 				}
 			}
 		}
 		podName := tmpPod.Name
-
+		log.V(DEBUGLEVEL).Info(fmt.Sprintf("geting logs from pod %s", podName))
 		req := clientset.CoreV1().Pods(job.Namespace).GetLogs(podName, &podLogOpts)
 		podLogs, err := req.Stream(ctx)
 		if err != nil {
-			msg := "error in opening stream"
+			msg := fmt.Sprintf("error in opening stream for pod %s", podName)
 			log.Error(err, msg)
 			return errors.Wrapf(err, msg)
 		}
@@ -224,7 +243,7 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 		buf := new(bytes.Buffer)
 		_, err = io.Copy(buf, podLogs)
 		if err != nil {
-			msg := "error in copy information from podLogs to buf"
+			msg := fmt.Sprintf("error in copy information from podLogs to buf for pod %s", podName)
 			log.Error(err, msg)
 			return errors.Wrapf(err, msg)
 		}
