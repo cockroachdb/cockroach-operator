@@ -32,28 +32,33 @@ const (
 	// owner: @chrislovecnm
 	// alpha: v0.1
 	// beta: v1.0
+	// ga: v1.7.13
 	// PartitionedUpdate controls how the statefulset is updated
 	PartitionedUpdate featuregate.Feature = "PartitionedUpdate"
 
 	// owner: @alina
 	// alpha: v0.1
 	// beta: v1.0
+	// ga: v1.7.13
 	// Decommission controls how the statefulset scales down
 	Decommission featuregate.Feature = "UseDecommission"
 
 	// alpha: v0.1
 	// beta: v1.0
+	// ga: v1.7.13
 	// Upgrades controls upgrade mechanism
 	Upgrade featuregate.Feature = "Upgrade"
 
 	// owner: @chrislovecnm
 	// alpha: v0.1
 	// beta: v1.0
+	// ga: v1.7.13
 	// ResizePVC allows for the resizing of PVC Volumes
 	ResizePVC featuregate.Feature = "ResizePVC"
 
 	// alpha: v0.1
 	// beta: v1.0
+	// ga: v1.7.13
 	// CrdbVersionValidator controls upgrade mechanism
 	CrdbVersionValidator featuregate.Feature = "CrdbVersionValidator"
 
@@ -63,14 +68,16 @@ const (
 	// GA: v1.7.7
 	// GenerateCerts uses crdb binary to generate self signed certifcates
 	GenerateCerts featuregate.Feature = "GenerateCerts"
+
 	// owner: @alina
 	// alpha: v0.1
 	// beta: v1.0
+	// ga: v1.7.13
 	// RestartCluster uses crdb binary to generate self signed certifcates
 	ClusterRestart featuregate.Feature = "ClusterRestart"
+
 	// owner: @alina
-	// alpha: v0.1
-	// beta: v1.0
+	// alpha: v1.7.13
 	// AutoPrunePVC uses crdb binary to prune PVC on decommission
 	AutoPrunePVC featuregate.Feature = "AutoPrunePVC"
 )
@@ -83,12 +90,16 @@ func init() {
 // To add a new feature, define a key for it above and add it here. The features will be
 // available throughout Kubernetes binaries.
 var defaultOperatorFeatureGates = map[featuregate.Feature]featuregate.FeatureSpec{
-	PartitionedUpdate: {Default: true, PreRelease: featuregate.Beta},
-	// Turing of Decomission because of design bug at this point
-	Decommission:         {Default: false, PreRelease: featuregate.Alpha},
-	ResizePVC:            {Default: true, PreRelease: featuregate.Beta},
-	CrdbVersionValidator: {Default: true, PreRelease: featuregate.Beta},
+	PartitionedUpdate:    {Default: true, PreRelease: featuregate.GA},
+	Decommission:         {Default: true, PreRelease: featuregate.GA},
+	ResizePVC:            {Default: true, PreRelease: featuregate.GA},
+	CrdbVersionValidator: {Default: true, PreRelease: featuregate.GA},
 	GenerateCerts:        {Default: true, PreRelease: featuregate.GA},
-	ClusterRestart:       {Default: true, PreRelease: featuregate.Beta},
-	AutoPrunePVC:         {Default: false, PreRelease: featuregate.Beta},
+	ClusterRestart:       {Default: true, PreRelease: featuregate.GA},
+
+	// We are leaving this in alpha because it can delete data at this point.
+	// We are still testing decommision, and are concerned that if a deco fails
+	// data is deleted and the database is corrupted.
+	// You can enable the feature by setting the feature gate
+	AutoPrunePVC: {Default: false, PreRelease: featuregate.Alpha},
 }
