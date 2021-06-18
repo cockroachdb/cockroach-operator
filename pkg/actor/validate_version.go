@@ -150,6 +150,28 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 			return err
 		}
 	}
+	if job == nil || job.Spec.Selector == nil {
+
+		// The job is nil or the selector is nil, we are doing a list, which
+		// should reconcile the API and we we do another get the job should have
+		// the selector.
+		_, err := clientset.BatchV1().Jobs(job.Namespace).List(ctx, metav1.ListOptions{})
+		if err != nil {
+			log.Error(err, "unable to list jobs")
+			return err
+		}
+
+		if err := v.client.Get(ctx, key, job); err != nil {
+			log.Error(err, "unable to get job")
+			return err
+		}
+	}
+
+	if job == nil {
+		return errors.New("job is nil")
+	} else if job.Spec.Selector == nil {
+		return errors.New("job selector is nil")
+	}
 
 	// check if the job is completed or failed before EXEC
 	if finished, _ := isJobCompletedOrFailed(job); !finished {
@@ -165,6 +187,7 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 		}
 		podLogOpts := corev1.PodLogOptions{}
 		//get pod for the job we created
+
 		pods, err := clientset.CoreV1().Pods(job.Namespace).List(ctx, metav1.ListOptions{
 			LabelSelector: labels.Set(job.Spec.Selector.MatchLabels).AsSelector().String(),
 		})
