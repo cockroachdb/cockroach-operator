@@ -151,6 +151,39 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 		}
 	}
 
+	// We have hit an edge case were sometimes the job selector is nil, the following block is extra code
+	// that tries to list the jobs and then get the job again, which probably will reconcile
+	// the API.  We also removed setting the job selector as well.
+	if job.Spec.Selector == nil {
+		log.V(int(zapcore.DebugLevel)).Info("Job or Job Selector returned as nil, attempting to get it again.")
+
+		// The job is nil or the selector is nil, we are doing a list, which
+		// should reconcile the API and we we do another get the job should have
+		// the selector.
+		jobs, err := clientset.BatchV1().Jobs(job.Namespace).List(ctx, metav1.ListOptions{})
+		if err != nil {
+			log.Error(err, "unable to list jobs")
+			return err
+		}
+
+		if jobs == nil || len(jobs.Items) == 0 {
+			err := errors.New("unable to find any jobs")
+			log.Error(err, err.Error())
+			return err
+		}
+
+		if err := v.client.Get(ctx, key, job); err != nil {
+			log.Error(err, "unable to get job")
+			return err
+		}
+	}
+
+	if job.Spec.Selector == nil {
+		err := errors.New("job selector is nil")
+		log.Error(err, err.Error())
+		return err
+	}
+
 	// check if the job is completed or failed before EXEC
 	if finished, _ := isJobCompletedOrFailed(job); !finished {
 		if err := WaitUntilJobPodIsRunning(ctx, clientset, job, v.log); err != nil {
@@ -165,6 +198,7 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 		}
 		podLogOpts := corev1.PodLogOptions{}
 		//get pod for the job we created
+
 		pods, err := clientset.CoreV1().Pods(job.Namespace).List(ctx, metav1.ListOptions{
 			LabelSelector: labels.Set(job.Spec.Selector.MatchLabels).AsSelector().String(),
 		})

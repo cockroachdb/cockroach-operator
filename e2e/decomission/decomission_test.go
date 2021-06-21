@@ -49,6 +49,59 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
+// TODO once prune pvc feature gate is set to "true" by default, we can
+// remove this test.
+
+// TestDecomissionFunctionalityWithPrune creates a cluster of 4 nodes and then decomissions on of the CRDB nodes.
+// It then checks that the cluster is stable and that decomissioning is successful.
+func TestDecommissionFunctionalityWithPrune(t *testing.T) {
+
+	// Testing removing and decommisioning a node.  We start at 4 node and then
+	// remove the 4th node
+
+	// turn on featuregate since Decommission is disabled by default currently
+	utilfeature.DefaultMutableFeatureGate.Set("AutoPrunePVC=true")
+
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+	// Does not seem to like running in parallel
+	if parallel {
+		t.Parallel()
+	}
+	testLog := zapr.NewLogger(zaptest.NewLogger(t))
+	actor.Log = testLog
+	sb := testenv.NewDiffingSandbox(t, env)
+	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
+	builder := testutil.NewBuilder("crdb").WithNodeCount(4).WithTLS().
+		WithImage("cockroachdb/cockroach:v20.2.5").
+		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
+	steps := testutil.Steps{
+		{
+			Name: "creates a 4-node secure cluster and tests db",
+			Test: func(t *testing.T) {
+				require.NoError(t, sb.Create(builder.Cr()))
+				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
+			},
+		},
+		{
+			Name: "decommission a node with pvc pruner",
+			Test: func(t *testing.T) {
+				current := builder.Cr()
+				require.NoError(t, sb.Get(current))
+
+				current.Spec.Nodes = 3
+				require.NoError(t, sb.Update(current))
+				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
+				testutil.RequireDecommissionNode(t, sb, builder, 3)
+				testutil.RequireDatabaseToFunction(t, sb, builder)
+				t.Log("Done with decommision")
+			},
+		},
+	}
+	steps.Run(t)
+}
+
 // TestDecomissionFunctionality creates a cluster of 4 nodes and then decomissions on of the CRDB nodes.
 // It then checks that the cluster is stable and that decomissioning is successful.
 func TestDecommissionFunctionality(t *testing.T) {
@@ -56,8 +109,8 @@ func TestDecommissionFunctionality(t *testing.T) {
 	// Testing removing and decommisioning a node.  We start at 4 node and then
 	// remove the 4th node
 
-	// turn on featuregate since Decommission is disabled by default currently
-	utilfeature.DefaultMutableFeatureGate.Set("UseDecommission=true,AutoPrunePVC=true")
+	// making sure the feature gate is off for prunePVC
+	utilfeature.DefaultMutableFeatureGate.Set("AutoPrunePVC=false")
 
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")

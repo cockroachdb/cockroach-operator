@@ -69,9 +69,14 @@ func (b JobBuilder) Build(obj client.Object) error {
 }
 func (b JobBuilder) buildPodTemplate() corev1.PodTemplateSpec {
 	pod := corev1.PodTemplateSpec{
-		ObjectMeta: metav1.ObjectMeta{
-			Labels: b.Selector,
-		},
+		// per the docs you do not add a selector and you let the system
+		// do this.
+		// https://kubernetes.io/docs/concepts/workloads/controllers/job/#specifying-your-own-pod-selector
+		/*
+			ObjectMeta: metav1.ObjectMeta{
+				Labels: b.Selector,
+			},
+		*/
 		Spec: corev1.PodSpec{
 			SecurityContext: &corev1.PodSecurityContext{
 				RunAsUser: ptr.Int64(1000581000),

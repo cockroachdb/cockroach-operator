@@ -28,9 +28,10 @@ import (
 )
 
 func TestDecommisionFeatureFlag(t *testing.T) {
-	// FeatureGate is currently disabled
-	assert.False(t, utilfeature.DefaultMutableFeatureGate.Enabled(features.Decommission))
-	assert.False(t, utilfeature.DefaultMutableFeatureGate.Enabled(features.AutoPrunePVC))
+	// FeatureGate is currently enabled as of 1.7.13 GA release
+	assert.True(t, utilfeature.DefaultMutableFeatureGate.Enabled(features.Decommission), "deco is enabled for GA")
+	// FeatureGate is currently disabled and is in alpha
+	assert.False(t, utilfeature.DefaultMutableFeatureGate.Enabled(features.AutoPrunePVC), "AutoPrunePVc is disabled for GA")
 
 	cluster := testutil.NewBuilder("cockroachdb").
 		Namespaced("default").
@@ -43,6 +44,6 @@ func TestDecommisionFeatureFlag(t *testing.T) {
 	client := testutil.NewFakeClient(scheme)
 	deco := newDecommission(scheme, client, nil)
 
-	require.False(t, deco.Handles(cluster.Status().Conditions))
+	require.True(t, deco.Handles(cluster.Status().Conditions))
 
 }
