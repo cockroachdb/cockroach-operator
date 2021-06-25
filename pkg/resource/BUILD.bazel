@@ -50,8 +50,8 @@ go_test(
         "tls_secret_test.go",
     ],
     data = glob(["testdata/**"]),
-    embed = [":go_default_library"],
     deps = [
+        ":go_default_library",
         "//apis/v1alpha1:go_default_library",
         "//pkg/kube:go_default_library",
         "//pkg/labels:go_default_library",
