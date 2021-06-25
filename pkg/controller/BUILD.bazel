@@ -27,8 +27,8 @@ go_library(
 go_test(
     name = "go_default_test",
     srcs = ["cluster_controller_test.go"],
-    embed = [":go_default_library"],
     deps = [
+        ":go_default_library",
         "//apis/v1alpha1:go_default_library",
         "//pkg/actor:go_default_library",
         "//pkg/resource:go_default_library",
