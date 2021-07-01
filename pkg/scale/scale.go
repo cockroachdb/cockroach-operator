@@ -175,8 +175,13 @@ func (s *Scaler) EnsureScale(ctx context.Context, scale uint, gRPCPort int32, pr
 	// With the call to Prune at the beginning, this call is not
 	// Strictly speaking required, it is just for cost savings and
 	// cleanliness.
-	if err := s.PVCPruner.Prune(ctx); err != nil {
-		return errors.Wrap(err, "final PVC pruning")
+
+	if prunePVC {
+		if err := s.PVCPruner.Prune(ctx); err != nil {
+			return errors.Wrap(err, "final PVC pruning")
+		}
+	} else {
+		s.Logger.V(int(zapcore.DebugLevel)).Info("Decommission will not delete the PVC. If you want to do this in automatic please enable AutoPrunePVC feature gate.")
 	}
 
 	return nil
