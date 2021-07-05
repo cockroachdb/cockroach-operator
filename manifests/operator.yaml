@@ -265,7 +265,7 @@ spec:
       serviceAccountName: cockroach-operator-sa
       containers:
         - name: cockroach-operator
-          image: cockroachdb/cockroach-operator:v1.7.13
+          image: cockroachdb/cockroach-operator:v1.7.14
           imagePullPolicy: IfNotPresent
           # uncomment this to enable different new features
           # args: ["-feature-gates","PartitionedUpdate=true,UseDecommission=true,Upgrade=false, CrdbVersionValidator=false"]
