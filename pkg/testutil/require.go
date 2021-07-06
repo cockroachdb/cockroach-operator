@@ -598,3 +598,32 @@ func getPodLog(ctx context.Context, podName string, namespace string, clientset 
 	}
 	return buf.String(), nil
 }
+
+// RequirePVCToResize checks that the PVCs are resized correctly
+func RequirePVCNumbers(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder, quantity int32) {
+	cluster := b.Cluster()
+
+	// TODO rewrite this
+	err := wait.Poll(10*time.Second, 500*time.Second, func() (bool, error) {
+		clientset, err := kubernetes.NewForConfig(sb.Mgr.GetConfig())
+		require.NoError(t, err)
+
+		sts, err := fetchStatefulSet(sb, cluster.StatefulSetName())
+
+		selector, err := metav1.LabelSelectorAsSelector(sts.Spec.Selector)
+		if err != nil {
+			return false, err
+		}
+
+		pvcs, err := clientset.CoreV1().PersistentVolumeClaims(cluster.Namespace()).List(ctx, metav1.ListOptions{
+			LabelSelector: selector.String(),
+		})
+
+		require.Equal(t, quantity, len(pvcs.Items))
+
+		if err != nil {
+			return false, err
+		}
+	})
+	require.NoError(t, err)
+}

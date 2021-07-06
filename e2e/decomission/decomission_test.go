@@ -95,6 +95,7 @@ func TestDecommissionFunctionalityWithPrune(t *testing.T) {
 				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
 				testutil.RequireDecommissionNode(t, sb, builder, 3)
 				testutil.RequireDatabaseToFunction(t, sb, builder)
+				//sb.Get()
 				t.Log("Done with decommision")
 			},
 		},
