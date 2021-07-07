@@ -600,8 +600,9 @@ func getPodLog(ctx context.Context, podName string, namespace string, clientset 
 }
 
 // RequirePVCToResize checks that the PVCs are resized correctly
-func RequirePVCNumbers(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder, quantity int32) {
+func RequireNumberOfPVCs(t *testing.T, ctx context.Context, sb testenv.DiffingSandbox, b ClusterBuilder, quantity int) {
 	cluster := b.Cluster()
+	var boundPVCCount = 0
 
 	// TODO rewrite this
 	err := wait.Poll(10*time.Second, 500*time.Second, func() (bool, error) {
@@ -619,11 +620,19 @@ func RequirePVCNumbers(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder
 			LabelSelector: selector.String(),
 		})
 
-		require.Equal(t, quantity, len(pvcs.Items))
-
 		if err != nil {
 			return false, err
 		}
+
+		for _, pvc := range pvcs.Items {
+			if pvc.Status.Phase == corev1.ClaimBound {
+				boundPVCCount = boundPVCCount + 1
+			}
+		}
+
+		return true, nil
 	})
 	require.NoError(t, err)
+
+	require.Equal(t, quantity, boundPVCCount)
 }
