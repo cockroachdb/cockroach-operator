@@ -265,7 +265,7 @@ spec:
       serviceAccountName: cockroach-operator-sa
       containers:
         - name: cockroach-operator
-          image: cockroachdb/cockroach-operator:v1.7.14
+          image: cockroachdb/cockroach-operator:v2.0.0
           imagePullPolicy: IfNotPresent
           # different new features are commented out below
           # uncomment the feature-gates argument to enable the feature
@@ -327,14 +327,20 @@ spec:
               value: cockroachdb/cockroach:v20.2.9
             - name: RELATED_IMAGE_COCKROACH_v20_2_10
               value: cockroachdb/cockroach:v20.2.10
+            - name: RELATED_IMAGE_COCKROACH_v20_2_11
+              value: cockroachdb/cockroach:v20.2.11
+            - name: RELATED_IMAGE_COCKROACH_v20_2_12
+              value: cockroachdb/cockroach:v20.2.12
+            - name: RELATED_IMAGE_COCKROACH_v20_2_13
+              value: cockroachdb/cockroach:v20.2.13
             - name: RELATED_IMAGE_COCKROACH_v21_1_0
               value: cockroachdb/cockroach:v21.1.0
             - name: RELATED_IMAGE_COCKROACH_v21_1_1
               value: cockroachdb/cockroach:v21.1.1
             - name: RELATED_IMAGE_COCKROACH_v21_1_2
               value: cockroachdb/cockroach:v21.1.2
-            - name: RELATED_IMAGE_COCKROACH_v21_1_4
-              value: cockroachdb/cockroach:v21.1.4
+            - name: RELATED_IMAGE_COCKROACH_v21_1_5
+              value: cockroachdb/cockroach:v21.1.5
           resources:
             requests:
               cpu: 10m
