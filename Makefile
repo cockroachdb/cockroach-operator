@@ -239,8 +239,8 @@ release/gen-templates:
 # operator version is changed. The results are committed to Git.
 .PHONY: release/gen-files
 release/gen-files: release/gen-templates
-	$(MAKE) CHANNEL=beta IS_DEFAULT_CHANNEL=0 release/update-pkg-manifest && \
-	$(MAKE) CHANNEL=beta IS_DEFAULT_CHANNEL=0 release/opm-build-bundle && \
+	$(MAKE) release/update-pkg-manifest && \
+	$(MAKE) release/opm-build-bundle && \
 	git add . && \
 	git commit -m "Bump version to $(VERSION)"
 
@@ -310,12 +310,12 @@ release/bundle-image:
 		//:push_operator_bundle_image
 
 # This target:
-# 1. Updates CRD and CSV files 
+# 1. Updates CRD and CSV files
 # 2. Pushes the operator image to a registry
 # 3. Builds the OpenShift bundle
 # 4. Pushes the OpenShift bundle to a registry
 # 5. Run opm to create and push the OpenShift index container to a registry
-# 6. Removes the newly created OpenShift files so that it can run again. 
+# 6. Removes the newly created OpenShift files so that it can run again.
 #
 # The following env variables are used for the above process.
 #
@@ -329,7 +329,7 @@ release/bundle-image:
 .PHONY: test/openshift-package
 test/openshift-package: release/update-pkg-manifest release/image release/opm-build-bundle test/push-openshift-images
 	VERSION=$(VERSION) \
-	hack/cleanup-packaging.sh 
+	hack/cleanup-packaging.sh
 
 # This target pushes the OpenShift bundle, then uses opm to push the index bundle.
 .PHONY: test/push-openshift-images
