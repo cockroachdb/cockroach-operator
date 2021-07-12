@@ -27,6 +27,7 @@ import (
 	"github.com/cockroachdb/cockroach-operator/pkg/labels"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	"github.com/cockroachdb/cockroach-operator/pkg/testutil"
+	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -38,6 +39,8 @@ import (
 var update = flag.Bool("update", false, "update the golden files of this test")
 
 func TestStatefulSetBuilder(t *testing.T) {
+	// turn on featuregate to test rules
+	utilfeature.DefaultMutableFeatureGate.Set("AffinityRules=true")
 	sc := testutil.InitScheme(t)
 
 	decoder, encoder := testutil.Yamlizers(t, sc)

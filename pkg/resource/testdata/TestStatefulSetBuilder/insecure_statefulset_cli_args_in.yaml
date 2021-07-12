@@ -40,4 +40,16 @@ spec:
   topology:
     zones:
       - locality: ""
+  affinity:
+    podAntiAffinity:
+       preferredDuringSchedulingIgnoredDuringExecution:
+       - weight: 100
+         podAffinityTerm:
+           labelSelector:
+             matchExpressions:
+             - key: app.kubernetes.io/instance
+               operator: In
+               values:
+               - test-cluster
+           topologyKey: kubernetes.io/hostname
 status: {}
