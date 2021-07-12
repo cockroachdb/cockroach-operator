@@ -11,7 +11,7 @@ metadata:
             "name": "crdb-tls-example"
           },
           "spec": {
-            "cockroachDBVersion": "v21.1.4",
+            "cockroachDBVersion": "v21.1.5",
             "dataStore": {
               "pvc": {
                 "spec": {
@@ -35,14 +35,14 @@ metadata:
     capabilities: Full Lifecycle
     categories: Database
     certified: "true"
-    containerImage: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v1.7.14
-    createdAt: "2021-07-06T11:51:10Z"
+    containerImage: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v2.0.0
+    createdAt: "2021-07-12T18:14:21Z"
     description: CockroachDB Operator
     operators.operatorframework.io/builder: operator-sdk-v1.1.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
     repository: https://github.com/cockroachdb/cockroach-operator
     support: Cockroach Labs
-  name: cockroach-operator.v1.7.14
+  name: cockroach-operator.v2.0.0
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -319,14 +319,20 @@ spec:
                   value: registry.connect.redhat.com/cockroachdb/cockroach:v20.2.9
                 - name: RELATED_IMAGE_COCKROACH_v20_2_10
                   value: registry.connect.redhat.com/cockroachdb/cockroach:v20.2.10
+                - name: RELATED_IMAGE_COCKROACH_v20_2_11
+                  value: registry.connect.redhat.com/cockroachdb/cockroach:v20.2.11
+                - name: RELATED_IMAGE_COCKROACH_v20_2_12
+                  value: registry.connect.redhat.com/cockroachdb/cockroach:v20.2.12
+                - name: RELATED_IMAGE_COCKROACH_v20_2_13
+                  value: registry.connect.redhat.com/cockroachdb/cockroach:v20.2.13
                 - name: RELATED_IMAGE_COCKROACH_v21_1_0
                   value: registry.connect.redhat.com/cockroachdb/cockroach:v21.1.0
                 - name: RELATED_IMAGE_COCKROACH_v21_1_1
                   value: registry.connect.redhat.com/cockroachdb/cockroach:v21.1.1
                 - name: RELATED_IMAGE_COCKROACH_v21_1_2
                   value: registry.connect.redhat.com/cockroachdb/cockroach:v21.1.2
-                - name: RELATED_IMAGE_COCKROACH_v21_1_4
-                  value: registry.connect.redhat.com/cockroachdb/cockroach:v21.1.4
+                - name: RELATED_IMAGE_COCKROACH_v21_1_5
+                  value: registry.connect.redhat.com/cockroachdb/cockroach:v21.1.5
                 - name: WATCH_NAMESPACE
                   valueFrom:
                     fieldRef:
@@ -337,7 +343,7 @@ spec:
                       fieldPath: metadata.name
                 - name: OPERATOR_NAME
                   value: cockroachdb
-                image: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v1.7.14
+                image: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v2.0.0
                 imagePullPolicy: IfNotPresent
                 name: cockroach-operator
                 resources:
@@ -377,7 +383,7 @@ spec:
   maintainers:
   - email: support@cockroachlabs.com
     name: Cockroach Labs Support
-  maturity: beta
+  maturity: stable
   provider:
     name: Cockroach Labs
-  version: 1.7.14
+  version: 2.0.0
