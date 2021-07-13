@@ -17,6 +17,7 @@ limitations under the License.
 package decommission
 
 import (
+	"context"
 	"flag"
 	"os"
 	"testing"
@@ -73,7 +74,7 @@ func TestDecommissionFunctionalityWithPrune(t *testing.T) {
 	actor.Log = testLog
 	sb := testenv.NewDiffingSandbox(t, env)
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
-	builder := testutil.NewBuilder("crdb").WithNodeCount(4).WithTLS().
+	builder := testutil.NewBuilder("crdb").Namespaced(sb.Namespace).WithNodeCount(4).WithTLS().
 		WithImage("cockroachdb/cockroach:v20.2.5").
 		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
 	steps := testutil.Steps{
@@ -82,6 +83,7 @@ func TestDecommissionFunctionalityWithPrune(t *testing.T) {
 			Test: func(t *testing.T) {
 				require.NoError(t, sb.Create(builder.Cr()))
 				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
+				testutil.RequireNumberOfPVCs(t, context.TODO(), sb, builder, 4)
 			},
 		},
 		{
@@ -96,6 +98,7 @@ func TestDecommissionFunctionalityWithPrune(t *testing.T) {
 				testutil.RequireDecommissionNode(t, sb, builder, 3)
 				testutil.RequireDatabaseToFunction(t, sb, builder)
 				t.Log("Done with decommision")
+				testutil.RequireNumberOfPVCs(t, context.TODO(), sb, builder, 3)
 			},
 		},
 	}
@@ -123,7 +126,7 @@ func TestDecommissionFunctionality(t *testing.T) {
 	actor.Log = testLog
 	sb := testenv.NewDiffingSandbox(t, env)
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
-	builder := testutil.NewBuilder("crdb").WithNodeCount(4).WithTLS().
+	builder := testutil.NewBuilder("crdb").Namespaced(sb.Namespace).WithNodeCount(4).WithTLS().
 		WithImage("cockroachdb/cockroach:v20.2.5").
 		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
 	steps := testutil.Steps{
@@ -132,6 +135,7 @@ func TestDecommissionFunctionality(t *testing.T) {
 			Test: func(t *testing.T) {
 				require.NoError(t, sb.Create(builder.Cr()))
 				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
+				testutil.RequireNumberOfPVCs(t, context.TODO(), sb, builder, 4)
 			},
 		},
 		{
@@ -146,6 +150,8 @@ func TestDecommissionFunctionality(t *testing.T) {
 				testutil.RequireDecommissionNode(t, sb, builder, 3)
 				testutil.RequireDatabaseToFunction(t, sb, builder)
 				t.Log("Done with decommision")
+
+				testutil.RequireNumberOfPVCs(t, context.TODO(), sb, builder, 4)
 			},
 		},
 	}
