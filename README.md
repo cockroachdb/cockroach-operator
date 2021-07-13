@@ -13,7 +13,6 @@ GKE Nightly: [![GKE Nightly](https://teamcity.cockroachdb.com/guestAuth/app/rest
 
 ## Limitations
 
-- This project is in beta and is not production-ready.
 - The Operator currently runs on GKE. VMware Tanzu, EKS, and AKS have not been tested.
 - The Operator does not yet support [multiple Kubernetes clusters for multi-region deployments](https://www.cockroachlabs.com/docs/stable/orchestrate-cockroachdb-with-kubernetes-multi-cluster.html#eks).
 - [Migrating from a deployment using the Helm Chart to the Operator](https://github.com/cockroachdb/cockroach-operator/issues/140) has not been defined or tested.
@@ -134,6 +133,8 @@ kubectl port-forward service/cockroachdb-public 8080
 Access the DB Console at `https://localhost:8080`.
 
 ### Scale the CockroachDB cluster
+
+> **Note:** Due to a [known issue](https://github.com/cockroachdb/cockroach-operator/issues/542), automatic pruning of PVCs is currently disabled by default. This means that after decommissioning and removing a node, the Operator will not remove the persistent volume that was mounted to its pod. If you plan to eventually scale up the cluster after scaling down, you will need to manually delete any PVCs that were orphaned by node removal before scaling up. For more information, see the [documentation](https://www.cockroachlabs.com/docs/stable/operate-cockroachdb-kubernetes.html#remove-nodes).
 
 To scale the cluster up and down, modify `nodes` in the custom resource. For details, see the [CockroachDB documentation](https://www.cockroachlabs.com/docs/stable/operate-cockroachdb-kubernetes#scale-the-cluster).
 
