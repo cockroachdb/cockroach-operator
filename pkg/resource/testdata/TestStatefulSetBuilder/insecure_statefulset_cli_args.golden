@@ -23,6 +23,18 @@ spec:
         app.kubernetes.io/instance: test-cluster
         app.kubernetes.io/name: cockroachdb
     spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app.kubernetes.io/instance
+                  operator: In
+                  values:
+                  - test-cluster
+              topologyKey: kubernetes.io/hostname
+            weight: 100
       automountServiceAccountToken: false
       containers:
       - command:

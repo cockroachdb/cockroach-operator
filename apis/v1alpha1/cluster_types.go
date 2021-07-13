@@ -101,6 +101,10 @@ type CrdbClusterSpec struct {
 	// Default: ""
 	// +optional
 	PodEnvVariables []corev1.EnvVar `json:"podEnvVariables,omitempty"`
+
+	// If specified, the pod's scheduling constraints
+	// +optional
+	Affinity *corev1.Affinity `json:"affinity,omitempty"`
 }
 
 // +k8s:openapi-gen=true
