@@ -598,3 +598,41 @@ func getPodLog(ctx context.Context, podName string, namespace string, clientset 
 	}
 	return buf.String(), nil
 }
+
+// RequirePVCToResize checks that the PVCs are resized correctly
+func RequireNumberOfPVCs(t *testing.T, ctx context.Context, sb testenv.DiffingSandbox, b ClusterBuilder, quantity int) {
+	cluster := b.Cluster()
+	var boundPVCCount = 0
+
+	// TODO rewrite this
+	err := wait.Poll(10*time.Second, 500*time.Second, func() (bool, error) {
+		clientset, err := kubernetes.NewForConfig(sb.Mgr.GetConfig())
+		require.NoError(t, err)
+
+		sts, err := fetchStatefulSet(sb, cluster.StatefulSetName())
+
+		selector, err := metav1.LabelSelectorAsSelector(sts.Spec.Selector)
+		if err != nil {
+			return false, err
+		}
+
+		pvcs, err := clientset.CoreV1().PersistentVolumeClaims(cluster.Namespace()).List(ctx, metav1.ListOptions{
+			LabelSelector: selector.String(),
+		})
+
+		if err != nil {
+			return false, err
+		}
+
+		for _, pvc := range pvcs.Items {
+			if pvc.Status.Phase == corev1.ClaimBound {
+				boundPVCCount = boundPVCCount + 1
+			}
+		}
+
+		return true, nil
+	})
+	require.NoError(t, err)
+
+	require.Equal(t, quantity, boundPVCCount)
+}
