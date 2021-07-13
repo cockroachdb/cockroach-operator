@@ -265,22 +265,17 @@ spec:
       serviceAccountName: cockroach-operator-sa
       containers:
         - name: cockroach-operator
-          image: cockroachdb/cockroach-operator:v1.7.14
+          image: cockroachdb/cockroach-operator:v2.0.0
           imagePullPolicy: IfNotPresent
-          # uncomment this to enable different new features
-          # args: ["-feature-gates","PartitionedUpdate=true,UseDecommission=true,Upgrade=false, CrdbVersionValidator=false"]
-          # this is for openshift only
-          # args: ["-feature-gates", "Upgrade=false,ResizePVC=false"]
-
           # different new features are commented out below
-          # uncomment them to enable the featureGate
+          # uncomment the feature-gates argument to enable the feature
           args:
-            - feature-gates
-            - Upgrade=false
+            # - feature-gates
+            # - AutoPrunePVC=true
             # the below log level accepts "info" "debug" "warn" or "error"
             - -zap-log-level
             - info
-              # - debug
+          # - debug
           env:
             - name: WATCH_NAMESPACE
               valueFrom:
@@ -332,14 +327,20 @@ spec:
               value: cockroachdb/cockroach:v20.2.9
             - name: RELATED_IMAGE_COCKROACH_v20_2_10
               value: cockroachdb/cockroach:v20.2.10
+            - name: RELATED_IMAGE_COCKROACH_v20_2_11
+              value: cockroachdb/cockroach:v20.2.11
+            - name: RELATED_IMAGE_COCKROACH_v20_2_12
+              value: cockroachdb/cockroach:v20.2.12
+            - name: RELATED_IMAGE_COCKROACH_v20_2_13
+              value: cockroachdb/cockroach:v20.2.13
             - name: RELATED_IMAGE_COCKROACH_v21_1_0
               value: cockroachdb/cockroach:v21.1.0
             - name: RELATED_IMAGE_COCKROACH_v21_1_1
               value: cockroachdb/cockroach:v21.1.1
             - name: RELATED_IMAGE_COCKROACH_v21_1_2
               value: cockroachdb/cockroach:v21.1.2
-            - name: RELATED_IMAGE_COCKROACH_v21_1_4
-              value: cockroachdb/cockroach:v21.1.4
+            - name: RELATED_IMAGE_COCKROACH_v21_1_5
+              value: cockroachdb/cockroach:v21.1.5
           resources:
             requests:
               cpu: 10m
