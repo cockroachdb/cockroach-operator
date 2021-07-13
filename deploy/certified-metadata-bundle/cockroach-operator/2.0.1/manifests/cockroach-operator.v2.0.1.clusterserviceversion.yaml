@@ -2,9 +2,7 @@ apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
   annotations:
-    olm.skipRange: '<v2.0.0'
-    olm.skips: '19.2.4'
-    olm.replaces: 'v2.0.0'
+    olm.skipRange: '<v2.0.1'
     alm-examples: |-
       [
         {
@@ -390,3 +388,5 @@ spec:
   provider:
     name: Cockroach Labs
   version: 2.0.1
+  skips:
+    - cockroachdb.v19.2.4
