@@ -22,8 +22,10 @@ import (
 	"os"
 	"strings"
 
+	"github.com/cockroachdb/cockroach-operator/pkg/features"
 	"github.com/cockroachdb/cockroach-operator/pkg/labels"
 	"github.com/cockroachdb/cockroach-operator/pkg/ptr"
+	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -201,6 +203,10 @@ func (b StatefulSetBuilder) makePodTemplate() corev1.PodTemplateSpec {
 			AutomountServiceAccountToken:  ptr.Bool(false),
 			ServiceAccountName:            "cockroach-database-sa",
 		},
+	}
+
+	if utilfeature.DefaultMutableFeatureGate.Enabled(features.AffinityRules) {
+		pod.Spec.Affinity = b.Spec().Affinity
 	}
 
 	secret := b.Spec().Image.PullSecret

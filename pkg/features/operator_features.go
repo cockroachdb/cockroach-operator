@@ -80,6 +80,11 @@ const (
 	// alpha: v1.7.13
 	// AutoPrunePVC uses crdb binary to prune PVC on decommission
 	AutoPrunePVC featuregate.Feature = "AutoPrunePVC"
+
+	// owner: @chrislovecnm
+	// alpha: v2.0
+	// AffinityRules allows setting affinity rules on the sts
+	AffinityRules featuregate.Feature = "AffinityRules"
 )
 
 func init() {
@@ -102,4 +107,7 @@ var defaultOperatorFeatureGates = map[featuregate.Feature]featuregate.FeatureSpe
 	// data is deleted and the database is corrupted.
 	// You can enable the feature by setting the feature gate
 	AutoPrunePVC: {Default: false, PreRelease: featuregate.Alpha},
+
+	// New features
+	AffinityRules: {Default: false, PreRelease: featuregate.Alpha},
 }
