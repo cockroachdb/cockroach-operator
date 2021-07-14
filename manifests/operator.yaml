@@ -265,7 +265,7 @@ spec:
       serviceAccountName: cockroach-operator-sa
       containers:
         - name: cockroach-operator
-          image: cockroachdb/cockroach-operator:v2.0.0
+          image: cockroachdb/cockroach-operator:v2.0.1
           imagePullPolicy: IfNotPresent
           # different new features are commented out below
           # uncomment the feature-gates argument to enable the feature
