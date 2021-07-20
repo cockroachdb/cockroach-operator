@@ -55,6 +55,11 @@ spec:
                 items:
                   type: string
                 type: array
+              additionalLabels:
+                additionalProperties:
+                  type: string
+                description: (Optional) Additional custom resource labels that are added to all resources
+                type: object
               affinity:
                 description: If specified, the pod's scheduling constraints
                 properties:

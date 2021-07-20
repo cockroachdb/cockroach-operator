@@ -68,7 +68,7 @@ func TestStatefulSetBuilder(t *testing.T) {
 
 			err := resource.StatefulSetBuilder{
 				Cluster:   &cluster,
-				Selector:  commonLabels.Selector(),
+				Selector:  commonLabels.Selector(cluster.Spec().AdditionalLabels),
 				Telemetry: "kubernetes-operator-gke",
 			}.Build(actual)
 			require.NoError(t, err)

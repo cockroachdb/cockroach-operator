@@ -37,4 +37,6 @@ spec:
   topology:
     zones:
       - locality: ""
+  additionalLabels:
+    car: koenigsegg
 status: {}

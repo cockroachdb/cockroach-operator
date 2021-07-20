@@ -111,7 +111,7 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 		ManagedResource: r,
 		Builder: resource.JobBuilder{
 			Cluster:  cluster,
-			Selector: r.Labels.Selector(),
+			Selector: r.Labels.Selector(cluster.Spec().AdditionalLabels),
 			JobName:  jobName,
 		},
 		Owner:  owner,

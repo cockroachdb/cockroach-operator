@@ -52,7 +52,7 @@ func (b PdbBuilder) Build(obj client.Object) error {
 	// Using the Common labels that will match
 	// the statefulset
 	commonLabels := labels.Common(b.Cluster.cr)
-	selector := commonLabels.Selector()
+	selector := commonLabels.Selector(b.Cluster.cr.Spec.AdditionalLabels)
 	pdb.Spec = policy.PodDisruptionBudgetSpec{
 		Selector: &metav1.LabelSelector{
 			MatchLabels: selector,

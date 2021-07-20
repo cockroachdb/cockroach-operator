@@ -79,7 +79,7 @@ func (d deploy) Act(ctx context.Context, cluster *resource.Cluster) error {
 		ManagedResource: r,
 		Builder: resource.DiscoveryServiceBuilder{
 			Cluster:  cluster,
-			Selector: r.Labels.Selector(),
+			Selector: r.Labels.Selector(cluster.Spec().AdditionalLabels),
 		},
 		Owner:  owner,
 		Scheme: d.scheme,
@@ -98,7 +98,7 @@ func (d deploy) Act(ctx context.Context, cluster *resource.Cluster) error {
 		ManagedResource: r,
 		Builder: resource.PublicServiceBuilder{
 			Cluster:  cluster,
-			Selector: r.Labels.Selector(),
+			Selector: r.Labels.Selector(cluster.Spec().AdditionalLabels),
 		},
 		Owner:  owner,
 		Scheme: d.scheme,
@@ -117,7 +117,7 @@ func (d deploy) Act(ctx context.Context, cluster *resource.Cluster) error {
 		ManagedResource: r,
 		Builder: resource.StatefulSetBuilder{
 			Cluster:   cluster,
-			Selector:  r.Labels.Selector(),
+			Selector:  r.Labels.Selector(cluster.Spec().AdditionalLabels),
 			Telemetry: kubernetesDistro,
 		},
 		Owner:  owner,
@@ -140,7 +140,7 @@ func (d deploy) Act(ctx context.Context, cluster *resource.Cluster) error {
 			ManagedResource: r,
 			Builder: resource.PdbBuilder{
 				Cluster:  cluster,
-				Selector: r.Labels.Selector(),
+				Selector: r.Labels.Selector(cluster.Spec().AdditionalLabels),
 			},
 			Owner:  owner,
 			Scheme: d.scheme,
