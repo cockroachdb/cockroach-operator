@@ -198,11 +198,14 @@ func (b StatefulSetBuilder) makePodTemplate() corev1.PodTemplateSpec {
 				FSGroup:   ptr.Int64(1000581000),
 			},
 			TerminationGracePeriodSeconds: ptr.Int64(60),
-			InitContainers:                b.MakeInitContainers(),
 			Containers:                    b.MakeContainers(),
 			AutomountServiceAccountToken:  ptr.Bool(false),
 			ServiceAccountName:            "cockroach-database-sa",
 		},
+	}
+
+	if b.Spec().TLSEnabled {
+		pod.Spec.InitContainers = b.MakeInitContainers()
 	}
 
 	if utilfeature.DefaultMutableFeatureGate.Enabled(features.AffinityRules) {
