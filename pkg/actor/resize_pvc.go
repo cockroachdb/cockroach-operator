@@ -192,7 +192,7 @@ func (rp *resizePVC) recreateSTS(ctx context.Context, cluster *resource.Cluster)
 		ManagedResource: r,
 		Builder: resource.StatefulSetBuilder{
 			Cluster:  cluster,
-			Selector: r.Labels.Selector(),
+			Selector: r.Labels.Selector(cluster.Spec().AdditionalLabels),
 		},
 		Owner:  cluster.Unwrap(),
 		Scheme: rp.scheme,

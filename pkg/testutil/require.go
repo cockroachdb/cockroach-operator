@@ -105,7 +105,7 @@ func RequireClusterToBeReadyEventually(t *testing.T, sb testenv.DiffingSandbox, 
 // RequireDbContainersToUseImage checks that the database is using the correct image
 func RequireDbContainersToUseImage(t *testing.T, sb testenv.DiffingSandbox, cr *api.CrdbCluster) {
 	err := wait.Poll(10*time.Second, 400*time.Second, func() (bool, error) {
-		pods, err := fetchPodsInStatefulSet(sb, labels.Common(cr).Selector())
+		pods, err := fetchPodsInStatefulSet(sb, labels.Common(cr).Selector(cr.Spec.AdditionalLabels))
 		if err != nil {
 			return false, err
 		}

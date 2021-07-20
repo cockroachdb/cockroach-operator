@@ -44,6 +44,7 @@ var managed = []string{NameKey, InstanceKey, VersionKey, ComponentKey, PartOfKey
 func Common(cluster *api.CrdbCluster) Labels {
 	ll := Labels{}
 	ll.Merge(makeCommonLabels(cluster.Labels, cluster.Name, cluster.Status.Version))
+	ll.Merge(cluster.Spec.AdditionalLabels)
 
 	return ll
 }
@@ -97,13 +98,17 @@ func (ll Labels) ApplyTo(obj runtime.Object) error {
 	return nil
 }
 
-func (ll Labels) Selector() map[string]string {
+func (ll Labels) Selector(custom map[string]string) map[string]string {
 	selector := make(map[string]string)
 
 	for _, k := range []string{NameKey, InstanceKey, ComponentKey} {
 		if _, ok := ll[k]; ok {
 			selector[k] = ll[k]
 		}
+	}
+
+	for k, v := range custom {
+		selector[k] = v
 	}
 
 	return selector

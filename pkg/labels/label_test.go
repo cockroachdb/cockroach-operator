@@ -99,13 +99,18 @@ func TestUpdateRemovesManagedLabel(t *testing.T) {
 }
 
 func TestSelector(t *testing.T) {
-	cr := testutil.NewBuilder("test-cluster").Namespaced("test-ns").Cr()
+	custom := map[string]string{
+		"car": "koenigsegg",
+	}
+
+	cr := testutil.NewBuilder("test-cluster").Namespaced("test-ns").WithLabels(custom).Cr()
 
 	expected := map[string]string{
 		"app.kubernetes.io/name":      "cockroachdb",
 		"app.kubernetes.io/instance":  "test-cluster",
 		"app.kubernetes.io/component": "database",
+		"car":                         "koenigsegg",
 	}
 
-	assert.Equal(t, expected, labels.Common(cr).Selector())
+	assert.Equal(t, expected, labels.Common(cr).Selector(cr.Spec.AdditionalLabels))
 }

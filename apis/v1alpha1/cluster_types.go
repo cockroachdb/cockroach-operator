@@ -105,6 +105,11 @@ type CrdbClusterSpec struct {
 	// If specified, the pod's scheduling constraints
 	// +optional
 	Affinity *corev1.Affinity `json:"affinity,omitempty"`
+
+	// (Optional) Additional custom resource labels that are added to all resources
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Map of additional custom labels"
+	// +optional
+	AdditionalLabels map[string]string `json:"additionalLabels,omitempty"`
 }
 
 // +k8s:openapi-gen=true
