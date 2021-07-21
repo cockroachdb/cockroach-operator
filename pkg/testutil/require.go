@@ -381,24 +381,40 @@ func makeDrainStatusChecker(t *testing.T, sb testenv.DiffingSandbox, b ClusterBu
 	return nil
 }
 
+// RequireDatabaseToFunctionInsecure tests that the database is functioning correctly on an
+// db that is insecure.
+func RequireDatabaseToFunctionInsecure(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder) {
+	requireDatabaseToFunction(t, sb, b, false)
+}
+
 // RequireDatabaseToFunction tests that the database is functioning correctly
+// for a db cluster that is using an SSL certificate.
 func RequireDatabaseToFunction(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder) {
+	requireDatabaseToFunction(t, sb, b, true)
+}
+
+func requireDatabaseToFunction(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder, useSSL bool) {
 	sb.Mgr.GetConfig()
 	podName := fmt.Sprintf("%s-0.%s", b.Cluster().Name(), b.Cluster().Name())
+
 	conn := &database.DBConnection{
 		Ctx:    context.TODO(),
 		Client: sb.Mgr.GetClient(),
 		Port:   b.Cluster().Spec().SQLPort,
-		UseSSL: true,
+		UseSSL: useSSL,
 
 		RestConfig:   sb.Mgr.GetConfig(),
 		ServiceName:  podName,
 		Namespace:    sb.Namespace,
 		DatabaseName: "system",
 
-		RunningInsideK8s:            false,
-		ClientCertificateSecretName: b.Cluster().ClientTLSSecretName(),
-		RootCertificateSecretName:   b.Cluster().NodeTLSSecretName(),
+		RunningInsideK8s: false,
+	}
+
+	// set the client certs since we are using SSL
+	if useSSL {
+		conn.ClientCertificateSecretName = b.Cluster().ClientTLSSecretName()
+		conn.RootCertificateSecretName = b.Cluster().NodeTLSSecretName()
 	}
 
 	// Create a new database connection for the update.

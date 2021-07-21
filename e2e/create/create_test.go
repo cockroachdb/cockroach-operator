@@ -51,6 +51,46 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
+func TestCreateInsecureCluster(t *testing.T) {
+
+	// Test Creating an insecure cluster
+	// No actions on the cluster just create it and
+	// tear it down.
+
+	if parallel {
+		t.Parallel()
+	}
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+
+	testLog := zapr.NewLogger(zaptest.NewLogger(t))
+
+	actor.Log = testLog
+
+	sb := testenv.NewDiffingSandbox(t, env)
+	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
+
+	builder := testutil.NewBuilder("crdb").WithNodeCount(3).
+		WithImage("cockroachdb/cockroach:v21.1.6").
+		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
+
+	steps := testutil.Steps{
+		{
+			Name: "creates 3-node insecure cluster",
+			Test: func(t *testing.T) {
+				require.NoError(t, sb.Create(builder.Cr()))
+
+				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
+				testutil.RequireDatabaseToFunctionInsecure(t, sb, builder)
+
+				t.Log("Done with basic cluster")
+			},
+		},
+	}
+	steps.Run(t)
+}
+
 func TestCreatesSecureCluster(t *testing.T) {
 
 	// Test Creating a secure cluster
