@@ -49,6 +49,9 @@ type deployer struct {
 	BaseDomain     string `flag:"base-domain" desc:"flag to set the TLD domain that is hosted in the GCP Project"`
 	ClusterName    string `flag:"cluster-name" desc:"flag to set the name of the cluster"`
 
+	DoNotEnableServices bool `flag:"do-not-enable-services" desc:"flag to set to enable services on the project"`
+	DoNotDeleteSA       bool `flag:"do-not-delete-sa" desc:"flag to set to not remove the service account"`
+
 	ServiceAccountToken string `flag:"sa-token" desc:"flag to set the path to the service account token"`
 }
 
