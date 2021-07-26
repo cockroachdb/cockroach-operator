@@ -29,6 +29,8 @@ The flags that we are most concered about are:
    --gcp-region string                flag for setting GCP Region, for instance us-east1
    --pull-secret-file string          flag for the location of the pull secrete file downloaded from the RedHat site
    --sa-token string                  flag to set the path to the service account token
+   --do-not-enable-services bool      flag to set to NOT enable services on the project
+   --do-not-delete-sa                 flag to set to NOT remove the service account
 ```
 
 The `--base-domain` flag is set to the TLD domain that you want the `openshift-install` to use and must be hosted
@@ -36,6 +38,9 @@ in the same GCP project as defined via the `--gcp-project-id` flag.
 A special note.  This deployer will create a service account that is used for running `openshift-install`. It does
 use `gcloud` to create that IAM account, so your account must have the correct permissions.
 The deployer will remove the IAM account as well.
+
+Set the do-not flags if you are using an project that is already configured and has an existing service account. You will
+need to set the sa-token flag to the json serice acount file.
 
 ## Setup and Building
 

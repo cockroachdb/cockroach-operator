@@ -67,9 +67,11 @@ func (d *deployer) Up() error {
 		return err
 	}
 
-	if err := d.enableServices(); err != nil {
-		klog.Fatalf("unable to enable GCP services: %v", err)
-		return err
+	if !d.DoNotEnableServices {
+		if err := d.enableServices(); err != nil {
+			klog.Fatalf("unable to enable GCP services: %v", err)
+			return err
+		}
 	}
 
 	// If we do not have a service account token then create the SA
