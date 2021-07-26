@@ -27,8 +27,8 @@ import (
 )
 
 // Down destroys a openshift cluster, deletes the
-// IAM user that was used to create the cluster, and also
-// deletes the tokens and folders.
+// IAM user that was used to create the cluster,
+// unless DoNotDeleteSA and also deletes the tokens and folders.
 func (d *deployer) Down() error {
 
 	if d.ClusterName == "" {
@@ -76,7 +76,7 @@ func (d *deployer) Down() error {
 	}
 
 	// If we have a sa token we are not going to remove the iam user and the token
-	if d.ServiceAccountToken != "" {
+	if d.DoNotDeleteSA {
 		return nil
 	}
 
