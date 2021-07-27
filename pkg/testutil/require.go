@@ -260,11 +260,11 @@ func statefulSetIsReady(t *testing.T, sts *appsv1.StatefulSet, sb testenv.Diffin
 
 	// Print out pretty into on the Pods
 	for _, podInfo := range (*podList).Items {
-		if strings.Contains("vchecker", podInfo.Name) {
+		if strings.Contains("vcheck", podInfo.Name) {
 			t.Logf("job found, skipping: %s", podInfo.Name)
 			continue
 		}
-		if !kube.IsPodAvailable(&podInfo, 5, metav1.Now()) {
+		if !kube.IsPodAvailable(&podInfo, 2, metav1.Now()) {
 			t.Logf("pod: %s not available", podInfo.Name)
 			return false, nil
 		}
@@ -276,15 +276,16 @@ func statefulSetIsReady(t *testing.T, sts *appsv1.StatefulSet, sb testenv.Diffin
 
 func RequireDownGradeOptionSet(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder, version string) {
 	sb.Mgr.GetConfig()
-	podName := fmt.Sprintf("%s-0.%s", b.Cluster().Name(), b.Cluster().Name())
+
 	conn := &database.DBConnection{
 		Ctx:    context.TODO(),
 		Client: sb.Mgr.GetClient(),
 		Port:   b.Cluster().Spec().SQLPort,
 		UseSSL: true,
 
-		RestConfig:   sb.Mgr.GetConfig(),
-		ServiceName:  podName,
+		RestConfig: sb.Mgr.GetConfig(),
+		// TODO we can connection to pod 1 instead of zero maybe
+		ServiceName:  fmt.Sprintf("%s-0.%s", b.Cluster().Name(), b.Cluster().Name()),
 		Namespace:    sb.Namespace,
 		DatabaseName: "system",
 
@@ -300,18 +301,12 @@ func RequireDownGradeOptionSet(t *testing.T, sb testenv.DiffingSandbox, b Cluste
 
 	r := db.QueryRowContext(context.TODO(), "SHOW CLUSTER SETTING cluster.preserve_downgrade_option")
 	var value string
-	if err := r.Scan(&value); err != nil {
-		t.Fatal(err)
-	}
+	err = r.Scan(&value)
+	require.NoError(t, err, "error finding value")
 
 	t.Log("found value: " + value)
-	if value == "" {
-		t.Errorf("downgrade_option is empty and should be set to %s", version)
-	}
-
-	if value != version {
-		t.Errorf("downgrade_option is not set to %s, but is set to %s", version, value)
-	}
+	require.NotEmpty(t, value, "downgrade_option is empty and should be set to %s", version)
+	require.True(t, value == version, "downgrade_option is not set to %s, but is set to %s", version, value)
 
 }
 
