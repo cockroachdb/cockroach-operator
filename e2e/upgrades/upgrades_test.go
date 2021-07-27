@@ -50,6 +50,7 @@ func TestMain(m *testing.M) {
 
 // TestUpgradesMinorVersion tests a minor version bump
 func TestUpgradesMinorVersion(t *testing.T) {
+	t.Skip("skipping test in short mode.")
 
 	// We are testing a Minor Version Upgrade with
 	// partition update
@@ -102,6 +103,7 @@ func TestUpgradesMinorVersion(t *testing.T) {
 
 // TestUpgradesMajorVersion20to21 tests a major version upgrade
 func TestUpgradesMajorVersion20to21(t *testing.T) {
+	t.Skip("skipping test in short mode.")
 
 	// We are doing a major version upgrade here
 	// 20 to 21
