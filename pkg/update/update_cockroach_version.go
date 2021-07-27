@@ -228,22 +228,7 @@ func kindAndCheckPreserveDowngradeSetting(
 		return s, nil
 	} else if isBackOneMajorVersion(wantVersion, currentVersion) {
 		l.V(int(zapcore.DebugLevel)).Info("major rollback")
-		s := "MAJOR_ROLLBACK"
-		preserve, err := preserveDowngradeSetting(ctx, db)
-		if err != nil {
-			return s, err
-		}
-		// To do a rollback, preserve downgrade option must be set to the major
-		// version to which kubeupdate is rolling back.
-		if preserve.Major() != wantVersion.Major() || preserve.Minor() != wantVersion.Minor() {
-			return s, UpdateNotAllowed{
-				cur:      currentVersion,
-				want:     wantVersion,
-				preserve: preserve,
-				extra:    "can't rollback since release already finalized",
-			}
-		}
-		return s, nil
+		return CheckDowngradeSetting(ctx, wantVersion, currentVersion, db)
 	}
 
 	err := UpdateNotAllowed{
@@ -253,6 +238,30 @@ func kindAndCheckPreserveDowngradeSetting(
 	}
 	l.Error(err, "unknown upgrade")
 	return "UNKNOWN", err
+}
+
+// CheckDowngradeSetting retrieves the downgrade setting from the database and then tests that the update is feasible.
+// This func will return an error if the update is not to the Major and Minor version that is requested.
+func CheckDowngradeSetting(ctx context.Context, wantVersion *semver.Version, currentVersion *semver.Version, db *sql.DB) (string, error) {
+	s := "MAJOR_ROLLBACK"
+	preserve, err := preserveDowngradeSetting(ctx, db)
+	if err != nil {
+		return s, err
+	}
+	return checkDowngradeAllowed(wantVersion, currentVersion, preserve)
+}
+
+func checkDowngradeAllowed(wantVersion *semver.Version, currentVersion *semver.Version, preserve *semver.Version) (string, error) {
+	s := "MAJOR_ROLLBACK"
+	if preserve.Major() != wantVersion.Major() || preserve.Minor() != wantVersion.Minor() {
+		return s, UpdateNotAllowed{
+			cur:      currentVersion,
+			want:     wantVersion,
+			preserve: preserve,
+			extra:    "can't rollback since release already finalized",
+		}
+	}
+	return s, nil
 }
 
 func preserveDowngradeSetting(ctx context.Context, db *sql.DB) (*semver.Version, error) {
