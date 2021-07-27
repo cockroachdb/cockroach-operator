@@ -215,6 +215,24 @@ func mutate(f MutateFn, key client.ObjectKey, obj client.Object) error {
 // TODO this code is from https://github.com/kubernetes/kubernetes/blob/master/pkg/api/v1/pod/util.go
 // We need to determine if this functionality is available via the client-go
 
+// IsPodAvailable returns true if a pod is available; false otherwise.
+// Precondition for an available pod is that it must be ready. On top
+// of that, there are two cases when a pod can be considered available:
+// 1. minReadySeconds == 0, or
+// 2. LastTransitionTime (is set) + minReadySeconds < current time
+func IsPodAvailable(pod *corev1.Pod, minReadySeconds int32, now metav1.Time) bool {
+	if !IsPodReady(pod) {
+		return false
+	}
+
+	c := GetPodReadyCondition(pod.Status)
+	minReadySecondsDuration := time.Duration(minReadySeconds) * time.Second
+	if minReadySeconds == 0 || (!c.LastTransitionTime.IsZero() && c.LastTransitionTime.Add(minReadySecondsDuration).Before(now.Time)) {
+		return true
+	}
+	return false
+}
+
 // IsPodReady returns true if a pod is ready; false otherwise.
 func IsPodReady(pod *corev1.Pod) bool {
 	return IsPodReadyConditionTrue(pod.Status)

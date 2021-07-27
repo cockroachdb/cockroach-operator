@@ -55,20 +55,23 @@ func RequireClusterToBeReadyEventuallyTimeout(t *testing.T, sb testenv.DiffingSa
 
 	err := wait.Poll(10*time.Second, timeout, func() (bool, error) {
 
-		ss, err := fetchStatefulSet(sb, cluster.StatefulSetName())
+		sts, err := fetchStatefulSet(sb, cluster.StatefulSetName())
 		if err != nil {
 			t.Logf("error fetching stateful set")
 			return false, err
 		}
 
-		if ss == nil {
+		if sts == nil {
 			t.Logf("stateful set is not found")
 			return false, nil
 		}
 
-		if !statefulSetIsReady(ss) {
+		ready, err := statefulSetIsReady(t, sts, sb)
+		if err != nil {
+			return false, err
+		}
+		if !ready {
 			t.Logf("stateful set is not ready")
-			logPods(context.TODO(), ss, cluster, sb, t)
 			return false, nil
 		}
 		return true, nil
@@ -83,17 +86,21 @@ func RequireClusterToBeReadyEventually(t *testing.T, sb testenv.DiffingSandbox, 
 
 	err := wait.Poll(10*time.Second, 60*time.Second, func() (bool, error) {
 
-		ss, err := fetchStatefulSet(sb, cluster.StatefulSetName())
+		sts, err := fetchStatefulSet(sb, cluster.StatefulSetName())
 		if err != nil {
 			t.Logf("error fetching stateful set")
 			return false, err
 		}
 
-		if ss == nil {
+		if sts == nil {
 			t.Logf("stateful set is not found")
 			return false, nil
 		}
-		if !statefulSetIsReady(ss) {
+		ready, err := statefulSetIsReady(t, sts, sb)
+		if err != nil {
+			return false, err
+		}
+		if !ready {
 			t.Logf("stateful set is not ready")
 			return false, nil
 		}
@@ -191,13 +198,13 @@ func clusterIsDecommissioned(t *testing.T, sb testenv.DiffingSandbox, name strin
 }
 
 func fetchStatefulSet(sb testenv.DiffingSandbox, name string) (*appsv1.StatefulSet, error) {
-	ss := &appsv1.StatefulSet{
+	sts := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},
 	}
 
-	if err := sb.Get(ss); err != nil {
+	if err := sb.Get(sts); err != nil {
 		if apierrors.IsNotFound(err) {
 			return nil, nil
 		}
@@ -205,7 +212,7 @@ func fetchStatefulSet(sb testenv.DiffingSandbox, name string) (*appsv1.StatefulS
 		return nil, err
 	}
 
-	return ss, nil
+	return sts, nil
 }
 
 func fetchPodsInStatefulSet(sb testenv.DiffingSandbox, labels map[string]string) ([]corev1.Pod, error) {
@@ -228,11 +235,44 @@ func testPodsWithPredicate(pods []corev1.Pod, pred func(*corev1.Pod) bool) bool 
 	return true
 }
 
-func statefulSetIsReady(ss *appsv1.StatefulSet) bool {
-	return ss.Status.ReadyReplicas == ss.Status.Replicas
-}
+func statefulSetIsReady(t *testing.T, sts *appsv1.StatefulSet, sb testenv.DiffingSandbox) (bool, error) {
+	if sts.Status.ReadyReplicas != sts.Status.Replicas {
+		t.Log("sts ready replicas do not match")
+		return false, nil
+	}
+	clientset, err := kubernetes.NewForConfig(sb.Mgr.GetConfig())
+	if err != nil {
+		t.Log("error building k8s api config")
+		return false, err
+	}
 
-// TODO we are not using this
+	// Get all pods
+	podList, err := clientset.CoreV1().Pods(sts.Namespace).List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		t.Log("error getting pods")
+		return false, err
+	}
+
+	if len(podList.Items) == 0 {
+		t.Log("no pods found")
+		return false, nil
+	}
+
+	// Print out pretty into on the Pods
+	for _, podInfo := range (*podList).Items {
+		if strings.Contains("vchecker", podInfo.Name) {
+			t.Logf("job found, skipping: %s", podInfo.Name)
+			continue
+		}
+		if !kube.IsPodAvailable(&podInfo, 5, metav1.Now()) {
+			t.Logf("pod: %s not available", podInfo.Name)
+			return false, nil
+		}
+	}
+
+	t.Log("statefulset is ready")
+	return true, nil
+}
 
 func RequireDownGradeOptionSet(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder, version string) {
 	sb.Mgr.GetConfig()
@@ -255,7 +295,7 @@ func RequireDownGradeOptionSet(t *testing.T, sb testenv.DiffingSandbox, b Cluste
 
 	// Create a new database connection for the update.
 	db, err := database.NewDbConnection(conn)
-	require.NoError(t, err)
+	require.NoError(t, err, "error creating database connection")
 	defer db.Close()
 
 	r := db.QueryRowContext(context.TODO(), "SHOW CLUSTER SETTING cluster.preserve_downgrade_option")
@@ -264,11 +304,12 @@ func RequireDownGradeOptionSet(t *testing.T, sb testenv.DiffingSandbox, b Cluste
 		t.Fatal(err)
 	}
 
+	t.Log("found value: " + value)
 	if value == "" {
 		t.Errorf("downgrade_option is empty and should be set to %s", version)
 	}
 
-	if value != value {
+	if value != version {
 		t.Errorf("downgrade_option is not set to %s, but is set to %s", version, value)
 	}
 
@@ -292,8 +333,12 @@ func RequireDecommissionNode(t *testing.T, sb testenv.DiffingSandbox, b ClusterB
 			return false, nil
 		}
 
-		if !statefulSetIsReady(sts) {
-			t.Log("statefulset is not ready")
+		ready, err := statefulSetIsReady(t, sts, sb)
+		if err != nil {
+			return false, err
+		}
+		if !ready {
+			t.Logf("stateful set is not ready")
 			return false, nil
 		}
 
@@ -485,23 +530,28 @@ func RequirePVCToResize(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilde
 
 	// TODO rewrite this
 	err := wait.Poll(10*time.Second, 500*time.Second, func() (bool, error) {
-		ss, err := fetchStatefulSet(sb, cluster.StatefulSetName())
+		sts, err := fetchStatefulSet(sb, cluster.StatefulSetName())
 		if err != nil {
 			return false, err
 		}
 
-		if ss == nil {
+		if sts == nil {
 			t.Logf("stateful set is not found")
 			return false, nil
 		}
-
-		if !statefulSetIsReady(ss) {
+		ready, err := statefulSetIsReady(t, sts, sb)
+		if err != nil {
+			return false, err
+		}
+		if !ready {
+			t.Logf("stateful set is not ready")
 			return false, nil
 		}
+
 		clientset, err := kubernetes.NewForConfig(sb.Mgr.GetConfig())
 		require.NoError(t, err)
 
-		resized, err := resizedPVCs(context.TODO(), ss, b.Cluster(), clientset, t, quantity)
+		resized, err := resizedPVCs(context.TODO(), sts, b.Cluster(), clientset, t, quantity)
 		require.NoError(t, err)
 
 		return resized, nil

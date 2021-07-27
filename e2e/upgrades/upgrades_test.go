@@ -194,6 +194,7 @@ func TestUpgradesMajorVersion20_1To20_2(t *testing.T) {
 				// v20.1.16 does not have curl installed
 				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
 				testutil.RequireDbContainersToUseImage(t, sb, current)
+				testutil.RequireDownGradeOptionSet(t, sb, builder, "20.1")
 				t.Log("Done with major upgrade")
 			},
 		},
