@@ -32,6 +32,7 @@ COCKROACH_DATABASE_VERSION=v20.2.5
 PULL_SECRET?=
 GCP_REGION?=
 BASE_DOMAIN?=
+EXTRA_KUBETEST2_PARAMS?=
 
 #
 # Unit Testing Targets
@@ -162,6 +163,7 @@ test/e2e/openshift:
 	     --gcp-region=$(GCP_REGION) \
 	     --base-domain=$(BASE_DOMAIN) \
 	     --pull-secret-file=$(PULL_SECRET) \
+	     $(EXTRA_KUBETEST2_PARAMS) \
 	     --up --down --test=exec -- make test/e2e/testrunner-openshift
 
 # This testrunner launchs the openshift packaging e2e test
