@@ -30,7 +30,7 @@ The flags that we are most concered about are:
    --pull-secret-file string          flag for the location of the pull secrete file downloaded from the RedHat site
    --sa-token string                  flag to set the path to the service account token
    --do-not-enable-services bool      flag to set to NOT enable services on the project
-   --do-not-delete-sa                 flag to set to NOT remove the service account
+   --do-not-delete-sa bool            flag to set to NOT remove the service account
 ```
 
 The `--base-domain` flag is set to the TLD domain that you want the `openshift-install` to use and must be hosted
