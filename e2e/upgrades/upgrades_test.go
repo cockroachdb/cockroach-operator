@@ -31,13 +31,17 @@ import (
 	"go.uber.org/zap/zaptest"
 )
 
-// TODO parallel seems to be buggy.  Not certain why, but we need to figure out if running with the operator
-// deployed in the cluster helps
-// We may have a threadsafe problem where one test starts messing with another test
+// We cannot do this since we are creatin the RBAC components now
+// for openshift.  We need to create those only once.
 var parallel = *flag.Bool("parallel", false, "run tests in parallel")
 
 // TODO should we make this an atomic that is created by evn pkg?
 var env *testenv.ActiveEnv
+
+// TODO move these into a common file
+var MinorVersion1 string = "cockroachdb/cockroach:v20.2.8"
+var MinorVersion2 string = "cockroachdb/cockroach:v20.2.9"
+var MajorVersion string = "cockroachdb/cockroach:v21.1.0"
 
 // TestMain wraps the unit tests. Set TEST_DO_NOT_USE_KIND evnvironment variable to any value
 // if you do not want this test to start a k8s cluster using kind.
@@ -70,7 +74,7 @@ func TestUpgradesMinorVersion(t *testing.T) {
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
 
 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
-		WithImage("cockroachdb/cockroach:v20.2.8").
+		WithImage(MinorVersion1).
 		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
 
 	steps := testutil.Steps{
@@ -87,7 +91,7 @@ func TestUpgradesMinorVersion(t *testing.T) {
 				current := builder.Cr()
 				require.NoError(t, sb.Get(current))
 
-				current.Spec.Image.Name = "cockroachdb/cockroach:v20.2.9"
+				current.Spec.Image.Name = MinorVersion2
 				require.NoError(t, sb.Update(current))
 
 				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
@@ -121,7 +125,7 @@ func TestUpgradesMajorVersion20to21(t *testing.T) {
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
 
 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
-		WithImage("cockroachdb/cockroach:v20.2.9").
+		WithImage(MinorVersion2).
 		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
 
 	steps := testutil.Steps{
@@ -139,7 +143,7 @@ func TestUpgradesMajorVersion20to21(t *testing.T) {
 				current := builder.Cr()
 				require.NoError(t, sb.Get(current))
 
-				current.Spec.Image.Name = "cockroachdb/cockroach:v21.1.0"
+				current.Spec.Image.Name = MajorVersion
 				require.NoError(t, sb.Update(current))
 
 				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
@@ -195,6 +199,73 @@ func TestUpgradesMajorVersion20_1To20_2(t *testing.T) {
 				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
 				testutil.RequireDbContainersToUseImage(t, sb, current)
 				t.Log("Done with major upgrade")
+			},
+		},
+	}
+
+	steps.Run(t)
+}
+
+// TestUpgradesMinorVersionThenRollback tests a minor version bump
+// then rollsback that upgrade
+func TestUpgradesMinorVersionThenRollback(t *testing.T) {
+
+	// We are testing a Minor Version Upgrade with
+	// partition update
+	// Going from v20.2.8 to v20.2.9
+
+	if parallel {
+		t.Parallel()
+	}
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+
+	testLog := zapr.NewLogger(zaptest.NewLogger(t))
+
+	actor.Log = testLog
+
+	sb := testenv.NewDiffingSandbox(t, env)
+	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
+
+	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
+		WithImage(MinorVersion1).
+		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
+
+	steps := testutil.Steps{
+		{
+			Name: "creates a 3-node secure cluster",
+			Test: func(t *testing.T) {
+				require.NoError(t, sb.Create(builder.Cr()))
+				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
+			},
+		},
+		{
+			Name: "upgrades the cluster to the next patch version",
+			Test: func(t *testing.T) {
+				current := builder.Cr()
+				require.NoError(t, sb.Get(current))
+
+				current.Spec.Image.Name = MinorVersion2
+				require.NoError(t, sb.Update(current))
+
+				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
+				testutil.RequireDbContainersToUseImage(t, sb, current)
+				t.Log("Done with upgrade")
+			},
+		},
+		{
+			Name: "downgrades the cluster to the old patch version",
+			Test: func(t *testing.T) {
+				current := builder.Cr()
+				require.NoError(t, sb.Get(current))
+
+				current.Spec.Image.Name = MinorVersion1
+				require.NoError(t, sb.Update(current))
+
+				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
+				testutil.RequireDbContainersToUseImage(t, sb, current)
+				t.Log("Done with downgrade")
 			},
 		},
 	}
