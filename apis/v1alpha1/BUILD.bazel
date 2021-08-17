@@ -1,7 +1,7 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
-    name = "go_default_library",
+    name = "v1alpha1",
     srcs = [
         "action_status.go",
         "action_types.go",
@@ -17,20 +17,20 @@ go_library(
     importpath = "github.com/cockroachdb/cockroach-operator/apis/v1alpha1",
     visibility = ["//visibility:public"],
     deps = [
-        "@com_github_pkg_errors//:go_default_library",
-        "@io_k8s_api//apps/v1:go_default_library",
-        "@io_k8s_api//core/v1:go_default_library",
-        "@io_k8s_apimachinery//pkg/apis/meta/v1:go_default_library",
-        "@io_k8s_apimachinery//pkg/runtime:go_default_library",
-        "@io_k8s_apimachinery//pkg/runtime/schema:go_default_library",
-        "@io_k8s_sigs_controller_runtime//pkg/scheme:go_default_library",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_api//apps/v1:apps",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/runtime",
+        "@io_k8s_apimachinery//pkg/runtime/schema",
+        "@io_k8s_sigs_controller_runtime//pkg/scheme",
     ],
 )
 
 ETCD = "//hack/bin:etcd"
 
 go_test(
-    name = "go_default_test",
+    name = "v1alpha1_test",
     srcs = [
         "cluster_defaults_test.go",
         "cluster_types_test.go",
@@ -49,27 +49,27 @@ go_test(
         "//hack/bin:kube-apiserver",
         "//hack/bin:kubectl",
     ],
-    embed = [":go_default_library"],
+    embed = [":v1alpha1"],
     importpath = "github.com/cockroachdb/cockroach-operator/apis/v1alpha1",
     deps = [
-        "//pkg/testutil/paths:go_default_library",
-        "@com_github_google_go_cmp//cmp:go_default_library",
-        "@com_github_onsi_ginkgo//:go_default_library",
-        "@com_github_onsi_gomega//:go_default_library",
-        "@com_github_stretchr_testify//assert:go_default_library",
-        "@com_github_stretchr_testify//require:go_default_library",
-        "@io_k8s_api//apps/v1:go_default_library",
-        "@io_k8s_api//core/v1:go_default_library",
-        "@io_k8s_apimachinery//pkg/apis/meta/v1:go_default_library",
-        "@io_k8s_apimachinery//pkg/types:go_default_library",
-        "@io_k8s_client_go//kubernetes/scheme:go_default_library",
-        "@io_k8s_client_go//rest:go_default_library",
-        "@io_k8s_sigs_controller_runtime//pkg/client:go_default_library",
-        "@io_k8s_sigs_controller_runtime//pkg/envtest:go_default_library",
-        "@io_k8s_sigs_controller_runtime//pkg/envtest/printer:go_default_library",
-        "@io_k8s_sigs_controller_runtime//pkg/log:go_default_library",
-        "@io_k8s_sigs_controller_runtime//pkg/log/zap:go_default_library",
-        "@org_golang_x_net//context:go_default_library",
+        "//pkg/testutil/paths",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_onsi_ginkgo//:ginkgo",
+        "@com_github_onsi_gomega//:gomega",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@io_k8s_api//apps/v1:apps",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/types",
+        "@io_k8s_client_go//kubernetes/scheme",
+        "@io_k8s_client_go//rest",
+        "@io_k8s_sigs_controller_runtime//pkg/client",
+        "@io_k8s_sigs_controller_runtime//pkg/envtest",
+        "@io_k8s_sigs_controller_runtime//pkg/envtest/printer",
+        "@io_k8s_sigs_controller_runtime//pkg/log",
+        "@io_k8s_sigs_controller_runtime//pkg/log/zap",
+        "@org_golang_x_net//context",
     ],
 )
 

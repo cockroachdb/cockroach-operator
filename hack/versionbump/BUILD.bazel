@@ -1,16 +1,16 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
 
 go_library(
-    name = "go_default_library",
+    name = "versionbump_lib",
     srcs = ["main.go"],
     importpath = "github.com/cockroachdb/cockroach-operator/hack/versionbump",
     visibility = ["//visibility:private"],
-    deps = ["@com_github_masterminds_semver_v3//:go_default_library"],
+    deps = ["@com_github_masterminds_semver_v3//:semver"],
 )
 
 go_binary(
     name = "versionbump",
-    embed = [":go_default_library"],
+    embed = [":versionbump_lib"],
     visibility = ["//visibility:public"],
 )
 

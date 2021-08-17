@@ -1,7 +1,7 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
-    name = "go_default_library",
+    name = "deployer",
     srcs = [
         "build.go",
         "deployer.go",
@@ -12,14 +12,14 @@ go_library(
     importpath = "github.com/cockroachdb/cockroach-operator/e2e/kubetest2-openshift/deployer",
     visibility = ["//visibility:public"],
     deps = [
-        "//e2e/kubetest2-openshift/types:go_default_library",
-        "//e2e/kubetest2-openshift/types/gcp:go_default_library",
-        "@com_github_octago_sflags//gen/gpflag:go_default_library",
-        "@com_github_spf13_pflag//:go_default_library",
-        "@in_gopkg_yaml_v2//:go_default_library",
-        "@io_k8s_klog_v2//:go_default_library",
-        "@io_k8s_sigs_kubetest2//pkg/process:go_default_library",
-        "@io_k8s_sigs_kubetest2//pkg/types:go_default_library",
+        "//e2e/kubetest2-openshift/types",
+        "//e2e/kubetest2-openshift/types/gcp",
+        "@com_github_octago_sflags//gen/gpflag",
+        "@com_github_spf13_pflag//:pflag",
+        "@in_gopkg_yaml_v2//:yaml_v2",
+        "@io_k8s_klog_v2//:klog",
+        "@io_k8s_sigs_kubetest2//pkg/process",
+        "@io_k8s_sigs_kubetest2//pkg/types",
     ],
 )
 

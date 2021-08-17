@@ -38,3 +38,17 @@ filegroup(
     tags = ["automanaged"],
     visibility = ["//visibility:public"],
 )
+
+go_test(
+    name = "create_test",
+    srcs = ["create_test.go"],
+    deps = [
+        "//pkg/actor",
+        "//pkg/controller",
+        "//pkg/testutil",
+        "//pkg/testutil/env",
+        "@com_github_go_logr_zapr//:zapr",
+        "@com_github_stretchr_testify//require",
+        "@org_uber_go_zap//zaptest",
+    ],
+)

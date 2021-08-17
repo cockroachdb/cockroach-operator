@@ -1,7 +1,7 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
-    name = "go_default_library",
+    name = "gcp",
     srcs = ["platform.go"],
     importpath = "github.com/cockroachdb/cockroach-operator/e2e/kubetest2-openshift/types/gcp",
     visibility = ["//visibility:public"],

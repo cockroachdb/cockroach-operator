@@ -1,19 +1,19 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
 
 go_library(
-    name = "go_default_library",
+    name = "kubetest2-openshift_lib",
     srcs = ["main.go"],
     importpath = "github.com/cockroachdb/cockroach-operator/e2e/kubetest2-openshift",
     visibility = ["//visibility:private"],
     deps = [
-        "//e2e/kubetest2-openshift/deployer:go_default_library",
-        "@io_k8s_sigs_kubetest2//pkg/app:go_default_library",
+        "//e2e/kubetest2-openshift/deployer",
+        "@io_k8s_sigs_kubetest2//pkg/app",
     ],
 )
 
 go_binary(
     name = "kubetest2-openshift",
-    embed = [":go_default_library"],
+    embed = [":kubetest2-openshift_lib"],
     visibility = ["//visibility:public"],
 )
 

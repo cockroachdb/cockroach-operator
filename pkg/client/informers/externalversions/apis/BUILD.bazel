@@ -1,13 +1,13 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
-    name = "go_default_library",
+    name = "apis",
     srcs = ["interface.go"],
     importpath = "github.com/cockroachdb/cockroach-operator/pkg/client/informers/externalversions/apis",
     visibility = ["//visibility:public"],
     deps = [
-        "//pkg/client/informers/externalversions/apis/v1alpha1:go_default_library",
-        "//pkg/client/informers/externalversions/internalinterfaces:go_default_library",
+        "//pkg/client/informers/externalversions/apis/v1alpha1",
+        "//pkg/client/informers/externalversions/internalinterfaces",
     ],
 )
 

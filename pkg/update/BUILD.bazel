@@ -1,7 +1,7 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
-    name = "go_default_library",
+    name = "update",
     srcs = [
         "internal.go",
         "rolling_restart.go",
@@ -12,21 +12,21 @@ go_library(
     importpath = "github.com/cockroachdb/cockroach-operator/pkg/update",
     visibility = ["//visibility:public"],
     deps = [
-        "//pkg/healthchecker:go_default_library",
-        "//pkg/kube:go_default_library",
-        "//pkg/resource:go_default_library",
-        "@com_github_cenkalti_backoff//:go_default_library",
-        "@com_github_cockroachdb_errors//:go_default_library",
-        "@com_github_go_logr_logr//:go_default_library",
-        "@com_github_lib_pq//:go_default_library",
-        "@com_github_masterminds_semver_v3//:go_default_library",
-        "@com_github_pkg_errors//:go_default_library",
-        "@io_k8s_api//apps/v1:go_default_library",
-        "@io_k8s_apimachinery//pkg/api/errors:go_default_library",
-        "@io_k8s_apimachinery//pkg/apis/meta/v1:go_default_library",
-        "@io_k8s_client_go//kubernetes:go_default_library",
-        "@io_k8s_client_go//util/retry:go_default_library",
-        "@org_uber_go_zap//zapcore:go_default_library",
+        "//pkg/healthchecker",
+        "//pkg/kube",
+        "//pkg/resource",
+        "@com_github_cenkalti_backoff//:backoff",
+        "@com_github_cockroachdb_errors//:errors",
+        "@com_github_go_logr_logr//:logr",
+        "@com_github_lib_pq//:pq",
+        "@com_github_masterminds_semver_v3//:semver",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_api//apps/v1:apps",
+        "@io_k8s_apimachinery//pkg/api/errors",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_client_go//kubernetes",
+        "@io_k8s_client_go//util/retry",
+        "@org_uber_go_zap//zapcore",
     ],
 )
 
@@ -45,11 +45,11 @@ filegroup(
 )
 
 go_test(
-    name = "go_default_test",
+    name = "update_test",
     srcs = ["update_cockroach_version_common_test.go"],
-    embed = [":go_default_library"],
+    embed = [":update"],
     deps = [
-        "@com_github_masterminds_semver_v3//:go_default_library",
-        "@com_github_stretchr_testify//require:go_default_library",
+        "@com_github_masterminds_semver_v3//:semver",
+        "@com_github_stretchr_testify//require",
     ],
 )

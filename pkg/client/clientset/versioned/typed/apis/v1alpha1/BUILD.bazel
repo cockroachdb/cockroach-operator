@@ -1,7 +1,7 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
-    name = "go_default_library",
+    name = "v1alpha1",
     srcs = [
         "apis_client.go",
         "crdbcluster.go",
@@ -11,12 +11,12 @@ go_library(
     importpath = "github.com/cockroachdb/cockroach-operator/pkg/client/clientset/versioned/typed/apis/v1alpha1",
     visibility = ["//visibility:public"],
     deps = [
-        "//apis/v1alpha1:go_default_library",
-        "//pkg/client/clientset/versioned/scheme:go_default_library",
-        "@io_k8s_apimachinery//pkg/apis/meta/v1:go_default_library",
-        "@io_k8s_apimachinery//pkg/types:go_default_library",
-        "@io_k8s_apimachinery//pkg/watch:go_default_library",
-        "@io_k8s_client_go//rest:go_default_library",
+        "//apis/v1alpha1",
+        "//pkg/client/clientset/versioned/scheme",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_apimachinery//pkg/types",
+        "@io_k8s_apimachinery//pkg/watch",
+        "@io_k8s_client_go//rest",
     ],
 )
 

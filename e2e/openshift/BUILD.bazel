@@ -34,3 +34,20 @@ filegroup(
     tags = ["automanaged"],
     visibility = ["//visibility:public"],
 )
+
+go_test(
+    name = "openshift_test",
+    srcs = ["openshift_packaging_test.go"],
+    deps = [
+        "//pkg/kube",
+        "//pkg/testutil/paths",
+        "@com_github_cenkalti_backoff//:backoff",
+        "@com_github_go_logr_zapr//:zapr",
+        "@com_github_stretchr_testify//require",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+        "@io_k8s_client_go//kubernetes",
+        "@io_k8s_client_go//tools/clientcmd",
+        "@io_k8s_sigs_kubetest2//pkg/process",
+        "@org_uber_go_zap//zaptest",
+    ],
+)

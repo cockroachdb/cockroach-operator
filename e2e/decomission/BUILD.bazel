@@ -39,3 +39,18 @@ filegroup(
     tags = ["automanaged"],
     visibility = ["//visibility:public"],
 )
+
+go_test(
+    name = "decomission_test",
+    srcs = ["decomission_test.go"],
+    deps = [
+        "//pkg/actor",
+        "//pkg/controller",
+        "//pkg/testutil",
+        "//pkg/testutil/env",
+        "//pkg/utilfeature",
+        "@com_github_go_logr_zapr//:zapr",
+        "@com_github_stretchr_testify//require",
+        "@org_uber_go_zap//zaptest",
+    ],
+)

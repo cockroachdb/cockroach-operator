@@ -277,14 +277,14 @@ go_test(
     data = [
         "@//:all-srcs",
     ],
-    deps = ["//pkg/testutil:go_default_library"],
+    deps = ["//pkg/testutil:testutil"],
 )
 
 go_library(
     name = "go_start_kind",
     srcs = ["start_stop_kind.go"],
     importpath = "github.com/cockroachdb/cockroach-operator/hack",
-    deps = ["//pkg/testutil/exec:go_default_library"],
+    deps = ["//pkg/testutil/exec"],
 )
 
 go_binary(

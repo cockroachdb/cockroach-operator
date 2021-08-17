@@ -1,14 +1,14 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
-    name = "go_default_library",
+    name = "features",
     srcs = ["operator_features.go"],
     importpath = "github.com/cockroachdb/cockroach-operator/pkg/features",
     visibility = ["//visibility:public"],
     deps = [
-        "//pkg/featuregates:go_default_library",
-        "//pkg/utilfeature:go_default_library",
-        "@io_k8s_apimachinery//pkg/util/runtime:go_default_library",
+        "//pkg/featuregates",
+        "//pkg/utilfeature",
+        "@io_k8s_apimachinery//pkg/util/runtime",
     ],
 )
 

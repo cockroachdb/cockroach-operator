@@ -1,15 +1,15 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
-    name = "go_default_library",
+    name = "labels",
     srcs = ["label.go"],
     importpath = "github.com/cockroachdb/cockroach-operator/pkg/labels",
     visibility = ["//visibility:public"],
     deps = [
-        "//apis/v1alpha1:go_default_library",
-        "@com_github_pkg_errors//:go_default_library",
-        "@io_k8s_apimachinery//pkg/api/meta:go_default_library",
-        "@io_k8s_apimachinery//pkg/runtime:go_default_library",
+        "//apis/v1alpha1",
+        "@com_github_pkg_errors//:errors",
+        "@io_k8s_apimachinery//pkg/api/meta",
+        "@io_k8s_apimachinery//pkg/runtime",
     ],
 )
 
@@ -37,4 +37,16 @@ filegroup(
     srcs = [":package-srcs"],
     tags = ["automanaged"],
     visibility = ["//visibility:public"],
+)
+
+go_test(
+    name = "labels_test",
+    srcs = ["label_test.go"],
+    deps = [
+        ":labels",
+        "//pkg/testutil",
+        "@com_github_stretchr_testify//assert",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
+    ],
 )

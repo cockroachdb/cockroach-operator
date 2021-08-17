@@ -1,13 +1,13 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
-    name = "go_default_library",
+    name = "types",
     srcs = ["installconfigs.go"],
     importpath = "github.com/cockroachdb/cockroach-operator/e2e/kubetest2-openshift/types",
     visibility = ["//visibility:public"],
     deps = [
-        "//e2e/kubetest2-openshift/types/gcp:go_default_library",
-        "@io_k8s_apimachinery//pkg/apis/meta/v1:go_default_library",
+        "//e2e/kubetest2-openshift/types/gcp",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
     ],
 )
 

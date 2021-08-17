@@ -1,11 +1,11 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
-    name = "go_default_library",
+    name = "security",
     srcs = ["certs.go"],
     importpath = "github.com/cockroachdb/cockroach-operator/pkg/security",
     visibility = ["//visibility:public"],
-    deps = ["@com_github_cockroachdb_errors//:go_default_library"],
+    deps = ["@com_github_cockroachdb_errors//:errors"],
 )
 
 filegroup(
@@ -23,9 +23,9 @@ filegroup(
 )
 
 go_test(
-    name = "go_default_test",
+    name = "security_test",
     srcs = ["certs_test.go"],
     data = ["//hack/bin:cockroach"],
-    embed = [":go_default_library"],
-    deps = ["//pkg/testutil/paths:go_default_library"],
+    embed = [":security"],
+    deps = ["//pkg/testutil/paths"],
 )

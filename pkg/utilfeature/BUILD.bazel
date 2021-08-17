@@ -1,11 +1,11 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
-    name = "go_default_library",
+    name = "utilfeature",
     srcs = ["feature_gate.go"],
     importpath = "github.com/cockroachdb/cockroach-operator/pkg/utilfeature",
     visibility = ["//visibility:public"],
-    deps = ["//pkg/featuregates:go_default_library"],
+    deps = ["//pkg/featuregates"],
 )
 
 filegroup(

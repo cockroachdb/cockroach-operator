@@ -40,3 +40,19 @@ filegroup(
     tags = ["automanaged"],
     visibility = ["//visibility:public"],
 )
+
+go_test(
+    name = "pvcresize_test",
+    srcs = ["pvcresize_test.go"],
+    deps = [
+        "//pkg/actor",
+        "//pkg/controller",
+        "//pkg/testutil",
+        "//pkg/testutil/env",
+        "@com_github_go_logr_zapr//:zapr",
+        "@com_github_stretchr_testify//require",
+        "@io_k8s_api//core/v1:core",
+        "@io_k8s_apimachinery//pkg/api/resource",
+        "@org_uber_go_zap//zaptest",
+    ],
+)

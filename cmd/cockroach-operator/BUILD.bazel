@@ -5,25 +5,25 @@ load("@bazel_tools//tools/build_defs/pkg:pkg.bzl", "pkg_tar")
 load("@io_bazel_rules_docker//docker/util:run.bzl", "container_run_and_commit_layer")
 
 go_library(
-    name = "go_default_library",
+    name = "cockroach-operator_lib",
     srcs = ["main.go"],
     importpath = "github.com/cockroachdb/cockroach-operator/cmd/cockroach-operator",
     visibility = ["//visibility:private"],
     deps = [
-        "//apis/v1alpha1:go_default_library",
-        "//pkg/controller:go_default_library",
-        "//pkg/utilfeature:go_default_library",
-        "@io_k8s_apimachinery//pkg/runtime:go_default_library",
-        "@io_k8s_client_go//kubernetes/scheme:go_default_library",
-        "@io_k8s_client_go//plugin/pkg/client/auth/gcp:go_default_library",
-        "@io_k8s_sigs_controller_runtime//:go_default_library",
-        "@io_k8s_sigs_controller_runtime//pkg/log/zap:go_default_library",
+        "//apis/v1alpha1",
+        "//pkg/controller",
+        "//pkg/utilfeature",
+        "@io_k8s_apimachinery//pkg/runtime",
+        "@io_k8s_client_go//kubernetes/scheme",
+        "@io_k8s_client_go//plugin/pkg/client/auth/gcp",
+        "@io_k8s_sigs_controller_runtime//:controller-runtime",
+        "@io_k8s_sigs_controller_runtime//pkg/log/zap",
     ],
 )
 
 go_binary(
     name = "cockroach-operator",
-    embed = [":go_default_library"],
+    embed = [":cockroach-operator_lib"],
     visibility = ["//visibility:public"],
 )
 

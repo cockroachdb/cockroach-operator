@@ -1,11 +1,11 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
 
 go_library(
-    name = "go_default_library",
+    name = "gke_lib",
     srcs = ["start_stop_gke.go"],
     importpath = "github.com/cockroachdb/cockroach-operator/hack/gke",
     visibility = ["//visibility:private"],
-    deps = ["//pkg/testutil/exec:go_default_library"],
+    deps = ["//pkg/testutil/exec"],
 )
 
 KUBETEST2 = "//hack/bin:kubetest2"
@@ -18,7 +18,7 @@ go_binary(
         KUBETEST2,
         KUBETEST2GKE,
     ],
-    embed = [":go_default_library"],
+    embed = [":gke_lib"],
     visibility = ["//visibility:public"],
 )
 

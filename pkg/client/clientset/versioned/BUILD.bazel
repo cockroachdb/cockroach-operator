@@ -1,7 +1,7 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
-    name = "go_default_library",
+    name = "versioned",
     srcs = [
         "clientset.go",
         "doc.go",
@@ -9,10 +9,10 @@ go_library(
     importpath = "github.com/cockroachdb/cockroach-operator/pkg/client/clientset/versioned",
     visibility = ["//visibility:public"],
     deps = [
-        "//pkg/client/clientset/versioned/typed/apis/v1alpha1:go_default_library",
-        "@io_k8s_client_go//discovery:go_default_library",
-        "@io_k8s_client_go//rest:go_default_library",
-        "@io_k8s_client_go//util/flowcontrol:go_default_library",
+        "//pkg/client/clientset/versioned/typed/apis/v1alpha1",
+        "@io_k8s_client_go//discovery",
+        "@io_k8s_client_go//rest",
+        "@io_k8s_client_go//util/flowcontrol",
     ],
 )
 

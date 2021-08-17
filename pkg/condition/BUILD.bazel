@@ -1,24 +1,24 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
-    name = "go_default_library",
+    name = "condition",
     srcs = ["condition.go"],
     importpath = "github.com/cockroachdb/cockroach-operator/pkg/condition",
     visibility = ["//visibility:public"],
     deps = [
-        "//apis/v1alpha1:go_default_library",
-        "@io_k8s_apimachinery//pkg/apis/meta/v1:go_default_library",
+        "//apis/v1alpha1",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
     ],
 )
 
 go_test(
-    name = "go_default_test",
+    name = "condition_test",
     srcs = ["condition_test.go"],
-    embed = [":go_default_library"],
+    embed = [":condition"],
     deps = [
-        "//apis/v1alpha1:go_default_library",
-        "@com_github_stretchr_testify//assert:go_default_library",
-        "@io_k8s_apimachinery//pkg/apis/meta/v1:go_default_library",
+        "//apis/v1alpha1",
+        "@com_github_stretchr_testify//assert",
+        "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
     ],
 )
 

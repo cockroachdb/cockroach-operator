@@ -1,23 +1,23 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
-    name = "go_default_library",
+    name = "featuregates",
     srcs = ["feature_gate.go"],
     importpath = "github.com/cockroachdb/cockroach-operator/pkg/featuregates",
     visibility = ["//visibility:public"],
     deps = [
-        "@com_github_spf13_pflag//:go_default_library",
-        "@io_k8s_apimachinery//pkg/util/naming:go_default_library",
+        "@com_github_spf13_pflag//:pflag",
+        "@io_k8s_apimachinery//pkg/util/naming",
     ],
 )
 
 go_test(
-    name = "go_default_test",
+    name = "featuregates_test",
     srcs = ["feature_gate_test.go"],
-    embed = [":go_default_library"],
+    embed = [":featuregates"],
     deps = [
-        "@com_github_spf13_pflag//:go_default_library",
-        "@com_github_stretchr_testify//assert:go_default_library",
+        "@com_github_spf13_pflag//:pflag",
+        "@com_github_stretchr_testify//assert",
     ],
 )
 
