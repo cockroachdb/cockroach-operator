@@ -34,6 +34,7 @@ def install():
     install_opm()
     install_crdb()
     install_openshift()
+    install_aws_kubetest2()
 
     # Install golang.org/x/build as kubernetes/repo-infra requires it for the
     # build-tar bazel target.
@@ -458,4 +459,17 @@ filegroup(
 """,
    )
 
-
+# fetch binaries for aws kubetest2
+def install_aws_kubetest2():
+    http_file(
+        name = "aws-k8s-tester-linux",
+        executable = 1,
+        sha256 = "f6a95feef94ab9a96145fff812eeebae14f974edfead98046351f3098808df54",
+        urls = ["https://github.com/aws/aws-k8s-tester/releases/download/v1.6.1/aws-k8s-tester-v1.6.1-linux-amd64"],
+    )
+    http_file(
+        name = "aws-k8s-tester-darwin",
+        executable = 1,
+        sha256 = "a724288e8f2b87df89c711ed59fa2a09db5ad2b50a35cb3039fa610408b99b32",
+        urls = ["https://github.com/aws/aws-k8s-tester/releases/download/v1.6.1/aws-k8s-tester-v1.6.1-darwin-amd64"],
+    )

@@ -236,6 +236,17 @@ genrule(
     visibility = ["//visibility:public"],
 )
 
+genrule(
+    name = "fetch-aws-k8s-tester",
+    srcs = select({
+        ":darwin": ["@aws-k8s-tester-darwin//file"],
+        ":k8": ["@aws-k8s-tester-linux//file"],
+    }),
+    outs = ["aws-k8s-tester"],
+    cmd = "cp $(SRCS) $@",
+    visibility = ["//visibility:public"],
+)
+
 config_setting(
     name = "k8",
     values = {"host_cpu": "k8"},
