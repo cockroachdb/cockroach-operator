@@ -20,6 +20,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/cockroachdb/cockroach-operator/pkg/testutil"
 	. "github.com/cockroachdb/cockroach-operator/pkg/testutil/env"
 	"github.com/stretchr/testify/require"
 )
@@ -31,46 +32,14 @@ func TestExpandPath(t *testing.T) {
 		"BUILD_WORKSPACE_DIRECTORY": "c",
 	}
 
-	withEnv(env, func() {
+	testutil.WithEnv(env, func() {
 		require.Equal(t, "a/b/c/pkg/test/env/path_test.go", ExpandPath("pkg/test/env/path_test.go"))
 	})
 }
 
 func TestPrependToPath(t *testing.T) {
-	withEnv(map[string]string{"PATH": "/usr/local/bin"}, func() {
+	testutil.WithEnv(map[string]string{"PATH": "/usr/local/bin"}, func() {
 		PrependToPath("hack", "bin")
 		require.Equal(t, "hack/bin:/usr/local/bin", os.Getenv("PATH"))
 	})
-}
-
-func withEnv(env map[string]string, fn func()) {
-	toReset := make(map[string]string)
-	toClear := make([]string, 0)
-
-	for k, v := range env {
-		if oldVal, ok := os.LookupEnv(k); ok {
-			toReset[k] = oldVal
-		} else {
-			toClear = append(toClear, k)
-		}
-
-		if v == "__unset__" {
-			os.Unsetenv(k)
-			continue
-		}
-
-		os.Setenv(k, v)
-	}
-
-	defer func() {
-		for k, v := range toReset {
-			os.Setenv(k, v)
-		}
-
-		for _, k := range toClear {
-			os.Unsetenv(k)
-		}
-	}()
-
-	fn()
 }
