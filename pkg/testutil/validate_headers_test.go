@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package testutil
+package testutil_test
 
 import (
 	"io/ioutil"
@@ -22,6 +22,8 @@ import (
 	"path"
 	"path/filepath"
 	"testing"
+
+	. "github.com/cockroachdb/cockroach-operator/pkg/testutil"
 )
 
 const GOOD_MAKEFILE = `# Copyright 2021 The Cockroach Authors

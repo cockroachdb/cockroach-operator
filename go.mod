@@ -7,6 +7,7 @@ require (
 	github.com/banzaicloud/k8s-objectmatcher v1.3.2
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/cockroachdb/errors v1.8.0
+	github.com/dnaeon/go-vcr v1.0.1
 	github.com/dustin/go-humanize v1.0.0
 	github.com/go-logr/logr v0.3.0
 	github.com/go-logr/zapr v0.2.0
