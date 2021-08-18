@@ -173,7 +173,7 @@ func (d *CockroachNodeDrainer) makeDrainStatusChecker(id uint) func(ctx context.
 		isLive, replicasStr, isDecommissioning := record[8], record[9], record[10]
 
 		d.Logger.V(int(zapcore.InfoLevel)).Info(
-			"draining node do to decommission",
+			"draining node due to decommission",
 			"id", id,
 			"isLive", isLive,
 			"replicas", replicasStr,
