@@ -645,8 +645,8 @@ func getPodLog(
 func RequireNumberOfPVCs(
 	t *testing.T, ctx context.Context, sb testenv.DiffingSandbox, b ClusterBuilder, quantity int,
 ) {
-	var pvcList corev1.PersistentVolumeClaimList
-	require.NoError(t, fetchPVCs(ctx, sb, b, &pvcList))
+	pvcList, err := fetchPVCs(ctx, sb, b)
+	require.Nil(t, err)
 
 	boundPVCCount := 0
 	for _, pvc := range pvcList.Items {
@@ -654,17 +654,14 @@ func RequireNumberOfPVCs(
 			boundPVCCount = boundPVCCount + 1
 		}
 	}
-	t.Logf("WE ARE DOING STUFF %v", boundPVCCount)
 	require.Equal(t, quantity, boundPVCCount)
 }
 
 func fetchPVCs(
-	ctx context.Context,
-	sb testenv.DiffingSandbox,
-	b ClusterBuilder,
-	pvcList *corev1.PersistentVolumeClaimList,
-) error {
+	ctx context.Context, sb testenv.DiffingSandbox, b ClusterBuilder,
+) (*corev1.PersistentVolumeClaimList, error) {
 	cluster := b.Cluster()
+	var pvcList *corev1.PersistentVolumeClaimList
 
 	err := wait.Poll(10*time.Second, 500*time.Second, func() (bool, error) {
 		clientset, err := kubernetes.NewForConfig(sb.Mgr.GetConfig())
@@ -677,17 +674,14 @@ func fetchPVCs(
 		pvcList, err = clientset.CoreV1().PersistentVolumeClaims(cluster.Namespace()).List(ctx, metav1.ListOptions{
 			LabelSelector: metav1.FormatLabelSelector(sts.Spec.Selector),
 		})
-
 		if err != nil {
 			return false, err
 		}
-
 		return true, nil
 	})
 
 	if err != nil {
-		pvcList = nil
-		return err
+		return nil, err
 	}
-	return nil
+	return pvcList, nil
 }
