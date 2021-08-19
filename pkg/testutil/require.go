@@ -582,7 +582,7 @@ func logPods(
 		return err
 	}
 
-	// the LableSelector I thought worked did not
+	// the LabelSelector I thought worked did not
 	// so I just get all of the Pods in a NS
 	options := metav1.ListOptions{
 		//LabelSelector: "app=" + cluster.StatefulSetName(),
