@@ -40,25 +40,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// We use 366 days on certificate lifetimes to at least match X years,
-// otherwise leap years risk putting us just under.
-const defaultCALifetime = 10 * 366 * 24 * time.Hour  // ten years
-const defaultCertLifetime = 5 * 366 * 24 * time.Hour // five years
-
 // Options settable via command-line flags. See below for defaults.
 var caCertificateLifetime time.Duration
 var certificateLifetime time.Duration
 var allowCAKeyReuse bool
 var overwriteFiles bool
 var generatePKCS8Key bool
-
-func initPreFlagsCertDefaults() {
-	caCertificateLifetime = defaultCALifetime
-	certificateLifetime = defaultCertLifetime
-	allowCAKeyReuse = false
-	overwriteFiles = false
-	generatePKCS8Key = false
-}
 
 func newGenerateCert(scheme *runtime.Scheme, cl client.Client, config *rest.Config) Actor {
 
