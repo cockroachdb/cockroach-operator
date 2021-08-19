@@ -29,6 +29,8 @@ import (
 	"testing"
 	"time"
 
+	"k8s.io/client-go/kubernetes"
+
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/database"
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
@@ -44,14 +46,11 @@ import (
 	apiresource "k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/client-go/kubernetes"
 )
 
 // RequireClusterToBeReadyEventuallyTimeout tests to see if a statefulset has started correctly and
 // all of the pods are running.
-func RequireClusterToBeReadyEventuallyTimeout(
-	t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder, timeout time.Duration,
-) {
+func RequireClusterToBeReadyEventuallyTimeout(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder, timeout time.Duration) {
 	cluster := b.Cluster()
 
 	err := wait.Poll(10*time.Second, timeout, func() (bool, error) {
@@ -209,9 +208,7 @@ func fetchStatefulSet(sb testenv.DiffingSandbox, name string) (*appsv1.StatefulS
 	return ss, nil
 }
 
-func fetchPodsInStatefulSet(
-	sb testenv.DiffingSandbox, labels map[string]string,
-) ([]corev1.Pod, error) {
+func fetchPodsInStatefulSet(sb testenv.DiffingSandbox, labels map[string]string) ([]corev1.Pod, error) {
 	var pods corev1.PodList
 
 	if err := sb.List(&pods, labels); err != nil {
@@ -237,9 +234,7 @@ func statefulSetIsReady(ss *appsv1.StatefulSet) bool {
 
 // TODO we are not using this
 
-func RequireDownGradeOptionSet(
-	t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder, version string,
-) {
+func RequireDownGradeOptionSet(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder, version string) {
 	sb.Mgr.GetConfig()
 	podName := fmt.Sprintf("%s-0.%s", b.Cluster().Name(), b.Cluster().Name())
 	conn := &database.DBConnection{
@@ -282,9 +277,7 @@ func RequireDownGradeOptionSet(
 // TODO I do not think this is correct.  Keith mentioned we need to check something else.
 
 // RequireDecommisionNode requires that proper nodes are decommisioned
-func RequireDecommissionNode(
-	t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder, numNodes int32,
-) {
+func RequireDecommissionNode(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder, numNodes int32) {
 	cluster := b.Cluster()
 
 	err := wait.Poll(10*time.Second, 700*time.Second, func() (bool, error) {
@@ -319,9 +312,7 @@ func RequireDecommissionNode(
 	require.NoError(t, err)
 }
 
-func makeDrainStatusChecker(
-	t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder, numNodes uint64,
-) error {
+func makeDrainStatusChecker(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder, numNodes uint64) error {
 	cluster := b.Cluster()
 	cmd := []string{"/cockroach/cockroach", "node", "status", "--decommission", "--format=csv", cluster.SecureMode()}
 	podname := fmt.Sprintf("%s-0", cluster.StatefulSetName())
@@ -402,9 +393,7 @@ func RequireDatabaseToFunction(t *testing.T, sb testenv.DiffingSandbox, b Cluste
 	requireDatabaseToFunction(t, sb, b, true)
 }
 
-func requireDatabaseToFunction(
-	t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder, useSSL bool,
-) {
+func requireDatabaseToFunction(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder, useSSL bool) {
 	sb.Mgr.GetConfig()
 	podName := fmt.Sprintf("%s-0.%s", b.Cluster().Name(), b.Cluster().Name())
 
@@ -491,9 +480,7 @@ func getCount(t *testing.T, rows *sql.Rows) (count int) {
 }
 
 // RequirePVCToResize checks that the PVCs are resized correctly
-func RequirePVCToResize(
-	t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder, quantity apiresource.Quantity,
-) {
+func RequirePVCToResize(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder, quantity apiresource.Quantity) {
 	cluster := b.Cluster()
 
 	// TODO rewrite this
@@ -523,14 +510,8 @@ func RequirePVCToResize(
 }
 
 // test to see if all PVCs are resized
-func resizedPVCs(
-	ctx context.Context,
-	sts *appsv1.StatefulSet,
-	cluster *resource.Cluster,
-	clientset *kubernetes.Clientset,
-	t *testing.T,
-	quantity apiresource.Quantity,
-) (bool, error) {
+func resizedPVCs(ctx context.Context, sts *appsv1.StatefulSet, cluster *resource.Cluster,
+	clientset *kubernetes.Clientset, t *testing.T, quantity apiresource.Quantity) (bool, error) {
 
 	prefixes := make([]string, len(sts.Spec.VolumeClaimTemplates))
 	pvcsToKeep := make(map[string]bool, int(*sts.Spec.Replicas)*len(sts.Spec.VolumeClaimTemplates))
@@ -569,13 +550,8 @@ func resizedPVCs(
 	return true, nil
 }
 
-func logPods(
-	ctx context.Context,
-	sts *appsv1.StatefulSet,
-	cluster *resource.Cluster,
-	sb testenv.DiffingSandbox,
-	t *testing.T,
-) error {
+func logPods(ctx context.Context, sts *appsv1.StatefulSet, cluster *resource.Cluster,
+	sb testenv.DiffingSandbox, t *testing.T) error {
 	// create a new clientset to talk to k8s
 	clientset, err := kubernetes.NewForConfig(sb.Mgr.GetConfig())
 	if err != nil {
@@ -614,9 +590,7 @@ func logPods(
 	return nil
 }
 
-func getPodLog(
-	ctx context.Context, podName string, namespace string, clientset kubernetes.Interface,
-) (string, error) {
+func getPodLog(ctx context.Context, podName string, namespace string, clientset kubernetes.Interface) (string, error) {
 
 	// This func will print out the pod logs
 	// This is code that is used by version checker and we should probably refactor
@@ -642,9 +616,7 @@ func getPodLog(
 }
 
 // RequireNumberOfPVCs checks that the number of PVCs is as specified
-func RequireNumberOfPVCs(
-	t *testing.T, ctx context.Context, sb testenv.DiffingSandbox, b ClusterBuilder, quantity int,
-) {
+func RequireNumberOfPVCs(t *testing.T, ctx context.Context, sb testenv.DiffingSandbox, b ClusterBuilder, quantity int) {
 	pvcList, err := fetchPVCs(ctx, sb, b)
 	require.Nil(t, err)
 
@@ -657,9 +629,7 @@ func RequireNumberOfPVCs(
 	require.Equal(t, quantity, boundPVCCount)
 }
 
-func fetchPVCs(
-	ctx context.Context, sb testenv.DiffingSandbox, b ClusterBuilder,
-) (*corev1.PersistentVolumeClaimList, error) {
+func fetchPVCs(ctx context.Context, sb testenv.DiffingSandbox, b ClusterBuilder) (*corev1.PersistentVolumeClaimList, error) {
 	cluster := b.Cluster()
 	var pvcList *corev1.PersistentVolumeClaimList
 
