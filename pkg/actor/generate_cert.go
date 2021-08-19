@@ -40,15 +40,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const defaultKeySize = 2048
-
 // We use 366 days on certificate lifetimes to at least match X years,
 // otherwise leap years risk putting us just under.
 const defaultCALifetime = 10 * 366 * 24 * time.Hour  // ten years
 const defaultCertLifetime = 5 * 366 * 24 * time.Hour // five years
 
 // Options settable via command-line flags. See below for defaults.
-var keySize int
 var caCertificateLifetime time.Duration
 var certificateLifetime time.Duration
 var allowCAKeyReuse bool
@@ -56,7 +53,6 @@ var overwriteFiles bool
 var generatePKCS8Key bool
 
 func initPreFlagsCertDefaults() {
-	keySize = defaultKeySize
 	caCertificateLifetime = defaultCALifetime
 	certificateLifetime = defaultCertLifetime
 	allowCAKeyReuse = false
@@ -241,7 +237,6 @@ func (rc *generateCert) generateCA(ctx context.Context, log logr.Logger, cluster
 		security.CreateCAPair(
 			rc.CertsDir,
 			rc.CAKey,
-			keySize,
 			caCertificateLifetime,
 			allowCAKeyReuse,
 			overwriteFiles),
@@ -309,7 +304,6 @@ func (rc *generateCert) generateNodeCert(ctx context.Context, log logr.Logger, c
 		security.CreateNodePair(
 			rc.CertsDir,
 			rc.CAKey,
-			keySize,
 			certificateLifetime,
 			overwriteFiles,
 			hosts),
@@ -378,7 +372,6 @@ func (rc *generateCert) generateClientCert(ctx context.Context, log logr.Logger,
 		security.CreateClientPair(
 			rc.CertsDir,
 			rc.CAKey,
-			keySize,
 			certificateLifetime,
 			overwriteFiles,
 			*u,
