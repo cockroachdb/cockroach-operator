@@ -34,19 +34,19 @@ type CrdbClusterSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Number of nodes",xDescriptors="urn:alm:descriptor:com.tectonic.ui:podCount"
 	// +required
 	Nodes int32 `json:"nodes"`
-	// (Required) Container image information
+	// Container image information
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Cockroach Database Image"
-	// +optional
+	// +required
 	Image PodImage `json:"image"`
 	// (Optional) The database port (`--port` CLI parameter when starting the service)
 	// Default: 26258
 	// +optional
 	GRPCPort *int32 `json:"grpcPort,omitempty"`
-	// The web UI port (`--http-port` CLI parameter when starting the service)
+	// (Optional) The web UI port (`--http-port` CLI parameter when starting the service)
 	// Default: 8080
 	// +optional
 	HTTPPort *int32 `json:"httpPort,omitempty"`
-	// The SQL Port number
+	// (Optional) The SQL Port number
 	// Default: 26257
 	// +optional
 	SQLPort *int32 `json:"sqlPort,omitempty"`
@@ -89,23 +89,21 @@ type CrdbClusterSpec struct {
 	// Default: (not specified)
 	// +optional
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
-	// (Required) Database disk storage configuration
+	// Database disk storage configuration
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Data Store"
 	// +required
-	DataStore Volume `json:"dataStore,omitempty"`
+	DataStore Volume `json:"dataStore"`
 	// (Optional) CockroachDBVersion sets the explicit version of the cockroachDB image
 	// Default: ""
 	// +optional
 	CockroachDBVersion string `json:"cockroachDBVersion,omitempty"`
-	// (Optional) PodEnvVariables is a slice of Environment Variables that are added to the pods
-	// Default: ""
+	// (Optional) PodEnvVariables is a slice of environment variables that are added to the pods
+	// Default: (empty list)
 	// +optional
 	PodEnvVariables []corev1.EnvVar `json:"podEnvVariables,omitempty"`
-
-	// If specified, the pod's scheduling constraints
+	// (Optional) If specified, the pod's scheduling constraints
 	// +optional
 	Affinity *corev1.Affinity `json:"affinity,omitempty"`
-
 	// (Optional) Additional custom resource labels that are added to all resources
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Map of additional custom labels"
 	// +optional
@@ -139,14 +137,14 @@ type CrdbClusterStatus struct {
 // ClusterCondition represents cluster status as it is perceived by
 // the operator
 type ClusterCondition struct {
-	// +required
 	// Type/Name of the condition
+	// +required
 	Type ClusterConditionType `json:"type"`
-	// +required
 	// Condition status: True, False or Unknown
-	Status metav1.ConditionStatus `json:"status"`
 	// +required
+	Status metav1.ConditionStatus `json:"status"`
 	// The time when the condition was updated
+	// +required
 	LastTransitionTime metav1.Time `json:"lastTransitionTime"`
 }
 
@@ -154,17 +152,17 @@ type ClusterCondition struct {
 // the operator
 // +k8s:deepcopy-gen=true
 type ClusterAction struct {
-	// +required
 	// Type/Name of the action
+	// +required
 	Type ActionType `json:"type"`
+	// (Optional) Message related to the status of the action
 	// +optional
-	// Message related to the status of the action
-	Message string `json:"message"`
-	// +required
+	Message string `json:"message,omitempty"`
 	// Action status: Failed, Finished or Unknown
-	Status string `json:"status"`
 	// +required
+	Status string `json:"status"`
 	// The time when the condition was updated
+	// +required
 	LastTransitionTime metav1.Time `json:"lastTransitionTime"`
 }
 
@@ -198,11 +196,11 @@ type PodImage struct {
 	// For instance: cockroachdb/cockroachdb:v20.1
 	// +required
 	Name string `json:"name,omitempty"`
-	// PullPolicy for the image, which defaults to IfNotPresent.
-	// +required
+	// (Optional) PullPolicy for the image, which defaults to IfNotPresent.
+	// Default: IfNotPresent
+	// +optional
 	PullPolicyName *corev1.PullPolicy `json:"pullPolicy,omitempty"`
-	// Secret name containing the dockerconfig to use for a
-	// registry that requires authentication. The secret
+	// (Optional) Secret name containing the dockerconfig to use for a registry that requires authentication. The secret
 	// must be configured first by the user.
 	// +optional
 	PullSecret *string `json:"pullSecret,omitempty"`
@@ -215,13 +213,13 @@ type PodImage struct {
 // Volume defined storage configuration for the container with the Database.
 // Only one of the fields should set
 type Volume struct {
-	// Directory from the host node's filesystem
+	// (Optional) Directory from the host node's filesystem
 	// +optional
 	HostPath *corev1.HostPathVolumeSource `json:"hostPath,omitempty"`
-	// Persistent volume to use
+	// (Optional) Persistent volume to use
 	// +optional
 	VolumeClaim *VolumeClaim `json:"pvc,omitempty"`
-	// SupportsAutoResize marks that a PVC will resize without restarting the entire cluster
+	// (Optional) SupportsAutoResize marks that a PVC will resize without restarting the entire cluster
 	// Default: false
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="PVC Supports Auto Resizing",xDescriptors="urn:alm:descriptor:com.tectonic.ui:booleanSwitch"
 	// +optional
@@ -237,10 +235,10 @@ type Volume struct {
 type VolumeClaim struct {
 	// PVC to request a new persistent volume
 	// +required
-	PersistentVolumeClaimSpec corev1.PersistentVolumeClaimSpec `json:"spec,omitempty"`
+	PersistentVolumeClaimSpec corev1.PersistentVolumeClaimSpec `json:"spec"`
 	// Existing PVC in the same namespace
 	// +required
-	PersistentVolumeSource corev1.PersistentVolumeClaimVolumeSource `json:"source,omitempty"`
+	PersistentVolumeSource corev1.PersistentVolumeClaimVolumeSource `json:"source"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
