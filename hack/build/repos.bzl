@@ -960,6 +960,15 @@ def _go_dependencies():
         version = "v0.2.2",
     )
     go_repository(
+        name = "com_github_data_dog_go_sqlmock",
+        build_file_generation = "on",
+        build_file_proto_mode = "disable",
+        importpath = "github.com/DATA-DOG/go-sqlmock",
+        sum = "h1:Shsta01QNfFxHCfpW6YH2STWB0MudeXXEWMr20OEh60=",
+        version = "v1.5.0",
+    )
+
+    go_repository(
         name = "com_github_datadog_zstd",
         build_file_generation = "on",
         build_file_proto_mode = "disable",
@@ -1561,6 +1570,9 @@ def _go_dependencies():
         sum = "h1:wDJmvq38kDhkVxi50ni9ykkdUr1PKgqKOoi01fa0Mdk=",
         version = "v0.9.0",
     )
+
+    # end manual updates
+
     go_repository(
         name = "com_github_go_lintpack_lintpack",
         build_file_generation = "on",
@@ -1569,8 +1581,6 @@ def _go_dependencies():
         sum = "h1:DI5mA3+eKdWeJ40nU4d6Wc26qmdG8RCi/btYq0TuRN0=",
         version = "v0.5.2",
     )
-
-    # end manual updates
 
     go_repository(
         name = "com_github_go_logfmt_logfmt",
