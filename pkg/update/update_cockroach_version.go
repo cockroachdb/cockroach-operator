@@ -27,6 +27,7 @@ import (
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/cenkalti/backoff"
+	"github.com/cockroachdb/cockroach-operator/pkg/clustersql"
 	"github.com/cockroachdb/cockroach-operator/pkg/healthchecker"
 	"github.com/go-logr/logr"
 	"github.com/lib/pq"
@@ -256,7 +257,7 @@ func kindAndCheckPreserveDowngradeSetting(
 }
 
 func preserveDowngradeSetting(ctx context.Context, db *sql.DB) (*semver.Version, error) {
-	preserveDowngradeSetting, err := getClusterSetting(ctx, db, "cluster.preserve_downgrade_option")
+	preserveDowngradeSetting, err := clustersql.GetClusterSetting(ctx, db, "cluster.preserve_downgrade_option")
 	if err != nil {
 		return nil, errors.Wrapf(err, "getting preserve downgrade option failed")
 	}
@@ -279,7 +280,7 @@ func setDowngradeOption(ctx context.Context, wantVersion *semver.Version, curren
 	if !validPreserveDowngradeOptionSetting.MatchString(newDowngradeOption) {
 		return fmt.Errorf("%s is not a valid preserve downgrade option setting", newDowngradeOption)
 	}
-	if err := setClusterSetting(ctx, db, PreserveDowngradeOptionClusterSetting, newDowngradeOption); err != nil {
+	if err := clustersql.SetClusterSetting(ctx, db, PreserveDowngradeOptionClusterSetting, newDowngradeOption); err != nil {
 		return errors.Wrapf(err, "setting preserve downgrade option failed")
 	}
 
@@ -337,23 +338,6 @@ func grantRoleToUser(ctx context.Context, db *sql.DB, role roleMembership, usern
 	}
 	if _, err := db.ExecContext(ctx, query); err != nil {
 		return err
-	}
-	return nil
-}
-
-func getClusterSetting(ctx context.Context, db *sql.DB, name string) (string, error) {
-	r := db.QueryRowContext(ctx, fmt.Sprintf("SHOW CLUSTER SETTING %s", name))
-	var value string
-	if err := r.Scan(&value); err != nil {
-		return "", errors.Wrapf(err, "failed to get %s", name)
-	}
-	return value, nil
-}
-
-func setClusterSetting(ctx context.Context, db *sql.DB, name string, value string) error {
-	sqlStr := fmt.Sprintf("SET CLUSTER SETTING %s = $1", name)
-	if _, err := db.Exec(sqlStr, value); err != nil {
-		return errors.Wrapf(err, "failed to set %s to %s", name, value)
 	}
 	return nil
 }

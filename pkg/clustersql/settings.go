@@ -27,21 +27,23 @@ import (
 	"github.com/dustin/go-humanize"
 )
 
+// ErrInvalidClusterSettingName is returned when the supplied setting name isn't valid.
+var ErrInvalidClusterSettingName = fmt.Errorf("only letters, numbers, underscores, and periods are allowed")
+
 // Cluster names have letters, underscores, and periods. See here for more:
 // https://www.cockroachlabs.com/docs/stable/cluster-settings.html
 var validClusterSettingNameRE = regexp.MustCompile(`^[a-z_.\d]+$`)
 
-//IsValidClusterSettingName func
-func IsValidClusterSettingName(name string) error {
+func validateSettingName(name string) error {
 	if !validClusterSettingNameRE.MatchString(name) {
-		return fmt.Errorf("%s not a valid cluster setting, only letters, underscores, and periods allowed", name)
+		return errors.Wrapf(ErrInvalidClusterSettingName, "%s is not a valid cluster setting", name)
 	}
 	return nil
 }
 
 //GetClusterSetting func
 func GetClusterSetting(ctx context.Context, db *sql.DB, name string) (string, error) {
-	if err := IsValidClusterSettingName(name); err != nil {
+	if err := validateSettingName(name); err != nil {
 		return "", err
 	}
 
@@ -55,7 +57,7 @@ func GetClusterSetting(ctx context.Context, db *sql.DB, name string) (string, er
 
 // SetClusterSetting func
 func SetClusterSetting(ctx context.Context, db *sql.DB, name, value string) error {
-	if err := IsValidClusterSettingName(name); err != nil {
+	if err := validateSettingName(name); err != nil {
 		return err
 	}
 
@@ -70,7 +72,7 @@ func SetClusterSetting(ctx context.Context, db *sql.DB, name, value string) erro
 // reasonably take to move from one node to another.
 // This duration does not account for IOPs or cluster load. If used as a timeout
 // a multiple of this value should be used.
-func RangeMoveDuration(ctx context.Context, db *sql.DB) (time.Duration, error) {
+func RangeMoveDuration(ctx context.Context, db *sql.DB, zones ...Zone) (time.Duration, error) {
 	rebalanceRate, err := GetClusterSetting(ctx, db, "kv.snapshot_rebalance.max_rate")
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to get kv.snapshot_rebalance.max_rate")
@@ -97,9 +99,11 @@ func RangeMoveDuration(ctx context.Context, db *sql.DB) (time.Duration, error) {
 		minMoveSpeed = rebalanceBytes
 	}
 
-	zones, err := ZoneConfigs(ctx, db)
-	if err != nil {
-		return 0, errors.Wrap(err, "failed to retrieve zone configs")
+	if len(zones) == 0 {
+		zones, err = ZoneConfigs(ctx, db)
+		if err != nil {
+			return 0, errors.Wrap(err, "failed to retrieve zone configs")
+		}
 	}
 
 	// Find the largest possible range size
@@ -117,21 +121,4 @@ func RangeMoveDuration(ctx context.Context, db *sql.DB) (time.Duration, error) {
 	// Calculate the kindest (values wise, not respecting cluster load) possible duration
 	// that it should take for a range to move from one node to another
 	return time.Duration(maxRangeSize/minMoveSpeed) * time.Second, nil
-}
-
-func getClusterSetting(ctx context.Context, db *sql.DB, name string) (string, error) {
-	r := db.QueryRowContext(ctx, fmt.Sprintf("SHOW CLUSTER SETTING %s", name))
-	var value string
-	if err := r.Scan(&value); err != nil {
-		return "", errors.Wrapf(err, "failed to get %s", name)
-	}
-	return value, nil
-}
-
-func setClusterSetting(ctx context.Context, db *sql.DB, name string, value string) error {
-	sqlStr := fmt.Sprintf("SET CLUSTER SETTING %s = $1", name)
-	if _, err := db.Exec(sqlStr, value); err != nil {
-		return errors.Wrapf(err, "failed to set %s to %s", name, value)
-	}
-	return nil
 }

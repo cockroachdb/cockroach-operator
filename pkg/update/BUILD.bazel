@@ -12,6 +12,7 @@ go_library(
     importpath = "github.com/cockroachdb/cockroach-operator/pkg/update",
     visibility = ["//visibility:public"],
     deps = [
+        "//pkg/clustersql:go_default_library",
         "//pkg/healthchecker:go_default_library",
         "//pkg/kube:go_default_library",
         "//pkg/resource:go_default_library",
