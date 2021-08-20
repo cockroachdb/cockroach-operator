@@ -480,74 +480,56 @@ func getCount(t *testing.T, rows *sql.Rows) (count int) {
 }
 
 // RequirePVCToResize checks that the PVCs are resized correctly
-func RequirePVCToResize(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder, quantity apiresource.Quantity) {
-	cluster := b.Cluster()
+func RequirePVCToResize(t *testing.T, ctx context.Context, sb testenv.DiffingSandbox, b ClusterBuilder, quantity apiresource.Quantity) {
+	pvcsToKeep, err := fetchPVCsToKeep(ctx, sb, b)
+	require.Nil(t, err)
 
-	// TODO rewrite this
+	pvcList, err := fetchPVCs(ctx, sb, b)
+	require.Nil(t, err)
+
+	for _, pvc := range pvcList.Items {
+		t.Logf("checking pvc %s", pvc.Name)
+		// Resize PVCs that are still in use
+		if pvcsToKeep[pvc.Name] {
+			require.True(t, pvc.Spec.Resources.Requests.Storage().Equal(quantity))
+		}
+	}
+}
+
+func fetchPVCsToKeep(ctx context.Context, sb testenv.DiffingSandbox, b ClusterBuilder) (map[string]bool, error) {
+	cluster := b.Cluster()
+	var prefixes []string
+	var pvcsToKeep map[string]bool
+
 	err := wait.Poll(10*time.Second, 500*time.Second, func() (bool, error) {
 		ss, err := fetchStatefulSet(sb, cluster.StatefulSetName())
 		if err != nil {
 			return false, err
 		}
-
 		if ss == nil {
-			t.Logf("stateful set is not found")
 			return false, nil
 		}
-
 		if !statefulSetIsReady(ss) {
 			return false, nil
 		}
-		clientset, err := kubernetes.NewForConfig(sb.Mgr.GetConfig())
-		require.NoError(t, err)
 
-		resized, err := resizedPVCs(context.TODO(), ss, b.Cluster(), clientset, t, quantity)
-		require.NoError(t, err)
-
-		return resized, nil
-	})
-	require.NoError(t, err)
-}
-
-// test to see if all PVCs are resized
-func resizedPVCs(ctx context.Context, sts *appsv1.StatefulSet, cluster *resource.Cluster,
-	clientset *kubernetes.Clientset, t *testing.T, quantity apiresource.Quantity) (bool, error) {
-
-	prefixes := make([]string, len(sts.Spec.VolumeClaimTemplates))
-	pvcsToKeep := make(map[string]bool, int(*sts.Spec.Replicas)*len(sts.Spec.VolumeClaimTemplates))
-	for j, pvct := range sts.Spec.VolumeClaimTemplates {
-		prefixes[j] = fmt.Sprintf("%s-%s-", pvct.Name, sts.Name)
-
-		for i := int32(0); i < *sts.Spec.Replicas; i++ {
-			name := fmt.Sprintf("%s-%s-%d", pvct.Name, sts.Name, i)
-			pvcsToKeep[name] = true
-		}
-	}
-
-	selector, err := metav1.LabelSelectorAsSelector(sts.Spec.Selector)
-	if err != nil {
-		return false, err
-	}
-
-	pvcs, err := clientset.CoreV1().PersistentVolumeClaims(cluster.Namespace()).List(ctx, metav1.ListOptions{
-		LabelSelector: selector.String(),
-	})
-
-	if err != nil {
-		return false, err
-	}
-
-	for _, pvc := range pvcs.Items {
-		t.Logf("checking pvc %s", pvc.Name)
-		// Resize PVCs that are still in use
-		if pvcsToKeep[pvc.Name] {
-			if !pvc.Spec.Resources.Requests.Storage().Equal(quantity) {
-				return false, nil
+		prefixes = make([]string, len(ss.Spec.VolumeClaimTemplates))
+		pvcsToKeep = make(map[string]bool, int(*ss.Spec.Replicas)*len(ss.Spec.VolumeClaimTemplates))
+		for i, pvct := range ss.Spec.VolumeClaimTemplates {
+			prefixes[i] = fmt.Sprintf("%s-%s-", pvct.Name, ss.Name)
+			for j := int32(0); j < *ss.Spec.Replicas; j++ {
+				name := fmt.Sprintf("%s-%s-%d", pvct.Name, ss.Name, j)
+				pvcsToKeep[name] = true
 			}
 		}
-	}
 
-	return true, nil
+		return true, nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+	return pvcsToKeep, nil
 }
 
 func logPods(ctx context.Context, sts *appsv1.StatefulSet, cluster *resource.Cluster,
