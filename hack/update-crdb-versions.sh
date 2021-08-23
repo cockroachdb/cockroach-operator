@@ -49,6 +49,6 @@ CrdbVersions:
 EOF
 
 # Skip unsupported versions and the latest tag
-for version in $(curl $URL | jq -r '.data[] .repositories[] .tags[] .name' | grep -v ^v19 | grep -v latest | grep -v ubi$ | sort --version-sort); do
+for version in $(curl -s $URL | jq -r '.data[] .repositories[] .tags[] .name' | grep -v ^v19 | grep -v latest | grep -v ubi$ | sort --version-sort); do
     echo "  - $version" >> crdb-versions.yaml
 done
