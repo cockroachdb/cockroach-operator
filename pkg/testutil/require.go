@@ -447,9 +447,6 @@ func fetchPVCsToKeep(ctx context.Context, sb testenv.DiffingSandbox, b ClusterBu
 		if err != nil {
 			return false, err
 		}
-		if ss == nil {
-			return false, nil
-		}
 		if !statefulSetIsReady(ss) {
 			return false, nil
 		}
