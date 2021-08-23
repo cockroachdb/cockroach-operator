@@ -11,13 +11,15 @@ The CockroachDB Kubernetes Operator deploys CockroachDB on a Kubernetes cluster.
 
 GKE Nightly: [![GKE Nightly](https://teamcity.cockroachdb.com/guestAuth/app/rest/builds/buildType:Cockroach_CockroachOperator_Nightlies_GkeNightly/statusIcon)](https://teamcity.cockroachdb.com/viewType.html?buildTypeId=Cockroach_CockroachOperator_Nightlies_GkeNightly)
 
+OpenShift Nightly: [![OpenShift Nightly](https://teamcity.cockroachdb.com/guestAuth/app/rest/builds/buildType:Cockroach_CockroachOperator_Nightlies_OpenShiftNightly/statusIcon)](https://teamcity.cockroachdb.com/viewType.html?buildTypeId=Cockroach_CockroachOperator_Nightlies_OpenShiftNightly)
+
 ## Limitations
 
 - The Operator currently runs on GKE. VMware Tanzu, EKS, and AKS have not been tested.
 - The Operator does not yet support [multiple Kubernetes clusters for multi-region deployments](https://www.cockroachlabs.com/docs/stable/orchestrate-cockroachdb-with-kubernetes-multi-cluster.html#eks).
 - [Migrating from a deployment using the Helm Chart to the Operator](https://github.com/cockroachdb/cockroach-operator/issues/140) has not been defined or tested.
 - The Operator does not yet [automatically create an ingress object](https://github.com/cockroachdb/cockroach-operator/issues/76).
-- The Operator has not been tested with [Istio](https://istio.io/).  
+- The Operator has not been tested with [Istio](https://istio.io/).
 
 ## Prerequisites
 

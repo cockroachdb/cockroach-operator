@@ -17,6 +17,7 @@ limitations under the License.
 package pvcresize
 
 import (
+	"context"
 	"flag"
 	"os"
 	"testing"
@@ -54,7 +55,6 @@ func TestMain(m *testing.M) {
 }
 
 func TestPVCResize(t *testing.T) {
-
 	// Testing PVCResize
 	if !*pvc {
 		t.Skip("platform does not support pvc resize")
@@ -90,7 +90,7 @@ func TestPVCResize(t *testing.T) {
 				require.NoError(t, sb.Update(current))
 				t.Log("updated CR")
 
-				testutil.RequirePVCToResize(t, sb, builder, quantity)
+				testutil.RequirePVCToResize(t, context.TODO(), sb, builder, quantity)
 				t.Log("here resized")
 			},
 		},

@@ -18,7 +18,6 @@ package security
 
 import (
 	"fmt"
-	"os"
 	"os/exec"
 	"time"
 
@@ -35,11 +34,6 @@ import (
 type SQLUsername struct {
 	U string
 }
-
-const (
-	keyFileMode  = 0600
-	certFileMode = 0644
-)
 
 // PemUsage indicates the purpose of a given certificate.
 type PemUsage uint32
@@ -64,14 +58,6 @@ const (
 	ClientPem
 	// TenantClientPem describes a SQL tenant client certificate.
 	TenantClientPem
-
-	// Maximum allowable permissions.
-	maxKeyPermissions os.FileMode = 0700
-	// Filename extenstions.
-	certExtension = `.crt`
-	keyExtension  = `.key`
-	// Certificate directory permissions.
-	defaultCertsDirPerm = 0700
 )
 
 // The following constants are used to run the crdb binary
@@ -89,12 +75,11 @@ const (
 // CreateCAPair creates a general CA certificate and associated key.
 func CreateCAPair(
 	certsDir, caKeyPath string,
-	keySize int,
 	lifetime time.Duration,
 	allowKeyReuse bool,
 	overwrite bool,
 ) error {
-	return createCACertAndKey(certsDir, caKeyPath, CAPem, keySize, lifetime, allowKeyReuse, overwrite)
+	return createCACertAndKey(certsDir, caKeyPath, CAPem, lifetime, allowKeyReuse, overwrite)
 }
 
 // This again is a copy of code used in the crdb hence why we are using the switch statement
@@ -109,7 +94,7 @@ func CreateCAPair(
 // It should be one of:
 // - ca.crt: the general CA certificate
 // - ca-client.crt: the CA certificate to verify client certificates
-func createCACertAndKey(certsDir, caKeyPath string, caType PemUsage, keySize int, lifetime time.Duration, allowKeyReuse bool, overwrite bool) error {
+func createCACertAndKey(certsDir, caKeyPath string, caType PemUsage, lifetime time.Duration, allowKeyReuse bool, overwrite bool) error {
 	if len(caKeyPath) == 0 {
 		return errors.New("the path to the CA key is required")
 	}
@@ -147,7 +132,7 @@ func createCACertAndKey(certsDir, caKeyPath string, caType PemUsage, keySize int
 // CreateNodePair creates a node key and certificate.
 // The CA cert and key must load properly. If multiple certificates
 // exist in the CA cert, the first one is used.
-func CreateNodePair(certsDir, caKeyPath string, keySize int, lifetime time.Duration, overwrite bool, hosts []string) error {
+func CreateNodePair(certsDir, caKeyPath string, lifetime time.Duration, overwrite bool, hosts []string) error {
 	if len(caKeyPath) == 0 {
 		return errors.New("the path to the CA key is required")
 	}
@@ -173,7 +158,6 @@ func CreateNodePair(certsDir, caKeyPath string, keySize int, lifetime time.Durat
 // If wantPKCS8Key is true, the private key in PKCS#8 encoding is written as well.
 func CreateClientPair(
 	certsDir, caKeyPath string,
-	keySize int,
 	lifetime time.Duration,
 	overwrite bool,
 	user SQLUsername,

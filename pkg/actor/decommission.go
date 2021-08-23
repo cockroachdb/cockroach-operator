@@ -68,7 +68,7 @@ func (d decommission) Handles(conds []api.ClusterCondition) bool {
 func (d decommission) Act(ctx context.Context, cluster *resource.Cluster) error {
 
 	log := d.log.WithValues("CrdbCluster", cluster.ObjectKey())
-	log.V(DEBUGLEVEL).Info("check decommission oportunities")
+	log.V(DEBUGLEVEL).Info("check decommission opportunities")
 	//we are not running decommission logic if a restart must be done
 	restartType := cluster.GetAnnotationRestartType()
 	if restartType != "" {
@@ -101,7 +101,7 @@ func (d decommission) Act(ctx context.Context, cluster *resource.Cluster) error 
 		log.Error(err, "We cannot decommission if there are less than 3 nodes", "nodes", nodes)
 		return err
 	}
-	log.Info("replicas decommisioning", "status.CurrentReplicas", status.CurrentReplicas, "expected", cluster.Spec().Nodes)
+	log.Info("replicas decommissioning", "status.CurrentReplicas", status.CurrentReplicas, "expected", cluster.Spec().Nodes)
 	if status.CurrentReplicas <= cluster.Spec().Nodes {
 		return nil
 	}
@@ -118,7 +118,7 @@ func (d decommission) Act(ctx context.Context, cluster *resource.Cluster) error 
 		log.V(DEBUGLEVEL).Info("operator is running inside of kubernetes, connecting to service for db connection")
 	} else {
 		serviceName = fmt.Sprintf("%s-0.%s.%s", cluster.Name(), cluster.Name(), cluster.Namespace())
-		log.V(DEBUGLEVEL).Info("operator is NOT inside of kubernetes, connnecting to pod ordinal zero for db connection")
+		log.V(DEBUGLEVEL).Info("operator is NOT inside of kubernetes, connecting to pod ordinal zero for db connection")
 	}
 
 	// The connection needs to use the discovery service name because of the
@@ -171,8 +171,8 @@ func (d decommission) Act(ctx context.Context, cluster *resource.Cluster) error 
 		PVCPruner: &pvcPruner,
 	}
 	if err := scaler.EnsureScale(ctx, nodes, *cluster.Spec().GRPCPort, utilfeature.DefaultMutableFeatureGate.Enabled(features.AutoPrunePVC)); err != nil {
-		/// now check if the decommisiionStaleErr and update status
-		log.Error(err, "decomission failed")
+		/// now check if the decommissionStaleErr and update status
+		log.Error(err, "decommission failed")
 		cluster.SetFalse(api.DecommissionCondition)
 		CancelLoop(ctx)
 		return err
