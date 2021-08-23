@@ -136,7 +136,7 @@ func checkPodsAreUp(podLabels *K8sPodLabels, clientset *kubernetes.Clientset) er
 		if err != nil {
 			return err
 		}
-		klog.Info(label + " is runnning")
+		klog.Info(label + " is running")
 	}
 
 	return nil

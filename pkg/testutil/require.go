@@ -499,7 +499,7 @@ func logPods(ctx context.Context, sts *appsv1.StatefulSet, cluster *resource.Clu
 		return err
 	}
 
-	// the LableSelector I thought worked did not
+	// the LabelSelector I thought worked did not
 	// so I just get all of the Pods in a NS
 	options := metav1.ListOptions{
 		//LabelSelector: "app=" + cluster.StatefulSetName(),
@@ -533,38 +533,41 @@ func logPods(ctx context.Context, sts *appsv1.StatefulSet, cluster *resource.Clu
 
 // RequireNumberOfPVCs checks that the correct number of PVCs are claimed
 func RequireNumberOfPVCs(t *testing.T, ctx context.Context, sb testenv.DiffingSandbox, b ClusterBuilder, quantity int) {
-	cluster := b.Cluster()
-	var boundPVCCount = 0
+	pvcList, err := fetchPVCs(ctx, sb, b)
+	require.Nil(t, err)
 
-	// TODO rewrite this
+	boundPVCCount := 0
+	for _, pvc := range pvcList.Items {
+		if pvc.Status.Phase == corev1.ClaimBound {
+			boundPVCCount = boundPVCCount + 1
+		}
+	}
+	require.Equal(t, quantity, boundPVCCount)
+}
+
+func fetchPVCs(ctx context.Context, sb testenv.DiffingSandbox, b ClusterBuilder) (*corev1.PersistentVolumeClaimList, error) {
+	cluster := b.Cluster()
+	var pvcList *corev1.PersistentVolumeClaimList
+
 	err := wait.Poll(10*time.Second, 500*time.Second, func() (bool, error) {
 		clientset, err := kubernetes.NewForConfig(sb.Mgr.GetConfig())
-		require.NoError(t, err)
+		if err != nil {
+			return false, err
+		}
 
 		sts, err := fetchStatefulSet(sb, cluster.StatefulSetName())
 
-		selector, err := metav1.LabelSelectorAsSelector(sts.Spec.Selector)
-		if err != nil {
-			return false, err
-		}
-
-		pvcs, err := clientset.CoreV1().PersistentVolumeClaims(cluster.Namespace()).List(ctx, metav1.ListOptions{
-			LabelSelector: selector.String(),
+		pvcList, err = clientset.CoreV1().PersistentVolumeClaims(cluster.Namespace()).List(ctx, metav1.ListOptions{
+			LabelSelector: metav1.FormatLabelSelector(sts.Spec.Selector),
 		})
-
 		if err != nil {
 			return false, err
 		}
-
-		for _, pvc := range pvcs.Items {
-			if pvc.Status.Phase == corev1.ClaimBound {
-				boundPVCCount = boundPVCCount + 1
-			}
-		}
-
 		return true, nil
 	})
-	require.NoError(t, err)
 
-	require.Equal(t, quantity, boundPVCCount)
+	if err != nil {
+		return nil, err
+	}
+	return pvcList, nil
 }
