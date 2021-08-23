@@ -298,14 +298,6 @@ func (b StatefulSetBuilder) MakeContainers() []corev1.Container {
 	}
 }
 
-func (b StatefulSetBuilder) secureMode() string {
-	if b.Spec().TLSEnabled {
-		return " --certs-dir=/cockroach/cockroach-certs/"
-	}
-
-	return " --insecure"
-}
-
 func (b StatefulSetBuilder) probeScheme() corev1.URIScheme {
 	if b.Spec().TLSEnabled {
 		return corev1.URISchemeHTTPS

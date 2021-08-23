@@ -28,7 +28,6 @@ import (
 	"github.com/gosimple/slug"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -69,7 +68,6 @@ type Cluster struct {
 	Fetcher
 
 	cr       *api.CrdbCluster
-	scheme   *runtime.Scheme
 	initTime metav1.Time
 }
 

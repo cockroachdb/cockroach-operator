@@ -34,14 +34,6 @@ import (
 )
 
 const (
-	// The default maximum amount of time to wait between when a pod has been
-	// updated and when it is safe to proceed to the next pod.
-	defaultPodUpdateTimeout = 5 * time.Minute
-
-	// The default maximum amount of time to wait between polling attempts when
-	// checking if we're okay to proceed with the update.
-	defaultPodMaxPollingInterval = 5 * time.Second
-
 	PreserveDowngradeOptionClusterSetting = "cluster.preserve_downgrade_option"
 )
 
@@ -258,46 +250,6 @@ func waitUntilPerPodVerificationFuncVerifies(
 	b.MaxElapsedTime = updateTimer.podUpdateTimeout
 	b.MaxInterval = updateTimer.podMaxPollingInterval
 	return backoff.Retry(f, b)
-}
-
-// TODO this code might not be used.
-
-// waitUntilAllPodsReadyInAllClusters waits until all pods in all statefulsets are in the
-// ready state. The ready state implies all nodes are passing node liveness.
-func makeWaitUntilAllPodsReadyFuncInAllClusters(
-	numCRDBPods int,
-	clientsets map[string]kubernetes.Interface,
-	podUpdateTimeout time.Duration,
-	maxPodPollingInterval time.Duration,
-	stsName string,
-) func(ctx context.Context, l logr.Logger) error {
-	return func(ctx context.Context, l logr.Logger) error {
-
-		l.V(int(zapcore.DebugLevel)).Info("waiting until all pods are in the ready state")
-		f := func() error {
-			got := 0
-			for ns, clientset := range clientsets {
-				sts, err := clientset.AppsV1().StatefulSets(ns).Get(ctx, stsName, metav1.GetOptions{})
-				if err != nil {
-					return handleStsError(err, l, stsName, ns)
-				}
-				got += int(sts.Status.ReadyReplicas)
-			}
-
-			if got != numCRDBPods {
-				err := fmt.Errorf("number of ready replicas is %v, not equal to num CRDB pods %v", got, numCRDBPods)
-				l.Error(err, "number of ready replicas is,  not equal to num CRDB pods")
-				return err
-			}
-			l.V(int(zapcore.DebugLevel)).Info("all replicas are ready")
-			return nil
-		}
-
-		b := backoff.NewExponentialBackOff()
-		b.MaxElapsedTime = podUpdateTimeout
-		b.MaxInterval = maxPodPollingInterval
-		return backoff.Retry(f, b)
-	}
 }
 
 // TODO there are ALOT more reason codes in k8sErrors, should we test them all?

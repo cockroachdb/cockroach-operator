@@ -25,11 +25,13 @@ jobs:
     name: Update crdb versions
     runs-on: ubuntu-latest
     steps:
+      - uses: bazelbuild/setup-bazelisk@v1
       - name: Update CRDB versions
         uses: technote-space/create-pr-action@v2
         with:
           EXECUTE_COMMANDS: |
             ./hack/update-crdb-versions.sh
+            make release/gen-templates
           COMMIT_MESSAGE: 'Update CRDB versions'
           COMMIT_NAME: 'GitHub Actions'
           COMMIT_EMAIL: 'dev-inf+github-cockroach-dev-inf@cockroachlabs.com'

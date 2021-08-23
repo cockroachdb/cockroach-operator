@@ -59,6 +59,8 @@ func ZoneConfigs(ctx context.Context, db *sql.DB) ([]Zone, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to select from crdb_internal.zones")
 	}
+	defer rows.Close()
+
 	var zones []Zone
 	for rows.Next() {
 		var zone Zone
