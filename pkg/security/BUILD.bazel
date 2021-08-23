@@ -26,6 +26,8 @@ go_test(
     name = "go_default_test",
     srcs = ["certs_test.go"],
     data = ["//hack/bin:cockroach"],
-    embed = [":go_default_library"],
-    deps = ["//pkg/testutil/paths:go_default_library"],
+    deps = [
+        ":go_default_library",
+        "//pkg/testutil/env:go_default_library",
+    ],
 )

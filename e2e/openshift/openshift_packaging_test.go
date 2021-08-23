@@ -33,7 +33,7 @@ import (
 
 	"github.com/cenkalti/backoff"
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
-	"github.com/cockroachdb/cockroach-operator/pkg/testutil/paths"
+	"github.com/cockroachdb/cockroach-operator/pkg/testutil/env"
 	"github.com/go-logr/zapr"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zaptest"
@@ -109,9 +109,8 @@ func TestPackaging(t *testing.T) {
 	kubeconfig := os.Getenv("KUBECONFIG")
 	require.True(t, kubeconfig != "", "KUBECONFIG evn var not set")
 
-	// this call does some magic and ensures and sets
-	// oc in the PATH env variable for the test
-	paths.MaybeSetEnv("PATH", "oc", "hack", "bin", "oc")
+	// We bring in //hack/bin:oc as a data resource in the go_test target. This ensures that it's available on the PATH.
+	env.PrependToPath(env.ExpandPath("hack", "bin"))
 
 	// remove old crdb db if it still exists
 	args := []string{

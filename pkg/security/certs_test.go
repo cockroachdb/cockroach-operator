@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package security
+package security_test
 
 import (
 	"io/ioutil"
@@ -23,12 +23,18 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cockroachdb/cockroach-operator/pkg/testutil/paths"
+	. "github.com/cockroachdb/cockroach-operator/pkg/security"
+	"github.com/cockroachdb/cockroach-operator/pkg/testutil/env"
 )
 
 // We use 366 days on certificate lifetimes to at least match X years,
 // otherwise leap years risk putting us just under.
 const defaultCALifetime = 10 * 366 * 24 * time.Hour // ten years
+
+func TestMain(m *testing.M) {
+	env.PrependToPath(env.ExpandPath("hack/bin"))
+	os.Exit(m.Run())
+}
 
 // tempDir is like testutils.TempDir but avoids a circular import.
 func tempDir(t *testing.T) (string, func()) {
@@ -43,18 +49,7 @@ func tempDir(t *testing.T) (string, func()) {
 	}
 }
 
-func setPath(t *testing.T) {
-	// We are running in bazel so set up the directory for the test binaries
-	if os.Getenv("TEST_WORKSPACE") != "" {
-		// TODO create a toolchain for this
-		paths.MaybeSetEnv("PATH", "cockroach", "hack", "bin", "cockroach")
-	} else {
-		t.Fatal("TEST_WORKSPACE not defined.  Are you running me with bazel")
-	}
-}
-
 func TestCreateCAPair(t *testing.T) {
-	setPath(t)
 	certsDir, cleanup := tempDir(t)
 	defer cleanup()
 	ca := filepath.Join(certsDir, "ca.key")
@@ -74,7 +69,6 @@ func TestCreateCAPair(t *testing.T) {
 }
 
 func TestCreateNodePair(t *testing.T) {
-	setPath(t)
 	certsDir, cleanup := tempDir(t)
 	defer cleanup()
 	ca := filepath.Join(certsDir, "ca.key")
@@ -107,7 +101,6 @@ func TestCreateNodePair(t *testing.T) {
 }
 
 func TestCreateClientPair(t *testing.T) {
-	setPath(t)
 	certsDir, cleanup := tempDir(t)
 	defer cleanup()
 	ca := filepath.Join(certsDir, "ca.key")
