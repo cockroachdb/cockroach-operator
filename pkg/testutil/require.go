@@ -17,7 +17,6 @@ limitations under the License.
 package testutil
 
 import (
-	"bytes"
 	"context"
 	"database/sql"
 	"encoding/csv"
@@ -37,7 +36,6 @@ import (
 	"github.com/cockroachdb/cockroach-operator/pkg/labels"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	testenv "github.com/cockroachdb/cockroach-operator/pkg/testutil/env"
-	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -131,63 +129,6 @@ func RequireDbContainersToUseImage(t *testing.T, sb testenv.DiffingSandbox, cr *
 	})
 
 	require.NoError(t, err)
-}
-
-func clusterIsInitialized(t *testing.T, sb testenv.DiffingSandbox, name string) (bool, error) {
-	expectedConditions := []api.ClusterCondition{
-		{
-			Type:   api.InitializedCondition,
-			Status: metav1.ConditionFalse,
-		},
-	}
-
-	actual := resource.ClusterPlaceholder(name)
-	if err := sb.Get(actual); err != nil {
-		t.Logf("failed to fetch current cluster status :(")
-		return false, err
-	}
-
-	actualConditions := actual.Status.DeepCopy().Conditions
-
-	// Reset condition time as it is not significant for the assertion
-	var emptyTime metav1.Time
-	for i := range actualConditions {
-		actualConditions[i].LastTransitionTime = emptyTime
-	}
-
-	if !cmp.Equal(expectedConditions, actualConditions) {
-		return false, nil
-	}
-
-	return true, nil
-}
-
-func clusterIsDecommissioned(t *testing.T, sb testenv.DiffingSandbox, name string) (bool, error) {
-	expectedConditions := []api.ClusterCondition{
-		{
-			Type:   api.DecommissionCondition,
-			Status: metav1.ConditionTrue,
-		},
-	}
-
-	actual := resource.ClusterPlaceholder(name)
-	if err := sb.Get(actual); err != nil {
-		t.Logf("failed to fetch current cluster status :(")
-		return false, err
-	}
-
-	actualConditions := actual.Status.DeepCopy().Conditions
-
-	// Reset condition time as it is not significant for the assertion
-	var emptyTime metav1.Time
-	for i := range actualConditions {
-		actualConditions[i].LastTransitionTime = emptyTime
-	}
-	if !cmp.Equal(expectedConditions, actualConditions) {
-		return false, nil
-	}
-
-	return true, nil
 }
 
 func fetchStatefulSet(sb testenv.DiffingSandbox, name string) (*appsv1.StatefulSet, error) {
@@ -590,32 +531,7 @@ func logPods(ctx context.Context, sts *appsv1.StatefulSet, cluster *resource.Clu
 	return nil
 }
 
-func getPodLog(ctx context.Context, podName string, namespace string, clientset kubernetes.Interface) (string, error) {
-
-	// This func will print out the pod logs
-	// This is code that is used by version checker and we should probably refactor
-	// this and move it into kube package.
-	// But right now it is untested
-	podLogOpts := corev1.PodLogOptions{}
-	req := clientset.CoreV1().Pods(namespace).GetLogs(podName, &podLogOpts)
-
-	podLogs, err := req.Stream(ctx)
-	if err != nil {
-		msg := "error in opening stream"
-		return "", errors.Wrapf(err, msg)
-	}
-	defer podLogs.Close()
-
-	buf := new(bytes.Buffer)
-	_, err = io.Copy(buf, podLogs)
-	if err != nil {
-		msg := "error in copying stream"
-		return "", errors.Wrapf(err, msg)
-	}
-	return buf.String(), nil
-}
-
-// RequirePVCToResize checks that the PVCs are resized correctly
+// RequireNumberOfPVCs checks that the correct number of PVCs are claimed
 func RequireNumberOfPVCs(t *testing.T, ctx context.Context, sb testenv.DiffingSandbox, b ClusterBuilder, quantity int) {
 	cluster := b.Cluster()
 	var boundPVCCount = 0
