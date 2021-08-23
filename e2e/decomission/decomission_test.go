@@ -38,10 +38,10 @@ import (
 // We may have a threadsafe problem where one test starts messing with another test
 var parallel = *flag.Bool("parallel", false, "run tests in parallel")
 
-// TODO should we make this an atomic that is created by evn pkg?
+// TODO should we make this an atomic that is created by env pkg?
 var env *testenv.ActiveEnv
 
-// TestMain wraps the unit tests. Set TEST_DO_NOT_USE_KIND evnvironment variable to any value
+// TestMain wraps the unit tests. Set TEST_DO_NOT_USE_KIND environment variable to any value
 // if you do not want this test to start a k8s cluster using kind.
 func TestMain(m *testing.M) {
 	e := testenv.CreateActiveEnvForTest([]string{"..", ".."})
@@ -57,7 +57,7 @@ func TestMain(m *testing.M) {
 // It then checks that the cluster is stable and that decomissioning is successful.
 func TestDecommissionFunctionalityWithPrune(t *testing.T) {
 
-	// Testing removing and decommisioning a node.  We start at 4 node and then
+	// Testing removing and decommissioning a node.  We start at 4 node and then
 	// remove the 4th node
 
 	// turn on featuregate since Decommission is disabled by default currently
@@ -97,7 +97,7 @@ func TestDecommissionFunctionalityWithPrune(t *testing.T) {
 				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
 				testutil.RequireDecommissionNode(t, sb, builder, 3)
 				testutil.RequireDatabaseToFunction(t, sb, builder)
-				t.Log("Done with decommision")
+				t.Log("Done with decommission")
 				testutil.RequireNumberOfPVCs(t, context.TODO(), sb, builder, 3)
 			},
 		},
@@ -105,8 +105,8 @@ func TestDecommissionFunctionalityWithPrune(t *testing.T) {
 	steps.Run(t)
 }
 
-// TestDecomissionFunctionality creates a cluster of 4 nodes and then decomissions on of the CRDB nodes.
-// It then checks that the cluster is stable and that decomissioning is successful.
+// TestDecomissionFunctionality creates a cluster of 4 nodes and then decommissions on of the CRDB nodes.
+// It then checks that the cluster is stable and that decommissioning is successful.
 func TestDecommissionFunctionality(t *testing.T) {
 
 	// Testing removing and decommisioning a node.  We start at 4 node and then
@@ -149,7 +149,7 @@ func TestDecommissionFunctionality(t *testing.T) {
 				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
 				testutil.RequireDecommissionNode(t, sb, builder, 3)
 				testutil.RequireDatabaseToFunction(t, sb, builder)
-				t.Log("Done with decommision")
+				t.Log("Done with decommission")
 
 				testutil.RequireNumberOfPVCs(t, context.TODO(), sb, builder, 4)
 			},

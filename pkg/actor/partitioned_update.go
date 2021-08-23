@@ -250,13 +250,6 @@ func inK8s(file string) bool {
 	}
 	return true
 }
-func getStsAnnotation(statefulSet *appsv1.StatefulSet, key string) string {
-	if currentVersion, ok := statefulSet.Annotations[key]; !ok {
-		return ""
-	} else {
-		return currentVersion
-	}
-}
 
 func getImageNameNoVersion(image string) string {
 	// if somehow this arrives as sha256 we do not extract version
