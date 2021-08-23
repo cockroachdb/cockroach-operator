@@ -27,9 +27,9 @@ import (
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/cenkalti/backoff"
+	"github.com/cockroachdb/cockroach-operator/pkg/clustersql"
 	"github.com/cockroachdb/cockroach-operator/pkg/healthchecker"
 	"github.com/go-logr/logr"
-	"github.com/lib/pq"
 	"github.com/pkg/errors"
 	"go.uber.org/zap/zapcore"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -256,7 +256,7 @@ func kindAndCheckPreserveDowngradeSetting(
 }
 
 func preserveDowngradeSetting(ctx context.Context, db *sql.DB) (*semver.Version, error) {
-	preserveDowngradeSetting, err := getClusterSetting(ctx, db, "cluster.preserve_downgrade_option")
+	preserveDowngradeSetting, err := clustersql.GetClusterSetting(ctx, db, "cluster.preserve_downgrade_option")
 	if err != nil {
 		return nil, errors.Wrapf(err, "getting preserve downgrade option failed")
 	}
@@ -274,86 +274,15 @@ func preserveDowngradeSetting(ctx context.Context, db *sql.DB) (*semver.Version,
 }
 
 func setDowngradeOption(ctx context.Context, wantVersion *semver.Version, currentVersion *semver.Version, db *sql.DB, l logr.Logger) error {
-
 	newDowngradeOption := fmt.Sprintf("%d.%d", currentVersion.Major(), currentVersion.Minor())
 	if !validPreserveDowngradeOptionSetting.MatchString(newDowngradeOption) {
 		return fmt.Errorf("%s is not a valid preserve downgrade option setting", newDowngradeOption)
 	}
-	if err := setClusterSetting(ctx, db, PreserveDowngradeOptionClusterSetting, newDowngradeOption); err != nil {
+	if err := clustersql.SetClusterSetting(ctx, db, PreserveDowngradeOptionClusterSetting, newDowngradeOption); err != nil {
 		return errors.Wrapf(err, "setting preserve downgrade option failed")
 	}
 
 	l.V(int(zapcore.DebugLevel)).Info("set downgrade option since major version", "cluster.preserve_downgrade_option", newDowngradeOption)
 
-	return nil
-}
-
-// roleMembership represents role membership for a particular database user.
-type roleMembership struct {
-	// Name is the name of the role membership.
-	Name string
-
-	// IsAdmin represents whether the "WITH ADMIN OPTION" is granted to the
-	// user's role. Enabling this option allows the user to grant or revoke
-	// membership of the associated role to other users.
-	IsAdmin bool
-}
-
-// ListRoleGrantsForUser returns a list of role memberships for the given user.
-func listRoleGrantsForUser(
-	ctx context.Context, db *sql.DB, username string,
-) ([]roleMembership, error) {
-	query := fmt.Sprintf(`SHOW GRANTS ON ROLE FOR %s`, pq.QuoteIdentifier(username))
-	rows, err := db.QueryContext(ctx, query)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var roles []roleMembership
-	for rows.Next() {
-		var role roleMembership
-		// `member` is ignored here because we're querying for the same user.
-		// Ideally, this function should take in a list of users, and return
-		// `map[string][]roleMembership`.
-		var member string
-
-		if err := rows.Scan(&role.Name, &member, &role.IsAdmin); err != nil {
-			return nil, err
-		}
-		roles = append(roles, role)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return roles, nil
-}
-
-func grantRoleToUser(ctx context.Context, db *sql.DB, role roleMembership, username string) error {
-	query := fmt.Sprintf("GRANT %s TO %s", role.Name, pq.QuoteIdentifier(username))
-	if role.IsAdmin {
-		query += " WITH ADMIN OPTION"
-	}
-	if _, err := db.ExecContext(ctx, query); err != nil {
-		return err
-	}
-	return nil
-}
-
-func getClusterSetting(ctx context.Context, db *sql.DB, name string) (string, error) {
-	r := db.QueryRowContext(ctx, fmt.Sprintf("SHOW CLUSTER SETTING %s", name))
-	var value string
-	if err := r.Scan(&value); err != nil {
-		return "", errors.Wrapf(err, "failed to get %s", name)
-	}
-	return value, nil
-}
-
-func setClusterSetting(ctx context.Context, db *sql.DB, name string, value string) error {
-	sqlStr := fmt.Sprintf("SET CLUSTER SETTING %s = $1", name)
-	if _, err := db.Exec(sqlStr, value); err != nil {
-		return errors.Wrapf(err, "failed to set %s to %s", name, value)
-	}
 	return nil
 }
