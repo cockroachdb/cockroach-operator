@@ -90,14 +90,12 @@ type GetAction struct {
 	verb string
 	key  client.ObjectKey
 	gvr  schema.GroupVersionResource
-	obj  runtime.Object
 }
 
 type CreateAction struct {
 	verb string
 	key  client.ObjectKey
 	gvr  schema.GroupVersionResource
-	obj  runtime.Object
 }
 
 var _ Reactor = &simpleReactor{}
