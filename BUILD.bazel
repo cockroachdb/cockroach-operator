@@ -87,6 +87,7 @@ filegroup(
         "//pkg/features:all-srcs",
         "//pkg/healthchecker:all-srcs",
         "//pkg/kube:all-srcs",
+        "//pkg/kuberecord:all-srcs",
         "//pkg/labels:all-srcs",
         "//pkg/ptr:all-srcs",
         "//pkg/resource:all-srcs",

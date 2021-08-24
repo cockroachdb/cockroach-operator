@@ -57,6 +57,7 @@ go_test(
     ],
     deps = [
         ":go_default_library",
+        "//pkg/testutil:go_default_library",
         "@com_github_stretchr_testify//require:go_default_library",
     ],
 )
