@@ -27,8 +27,6 @@ go_library(
     ],
 )
 
-ETCD = "//hack/bin:etcd"
-
 go_test(
     name = "go_default_test",
     srcs = [
@@ -37,22 +35,15 @@ go_test(
         "suite_test.go",
         "volume_test.go",
     ],
-    # TODO use these values in the unit test instead of the hardcoded values
-    args = [
-        "$(location //hack/bin:etcd)",
-        "$(location //hack/bin:kube-apiserver)",
-        "$(location //hack/bin:kubectl)",
-    ],
     data = [
         "//config/crd/bases:crd_manifest",
         "//hack/bin:etcd",
         "//hack/bin:kube-apiserver",
         "//hack/bin:kubectl",
     ],
-    embed = [":go_default_library"],
-    importpath = "github.com/cockroachdb/cockroach-operator/apis/v1alpha1",
     deps = [
-        "//pkg/testutil/paths:go_default_library",
+        ":go_default_library",
+        "//pkg/testutil/env:go_default_library",
         "@com_github_google_go_cmp//cmp:go_default_library",
         "@com_github_onsi_ginkgo//:go_default_library",
         "@com_github_onsi_gomega//:go_default_library",
@@ -61,11 +52,11 @@ go_test(
         "@io_k8s_api//apps/v1:go_default_library",
         "@io_k8s_api//core/v1:go_default_library",
         "@io_k8s_apimachinery//pkg/apis/meta/v1:go_default_library",
+        "@io_k8s_apimachinery//pkg/runtime:go_default_library",
         "@io_k8s_apimachinery//pkg/types:go_default_library",
         "@io_k8s_client_go//kubernetes/scheme:go_default_library",
         "@io_k8s_client_go//rest:go_default_library",
         "@io_k8s_sigs_controller_runtime//pkg/client:go_default_library",
-        "@io_k8s_sigs_controller_runtime//pkg/envtest:go_default_library",
         "@io_k8s_sigs_controller_runtime//pkg/envtest/printer:go_default_library",
         "@io_k8s_sigs_controller_runtime//pkg/log:go_default_library",
         "@io_k8s_sigs_controller_runtime//pkg/log/zap:go_default_library",

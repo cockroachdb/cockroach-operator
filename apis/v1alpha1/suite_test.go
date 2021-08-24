@@ -14,21 +14,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha1
+package v1alpha1_test
 
 import (
-	"os"
 	"path/filepath"
 	"testing"
 
-	"github.com/cockroachdb/cockroach-operator/pkg/testutil/paths"
+	. "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
+	"github.com/cockroachdb/cockroach-operator/pkg/testutil/env"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
+	runtime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/controller-runtime/pkg/envtest/printer"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -39,7 +38,7 @@ import (
 
 var cfg *rest.Config
 var k8sClient client.Client
-var testEnv *envtest.Environment
+var testEnv *env.Env
 
 func TestAPIs(t *testing.T) {
 	if testing.Short() {
@@ -54,24 +53,14 @@ func TestAPIs(t *testing.T) {
 }
 
 var _ = BeforeSuite(func(done Done) {
-
 	logf.SetLogger(zap.New(zap.UseDevMode(true), zap.WriteTo(GinkgoWriter)))
 
-	// We are running in bazel so set up the directory for the test binaries
-	if os.Getenv("TEST_WORKSPACE") != "" {
-		// TODO change these by splitting the args that we are passing in
-		paths.MaybeSetEnv("TEST_ASSET_ETCD", "etcd", "hack", "bin", "etcd")
-		paths.MaybeSetEnv("TEST_ASSET_KUBE_APISERVER", "kube-apiserver", "hack", "bin", "kube-apiserver")
-		paths.MaybeSetEnv("TEST_ASSET_KUBECTL", "kubectl", "hack", "bin", "kubectl")
-	}
-
 	By("bootstrapping test environment")
-	testEnv = &envtest.Environment{
-		CRDDirectoryPaths: []string{filepath.Join("..", "..", "config", "crd", "bases")},
-	}
+	testEnv = env.NewEnv(runtime.NewSchemeBuilder(AddToScheme), filepath.Join("..", "..", "config", "crd", "bases"))
 
 	var err error
-	cfg, err = testEnv.Start()
+	testEnv.Start()
+	cfg = testEnv.Environment.Config
 	Expect(err).ToNot(HaveOccurred())
 	Expect(cfg).ToNot(BeNil())
 
@@ -87,6 +76,5 @@ var _ = BeforeSuite(func(done Done) {
 
 var _ = AfterSuite(func() {
 	By("tearing down the test environment")
-	err := testEnv.Stop()
-	Expect(err).ToNot(HaveOccurred())
+	testEnv.Stop()
 })

@@ -9,7 +9,7 @@ go_test(
     ],
     deps = [
         "//pkg/kube:go_default_library",
-        "//pkg/testutil/paths:go_default_library",
+        "//pkg/testutil/env:go_default_library",
         "@com_github_cenkalti_backoff//:go_default_library",
         "@com_github_go_logr_zapr//:go_default_library",
         "@com_github_stretchr_testify//require:go_default_library",

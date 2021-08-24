@@ -58,7 +58,6 @@ filegroup(
         ":package-srcs",
         "//pkg/testutil/env:all-srcs",
         "//pkg/testutil/exec:all-srcs",
-        "//pkg/testutil/paths:all-srcs",
     ],
     tags = ["automanaged"],
     visibility = ["//visibility:public"],

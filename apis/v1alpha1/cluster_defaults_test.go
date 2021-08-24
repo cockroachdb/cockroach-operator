@@ -14,12 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha1
+package v1alpha1_test
 
 import (
 	"fmt"
 	"testing"
 
+	. "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
