@@ -43,13 +43,13 @@ spec:
   image:
     name: cockroachdb/cockroach:v21.1.7
   # nodes refers to the number of crdb pods that are created
-  # via the statefulset 
+  # via the statefulset
   nodes: 3
   additionalLabels:
     crdb: is-cool
   # affinity is a new API field that is behind a feature gate that is
   # disabled by default.  To enable please see the operator.yaml file.
-   
+
   # The affinity field will accept any podSpec affinity rule.
   # affinity:
   #   podAntiAffinity:

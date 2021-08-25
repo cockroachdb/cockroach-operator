@@ -43,6 +43,7 @@ var targets = []struct{ template, output string }{
 	{"config/templates/deployment_patch.yaml.in", "manifests/patches/deployment_patch.yaml"},
 	{"config/templates/crdb-tls-example.yaml.in", "config/samples/crdb-tls-example.yaml"},
 	{"config/templates/example.yaml.in", "examples/example.yaml"},
+	{"config/templates/client-secure-operator.yaml.in", "examples/client-secure-operator.yaml"},
 }
 
 // crdb-versions.yaml structure
