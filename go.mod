@@ -16,13 +16,10 @@ require (
 	github.com/gosimple/slug v1.9.0
 	github.com/jackc/pgx/v4 v4.9.0
 	github.com/octago/sflags v0.2.0
-	github.com/onsi/ginkgo v1.14.1
-	github.com/onsi/gomega v1.10.3
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.7.0
 	go.uber.org/zap v1.15.0
-	golang.org/x/net v0.0.0-20201224014010-6772e930b67b
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.20.2
 	k8s.io/apimachinery v0.20.2
