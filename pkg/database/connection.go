@@ -27,7 +27,7 @@ import (
 	"time"
 
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 

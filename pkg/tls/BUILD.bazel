@@ -11,7 +11,7 @@ go_library(
     deps = [
         "//pkg/kube:go_default_library",
         "//pkg/resource:go_default_library",
-        "@com_github_pkg_errors//:go_default_library",
+        "@com_github_cockroachdb_errors//:go_default_library",
         "@io_k8s_api//certificates/v1beta1:go_default_library",
         "@io_k8s_apimachinery//pkg/apis/meta/v1:go_default_library",
         "@io_k8s_client_go//kubernetes:go_default_library",
