@@ -1,5 +1,3 @@
-// +build tools
-
 /*
 Copyright 2021 The Cockroach Authors
 
@@ -16,18 +14,34 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// This file exists to force 'go mod' to fetch tool dependencies
-// See: https://github.com/golang/go/wiki/Modules#how-can-i-track-tool-dependencies-for-a-module
+package testutil
 
-package bin
+import "os"
 
-import (
-	_ "k8s.io/code-generator/cmd/client-gen"
-	_ "k8s.io/code-generator/cmd/conversion-gen"
-	_ "k8s.io/code-generator/cmd/deepcopy-gen"
-	_ "k8s.io/code-generator/cmd/defaulter-gen"
-	_ "k8s.io/code-generator/cmd/informer-gen"
-	_ "k8s.io/code-generator/cmd/lister-gen"
-	_ "k8s.io/kube-openapi/cmd/openapi-gen"
-	_ "sigs.k8s.io/controller-tools/cmd/controller-gen"
-)
+// WithEnv sets environment variables, runs the supplied function and puts the env back the way it was found.
+func WithEnv(vars map[string]string, fn func()) {
+	toReset := map[string]string{}
+	toClear := make([]string, 0)
+
+	for k, v := range vars {
+		if oldV, ok := os.LookupEnv(k); ok {
+			toReset[k] = oldV
+		} else {
+			toClear = append(toClear, k)
+		}
+
+		os.Setenv(k, v)
+	}
+
+	defer func() {
+		for k, v := range toReset {
+			os.Setenv(k, v)
+		}
+
+		for _, k := range toClear {
+			os.Unsetenv(k)
+		}
+	}()
+
+	fn()
+}

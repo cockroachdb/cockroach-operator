@@ -17,15 +17,29 @@ limitations under the License.
 package env_test
 
 import (
+	"os"
 	"testing"
 
+	"github.com/cockroachdb/cockroach-operator/pkg/testutil"
 	. "github.com/cockroachdb/cockroach-operator/pkg/testutil/env"
+	"github.com/stretchr/testify/require"
 )
 
-func TestCreateEnv(t *testing.T) {
-	env := CreateActiveEnvForTest([]string{"..", "..", ".."})
-	if env == nil {
-		t.Log("env is nil")
-		t.Fail()
+func TestExpandPath(t *testing.T) {
+	env := map[string]string{
+		"RUNFILES_DIR":              "a",
+		"TEST_WORKSPACE":            "b",
+		"BUILD_WORKSPACE_DIRECTORY": "c",
 	}
+
+	testutil.WithEnv(env, func() {
+		require.Equal(t, "a/b/c/pkg/test/env/path_test.go", ExpandPath("pkg/test/env/path_test.go"))
+	})
+}
+
+func TestPrependToPath(t *testing.T) {
+	testutil.WithEnv(map[string]string{"PATH": "/usr/local/bin"}, func() {
+		PrependToPath("hack", "bin")
+		require.Equal(t, "hack/bin:/usr/local/bin", os.Getenv("PATH"))
+	})
 }

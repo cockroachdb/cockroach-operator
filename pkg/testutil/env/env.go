@@ -25,7 +25,6 @@ import (
 
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	customClient "github.com/cockroachdb/cockroach-operator/pkg/client/clientset/versioned"
-	"github.com/cockroachdb/cockroach-operator/pkg/testutil/paths"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	apiruntime "k8s.io/apimachinery/pkg/runtime"
@@ -39,7 +38,18 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 )
 
+// testBinaries is used to set KUBEBUILDER_ASSETS variable to ensure things like etcd are available to all test
+// environments.
+var testBinaries = flag.String("binaries", "hack/bin", "")
+
 func NewEnv(builder apiruntime.SchemeBuilder, crds ...string) *Env {
+	flag.Parse()
+
+	// ensure hack/bin is added to the path and KUBEBUILDER_ASSETS
+	p := ExpandPath(*testBinaries)
+	os.Setenv("KUBEBUILDER_ASSETS", p)
+	PrependToPath(p)
+
 	scheme := apiruntime.NewScheme()
 
 	if err := kscheme.AddToScheme(scheme); err != nil {
@@ -123,10 +133,7 @@ type ActiveEnv struct {
 }
 
 func CreateActiveEnvForTest(levels []string) *Env {
-	flag.Parse()
-
 	os.Setenv("USE_EXISTING_CLUSTER", "true")
-	paths.MaybeSetEnv("PATH", "kubetest2-kind", "hack", "bin", "kubetest2-kind")
 
 	// TODO do we need RBAC loaded? Because I do not
 	// think the file existed

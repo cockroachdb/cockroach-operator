@@ -1,4 +1,4 @@
-# Copyright 2021 The Cockroach Authors
+# Copyright {{ .Year }} The Cockroach Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Generated, do not edit. Please edit this file instead: config/templates/client-secure-operator.yaml.in
+# {{ .GeneratedWarning }}
 #
 
 apiVersion: v1
@@ -23,7 +23,7 @@ spec:
   serviceAccountName: cockroach-operator-sa
   containers:
   - name: cockroachdb-client-secure
-    image: cockroachdb/cockroach:v21.1.7
+    image: cockroachdb/cockroach:{{ .LatestStableCrdbVersion }}
     imagePullPolicy: IfNotPresent
     volumeMounts:
     - name: client-certs
