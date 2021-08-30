@@ -14,14 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package actor
-
-import (
-	"github.com/cockroachdb/cockroach-operator/pkg/testutil"
-	"testing"
-
-	"github.com/stretchr/testify/require"
-)
+package actor_test
 
 //func TestActorOrder(t *testing.T) {
 //
@@ -57,14 +50,21 @@ import (
 //
 //}
 
-func TestRENAMETHISTEST(t *testing.T) {
-	// Setup fake client
-	cluster := testutil.NewBuilder("cockroachdb").
-		Namespaced("default").
-		WithUID("cockroachdb-uid").
-		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */).
-		WithNodeCount(1).Cluster()
-	_ = cluster
-
-	require.True(t, false)
-}
+//func TestFakeTest(t *testing.T) {
+//	// Setup fake client
+//	cluster := testutil.NewBuilder("cockroachdb").
+//		Namespaced("default").
+//		WithUID("cockroachdb-uid").
+//		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */).
+//		WithNodeCount(1).Cluster()
+//	_ = cluster
+//
+//	require.True(t, false)
+//}
+//
+//func TestDecommissionFeatureGate(t *testing.T) {
+//	// Setup fake client
+//	director := actor.ClusterDirector{}
+//
+//	utilfeature.DefaultMutableFeatureGate.Enabled(features.CrdbVersionValidator)
+//}
