@@ -19,9 +19,6 @@ package controller
 import (
 	"context"
 	"fmt"
-	"github.com/cockroachdb/cockroach-operator/pkg/condition"
-	"github.com/cockroachdb/cockroach-operator/pkg/features"
-	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
 	"time"
 
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
@@ -41,9 +38,10 @@ import (
 // ClusterReconciler reconciles a CrdbCluster object
 type ClusterReconciler struct {
 	client.Client
-	Log    logr.Logger
-	Scheme *runtime.Scheme
-	Actors map[api.ActionType]actor.Actor
+	Log      logr.Logger
+	Scheme   *runtime.Scheme
+	Actors   map[api.ActionType]actor.Actor
+	Director actor.Director
 }
 
 // Note: you need a blank line after this list in order for the controller to pick this up.
@@ -124,7 +122,9 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req reconcile.Request
 	// Save context cancellation function for actors to call if needed
 	ctx = actor.ContextWithCancelFn(ctx, cancel)
 
-	actionsToExecute := getActionsToExecute(&cluster)
+	// TODO: refactor this so that it's more like a state machine: determine what state we're in, and execute the actions
+	// necessary for that state.
+	actionsToExecute := r.Director.GetActionsToExecute(&cluster)
 	for _, action := range actionsToExecute {
 		a := r.Actors[action]
 		log.Info(fmt.Sprintf("Running action with name: %s", a.GetActionType()))
@@ -194,63 +194,6 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req reconcile.Request
 	return noRequeue()
 }
 
-func getActionsToExecute(cluster *resource.Cluster) []api.ActionType {
-	conditions := cluster.Status().Conditions
-	featureVersionValidatorEnabled := utilfeature.DefaultMutableFeatureGate.Enabled(features.CrdbVersionValidator)
-	featureDecommissionEnabled := utilfeature.DefaultMutableFeatureGate.Enabled(features.Decommission)
-	featureResizePVCEnabled := utilfeature.DefaultMutableFeatureGate.Enabled(features.ResizePVC)
-	featureClusterRestartEnabled := utilfeature.DefaultMutableFeatureGate.Enabled(features.ClusterRestart)
-	conditionInitializedTrue := condition.True(api.InitializedCondition, conditions)
-	conditionInitializedFalse := condition.False(api.InitializedCondition, conditions)
-	conditionVersionCheckedTrue := condition.True(api.CrdbVersionChecked, conditions)
-	conditionVersionCheckedFalse := condition.False(api.CrdbVersionChecked, conditions)
-
-	actionsToExecute := []api.ActionType{}
-
-	if featureDecommissionEnabled && conditionInitializedTrue {
-		actionsToExecute = append(actionsToExecute, api.DecommissionAction)
-	}
-
-	if featureVersionValidatorEnabled && conditionVersionCheckedFalse && (conditionInitializedTrue || conditionInitializedFalse) {
-		actionsToExecute = append(actionsToExecute, api.VersionCheckerAction)
-	}
-
-	// TODO (this todo was copy/pasted from the deprecated Handles func): this is not working am I doing this correctly?
-	// condition.True(api.CertificateGenerated, conds)
-	if conditionInitializedFalse {
-		actionsToExecute = append(actionsToExecute, api.GenerateCertAction)
-	}
-
-	if featureVersionValidatorEnabled && conditionVersionCheckedTrue && conditionInitializedTrue {
-		actionsToExecute = append(actionsToExecute, api.PartialUpdateAction)
-	} else if conditionInitializedTrue {
-		actionsToExecute = append(actionsToExecute, api.PartialUpdateAction)
-	}
-
-	if featureResizePVCEnabled && conditionInitializedTrue {
-		actionsToExecute = append(actionsToExecute, api.ResizePVCAction)
-	}
-
-	if featureVersionValidatorEnabled && conditionVersionCheckedTrue && (conditionInitializedTrue || conditionInitializedFalse) {
-		actionsToExecute = append(actionsToExecute, api.DeployAction)
-	} else if conditionInitializedTrue || conditionInitializedFalse {
-		actionsToExecute = append(actionsToExecute, api.DeployAction)
-	}
-
-	if featureVersionValidatorEnabled && conditionVersionCheckedTrue && conditionInitializedFalse {
-		actionsToExecute = append(actionsToExecute, api.InitializeAction)
-	} else if conditionInitializedFalse {
-		actionsToExecute = append(actionsToExecute, api.InitializeAction)
-	}
-
-	// TODO: conditionVersionCheckedTrue should probably be contingent on featureVersionValidatorEnabled, like with other actions
-	if featureClusterRestartEnabled && conditionVersionCheckedTrue && (conditionInitializedTrue || conditionInitializedFalse) {
-		actionsToExecute = append(actionsToExecute, api.ClusterRestartAction)
-	}
-
-	return actionsToExecute
-}
-
 // SetupWithManager registers the controller with the controller.Manager from controller-runtime
 func (r *ClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
@@ -270,10 +213,11 @@ func InitClusterReconciler() func(ctrl.Manager) error {
 func InitClusterReconcilerWithLogger(l logr.Logger) func(ctrl.Manager) error {
 	return func(mgr ctrl.Manager) error {
 		return (&ClusterReconciler{
-			Client: mgr.GetClient(),
-			Log:    l,
-			Scheme: mgr.GetScheme(),
-			Actors: actor.NewOperatorActions(mgr.GetScheme(), mgr.GetClient(), mgr.GetConfig()),
+			Client:   mgr.GetClient(),
+			Log:      l,
+			Scheme:   mgr.GetScheme(),
+			Actors:   actor.NewOperatorActions(mgr.GetScheme(), mgr.GetClient(), mgr.GetConfig()),
+			Director: actor.ClusterDirector{},
 		}).SetupWithManager(mgr)
 	}
 }

@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"testing"
 
-	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/go-logr/logr"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
@@ -39,88 +38,6 @@ type HealthCheckerTest struct{}
 
 func (hc *HealthCheckerTest) Probe(ctx context.Context, l logr.Logger, logSuffix string, partition int) error {
 	return nil
-}
-
-func TestClusterRestartHandles(t *testing.T) {
-	cra := clusterRestart{}
-
-	var conditions []api.ClusterCondition
-
-	t.Run("Handle func passes", func(t *testing.T) {
-		// For restart to be a valid action the CRDB cluster needs the initialized condition to be true OR false
-		// and have had its CRDB Version checked
-		conditions = []api.ClusterCondition{
-			{
-				Type:               api.InitializedCondition,
-				Status:             metav1.ConditionTrue,
-				LastTransitionTime: metav1.Now(),
-			},
-			{
-				Type:               api.CrdbVersionChecked,
-				Status:             metav1.ConditionTrue,
-				LastTransitionTime: metav1.Now(),
-			},
-		}
-		require.True(t, cra.Handles(conditions))
-
-		conditions = []api.ClusterCondition{
-			{
-				Type:               api.InitializedCondition,
-				Status:             metav1.ConditionFalse,
-				LastTransitionTime: metav1.Now(),
-			},
-			{
-				Type:               api.CrdbVersionChecked,
-				Status:             metav1.ConditionTrue,
-				LastTransitionTime: metav1.Now(),
-			},
-		}
-		require.True(t, cra.Handles(conditions))
-
-	})
-
-	t.Run("Handle func does not pass", func(t *testing.T) {
-
-		// Checked version is false
-		conditions = []api.ClusterCondition{
-			{
-				Type:               api.InitializedCondition,
-				Status:             metav1.ConditionTrue,
-				LastTransitionTime: metav1.Now(),
-			},
-			{
-				Type:               api.CrdbVersionChecked,
-				Status:             metav1.ConditionFalse,
-				LastTransitionTime: metav1.Now(),
-			},
-		}
-		require.False(t, cra.Handles(conditions))
-
-		// Initialized condition is unknown or missing
-		conditions = []api.ClusterCondition{
-			{
-				Type:               api.InitializedCondition,
-				Status:             metav1.ConditionUnknown,
-				LastTransitionTime: metav1.Now(),
-			},
-			{
-				Type:               api.CrdbVersionChecked,
-				Status:             metav1.ConditionTrue,
-				LastTransitionTime: metav1.Now(),
-			},
-		}
-		require.False(t, cra.Handles(conditions))
-
-		conditions = []api.ClusterCondition{
-			{
-				Type:               api.CrdbVersionChecked,
-				Status:             metav1.ConditionTrue,
-				LastTransitionTime: metav1.Now(),
-			},
-		}
-		require.False(t, cra.Handles(conditions))
-	})
-
 }
 
 func TestClusterReadyForRestart(t *testing.T) {

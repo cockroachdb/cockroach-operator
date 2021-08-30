@@ -58,7 +58,6 @@ go_test(
     srcs = [
         "actor_test.go",
         "cluster_restart_test.go",
-        "decommission_test.go",
         "deploy_test.go",
         "export_test.go",
         "partitioned_update_test.go",

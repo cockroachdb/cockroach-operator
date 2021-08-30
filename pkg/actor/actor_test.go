@@ -17,43 +17,54 @@ limitations under the License.
 package actor
 
 import (
-	"reflect"
+	"github.com/cockroachdb/cockroach-operator/pkg/testutil"
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-func TestActorOrder(t *testing.T) {
+//func TestActorOrder(t *testing.T) {
+//
+//	// So the actor order is so important that we need to ensure that the slice
+//	// does not get touched.
+//	// This test ensures that the name of the actor is in the correct order.
+//
+//	// Setup fake client
+//	builder := fake.NewClientBuilder()
+//
+//	client := builder.Build()
+//	actors := NewOperatorActions(nil, client, nil)
+//
+//	actorNamesInOrder := []string{
+//		"*actor.decommission",
+//		"*actor.versionChecker",
+//		"*actor.generateCert",
+//		"*actor.partitionedUpdate",
+//		"*actor.resizePVC",
+//		"*actor.deploy",
+//		"*actor.initialize",
+//		"*actor.clusterRestart",
+//	}
+//
+//	// TODO this seems kinda hacky, but I could not get a.(type) working
+//	// so I am just testing the name of the string. Maybe I could test the
+//	// struct type, but hey this works for now.
+//	for i, a := range actors {
+//		xType := reflect.TypeOf(a)
+//		expected := actorNamesInOrder[i]
+//		require.True(t, xType.String() == expected, "expected:", expected, "got", xType.String())
+//	}
+//
+//}
 
-	// So the actor order is so important that we need to ensure that the slice
-	// does not get touched.
-	// This test ensures that the name of the actor is in the correct order.
-
+func TestRENAMETHISTEST(t *testing.T) {
 	// Setup fake client
-	builder := fake.NewClientBuilder()
+	cluster := testutil.NewBuilder("cockroachdb").
+		Namespaced("default").
+		WithUID("cockroachdb-uid").
+		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */).
+		WithNodeCount(1).Cluster()
+	_ = cluster
 
-	client := builder.Build()
-	actors := NewOperatorActions(nil, client, nil)
-
-	actorNamesInOrder := []string{
-		"*actor.decommission",
-		"*actor.versionChecker",
-		"*actor.generateCert",
-		"*actor.partitionedUpdate",
-		"*actor.resizePVC",
-		"*actor.deploy",
-		"*actor.initialize",
-		"*actor.clusterRestart",
-	}
-
-	// TODO this seems kinda hacky, but I could not get a.(type) working
-	// so I am just testing the name of the string. Maybe I could test the
-	// struct type, but hey this works for now.
-	for i, a := range actors {
-		xType := reflect.TypeOf(a)
-		expected := actorNamesInOrder[i]
-		require.True(t, xType.String() == expected, "expected:", expected, "got", xType.String())
-	}
-
+	require.True(t, false)
 }

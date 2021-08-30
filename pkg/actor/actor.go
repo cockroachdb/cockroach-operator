@@ -18,6 +18,9 @@ package actor
 
 import (
 	"context"
+	"github.com/cockroachdb/cockroach-operator/pkg/condition"
+	"github.com/cockroachdb/cockroach-operator/pkg/features"
+	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
 
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
@@ -76,6 +79,10 @@ type Actor interface {
 	GetActionType() api.ActionType
 }
 
+type Director interface {
+	GetActionsToExecute(*resource.Cluster) []api.ActionType
+}
+
 // NewOperatorActions creates a slice of actors that control the actions or actors for the operator.
 // The order of the slice is critical so that the actors run in order, for instance update has to
 // happen before deploy.
@@ -99,6 +106,66 @@ func NewOperatorActions(scheme *runtime.Scheme, cl client.Client, config *rest.C
 		api.InitializeAction:     newInitialize(scheme, cl, config),
 		api.ClusterRestartAction: newClusterRestart(scheme, cl, config),
 	}
+}
+
+type ClusterDirector struct {
+}
+
+func (_ ClusterDirector) GetActionsToExecute(cluster *resource.Cluster) []api.ActionType {
+	conditions := cluster.Status().Conditions
+	featureVersionValidatorEnabled := utilfeature.DefaultMutableFeatureGate.Enabled(features.CrdbVersionValidator)
+	featureDecommissionEnabled := utilfeature.DefaultMutableFeatureGate.Enabled(features.Decommission)
+	featureResizePVCEnabled := utilfeature.DefaultMutableFeatureGate.Enabled(features.ResizePVC)
+	featureClusterRestartEnabled := utilfeature.DefaultMutableFeatureGate.Enabled(features.ClusterRestart)
+	conditionInitializedTrue := condition.True(api.InitializedCondition, conditions)
+	conditionInitializedFalse := condition.False(api.InitializedCondition, conditions)
+	conditionVersionCheckedTrue := condition.True(api.CrdbVersionChecked, conditions)
+	conditionVersionCheckedFalse := condition.False(api.CrdbVersionChecked, conditions)
+
+	actionsToExecute := []api.ActionType{}
+
+	if featureDecommissionEnabled && conditionInitializedTrue {
+		actionsToExecute = append(actionsToExecute, api.DecommissionAction)
+	}
+
+	if featureVersionValidatorEnabled && conditionVersionCheckedFalse && (conditionInitializedTrue || conditionInitializedFalse) {
+		actionsToExecute = append(actionsToExecute, api.VersionCheckerAction)
+	}
+
+	// TODO (this todo was copy/pasted from the deprecated Handles func): this is not working am I doing this correctly?
+	// condition.True(api.CertificateGenerated, conds)
+	if conditionInitializedFalse {
+		actionsToExecute = append(actionsToExecute, api.GenerateCertAction)
+	}
+
+	if featureVersionValidatorEnabled && conditionVersionCheckedTrue && conditionInitializedTrue {
+		actionsToExecute = append(actionsToExecute, api.PartialUpdateAction)
+	} else if conditionInitializedTrue {
+		actionsToExecute = append(actionsToExecute, api.PartialUpdateAction)
+	}
+
+	if featureResizePVCEnabled && conditionInitializedTrue {
+		actionsToExecute = append(actionsToExecute, api.ResizePVCAction)
+	}
+
+	if featureVersionValidatorEnabled && conditionVersionCheckedTrue && (conditionInitializedTrue || conditionInitializedFalse) {
+		actionsToExecute = append(actionsToExecute, api.DeployAction)
+	} else if conditionInitializedTrue || conditionInitializedFalse {
+		actionsToExecute = append(actionsToExecute, api.DeployAction)
+	}
+
+	if featureVersionValidatorEnabled && conditionVersionCheckedTrue && conditionInitializedFalse {
+		actionsToExecute = append(actionsToExecute, api.InitializeAction)
+	} else if conditionInitializedFalse {
+		actionsToExecute = append(actionsToExecute, api.InitializeAction)
+	}
+
+	// TODO: conditionVersionCheckedTrue should probably be contingent on featureVersionValidatorEnabled, like with other actions
+	if featureClusterRestartEnabled && conditionVersionCheckedTrue && (conditionInitializedTrue || conditionInitializedFalse) {
+		actionsToExecute = append(actionsToExecute, api.ClusterRestartAction)
+	}
+
+	return actionsToExecute
 }
 
 //Log var
