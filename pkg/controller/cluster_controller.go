@@ -19,6 +19,9 @@ package controller
 import (
 	"context"
 	"fmt"
+	"github.com/cockroachdb/cockroach-operator/pkg/condition"
+	"github.com/cockroachdb/cockroach-operator/pkg/features"
+	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
 	"time"
 
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
@@ -38,9 +41,9 @@ import (
 // ClusterReconciler reconciles a CrdbCluster object
 type ClusterReconciler struct {
 	client.Client
-	Log     logr.Logger
-	Scheme  *runtime.Scheme
-	Actions []actor.Actor
+	Log    logr.Logger
+	Scheme *runtime.Scheme
+	Actors map[api.ActionType]actor.Actor
 }
 
 // Note: you need a blank line after this list in order for the controller to pick this up.
@@ -121,47 +124,44 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req reconcile.Request
 	// Save context cancellation function for actors to call if needed
 	ctx = actor.ContextWithCancelFn(ctx, cancel)
 
-	// Apply all actions to the cluster. Some actions can stop the loop if it is needed
-	// to refresh the state of the world
-	for i, a := range r.Actions {
-		// Ensure the action is applicable to the current resource state
-		if a.Handles(cluster.Status().Conditions) {
-			log.Info(fmt.Sprintf("Running action with index: %v and  name: %s", i, a.GetActionType()))
-			if err := a.Act(ctx, &cluster); err != nil {
-				// Save the error on he Status for each action
-				log.Info("Error on action", "Action", a.GetActionType(), "err", err.Error())
-				cluster.SetActionFailed(a.GetActionType(), err.Error())
-				defer func(ctx context.Context, cluster *resource.Cluster) {
-					if err := r.Client.Status().Update(ctx, cluster.Unwrap()); err != nil {
-						log.Error(err, "failed to update cluster status")
-					}
-				}(ctx, &cluster)
-				// Short pause
-				if notReadyErr, ok := err.(actor.NotReadyErr); ok {
-					log.V(int(zapcore.DebugLevel)).Info("requeueing", "reason", notReadyErr.Error(), "Action", a.GetActionType())
-					return requeueAfter(5*time.Second, nil)
+	actionsToExecute := getActionsToExecute(&cluster)
+	for _, action := range actionsToExecute {
+		a := r.Actors[action]
+		log.Info(fmt.Sprintf("Running action with name: %s", a.GetActionType()))
+		if err := a.Act(ctx, &cluster); err != nil {
+			// Save the error on the Status for each action
+			log.Info("Error on action", "Action", a.GetActionType(), "err", err.Error())
+			cluster.SetActionFailed(a.GetActionType(), err.Error())
+			defer func(ctx context.Context, cluster *resource.Cluster) {
+				if err := r.Client.Status().Update(ctx, cluster.Unwrap()); err != nil {
+					log.Error(err, "failed to update cluster status")
 				}
-
-				// Long pause
-				if cantRecoverErr, ok := err.(actor.PermanentErr); ok {
-					log.Error(cantRecoverErr, "can't proceed with reconcile", "Action", a.GetActionType())
-					return requeueAfter(5*time.Minute, err)
-				}
-
-				// No requeue until the user makes changes
-				if validationError, ok := err.(actor.ValidationError); ok {
-					log.Error(validationError, "can't proceed with reconcile")
-					return noRequeue()
-				}
-
-				log.Error(err, "action failed")
-				return requeueIfError(err)
+			}(ctx, &cluster)
+			// Short pause
+			if notReadyErr, ok := err.(actor.NotReadyErr); ok {
+				log.V(int(zapcore.DebugLevel)).Info("requeueing", "reason", notReadyErr.Error(), "Action", a.GetActionType())
+				return requeueAfter(5*time.Second, nil)
 			}
-			// reset errors on each run  if there was an error,
-			// this is to cover the not ready case
-			if cluster.Failed(a.GetActionType()) {
-				cluster.SetActionFinished(a.GetActionType())
+
+			// Long pause
+			if cantRecoverErr, ok := err.(actor.PermanentErr); ok {
+				log.Error(cantRecoverErr, "can't proceed with reconcile", "Action", a.GetActionType())
+				return requeueAfter(5*time.Minute, err)
 			}
+
+			// No requeue until the user makes changes
+			if validationError, ok := err.(actor.ValidationError); ok {
+				log.Error(validationError, "can't proceed with reconcile")
+				return noRequeue()
+			}
+
+			log.Error(err, "action failed")
+			return requeueIfError(err)
+		}
+		// reset errors on each run  if there was an error,
+		// this is to cover the not ready case
+		if cluster.Failed(a.GetActionType()) {
+			cluster.SetActionFinished(a.GetActionType())
 		}
 
 		// Stop processing and wait for Kubernetes scheduler to call us again as the actor
@@ -194,6 +194,63 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req reconcile.Request
 	return noRequeue()
 }
 
+func getActionsToExecute(cluster *resource.Cluster) []api.ActionType {
+	conditions := cluster.Status().Conditions
+	featureVersionValidatorEnabled := utilfeature.DefaultMutableFeatureGate.Enabled(features.CrdbVersionValidator)
+	featureDecommissionEnabled := utilfeature.DefaultMutableFeatureGate.Enabled(features.Decommission)
+	featureResizePVCEnabled := utilfeature.DefaultMutableFeatureGate.Enabled(features.ResizePVC)
+	featureClusterRestartEnabled := utilfeature.DefaultMutableFeatureGate.Enabled(features.ClusterRestart)
+	conditionInitializedTrue := condition.True(api.InitializedCondition, conditions)
+	conditionInitializedFalse := condition.False(api.InitializedCondition, conditions)
+	conditionVersionCheckedTrue := condition.True(api.CrdbVersionChecked, conditions)
+	conditionVersionCheckedFalse := condition.False(api.CrdbVersionChecked, conditions)
+
+	actionsToExecute := []api.ActionType{}
+
+	if featureDecommissionEnabled && conditionInitializedTrue {
+		actionsToExecute = append(actionsToExecute, api.DecommissionAction)
+	}
+
+	if featureVersionValidatorEnabled && conditionVersionCheckedFalse && (conditionInitializedTrue || conditionInitializedFalse) {
+		actionsToExecute = append(actionsToExecute, api.VersionCheckerAction)
+	}
+
+	// TODO (this todo was copy/pasted from the deprecated Handles func): this is not working am I doing this correctly?
+	// condition.True(api.CertificateGenerated, conds)
+	if conditionInitializedFalse {
+		actionsToExecute = append(actionsToExecute, api.GenerateCertAction)
+	}
+
+	if featureVersionValidatorEnabled && conditionVersionCheckedTrue && conditionInitializedTrue {
+		actionsToExecute = append(actionsToExecute, api.PartialUpdateAction)
+	} else if conditionInitializedTrue {
+		actionsToExecute = append(actionsToExecute, api.PartialUpdateAction)
+	}
+
+	if featureResizePVCEnabled && conditionInitializedTrue {
+		actionsToExecute = append(actionsToExecute, api.ResizePVCAction)
+	}
+
+	if featureVersionValidatorEnabled && conditionVersionCheckedTrue && (conditionInitializedTrue || conditionInitializedFalse) {
+		actionsToExecute = append(actionsToExecute, api.DeployAction)
+	} else if conditionInitializedTrue || conditionInitializedFalse {
+		actionsToExecute = append(actionsToExecute, api.DeployAction)
+	}
+
+	if featureVersionValidatorEnabled && conditionVersionCheckedTrue && conditionInitializedFalse {
+		actionsToExecute = append(actionsToExecute, api.InitializeAction)
+	} else if conditionInitializedFalse {
+		actionsToExecute = append(actionsToExecute, api.InitializeAction)
+	}
+
+	// TODO: conditionVersionCheckedTrue should probably be contingent on featureVersionValidatorEnabled, like with other actions
+	if featureClusterRestartEnabled && conditionVersionCheckedTrue && (conditionInitializedTrue || conditionInitializedFalse) {
+		actionsToExecute = append(actionsToExecute, api.ClusterRestartAction)
+	}
+
+	return actionsToExecute
+}
+
 // SetupWithManager registers the controller with the controller.Manager from controller-runtime
 func (r *ClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
@@ -213,10 +270,10 @@ func InitClusterReconciler() func(ctrl.Manager) error {
 func InitClusterReconcilerWithLogger(l logr.Logger) func(ctrl.Manager) error {
 	return func(mgr ctrl.Manager) error {
 		return (&ClusterReconciler{
-			Client:  mgr.GetClient(),
-			Log:     l,
-			Scheme:  mgr.GetScheme(),
-			Actions: actor.NewOperatorActions(mgr.GetScheme(), mgr.GetClient(), mgr.GetConfig()),
+			Client: mgr.GetClient(),
+			Log:    l,
+			Scheme: mgr.GetScheme(),
+			Actors: actor.NewOperatorActions(mgr.GetScheme(), mgr.GetClient(), mgr.GetConfig()),
 		}).SetupWithManager(mgr)
 	}
 }

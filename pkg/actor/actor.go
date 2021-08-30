@@ -72,7 +72,6 @@ func (e ValidationError) Error() string {
 
 // Actor is one action against the cluster if the cluster resource state can be handled
 type Actor interface {
-	Handles([]api.ClusterCondition) bool
 	Act(context.Context, *resource.Cluster) error
 	GetActionType() api.ActionType
 }
@@ -80,7 +79,7 @@ type Actor interface {
 // NewOperatorActions creates a slice of actors that control the actions or actors for the operator.
 // The order of the slice is critical so that the actors run in order, for instance update has to
 // happen before deploy.
-func NewOperatorActions(scheme *runtime.Scheme, cl client.Client, config *rest.Config) []Actor {
+func NewOperatorActions(scheme *runtime.Scheme, cl client.Client, config *rest.Config) map[api.ActionType]Actor {
 
 	// The order of these actors MATTERS.
 	// We need to have update before deploy so that
@@ -90,15 +89,15 @@ func NewOperatorActions(scheme *runtime.Scheme, cl client.Client, config *rest.C
 
 	// Actors that controlled by featuregates
 	// have the featuregate check above or in there handles func.
-	return []Actor{
-		newDecommission(scheme, cl, config),
-		newVersionChecker(scheme, cl, config),
-		newGenerateCert(scheme, cl, config),
-		newPartitionedUpdate(scheme, cl, config),
-		newResizePVC(scheme, cl, config),
-		newDeploy(scheme, cl, config, kube.NewKubernetesDistribution()),
-		newInitialize(scheme, cl, config),
-		newClusterRestart(scheme, cl, config),
+	return map[api.ActionType]Actor{
+		api.DecommissionAction:   newDecommission(scheme, cl, config),
+		api.VersionCheckerAction: newVersionChecker(scheme, cl, config),
+		api.GenerateCertAction:   newGenerateCert(scheme, cl, config),
+		api.PartialUpdateAction:  newPartitionedUpdate(scheme, cl, config),
+		api.ResizePVCAction:      newResizePVC(scheme, cl, config),
+		api.DeployAction:         newDeploy(scheme, cl, config, kube.NewKubernetesDistribution()),
+		api.InitializeAction:     newInitialize(scheme, cl, config),
+		api.ClusterRestartAction: newClusterRestart(scheme, cl, config),
 	}
 }
 

@@ -25,7 +25,6 @@ import (
 
 	"github.com/Masterminds/semver/v3"
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
-	"github.com/cockroachdb/cockroach-operator/pkg/condition"
 	"github.com/cockroachdb/cockroach-operator/pkg/database"
 	"github.com/cockroachdb/cockroach-operator/pkg/healthchecker"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
@@ -38,9 +37,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	"github.com/cockroachdb/cockroach-operator/pkg/features"
-	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
 )
 
 func newPartitionedUpdate(scheme *runtime.Scheme, cl client.Client, config *rest.Config) Actor {
@@ -60,12 +56,6 @@ type partitionedUpdate struct {
 // GetActionType returns api.PartialUpdateAction action used to set the cluster status errors
 func (up *partitionedUpdate) GetActionType() api.ActionType {
 	return api.PartialUpdateAction
-}
-func (up *partitionedUpdate) Handles(conds []api.ClusterCondition) bool {
-	if utilfeature.DefaultMutableFeatureGate.Enabled(features.CrdbVersionValidator) {
-		return condition.True(api.InitializedCondition, conds) && condition.True(api.CrdbVersionChecked, conds)
-	}
-	return condition.True(api.InitializedCondition, conds)
 }
 
 // Act runs a new partitionUpdate.

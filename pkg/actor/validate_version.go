@@ -65,11 +65,6 @@ func (v *versionChecker) GetActionType() api.ActionType {
 	return api.VersionCheckerAction
 }
 
-//Handles will return true if the conditions to run this action are satisfied
-func (v *versionChecker) Handles(conds []api.ClusterCondition) bool {
-	return utilfeature.DefaultMutableFeatureGate.Enabled(features.CrdbVersionValidator) && (condition.True(api.InitializedCondition, conds) || condition.False(api.InitializedCondition, conds)) && condition.False(api.CrdbVersionChecked, conds)
-}
-
 func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) error {
 	log := v.log.WithValues("CrdbCluster", cluster.ObjectKey())
 	log.V(DEBUGLEVEL).Info("starting to check the crdb version of the container provided")
