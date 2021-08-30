@@ -41,14 +41,32 @@ cd "${REPO_ROOT}"
 
 "$controllergen" \
   crd:trivialVersions=true \
-  rbac:roleName=cockroach-operator-role  webhook \
+  rbac:roleName=cockroach-operator-role webhook \
   paths="./..." output:crd:artifacts:config=config/crd/bases
 
-FILE_NAMES=(config/rbac/role.yaml config/crd/bases/crdb.cockroachlabs.com_crdbclusters.yaml)
+FILE_NAMES=(config/webhook/manifests.yaml config/rbac/role.yaml config/crd/bases/crdb.cockroachlabs.com_crdbclusters.yaml)
 
 for YAML in "${FILE_NAMES[@]}"
 do
    :
    cat "${REPO_ROOT}/hack/boilerplate/boilerplate.yaml.txt" "${REPO_ROOT}/${YAML}" > "${REPO_ROOT}/${YAML}.mod"
    mv "${REPO_ROOT}/${YAML}.mod" "${REPO_ROOT}/${YAML}"
-done 
+done
+
+fix_webhook_manifest() {
+  local selector='namespaceSelector:\n    matchLabels:\n      cockroach-namespace: default'
+
+  for file in config/webhook/manifests.yaml; do
+    local manifest="${REPO_ROOT}/${file}"
+    # we don't use the "system" namespace here
+    sed 's/namespace: system/namespace: default/g' "${manifest}" > "${manifest}.mod"
+    # strip out null creationTimestamp
+    sed '/creationTimestamp: null/d' "${manifest}.mod" > "${manifest}"
+    # add a namespaceSelector to the webhooks (not available via kubebuilder markers)
+    sed "s/name: mcrdbcluster.kb.io/name: mcrdbcluster.kb.io\n  ${selector}/" "${manifest}" > "${manifest}.mod"
+    sed "s/name: vcrdbcluster.kb.io/name: vcrdbcluster.kb.io\n  ${selector}/" "${manifest}.mod" > "${manifest}"
+    rm "${manifest}.mod"
+  done
+}
+
+fix_webhook_manifest

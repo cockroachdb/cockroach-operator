@@ -48,7 +48,7 @@ func (e *ErrWebhookNotFound) Error() string {
 func ConfigureMutatingWebhook(ctx context.Context, api admv1.MutatingWebhookConfigurationInterface, caCert []byte) error {
 	log := logr.FromContextOrDiscard(ctx).WithName("webhook_config").WithValues("resource", mutatingWebhookConfig)
 
-	log.V(2).Info("Fetching mutating webhook configuration")
+	log.V(debugLevel).Info("Fetching mutating webhook configuration")
 	config, err := api.Get(ctx, mutatingWebhookConfig, metav1.GetOptions{})
 	if err != nil {
 		log.Error(err, "Failed to fetch webhook configuration")
@@ -70,7 +70,7 @@ func ConfigureMutatingWebhook(ctx context.Context, api admv1.MutatingWebhookConf
 	}
 
 	config.Webhooks[idx].ClientConfig.CABundle = caCert
-	log.V(2).Info("Updating webhook CA bundle", "webhook", mutatingWebhookName)
+	log.V(debugLevel).Info("Updating webhook CA bundle", "webhook", mutatingWebhookName)
 	_, err = api.Update(ctx, config, metav1.UpdateOptions{})
 	return errors.Wrap(err, "failed to set CABundle for mutating webhook")
 }
@@ -82,7 +82,7 @@ func ConfigureMutatingWebhook(ctx context.Context, api admv1.MutatingWebhookConf
 func ConfigureValidatingWebhook(ctx context.Context, api admv1.ValidatingWebhookConfigurationInterface, caCert []byte) error {
 	log := logr.FromContextOrDiscard(ctx).WithName("webhook_config").WithValues("resource", validatingWebhookConfig)
 
-	log.V(2).Info("Fetching validating webhook configuration")
+	log.V(debugLevel).Info("Fetching validating webhook configuration")
 	config, err := api.Get(ctx, validatingWebhookConfig, metav1.GetOptions{})
 	if err != nil {
 		log.Error(err, "Failed to fetch webhook configuration")
@@ -104,7 +104,7 @@ func ConfigureValidatingWebhook(ctx context.Context, api admv1.ValidatingWebhook
 	}
 
 	config.Webhooks[idx].ClientConfig.CABundle = caCert
-	log.V(2).Info("Updating webhook CA bundle", "webhook", mutatingWebhookName)
+	log.V(debugLevel).Info("Updating webhook CA bundle", "webhook", mutatingWebhookName)
 	_, err = api.Update(ctx, config, metav1.UpdateOptions{})
 	return errors.Wrap(err, "failed to set CABundle for validating webhook")
 }

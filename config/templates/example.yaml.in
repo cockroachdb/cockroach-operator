@@ -32,11 +32,12 @@ spec:
         volumeMode: Filesystem
   resources:
     requests:
-      cpu: "2"
-      memory: "8Gi"
+      # This is intentionally low to make it work on local kind clusters.
+      cpu: 500m
+      memory: 2Gi
     limits:
-      cpu: "2"
-      memory: "8Gi"
+      cpu: 2
+      memory: 8Gi
   tlsEnabled: true
 {{- /* .LatestStableCrdbVersion: latest stable version of CockroachDB */}}
 # You can set either a version of the db or a specific image name

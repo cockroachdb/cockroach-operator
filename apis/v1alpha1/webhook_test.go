@@ -17,33 +17,26 @@ limitations under the License.
 package v1alpha1_test
 
 import (
-	"fmt"
 	"testing"
 
 	. "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
-	"github.com/google/go-cmp/cmp"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 )
 
-func TestSetClusterSpecDefaults(t *testing.T) {
-	s := &CrdbClusterSpec{}
+func TestCrdbClusterDefault(t *testing.T) {
+	cluster := &CrdbCluster{}
+
 	maxUnavailable := int32(1)
 	policy := v1.PullIfNotPresent
-	expected := &CrdbClusterSpec{
+	expected := CrdbClusterSpec{
 		GRPCPort:       &DefaultGRPCPort,
 		HTTPPort:       &DefaultHTTPPort,
 		SQLPort:        &DefaultSQLPort,
 		MaxUnavailable: &maxUnavailable,
-		Image: PodImage{
-			PullPolicyName: &policy,
-		},
+		Image:          PodImage{PullPolicyName: &policy},
 	}
 
-	SetClusterSpecDefaults(s)
-
-	diff := cmp.Diff(expected, s)
-	if diff != "" {
-		assert.Fail(t, fmt.Sprintf("unexpected result (-want +got):\n%v", diff))
-	}
+	cluster.Default()
+	require.Equal(t, expected, cluster.Spec)
 }

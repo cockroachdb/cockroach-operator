@@ -42,6 +42,7 @@ go_library(
         "@io_k8s_client_go//kubernetes/typed/core/v1:go_default_library",
         "@io_k8s_sigs_controller_runtime//:go_default_library",
         "@io_k8s_sigs_controller_runtime//pkg/client:go_default_library",
+        "@org_uber_go_zap//zapcore:go_default_library",
     ],
 )
 
