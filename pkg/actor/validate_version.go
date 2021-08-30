@@ -26,12 +26,9 @@ import (
 
 	"github.com/cenkalti/backoff"
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
-	"github.com/cockroachdb/cockroach-operator/pkg/condition"
-	"github.com/cockroachdb/cockroach-operator/pkg/features"
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
 	"github.com/cockroachdb/cockroach-operator/pkg/ptr"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
-	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"go.uber.org/zap/zapcore"
