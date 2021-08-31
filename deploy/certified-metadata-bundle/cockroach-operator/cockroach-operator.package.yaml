@@ -1,7 +1,7 @@
 channels:
 - currentCSV: cockroach-operator.v2.0.1
   name: beta
-- currentCSV: cockroach-operator.v2.0.1
+- currentCSV: cockroach-operator.v2.1.0
   name: stable
 defaultChannel: stable
 packageName: cockroachdb-certified
