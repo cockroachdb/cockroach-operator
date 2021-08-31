@@ -40,7 +40,6 @@ type ClusterReconciler struct {
 	client.Client
 	Log      logr.Logger
 	Scheme   *runtime.Scheme
-	Actors   map[api.ActionType]actor.Actor
 	Director actor.Director
 }
 
