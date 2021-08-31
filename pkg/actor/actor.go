@@ -140,7 +140,7 @@ func (_ ClusterDirector) GetActionsToExecute(cluster *resource.Cluster) []api.Ac
 
 	if featureVersionValidatorEnabled && conditionVersionCheckedTrue && conditionInitializedTrue {
 		actionsToExecute = append(actionsToExecute, api.PartialUpdateAction)
-	} else if conditionInitializedTrue {
+	} else if !featureVersionValidatorEnabled && conditionInitializedTrue {
 		actionsToExecute = append(actionsToExecute, api.PartialUpdateAction)
 	}
 
@@ -150,13 +150,13 @@ func (_ ClusterDirector) GetActionsToExecute(cluster *resource.Cluster) []api.Ac
 
 	if featureVersionValidatorEnabled && conditionVersionCheckedTrue && (conditionInitializedTrue || conditionInitializedFalse) {
 		actionsToExecute = append(actionsToExecute, api.DeployAction)
-	} else if conditionInitializedTrue || conditionInitializedFalse {
+	} else if !featureVersionValidatorEnabled && (conditionInitializedTrue || conditionInitializedFalse) {
 		actionsToExecute = append(actionsToExecute, api.DeployAction)
 	}
 
 	if featureVersionValidatorEnabled && conditionVersionCheckedTrue && conditionInitializedFalse {
 		actionsToExecute = append(actionsToExecute, api.InitializeAction)
-	} else if conditionInitializedFalse {
+	} else if !featureVersionValidatorEnabled && conditionInitializedFalse {
 		actionsToExecute = append(actionsToExecute, api.InitializeAction)
 	}
 

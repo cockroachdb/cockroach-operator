@@ -69,6 +69,7 @@ go_test(
         "//pkg/testutil:go_default_library",
         "@com_github_go_logr_logr//:go_default_library",
         "@com_github_go_logr_zapr//:go_default_library",
+        "@com_github_google_go_cmp//cmp:go_default_library",
         "@com_github_pkg_errors//:go_default_library",
         "@com_github_stretchr_testify//assert:go_default_library",
         "@com_github_stretchr_testify//require:go_default_library",
