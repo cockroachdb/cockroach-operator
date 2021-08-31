@@ -80,23 +80,15 @@ type Actor interface {
 }
 
 type Director interface {
-	GetActionsToExecute(*resource.Cluster) []api.ActionType
+	GetActorsToExecute(*resource.Cluster) []Actor
 }
 
-// NewOperatorActions creates a slice of actors that control the actions or actors for the operator.
-// The order of the slice is critical so that the actors run in order, for instance update has to
-// happen before deploy.
-func NewOperatorActions(scheme *runtime.Scheme, cl client.Client, config *rest.Config) map[api.ActionType]Actor {
+type ClusterDirector struct {
+	actors map[api.ActionType]Actor
+}
 
-	// The order of these actors MATTERS.
-	// We need to have update before deploy so that
-	// updates run before the deploy actor, or
-	// deploy will update the STS container and not deploy.
-	// Decommission needs to be first, it is not dependant on versionchecker.
-
-	// Actors that controlled by featuregates
-	// have the featuregate check above or in there handles func.
-	return map[api.ActionType]Actor{
+func NewDirector(scheme *runtime.Scheme, cl client.Client, config *rest.Config) Director {
+	actors := map[api.ActionType]Actor{
 		api.DecommissionAction:   newDecommission(scheme, cl, config),
 		api.VersionCheckerAction: newVersionChecker(scheme, cl, config),
 		api.GenerateCertAction:   newGenerateCert(scheme, cl, config),
@@ -106,12 +98,12 @@ func NewOperatorActions(scheme *runtime.Scheme, cl client.Client, config *rest.C
 		api.InitializeAction:     newInitialize(scheme, cl, config),
 		api.ClusterRestartAction: newClusterRestart(scheme, cl, config),
 	}
+	return &ClusterDirector{
+		actors: actors,
+	}
 }
 
-type ClusterDirector struct {
-}
-
-func (_ ClusterDirector) GetActionsToExecute(cluster *resource.Cluster) []api.ActionType {
+func (cd *ClusterDirector) GetActorsToExecute(cluster *resource.Cluster) []Actor {
 	conditions := cluster.Status().Conditions
 	featureVersionValidatorEnabled := utilfeature.DefaultMutableFeatureGate.Enabled(features.CrdbVersionValidator)
 	featureDecommissionEnabled := utilfeature.DefaultMutableFeatureGate.Enabled(features.Decommission)
@@ -122,50 +114,50 @@ func (_ ClusterDirector) GetActionsToExecute(cluster *resource.Cluster) []api.Ac
 	conditionVersionCheckedTrue := condition.True(api.CrdbVersionChecked, conditions)
 	conditionVersionCheckedFalse := condition.False(api.CrdbVersionChecked, conditions)
 
-	actionsToExecute := []api.ActionType{}
+	var actorsToExecute []Actor
 
 	if featureDecommissionEnabled && conditionInitializedTrue {
-		actionsToExecute = append(actionsToExecute, api.DecommissionAction)
+		actorsToExecute = append(actorsToExecute, cd.actors[api.DecommissionAction])
 	}
 
 	if featureVersionValidatorEnabled && conditionVersionCheckedFalse && (conditionInitializedTrue || conditionInitializedFalse) {
-		actionsToExecute = append(actionsToExecute, api.VersionCheckerAction)
+		actorsToExecute = append(actorsToExecute, cd.actors[api.VersionCheckerAction])
 	}
 
 	// TODO (this todo was copy/pasted from the deprecated Handles func): this is not working am I doing this correctly?
 	// condition.True(api.CertificateGenerated, conds)
 	if conditionInitializedFalse {
-		actionsToExecute = append(actionsToExecute, api.GenerateCertAction)
+		actorsToExecute = append(actorsToExecute, cd.actors[api.GenerateCertAction])
 	}
 
 	if featureVersionValidatorEnabled && conditionVersionCheckedTrue && conditionInitializedTrue {
-		actionsToExecute = append(actionsToExecute, api.PartialUpdateAction)
+		actorsToExecute = append(actorsToExecute, cd.actors[api.PartialUpdateAction])
 	} else if !featureVersionValidatorEnabled && conditionInitializedTrue {
-		actionsToExecute = append(actionsToExecute, api.PartialUpdateAction)
+		actorsToExecute = append(actorsToExecute, cd.actors[api.PartialUpdateAction])
 	}
 
 	if featureResizePVCEnabled && conditionInitializedTrue {
-		actionsToExecute = append(actionsToExecute, api.ResizePVCAction)
+		actorsToExecute = append(actorsToExecute, cd.actors[api.ResizePVCAction])
 	}
 
 	if featureVersionValidatorEnabled && conditionVersionCheckedTrue && (conditionInitializedTrue || conditionInitializedFalse) {
-		actionsToExecute = append(actionsToExecute, api.DeployAction)
+		actorsToExecute = append(actorsToExecute, cd.actors[api.DeployAction])
 	} else if !featureVersionValidatorEnabled && (conditionInitializedTrue || conditionInitializedFalse) {
-		actionsToExecute = append(actionsToExecute, api.DeployAction)
+		actorsToExecute = append(actorsToExecute, cd.actors[api.DeployAction])
 	}
 
 	if featureVersionValidatorEnabled && conditionVersionCheckedTrue && conditionInitializedFalse {
-		actionsToExecute = append(actionsToExecute, api.InitializeAction)
+		actorsToExecute = append(actorsToExecute, cd.actors[api.InitializeAction])
 	} else if !featureVersionValidatorEnabled && conditionInitializedFalse {
-		actionsToExecute = append(actionsToExecute, api.InitializeAction)
+		actorsToExecute = append(actorsToExecute, cd.actors[api.InitializeAction])
 	}
 
 	// TODO: conditionVersionCheckedTrue should probably be contingent on featureVersionValidatorEnabled, like with other actions
 	if featureClusterRestartEnabled && conditionVersionCheckedTrue && (conditionInitializedTrue || conditionInitializedFalse) {
-		actionsToExecute = append(actionsToExecute, api.ClusterRestartAction)
+		actorsToExecute = append(actorsToExecute, cd.actors[api.ClusterRestartAction])
 	}
 
-	return actionsToExecute
+	return actorsToExecute
 }
 
 //Log var

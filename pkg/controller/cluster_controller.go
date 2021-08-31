@@ -124,9 +124,8 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req reconcile.Request
 
 	// TODO: refactor this so that it's more like a state machine: determine what state we're in, and execute the actions
 	// necessary for that state.
-	actionsToExecute := r.Director.GetActionsToExecute(&cluster)
-	for _, action := range actionsToExecute {
-		a := r.Actors[action]
+	actorsToExecute := r.Director.GetActorsToExecute(&cluster)
+	for _, a := range actorsToExecute {
 		log.Info(fmt.Sprintf("Running action with name: %s", a.GetActionType()))
 		if err := a.Act(ctx, &cluster); err != nil {
 			// Save the error on the Status for each action
@@ -216,8 +215,7 @@ func InitClusterReconcilerWithLogger(l logr.Logger) func(ctrl.Manager) error {
 			Client:   mgr.GetClient(),
 			Log:      l,
 			Scheme:   mgr.GetScheme(),
-			Actors:   actor.NewOperatorActions(mgr.GetScheme(), mgr.GetClient(), mgr.GetConfig()),
-			Director: actor.ClusterDirector{},
+			Director: actor.NewDirector(mgr.GetScheme(), mgr.GetClient(), mgr.GetConfig()),
 		}).SetupWithManager(mgr)
 	}
 }

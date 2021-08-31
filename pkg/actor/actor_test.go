@@ -19,163 +19,141 @@ package actor_test
 import (
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/actor"
+	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	"github.com/cockroachdb/cockroach-operator/pkg/testutil"
 	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
-	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
 
-func containsAction(actions []api.ActionType, action api.ActionType) bool {
-	for _, a := range actions {
-		if a == action {
+func containsAction(actors []actor.Actor, action api.ActionType) bool {
+	for _, a := range actors {
+		if a.GetActionType() == action {
 			return true
 		}
 	}
 	return false
 }
 
-func TestDecommissionFeatureGate(t *testing.T) {
-	// Setup fake client
+func createTestDirectorAndCluster(t *testing.T) (*resource.Cluster, actor.Director) {
 	cluster := testutil.NewBuilder("cockroachdb").
 		Namespaced("default").
 		WithUID("cockroachdb-uid").
 		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */).
 		WithNodeCount(1).Cluster()
-	director := actor.ClusterDirector{}
+
+	scheme := testutil.InitScheme(t)
+	client := testutil.NewFakeClient(scheme)
+	director := actor.NewDirector(scheme, client, nil)
+
+	return cluster, director
+}
+
+func TestDecommissionFeatureGate(t *testing.T) {
+	cluster, director := createTestDirectorAndCluster(t)
 
 	cluster.SetTrue(api.InitializedCondition)
 
 	utilfeature.DefaultMutableFeatureGate.Set("UseDecommission=true")
-	actions := director.GetActionsToExecute(cluster)
-	require.True(t, containsAction(actions, api.DecommissionAction))
+	actors := director.GetActorsToExecute(cluster)
+	require.True(t, containsAction(actors, api.DecommissionAction))
 
 	utilfeature.DefaultMutableFeatureGate.Set("UseDecommission=false")
-	actions = director.GetActionsToExecute(cluster)
-	require.False(t, containsAction(actions, api.DecommissionAction))
+	actors = director.GetActorsToExecute(cluster)
+	require.False(t, containsAction(actors, api.DecommissionAction))
 }
 
 func TestVersionValidatorFeatureGate(t *testing.T) {
-	// Setup fake client
-	cluster := testutil.NewBuilder("cockroachdb").
-		Namespaced("default").
-		WithUID("cockroachdb-uid").
-		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */).
-		WithNodeCount(1).Cluster()
-	director := actor.ClusterDirector{}
+	cluster, director := createTestDirectorAndCluster(t)
 
 	cluster.SetTrue(api.InitializedCondition)
 
 	utilfeature.DefaultMutableFeatureGate.Set("CrdbVersionValidator=true")
-	actions := director.GetActionsToExecute(cluster)
-	require.True(t, containsAction(actions, api.VersionCheckerAction))
+	actors := director.GetActorsToExecute(cluster)
+	require.True(t, containsAction(actors, api.VersionCheckerAction))
 
 	utilfeature.DefaultMutableFeatureGate.Set("CrdbVersionValidator=false")
-	actions = director.GetActionsToExecute(cluster)
-	require.False(t, containsAction(actions, api.VersionCheckerAction))
+	actors = director.GetActorsToExecute(cluster)
+	require.False(t, containsAction(actors, api.VersionCheckerAction))
 }
 
 func TestResizePVCFeatureGate(t *testing.T) {
-	// Setup fake client
-	cluster := testutil.NewBuilder("cockroachdb").
-		Namespaced("default").
-		WithUID("cockroachdb-uid").
-		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */).
-		WithNodeCount(1).Cluster()
-	director := actor.ClusterDirector{}
+	cluster, director := createTestDirectorAndCluster(t)
 
 	cluster.SetTrue(api.InitializedCondition)
 
 	utilfeature.DefaultMutableFeatureGate.Set("ResizePVC=true")
-	actions := director.GetActionsToExecute(cluster)
-	require.True(t, containsAction(actions, api.ResizePVCAction))
+	actors := director.GetActorsToExecute(cluster)
+	require.True(t, containsAction(actors, api.ResizePVCAction))
 
 	utilfeature.DefaultMutableFeatureGate.Set("ResizePVC=false")
-	actions = director.GetActionsToExecute(cluster)
-	require.False(t, containsAction(actions, api.ResizePVCAction))
+	actors = director.GetActorsToExecute(cluster)
+	require.False(t, containsAction(actors, api.ResizePVCAction))
 }
 
 func TestClusterRestartFeatureGate(t *testing.T) {
-	// Setup fake client
-	cluster := testutil.NewBuilder("cockroachdb").
-		Namespaced("default").
-		WithUID("cockroachdb-uid").
-		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */).
-		WithNodeCount(1).Cluster()
-	director := actor.ClusterDirector{}
+	cluster, director := createTestDirectorAndCluster(t)
 
 	cluster.SetTrue(api.InitializedCondition)
 	cluster.SetTrue(api.CrdbVersionChecked)
 
 	utilfeature.DefaultMutableFeatureGate.Set("ClusterRestart=true")
-	actions := director.GetActionsToExecute(cluster)
-	require.True(t, containsAction(actions, api.ClusterRestartAction))
+	actors := director.GetActorsToExecute(cluster)
+	require.True(t, containsAction(actors, api.ClusterRestartAction))
 
 	utilfeature.DefaultMutableFeatureGate.Set("ClusterRestart=false")
-	actions = director.GetActionsToExecute(cluster)
-	require.False(t, containsAction(actions, api.ClusterRestartAction))
+	actors = director.GetActorsToExecute(cluster)
+	require.False(t, containsAction(actors, api.ClusterRestartAction))
+}
+
+func actorsHaveTypes(actors []actor.Actor, actionTypes []api.ActionType) bool {
+	if len(actors) != len(actionTypes) {
+		return false
+	}
+	for i, a := range actors {
+		if a.GetActionType() != actionTypes[i] {
+			return false
+		}
+	}
+	return true
 }
 
 func TestTotallyUninitialized(t *testing.T) {
-	// Setup fake client
-	cluster := testutil.NewBuilder("cockroachdb").
-		Namespaced("default").
-		WithUID("cockroachdb-uid").
-		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */).
-		WithNodeCount(1).Cluster()
-	director := actor.ClusterDirector{}
+	cluster, director := createTestDirectorAndCluster(t)
 
 	utilfeature.DefaultMutableFeatureGate.Set("UseDecommission=true,CrdbVersionValidator=true,ResizePVC=true,ClusterRestart=true")
 
-	actions := director.GetActionsToExecute(cluster)
-	require.True(t, cmp.Equal(actions, []api.ActionType{api.VersionCheckerAction, api.GenerateCertAction}))
+	actors := director.GetActorsToExecute(cluster)
+	require.True(t, actorsHaveTypes(actors, []api.ActionType{api.VersionCheckerAction, api.RequestCertAction}))
 }
 
 func TestVersionCheckedButNotInitialized(t *testing.T) {
-	// Setup fake client
-	cluster := testutil.NewBuilder("cockroachdb").
-		Namespaced("default").
-		WithUID("cockroachdb-uid").
-		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */).
-		WithNodeCount(1).Cluster()
-	director := actor.ClusterDirector{}
+	cluster, director := createTestDirectorAndCluster(t)
 
 	utilfeature.DefaultMutableFeatureGate.Set("UseDecommission=true,CrdbVersionValidator=true,ResizePVC=true,ClusterRestart=true")
 	cluster.SetTrue(api.CrdbVersionChecked)
 
-	actions := director.GetActionsToExecute(cluster)
-	require.True(t, cmp.Equal(actions, []api.ActionType{api.GenerateCertAction, api.DeployAction, api.InitializeAction, api.ClusterRestartAction}))
+	actors := director.GetActorsToExecute(cluster)
+	require.True(t, actorsHaveTypes(actors, []api.ActionType{api.RequestCertAction, api.DeployAction, api.InitializeAction, api.ClusterRestartAction}))
 }
 
 func TestInitializedButNotVersionChecked(t *testing.T) {
-	// Setup fake client
-	cluster := testutil.NewBuilder("cockroachdb").
-		Namespaced("default").
-		WithUID("cockroachdb-uid").
-		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */).
-		WithNodeCount(1).Cluster()
-	director := actor.ClusterDirector{}
+	cluster, director := createTestDirectorAndCluster(t)
 
 	utilfeature.DefaultMutableFeatureGate.Set("UseDecommission=true,CrdbVersionValidator=true,ResizePVC=true,ClusterRestart=true")
 	cluster.SetTrue(api.InitializedCondition)
 
-	actions := director.GetActionsToExecute(cluster)
-	require.True(t, cmp.Equal(actions, []api.ActionType{api.DecommissionAction, api.VersionCheckerAction, api.ResizePVCAction}))
+	actors := director.GetActorsToExecute(cluster)
+	require.True(t, actorsHaveTypes(actors, []api.ActionType{api.DecommissionAction, api.VersionCheckerAction, api.ResizePVCAction}))
 }
 
 func TestVersionCheckedAndInitialized(t *testing.T) {
-	// Setup fake client
-	cluster := testutil.NewBuilder("cockroachdb").
-		Namespaced("default").
-		WithUID("cockroachdb-uid").
-		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */).
-		WithNodeCount(1).Cluster()
-	director := actor.ClusterDirector{}
+	cluster, director := createTestDirectorAndCluster(t)
 
 	utilfeature.DefaultMutableFeatureGate.Set("UseDecommission=true,CrdbVersionValidator=true,ResizePVC=true,ClusterRestart=true")
 	cluster.SetTrue(api.InitializedCondition)
 	cluster.SetTrue(api.CrdbVersionChecked)
 
-	actions := director.GetActionsToExecute(cluster)
-	require.True(t, cmp.Equal(actions, []api.ActionType{api.DecommissionAction, api.PartialUpdateAction, api.ResizePVCAction, api.DeployAction, api.ClusterRestartAction}))
+	actors := director.GetActorsToExecute(cluster)
+	require.True(t, actorsHaveTypes(actors, []api.ActionType{api.DecommissionAction, api.PartialUpdateAction, api.ResizePVCAction, api.DeployAction, api.ClusterRestartAction}))
 }
