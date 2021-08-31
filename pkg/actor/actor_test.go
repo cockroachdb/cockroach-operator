@@ -147,6 +147,22 @@ func TestVersionCheckedButNotInitialized(t *testing.T) {
 	require.True(t, cmp.Equal(actions, []api.ActionType{api.GenerateCertAction, api.DeployAction, api.InitializeAction, api.ClusterRestartAction}))
 }
 
+func TestInitializedButNotVersionChecked(t *testing.T) {
+	// Setup fake client
+	cluster := testutil.NewBuilder("cockroachdb").
+		Namespaced("default").
+		WithUID("cockroachdb-uid").
+		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */).
+		WithNodeCount(1).Cluster()
+	director := actor.ClusterDirector{}
+
+	utilfeature.DefaultMutableFeatureGate.Set("UseDecommission=true,CrdbVersionValidator=true,ResizePVC=true,ClusterRestart=true")
+	cluster.SetTrue(api.InitializedCondition)
+
+	actions := director.GetActionsToExecute(cluster)
+	require.True(t, cmp.Equal(actions, []api.ActionType{api.DecommissionAction, api.VersionCheckerAction, api.ResizePVCAction}))
+}
+
 func TestVersionCheckedAndInitialized(t *testing.T) {
 	// Setup fake client
 	cluster := testutil.NewBuilder("cockroachdb").
