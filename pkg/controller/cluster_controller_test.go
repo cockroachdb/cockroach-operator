@@ -40,14 +40,8 @@ import (
 )
 
 type fakeActor struct {
-	handlesCalled bool
-	cancelCtx     bool
-	err           error
-}
-
-func (a *fakeActor) Handles(_ []api.ClusterCondition) bool {
-	a.handlesCalled = true
-	return true
+	cancelCtx bool
+	err       error
 }
 
 func (a *fakeActor) Act(ctx context.Context, _ *resource.Cluster) error {
@@ -58,6 +52,14 @@ func (a *fakeActor) Act(ctx context.Context, _ *resource.Cluster) error {
 }
 func (a *fakeActor) GetActionType() api.ActionType {
 	return api.UnknownAction
+}
+
+type fakeDirector struct {
+	actorsToExecute []actor.Actor
+}
+
+func (fd *fakeDirector) GetActorsToExecute(cluster *resource.Cluster) []actor.Actor {
+	return fd.actorsToExecute
 }
 
 func TestReconcile(t *testing.T) {
@@ -129,8 +131,8 @@ func TestReconcile(t *testing.T) {
 				Client: cl,
 				Log:    log,
 				Scheme: scheme,
-				Actions: []actor.Actor{
-					&tt.action,
+				Director: &fakeDirector{
+					actorsToExecute: []actor.Actor{&tt.action},
 				},
 			}
 

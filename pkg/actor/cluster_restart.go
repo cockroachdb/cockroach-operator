@@ -23,12 +23,9 @@ import (
 	"time"
 
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
-	"github.com/cockroachdb/cockroach-operator/pkg/condition"
-	"github.com/cockroachdb/cockroach-operator/pkg/features"
 	"github.com/cockroachdb/cockroach-operator/pkg/healthchecker"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	"github.com/cockroachdb/cockroach-operator/pkg/scale"
-	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
@@ -63,15 +60,6 @@ type clusterRestart struct {
 //GetActionType returns api.ClusterRestartAction action used to set the cluster status errors
 func (r *clusterRestart) GetActionType() api.ActionType {
 	return api.ClusterRestartAction
-}
-
-//Handles will return true if the prerequisite are met to run restart
-//like the cluster exists, actin deploy and inizialize, run and the feature gate was enabled
-//for this feature
-func (r *clusterRestart) Handles(conds []api.ClusterCondition) bool {
-	return utilfeature.DefaultMutableFeatureGate.Enabled(features.ClusterRestart) &&
-		(condition.True(api.InitializedCondition, conds) || condition.False(api.InitializedCondition, conds)) &&
-		condition.True(api.CrdbVersionChecked, conds)
 }
 
 func (r *clusterRestart) Act(ctx context.Context, cluster *resource.Cluster) error {

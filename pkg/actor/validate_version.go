@@ -26,12 +26,9 @@ import (
 
 	"github.com/cenkalti/backoff"
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
-	"github.com/cockroachdb/cockroach-operator/pkg/condition"
-	"github.com/cockroachdb/cockroach-operator/pkg/features"
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
 	"github.com/cockroachdb/cockroach-operator/pkg/ptr"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
-	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
 	"go.uber.org/zap/zapcore"
@@ -63,11 +60,6 @@ type versionChecker struct {
 //GetActionType returns api.VersionCheckerAction action used to set the cluster status errors
 func (v *versionChecker) GetActionType() api.ActionType {
 	return api.VersionCheckerAction
-}
-
-//Handles will return true if the conditions to run this action are satisfied
-func (v *versionChecker) Handles(conds []api.ClusterCondition) bool {
-	return utilfeature.DefaultMutableFeatureGate.Enabled(features.CrdbVersionValidator) && (condition.True(api.InitializedCondition, conds) || condition.False(api.InitializedCondition, conds)) && condition.False(api.CrdbVersionChecked, conds)
 }
 
 func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) error {
