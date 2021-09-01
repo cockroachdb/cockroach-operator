@@ -22,7 +22,7 @@ import (
 )
 
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-// Important: Run "make" to regenerate code after modifying this file
+// Important: Run "make dev/generate" to regenerate code after modifying this file
 
 // +k8s:openapi-gen=true
 // +k8s:deepcopy-gen=true
@@ -233,12 +233,12 @@ type Volume struct {
 // VolumeClaim wraps a persistent volume claim (PVC) to use with the container.
 // Only one of the fields should set
 type VolumeClaim struct {
-	// PVC to request a new persistent volume
-	// +required
-	PersistentVolumeClaimSpec corev1.PersistentVolumeClaimSpec `json:"spec"`
-	// Existing PVC in the same namespace
-	// +required
-	PersistentVolumeSource corev1.PersistentVolumeClaimVolumeSource `json:"source"`
+	// (Optional) PVC to request a new persistent volume
+	// +optional
+	PersistentVolumeClaimSpec corev1.PersistentVolumeClaimSpec `json:"spec,omitempty"`
+	// (Optional) Existing PVC in the same namespace
+	// +optional
+	PersistentVolumeSource corev1.PersistentVolumeClaimVolumeSource `json:"source,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
