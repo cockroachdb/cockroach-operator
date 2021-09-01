@@ -692,7 +692,7 @@ spec:
                     description: (Optional) Persistent volume to use
                     properties:
                       source:
-                        description: Existing PVC in the same namespace
+                        description: (Optional) Existing PVC in the same namespace
                         properties:
                           claimName:
                             description: 'ClaimName is the name of a PersistentVolumeClaim
@@ -707,7 +707,7 @@ spec:
                         - claimName
                         type: object
                       spec:
-                        description: PVC to request a new persistent volume
+                        description: (Optional) PVC to request a new persistent volume
                         properties:
                           accessModes:
                             description: 'AccessModes contains the desired access
@@ -831,9 +831,6 @@ spec:
                               PersistentVolume backing this claim.
                             type: string
                         type: object
-                    required:
-                    - source
-                    - spec
                     type: object
                   supportsAutoResize:
                     description: '(Optional) SupportsAutoResize marks that a PVC will
