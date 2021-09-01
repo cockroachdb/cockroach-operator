@@ -83,7 +83,7 @@ type Director interface {
 	GetActorsToExecute(*resource.Cluster) []Actor
 }
 
-type ClusterDirector struct {
+type clusterDirector struct {
 	actors map[api.ActionType]Actor
 }
 
@@ -98,12 +98,12 @@ func NewDirector(scheme *runtime.Scheme, cl client.Client, config *rest.Config) 
 		api.InitializeAction:     newInitialize(scheme, cl, config),
 		api.ClusterRestartAction: newClusterRestart(scheme, cl, config),
 	}
-	return &ClusterDirector{
+	return &clusterDirector{
 		actors: actors,
 	}
 }
 
-func (cd *ClusterDirector) GetActorsToExecute(cluster *resource.Cluster) []Actor {
+func (cd *clusterDirector) GetActorsToExecute(cluster *resource.Cluster) []Actor {
 	conditions := cluster.Status().Conditions
 	featureVersionValidatorEnabled := utilfeature.DefaultMutableFeatureGate.Enabled(features.CrdbVersionValidator)
 	featureDecommissionEnabled := utilfeature.DefaultMutableFeatureGate.Enabled(features.Decommission)
