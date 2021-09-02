@@ -195,7 +195,7 @@ type PodImage struct {
 	// This defaults to the version pinned to the operator and requires a full container and tag/sha name.
 	// For instance: cockroachdb/cockroachdb:v20.1
 	// +required
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 	// (Optional) PullPolicy for the image, which defaults to IfNotPresent.
 	// Default: IfNotPresent
 	// +optional
