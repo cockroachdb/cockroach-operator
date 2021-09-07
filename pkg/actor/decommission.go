@@ -28,7 +28,7 @@ import (
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	"github.com/cockroachdb/cockroach-operator/pkg/scale"
 	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	kubetypes "k8s.io/apimachinery/pkg/types"

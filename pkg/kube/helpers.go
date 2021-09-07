@@ -26,8 +26,8 @@ import (
 
 	"github.com/banzaicloud/k8s-objectmatcher/patch"
 	"github.com/cenkalti/backoff"
+	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
-	"github.com/pkg/errors"
 	"go.uber.org/zap/zapcore"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"

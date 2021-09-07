@@ -27,7 +27,7 @@ import (
 
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 	certs "k8s.io/api/certificates/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
