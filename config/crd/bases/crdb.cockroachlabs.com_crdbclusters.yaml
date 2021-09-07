@@ -68,7 +68,7 @@ spec:
                   added to all resources
                 type: object
               affinity:
-                description: If specified, the pod's scheduling constraints
+                description: (Optional) If specified, the pod's scheduling constraints
                 properties:
                   nodeAffinity:
                     description: Describes node affinity scheduling rules for the
@@ -671,10 +671,10 @@ spec:
                   of the cockroachDB image Default: ""'
                 type: string
               dataStore:
-                description: (Required) Database disk storage configuration
+                description: Database disk storage configuration
                 properties:
                   hostPath:
-                    description: Directory from the host node's filesystem
+                    description: (Optional) Directory from the host node's filesystem
                     properties:
                       path:
                         description: 'Path of the directory on the host. If the path
@@ -689,10 +689,10 @@ spec:
                     - path
                     type: object
                   pvc:
-                    description: Persistent volume to use
+                    description: (Optional) Persistent volume to use
                     properties:
                       source:
-                        description: Existing PVC in the same namespace
+                        description: (Optional) Existing PVC in the same namespace
                         properties:
                           claimName:
                             description: 'ClaimName is the name of a PersistentVolumeClaim
@@ -707,7 +707,7 @@ spec:
                         - claimName
                         type: object
                       spec:
-                        description: PVC to request a new persistent volume
+                        description: (Optional) PVC to request a new persistent volume
                         properties:
                           accessModes:
                             description: 'AccessModes contains the desired access
@@ -833,8 +833,8 @@ spec:
                         type: object
                     type: object
                   supportsAutoResize:
-                    description: 'SupportsAutoResize marks that a PVC will resize
-                      without restarting the entire cluster Default: false'
+                    description: '(Optional) SupportsAutoResize marks that a PVC will
+                      resize without restarting the entire cluster Default: false'
                     type: boolean
                 type: object
               grpcPort:
@@ -843,12 +843,12 @@ spec:
                 format: int32
                 type: integer
               httpPort:
-                description: 'The web UI port (`--http-port` CLI parameter when starting
-                  the service) Default: 8080'
+                description: '(Optional) The web UI port (`--http-port` CLI parameter
+                  when starting the service) Default: 8080'
                 format: int32
                 type: integer
               image:
-                description: (Required) Container image information
+                description: Container image information
                 properties:
                   name:
                     description: 'Container image with supported CockroachDB version.
@@ -856,12 +856,13 @@ spec:
                       a full container and tag/sha name. For instance: cockroachdb/cockroachdb:v20.1'
                     type: string
                   pullPolicy:
-                    description: PullPolicy for the image, which defaults to IfNotPresent.
+                    description: '(Optional) PullPolicy for the image, which defaults
+                      to IfNotPresent. Default: IfNotPresent'
                     type: string
                   pullSecret:
-                    description: Secret name containing the dockerconfig to use for
-                      a registry that requires authentication. The secret must be
-                      configured first by the user.
+                    description: (Optional) Secret name containing the dockerconfig
+                      to use for a registry that requires authentication. The secret
+                      must be configured first by the user.
                     type: string
                 type: object
               maxSQLMemory:
@@ -891,8 +892,8 @@ spec:
                 format: int32
                 type: integer
               podEnvVariables:
-                description: '(Optional) PodEnvVariables is a slice of Environment
-                  Variables that are added to the pods Default: ""'
+                description: '(Optional) PodEnvVariables is a slice of environment
+                  variables that are added to the pods Default: (empty list)'
                 items:
                   description: EnvVar represents an environment variable present in
                     a Container.
@@ -1022,7 +1023,7 @@ spec:
                     type: object
                 type: object
               sqlPort:
-                description: 'The SQL Port number Default: 26257'
+                description: '(Optional) The SQL Port number Default: 26257'
                 format: int32
                 type: integer
               tlsEnabled:
@@ -1030,6 +1031,8 @@ spec:
                   your CockroachDB Cluster
                 type: boolean
             required:
+            - dataStore
+            - image
             - nodes
             type: object
           status:
@@ -1075,7 +1078,8 @@ spec:
                       format: date-time
                       type: string
                     message:
-                      description: Message related to the status of the action
+                      description: (Optional) Message related to the status of the
+                        action
                       type: string
                     status:
                       description: 'Action status: Failed, Finished or Unknown'

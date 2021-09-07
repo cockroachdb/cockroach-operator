@@ -92,7 +92,7 @@ shift || true
 unset GOROOT
 "$gazelle" update-repos \
   --from_file=go.mod --to_macro=hack/build/repos.bzl%_go_dependencies \
-  --build_file_generation=on --build_file_proto_mode=disable
+  --build_file_generation=on --build_file_proto_mode=disable --prune
 #"${update_bazel[@]}" # TODO(fejta): do we still need to do this?
 #"${update_deps_licenses[@]}"
 

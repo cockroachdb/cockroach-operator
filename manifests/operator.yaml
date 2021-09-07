@@ -265,7 +265,7 @@ spec:
       serviceAccountName: cockroach-operator-sa
       containers:
         - name: cockroach-operator
-          image: cockroachdb/cockroach-operator:v2.0.1
+          image: cockroachdb/cockroach-operator:v2.1.0
           imagePullPolicy: IfNotPresent
           # new alpha features are disabled via feature gates
           # uncomment the feature-gates argument to enable the feature
@@ -333,6 +333,8 @@ spec:
               value: cockroachdb/cockroach:v20.2.13
             - name: RELATED_IMAGE_COCKROACH_v20_2_14
               value: cockroachdb/cockroach:v20.2.14
+            - name: RELATED_IMAGE_COCKROACH_v20_2_15
+              value: cockroachdb/cockroach:v20.2.15
             - name: RELATED_IMAGE_COCKROACH_v21_1_0
               value: cockroachdb/cockroach:v21.1.0
             - name: RELATED_IMAGE_COCKROACH_v21_1_1

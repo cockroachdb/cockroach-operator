@@ -208,7 +208,15 @@ dev/fmt:
 
 .PHONY: dev/generate
 dev/generate:
-	bazel run //hack:update-codegen //hack:update-crds
+	bazel run //hack:update-codegen && bazel run //hack:update-crds
+
+.PHONY: dev/run
+dev/run:
+	bazel run //hack/run
+
+.PHONY: dev/run-shell
+dev/run-shell:
+	KUBECONFIG=/tmp/.kube/config $(shell printenv SHELL)
 
 #
 # Targets that allow to install the operator on an existing cluster
@@ -232,9 +240,8 @@ k8s/delete:
 #
 .PHONY: dev/syncdeps
 dev/syncdeps:
-	bazel run //hack:update-deps \
-	bazel run //hack:update-bazel \
-	bazel run //:gazelle -- update-repos -from_file=go.mod
+	bazel run //hack:update-deps && \
+	bazel run //hack:update-bazel
 
 #
 # Release targets

@@ -22,7 +22,7 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	. "github.com/cockroachdb/cockroach-operator/pkg/clustersql"
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v2"
 )

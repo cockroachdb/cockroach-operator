@@ -23,8 +23,8 @@ import (
 
 	"github.com/cenkalti/backoff"
 	"github.com/cockroachdb/cockroach-operator/pkg/healthchecker"
+	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
-	"github.com/pkg/errors"
 	"go.uber.org/zap/zapcore"
 	v1 "k8s.io/api/apps/v1"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"

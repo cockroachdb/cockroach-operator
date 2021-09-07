@@ -17,64 +17,59 @@ limitations under the License.
 package v1alpha1_test
 
 import (
+	"context"
+	"path/filepath"
+	"testing"
+
 	. "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	"golang.org/x/net/context"
+	"github.com/cockroachdb/cockroach-operator/pkg/client/clientset/versioned"
+	"github.com/cockroachdb/cockroach-operator/pkg/testutil/env"
+	"github.com/stretchr/testify/require"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	runtime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 )
 
-// These tests are written in BDD-style using Ginkgo framework. Refer to
-// http://onsi.github.io/ginkgo to learn more.
-
-var _ = Describe("CrdbCluster", func() {
-	var (
-		key              types.NamespacedName
-		created, fetched *CrdbCluster
+func TestCrdbCluster(t *testing.T) {
+	env := env.NewEnv(
+		runtime.NewSchemeBuilder(AddToScheme),
+		filepath.Join("..", "..", "config", "crd", "bases"),
 	)
 
-	BeforeEach(func() {
-		// Add any setup steps that needs to be executed before each test
-	})
+	env.Start()
+	defer env.Stop()
 
-	AfterEach(func() {
-		// Add any teardown steps that needs to be executed after each test
-	})
+	key := types.NamespacedName{
+		Name:      "foo",
+		Namespace: "default",
+	}
 
-	// Add Tests for OpenAPI validation (or additonal CRD features) specified in
-	// your API definition.
-	// Avoid adding tests for vanilla CRUD operations because they would
-	// test Kubernetes API server, which isn't the goal here.
-	Context("Create CRD", func() {
+	given := &CrdbCluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      key.Name,
+			Namespace: key.Namespace,
+		},
+		Spec: CrdbClusterSpec{},
+	}
 
-		It("should create an object successfully", func() {
+	ctx := context.TODO()
+	client := versioned.NewForConfigOrDie(env.Config).CrdbV1alpha1().CrdbClusters(key.Namespace)
 
-			key = types.NamespacedName{
-				Name:      "foo",
-				Namespace: "default",
-			}
+	// create a new cluster
+	created, err := client.Create(ctx, given, metav1.CreateOptions{})
+	require.NoError(t, err)
 
-			created = &CrdbCluster{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "foo",
-					Namespace: "default",
-				},
-				Spec: CrdbClusterSpec{},
-			}
+	// look it up
+	found, err := client.Get(ctx, key.Name, metav1.GetOptions{})
+	require.NoError(t, err)
+	require.Equal(t, created, found)
 
-			By("creating an API object")
-			Expect(k8sClient.Create(context.TODO(), created)).To(Succeed())
+	// delete it
+	require.NoError(t, client.Delete(ctx, key.Name, metav1.DeleteOptions{}))
 
-			fetched = &CrdbCluster{}
-			Expect(k8sClient.Get(context.TODO(), key, fetched)).To(Succeed())
-			Expect(fetched).To(Equal(created))
-
-			By("deleting the created object")
-			Expect(k8sClient.Delete(context.TODO(), created)).To(Succeed())
-			Expect(k8sClient.Get(context.TODO(), key, created)).ToNot(Succeed())
-		})
-
-	})
-
-})
+	// ensure it's gone
+	found, err = client.Get(ctx, key.Name, metav1.GetOptions{})
+	require.True(t, errors.IsNotFound(err))
+	require.Empty(t, found)
+}
