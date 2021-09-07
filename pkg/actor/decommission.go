@@ -22,7 +22,6 @@ import (
 
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/clustersql"
-	"github.com/cockroachdb/cockroach-operator/pkg/condition"
 	"github.com/cockroachdb/cockroach-operator/pkg/database"
 	"github.com/cockroachdb/cockroach-operator/pkg/features"
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
@@ -55,14 +54,6 @@ type decommission struct {
 //GetActionType returns  api.DecommissionAction used to set the cluster status errors
 func (d decommission) GetActionType() api.ActionType {
 	return api.DecommissionAction
-}
-
-// Handles returns true if the Actor is enabled or can run
-func (d decommission) Handles(conds []api.ClusterCondition) bool {
-	if !utilfeature.DefaultMutableFeatureGate.Enabled(features.Decommission) {
-		return false
-	}
-	return condition.True(api.InitializedCondition, conds)
 }
 
 func (d decommission) Act(ctx context.Context, cluster *resource.Cluster) error {

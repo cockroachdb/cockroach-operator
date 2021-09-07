@@ -22,12 +22,8 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff"
-	"github.com/cockroachdb/cockroach-operator/pkg/features"
-	"github.com/cockroachdb/cockroach-operator/pkg/kube"
-	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
-
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
-	"github.com/cockroachdb/cockroach-operator/pkg/condition"
+	"github.com/cockroachdb/cockroach-operator/pkg/kube"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	"github.com/cockroachdb/errors"
 	appsv1 "k8s.io/api/apps/v1"
@@ -69,11 +65,6 @@ type resizePVC struct {
 //GetActionType returns api.RequestCertAction action used to set the cluster status errors
 func (rp *resizePVC) GetActionType() api.ActionType {
 	return api.ResizePVCAction
-}
-
-// Handles returns true if the DB is initialized
-func (rp *resizePVC) Handles(conds []api.ClusterCondition) bool {
-	return condition.True(api.InitializedCondition, conds) && utilfeature.DefaultMutableFeatureGate.Enabled(features.ResizePVC)
 }
 
 // Act in this implementation resizes PVC volumes of a CR sts.

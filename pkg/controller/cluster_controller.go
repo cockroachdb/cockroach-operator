@@ -38,9 +38,9 @@ import (
 // ClusterReconciler reconciles a CrdbCluster object
 type ClusterReconciler struct {
 	client.Client
-	Log     logr.Logger
-	Scheme  *runtime.Scheme
-	Actions []actor.Actor
+	Log      logr.Logger
+	Scheme   *runtime.Scheme
+	Director actor.Director
 }
 
 // Note: you need a blank line after this list in order for the controller to pick this up.
@@ -121,47 +121,45 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req reconcile.Request
 	// Save context cancellation function for actors to call if needed
 	ctx = actor.ContextWithCancelFn(ctx, cancel)
 
-	// Apply all actions to the cluster. Some actions can stop the loop if it is needed
-	// to refresh the state of the world
-	for i, a := range r.Actions {
-		// Ensure the action is applicable to the current resource state
-		if a.Handles(cluster.Status().Conditions) {
-			log.Info(fmt.Sprintf("Running action with index: %v and  name: %s", i, a.GetActionType()))
-			if err := a.Act(ctx, &cluster); err != nil {
-				// Save the error on he Status for each action
-				log.Info("Error on action", "Action", a.GetActionType(), "err", err.Error())
-				cluster.SetActionFailed(a.GetActionType(), err.Error())
-				defer func(ctx context.Context, cluster *resource.Cluster) {
-					if err := r.Client.Status().Update(ctx, cluster.Unwrap()); err != nil {
-						log.Error(err, "failed to update cluster status")
-					}
-				}(ctx, &cluster)
-				// Short pause
-				if notReadyErr, ok := err.(actor.NotReadyErr); ok {
-					log.V(int(zapcore.DebugLevel)).Info("requeueing", "reason", notReadyErr.Error(), "Action", a.GetActionType())
-					return requeueAfter(5*time.Second, nil)
+	// TODO: refactor this so that it's more like a state machine: determine what state we're in, and execute the actions
+	// necessary for that state.
+	actorsToExecute := r.Director.GetActorsToExecute(&cluster)
+	for _, a := range actorsToExecute {
+		log.Info(fmt.Sprintf("Running action with name: %s", a.GetActionType()))
+		if err := a.Act(ctx, &cluster); err != nil {
+			// Save the error on the Status for each action
+			log.Info("Error on action", "Action", a.GetActionType(), "err", err.Error())
+			cluster.SetActionFailed(a.GetActionType(), err.Error())
+			defer func(ctx context.Context, cluster *resource.Cluster) {
+				if err := r.Client.Status().Update(ctx, cluster.Unwrap()); err != nil {
+					log.Error(err, "failed to update cluster status")
 				}
-
-				// Long pause
-				if cantRecoverErr, ok := err.(actor.PermanentErr); ok {
-					log.Error(cantRecoverErr, "can't proceed with reconcile", "Action", a.GetActionType())
-					return requeueAfter(5*time.Minute, err)
-				}
-
-				// No requeue until the user makes changes
-				if validationError, ok := err.(actor.ValidationError); ok {
-					log.Error(validationError, "can't proceed with reconcile")
-					return noRequeue()
-				}
-
-				log.Error(err, "action failed")
-				return requeueIfError(err)
+			}(ctx, &cluster)
+			// Short pause
+			if notReadyErr, ok := err.(actor.NotReadyErr); ok {
+				log.V(int(zapcore.DebugLevel)).Info("requeueing", "reason", notReadyErr.Error(), "Action", a.GetActionType())
+				return requeueAfter(5*time.Second, nil)
 			}
-			// reset errors on each run  if there was an error,
-			// this is to cover the not ready case
-			if cluster.Failed(a.GetActionType()) {
-				cluster.SetActionFinished(a.GetActionType())
+
+			// Long pause
+			if cantRecoverErr, ok := err.(actor.PermanentErr); ok {
+				log.Error(cantRecoverErr, "can't proceed with reconcile", "Action", a.GetActionType())
+				return requeueAfter(5*time.Minute, err)
 			}
+
+			// No requeue until the user makes changes
+			if validationError, ok := err.(actor.ValidationError); ok {
+				log.Error(validationError, "can't proceed with reconcile")
+				return noRequeue()
+			}
+
+			log.Error(err, "action failed")
+			return requeueIfError(err)
+		}
+		// reset errors on each run  if there was an error,
+		// this is to cover the not ready case
+		if cluster.Failed(a.GetActionType()) {
+			cluster.SetActionFinished(a.GetActionType())
 		}
 
 		// Stop processing and wait for Kubernetes scheduler to call us again as the actor
@@ -213,10 +211,10 @@ func InitClusterReconciler() func(ctrl.Manager) error {
 func InitClusterReconcilerWithLogger(l logr.Logger) func(ctrl.Manager) error {
 	return func(mgr ctrl.Manager) error {
 		return (&ClusterReconciler{
-			Client:  mgr.GetClient(),
-			Log:     l,
-			Scheme:  mgr.GetScheme(),
-			Actions: actor.NewOperatorActions(mgr.GetScheme(), mgr.GetClient(), mgr.GetConfig()),
+			Client:   mgr.GetClient(),
+			Log:      l,
+			Scheme:   mgr.GetScheme(),
+			Director: actor.NewDirector(mgr.GetScheme(), mgr.GetClient(), mgr.GetConfig()),
 		}).SetupWithManager(mgr)
 	}
 }

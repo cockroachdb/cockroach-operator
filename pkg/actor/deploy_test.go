@@ -27,7 +27,6 @@ import (
 	"github.com/go-logr/zapr"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zaptest"
 )
 
@@ -78,7 +77,6 @@ func TestDeploysNotInitalizedClusterAfterVersionChecker(t *testing.T) {
 	mock := kube.MockKubernetesDistribution()
 	deploy := actor.NewDeploy(scheme, client, nil, mock)
 	t.Log(cluster.Status().Conditions)
-	require.True(t, deploy.Handles(cluster.Status().Conditions))
 
 	// 3 is the number of resources we expect to be created. The action should be repeated as it is
 	// restarted on successful creation or update

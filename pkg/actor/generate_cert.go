@@ -26,7 +26,6 @@ import (
 	"time"
 
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
-	"github.com/cockroachdb/cockroach-operator/pkg/condition"
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	"github.com/cockroachdb/cockroach-operator/pkg/security"
@@ -67,13 +66,6 @@ type generateCert struct {
 //GetActionType returns api.RequestCertAction action used to set the cluster status errors
 func (rc *generateCert) GetActionType() api.ActionType {
 	return api.RequestCertAction
-}
-
-// Handles returns if this Actor can run.
-func (rc *generateCert) Handles(conds []api.ClusterCondition) bool {
-	// TODO this is not working am I doing this correctly?
-	// condition.True(api.CertificateGenerated, conds)
-	return condition.False(api.InitializedCondition, conds)
 }
 
 // Act func generates the various certificates required and then stores

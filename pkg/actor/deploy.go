@@ -20,11 +20,8 @@ import (
 	"context"
 
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
-	"github.com/cockroachdb/cockroach-operator/pkg/condition"
-	"github.com/cockroachdb/cockroach-operator/pkg/features"
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
-	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
@@ -51,13 +48,6 @@ type deploy struct {
 // GetActionType returns the  api.DeployAction value used to set the cluster status errors
 func (d deploy) GetActionType() api.ActionType {
 	return api.DeployAction
-}
-
-func (d deploy) Handles(conds []api.ClusterCondition) bool {
-	if utilfeature.DefaultMutableFeatureGate.Enabled(features.CrdbVersionValidator) {
-		return (condition.True(api.InitializedCondition, conds) || condition.False(api.InitializedCondition, conds)) && (condition.True(api.CrdbVersionChecked, conds))
-	}
-	return (condition.True(api.InitializedCondition, conds) || condition.False(api.InitializedCondition, conds))
 }
 
 func (d deploy) Act(ctx context.Context, cluster *resource.Cluster) error {
