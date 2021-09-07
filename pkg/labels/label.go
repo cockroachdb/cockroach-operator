@@ -18,7 +18,7 @@ package labels
 
 import (
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
 )
