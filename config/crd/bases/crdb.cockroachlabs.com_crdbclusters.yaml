@@ -864,6 +864,8 @@ spec:
                       to use for a registry that requires authentication. The secret
                       must be configured first by the user.
                     type: string
+                required:
+                - name
                 type: object
               maxSQLMemory:
                 description: '(Optional) The maximum in-memory storage capacity available
