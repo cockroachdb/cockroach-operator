@@ -113,6 +113,12 @@ func (s Sandbox) Update(obj client.Object) error {
 	return s.env.Update(context.TODO(), obj)
 }
 
+func (s Sandbox) Delete(obj client.Object) error {
+	obj = s.setNamespaceIfMissing(obj)
+
+	return s.env.Delete(context.TODO(), obj)
+}
+
 func (s Sandbox) Get(o client.Object) error {
 	accessor, err := meta.Accessor(o)
 	if err != nil {

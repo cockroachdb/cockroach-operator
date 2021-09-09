@@ -117,6 +117,16 @@ func (b ClusterBuilder) WithLabels(labels map[string]string) ClusterBuilder {
 	return b
 }
 
+func (b ClusterBuilder) WithAffinity(affinity *corev1.Affinity) ClusterBuilder {
+	b.cluster.Spec.Affinity = affinity
+	return b
+}
+
+func (b ClusterBuilder) WithResources(resources corev1.ResourceRequirements) ClusterBuilder {
+	b.cluster.Spec.Resources = resources
+	return b
+}
+
 func (b ClusterBuilder) Cr() *api.CrdbCluster {
 	cluster := b.cluster.DeepCopy()
 
