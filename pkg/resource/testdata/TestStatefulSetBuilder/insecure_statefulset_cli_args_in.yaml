@@ -52,4 +52,8 @@ spec:
                values:
                - test-cluster
            topologyKey: kubernetes.io/hostname
+  tolerations:
+    - key: "key"
+      operator: "Exists"
+      effect: "NoSchedule"
 status: {}

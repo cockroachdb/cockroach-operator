@@ -34,80 +34,103 @@ type CrdbClusterSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Number of nodes",xDescriptors="urn:alm:descriptor:com.tectonic.ui:podCount"
 	// +required
 	Nodes int32 `json:"nodes"`
+
 	// Container image information
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Cockroach Database Image"
 	// +required
 	Image PodImage `json:"image"`
+
 	// (Optional) The database port (`--port` CLI parameter when starting the service)
 	// Default: 26258
 	// +optional
 	GRPCPort *int32 `json:"grpcPort,omitempty"`
+
 	// (Optional) The web UI port (`--http-port` CLI parameter when starting the service)
 	// Default: 8080
 	// +optional
 	HTTPPort *int32 `json:"httpPort,omitempty"`
+
 	// (Optional) The SQL Port number
 	// Default: 26257
 	// +optional
 	SQLPort *int32 `json:"sqlPort,omitempty"`
+
 	// (Optional) TLSEnabled determines if TLS is enabled for your CockroachDB Cluster
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="TLS Enabled",xDescriptors="urn:alm:descriptor:com.tectonic.ui:booleanSwitch"
 	// +optional
 	TLSEnabled bool `json:"tlsEnabled,omitempty"`
+
 	// (Optional) The secret with certificates and a private key for the TLS endpoint
 	// on the database port. The standard naming of files is expected (tls.key, tls.crt, ca.crt)
 	// Default: ""
 	// +optional
 	NodeTLSSecret string `json:"nodeTLSSecret,omitempty"`
+
 	// (Optional) The secret with a certificate and a private key for root database user
 	// Default: ""
 	// +optional
 	ClientTLSSecret string `json:"clientTLSSecret,omitempty"`
+
 	// (Optional) The maximum number of pods that can be unavailable during a rolling update.
 	// This number is set in the PodDistruptionBudget and defaults to 1.
 	// +optional
 	MaxUnavailable *int32 `json:"maxUnavailable,omitempty"`
+
 	// (Optional) The min number of pods that can be unavailable during a rolling update.
 	// This number is set in the PodDistruptionBudget and defaults to 1.
 	// +optional
 	MinAvailable *int32 `json:"minAvailable,omitempty"`
+
 	// (Optional) The total size for caches (`--cache` command line parameter)
 	// Default: "25%"
 	// +optional
 	Cache string `json:"cache,omitempty"`
+
 	// (Optional) The maximum in-memory storage capacity available to store temporary
 	// data for SQL queries (`--max-sql-memory` parameter)
 	// Default: "25%"
 	// +optional
 	MaxSQLMemory string `json:"maxSQLMemory,omitempty"`
+
 	// (Optional) Additional command line arguments for the `cockroach` binary
 	// Default: ""
 	// +optional
 	AdditionalArgs []string `json:"additionalArgs,omitempty"`
+
 	// (Optional) Database container resource limits. Any container limits
 	// can be specified.
 	// Default: (not specified)
 	// +optional
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+
 	// Database disk storage configuration
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Data Store"
 	// +required
 	DataStore Volume `json:"dataStore"`
+
 	// (Optional) CockroachDBVersion sets the explicit version of the cockroachDB image
 	// Default: ""
 	// +optional
 	CockroachDBVersion string `json:"cockroachDBVersion,omitempty"`
+
 	// (Optional) PodEnvVariables is a slice of environment variables that are added to the pods
 	// Default: (empty list)
 	// +optional
 	PodEnvVariables []corev1.EnvVar `json:"podEnvVariables,omitempty"`
+
 	// (Optional) If specified, the pod's scheduling constraints
 	// +optional
 	Affinity *corev1.Affinity `json:"affinity,omitempty"`
+
 	// (Optional) Additional custom resource labels that are added to all resources
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Map of additional custom labels"
 	// +optional
 	AdditionalLabels map[string]string `json:"additionalLabels,omitempty"`
+
+	// (Optional) Tolerations for scheduling pods onto some dedicated nodes
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Cockroach Database Tolerations"
+	// +optional
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
 }
 
 // +k8s:openapi-gen=true

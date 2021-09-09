@@ -22,16 +22,17 @@ import (
 	"os"
 	"strings"
 
-	"github.com/cockroachdb/cockroach-operator/pkg/features"
-	"github.com/cockroachdb/cockroach-operator/pkg/labels"
-	"github.com/cockroachdb/cockroach-operator/pkg/ptr"
-	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/cockroachdb/cockroach-operator/pkg/features"
+	"github.com/cockroachdb/cockroach-operator/pkg/labels"
+	"github.com/cockroachdb/cockroach-operator/pkg/ptr"
+	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
 )
 
 const (
@@ -210,6 +211,10 @@ func (b StatefulSetBuilder) makePodTemplate() corev1.PodTemplateSpec {
 
 	if utilfeature.DefaultMutableFeatureGate.Enabled(features.AffinityRules) {
 		pod.Spec.Affinity = b.Spec().Affinity
+	}
+
+	if utilfeature.DefaultMutableFeatureGate.Enabled(features.TolerationRules) {
+		pod.Spec.Tolerations = b.Spec().Tolerations
 	}
 
 	secret := b.Spec().Image.PullSecret

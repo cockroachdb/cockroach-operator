@@ -17,13 +17,14 @@ limitations under the License.
 package actor_test
 
 import (
+	"testing"
+
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/actor"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	"github.com/cockroachdb/cockroach-operator/pkg/testutil"
 	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func containsAction(actors []actor.Actor, action api.ActionType) bool {
