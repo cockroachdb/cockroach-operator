@@ -154,7 +154,7 @@ func (cluster Cluster) StatefulSetName() string {
 
 func (cluster Cluster) JobName() string {
 	slug.MaxLength = 63
-	return slug.Make(fmt.Sprintf("%s-vcheck", cluster.Name()))
+	return slug.Make(fmt.Sprintf("%s-vcheck-%d", cluster.Name(), getTimeHashInMinutes(time.Now())))
 }
 func getTimeHashInMinutes(scheduledTime time.Time) int64 {
 	return scheduledTime.Unix() / 60
