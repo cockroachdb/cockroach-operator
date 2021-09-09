@@ -140,6 +140,7 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 		if err != nil {
 			log.Error(err, "job not found")
 			if dErr := deleteJob(ctx, cluster, clientset, job); dErr != nil {
+				// Log the job deletion error, but return the underlying error that prompted deletion.
 				log.Error(dErr, "failed to delete the job")
 			}
 			return err
@@ -189,6 +190,7 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 				err := InvalidContainerVersionError{Err: errBackoff}
 				return LogError("job image incorrect", err, log)
 			} else if dErr := deleteJob(ctx, cluster, clientset, job); dErr != nil {
+				// Log the job deletion error, but return the underlying error that prompted deletion.
 				log.Error(dErr, "failed to delete the job")
 			}
 			return errors.Wrapf(err, "failed to check the version of the crdb")
@@ -298,6 +300,7 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 		return err
 	}
 
+	// If we got here, the version checker job was successful. Delete it.
 	if dErr := deleteJob(ctx, cluster, clientset, job); dErr != nil {
 		log.Error(dErr, "failed to delete the job")
 	}
