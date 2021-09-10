@@ -265,7 +265,6 @@ filegroup(
         "//hack/crdbversions:all-srcs",
         "//hack/gke:all-srcs",
         "//hack/k8s:all-srcs",
-        "//hack/run:all-srcs",
         "//hack/versionbump:all-srcs",
     ],
     tags = ["automanaged"],
