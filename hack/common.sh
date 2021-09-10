@@ -20,6 +20,9 @@
 # "-                                                       -"
 # "---------------------------------------------------------"
 
+# load env vars from rc file if it exists
+[ -f .envrc ] && export $(cat .envrc | sed 's/#.*//g' | xargs)
+
 # gcloud and kubectl are required for this POC
 command -v gcloud >/dev/null 2>&1 || { \
  echo >&2 "I require gcloud but it's not installed.  Aborting."; exit 1; }
