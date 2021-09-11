@@ -18,7 +18,6 @@ package actor
 
 import (
 	"context"
-
 	"github.com/cockroachdb/cockroach-operator/pkg/condition"
 	"github.com/cockroachdb/cockroach-operator/pkg/features"
 	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
