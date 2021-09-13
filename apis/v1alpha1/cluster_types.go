@@ -109,6 +109,10 @@ type CrdbClusterSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Map of additional custom labels"
 	// +optional
 	AdditionalLabels map[string]string `json:"additionalLabels,omitempty"`
+	// (Optional) Tolerations for scheduling pods onto some dedicated nodes
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Cockroach Database Tolerations"
+	// +optional
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
 }
 
 // +k8s:openapi-gen=true

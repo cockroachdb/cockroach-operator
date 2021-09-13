@@ -35,6 +35,10 @@ spec:
                   - test-cluster
               topologyKey: kubernetes.io/hostname
             weight: 100
+      tolerations:
+        - key: "key"
+          operator: "Exists"
+          effect: "NoSchedule"
       automountServiceAccountToken: false
       containers:
       - command:
