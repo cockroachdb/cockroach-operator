@@ -50,15 +50,12 @@ there's no need to set up a remote GKE/OpenShift cluster.
 
 This command will get everything set up for you to begin testing out the operator. Specifically it will:
 
+* Start a local docker registry (via docker run) and configure it to work with kind/K8s
 * Start a kind cluster named test (context=kind-test)
 * Install the CRDs
-* Build a docker image and publish it to $DEV_REGISTRY (e.g. `gcr.io/<your-project>`)
-* Configure kind to be able to pull the image from gcr.io
-* Deploy the operator
+* Build a docker image and publish it to the local registry
+* Deploy the operator and wait for it to be available
 * Ensure your shell is configured to use the new cluster (kube context)
-
-> It can take a minute for the operator to be ready. If you'd like to wait for that you can run `make dev/up-wait` which
-will block until the pod is ready.
 
 **make dev/down**
 
