@@ -892,6 +892,7 @@ spec:
               nodes:
                 description: Number of nodes (pods) in the cluster
                 format: int32
+                minimum: 3
                 type: integer
               podEnvVariables:
                 description: '(Optional) PodEnvVariables is a slice of environment

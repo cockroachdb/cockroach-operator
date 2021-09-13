@@ -216,19 +216,11 @@ dev/generate:
 
 .PHONY: dev/up
 dev/up:
-	bazel run //hack:kind-start
-	@hack/gcr-in-kind.sh
-	K8S_CLUSTER=kind-test DEV_REGISTRY=$(DEV_REGISTRY) \
-	bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 //manifests:install_operator.apply
-
-.PHONY: dev/up-wait
-dev/up-wait:
-	@echo Waiting for deployment to be available...
-	kubectl wait --for=condition=Available deploy/cockroach-operator --timeout=2m
+	@hack/dev.sh up
 
 .PHONY: dev/down
 dev/down:
-	bazel run //hack:kind-stop
+	@hack/dev.sh down
 #
 # Targets that allow to install the operator on an existing cluster
 #
