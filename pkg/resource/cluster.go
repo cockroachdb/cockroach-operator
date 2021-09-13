@@ -40,6 +40,8 @@ const (
 	CrdbRestartAnnotation        = "crdb.io/restart"
 	CrdbCertExpirationAnnotation = "crdb.io/certexpiration"
 	CrdbRestartTypeAnnotation    = "crdb.io/restarttype"
+
+	VersionCheckJobName = "vcheck"
 )
 
 func NewCluster(original *api.CrdbCluster) Cluster {
@@ -154,7 +156,7 @@ func (cluster Cluster) StatefulSetName() string {
 
 func (cluster Cluster) JobName() string {
 	slug.MaxLength = 63
-	return slug.Make(fmt.Sprintf("%s-vcheck-%d", cluster.Name(), getTimeHashInMinutes(time.Now())))
+	return slug.Make(fmt.Sprintf("%s-%s-%d", cluster.Name(), VersionCheckJobName, getTimeHashInMinutes(time.Now())))
 }
 func getTimeHashInMinutes(scheduledTime time.Time) int64 {
 	return scheduledTime.Unix() / 60
