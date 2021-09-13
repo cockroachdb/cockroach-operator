@@ -50,7 +50,7 @@ func TestCrdbCluster(t *testing.T) {
 			Name:      key.Name,
 			Namespace: key.Namespace,
 		},
-		Spec: CrdbClusterSpec{},
+		Spec: CrdbClusterSpec{Nodes: 3},
 	}
 
 	ctx := context.TODO()

@@ -32,6 +32,7 @@ import (
 type CrdbClusterSpec struct {
 	// Number of nodes (pods) in the cluster
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Number of nodes",xDescriptors="urn:alm:descriptor:com.tectonic.ui:podCount"
+	// +kubebuilder:validation:Minimum=3
 	// +required
 	Nodes int32 `json:"nodes"`
 	// Container image information
