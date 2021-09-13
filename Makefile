@@ -15,7 +15,11 @@
 #
 # This project requires the use of bazel.
 # Install instuctions https://docs.bazel.build/versions/master/install.html
-#
+
+# load env vars from .envrc if it exists
+ifneq ("$(wildcard .envrc)","")
+include .envrc
+endif
 
 # values used in workspace-status.sh
 DOCKER_REGISTRY?=cockroachdb
@@ -210,14 +214,21 @@ dev/fmt:
 dev/generate:
 	bazel run //hack:update-codegen && bazel run //hack:update-crds
 
-.PHONY: dev/run
-dev/run:
-	bazel run //hack/run
+.PHONY: dev/up
+dev/up:
+	bazel run //hack:kind-start
+	@hack/gcr-in-kind.sh
+	K8S_CLUSTER=kind-test DEV_REGISTRY=$(DEV_REGISTRY) \
+	bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 //manifests:install_operator.apply
 
-.PHONY: dev/run-shell
-dev/run-shell:
-	KUBECONFIG=/tmp/.kube/config $(shell printenv SHELL)
+.PHONY: dev/up-wait
+dev/up-wait:
+	@echo Waiting for deployment to be available...
+	kubectl wait --for=condition=Available deploy/cockroach-operator --timeout=2m
 
+.PHONY: dev/down
+dev/down:
+	bazel run //hack:kind-stop
 #
 # Targets that allow to install the operator on an existing cluster
 #
