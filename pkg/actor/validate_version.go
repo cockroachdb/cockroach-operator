@@ -138,7 +138,7 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 	if err := v.client.Get(ctx, key, job); err != nil {
 		err := WaitUntilJobPodIsRunning(ctx, clientset, job, log)
 		if err != nil {
-			log.Error(err, "job not found")
+			log.Error(err, "job pod is not running; deleting job")
 			if dErr := deleteJob(ctx, cluster, clientset, job); dErr != nil {
 				// Log the job deletion error, but return the underlying error that prompted deletion.
 				log.Error(dErr, "failed to delete the job")
