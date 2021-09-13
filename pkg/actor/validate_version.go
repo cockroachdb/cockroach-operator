@@ -302,7 +302,7 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 
 	// If we got here, the version checker job was successful. Delete it.
 	if dErr := deleteJob(ctx, cluster, clientset, job); dErr != nil {
-		log.Error(dErr, "failed to delete the job")
+		log.Error(dErr, "version checker job succeeded, but job failed to delete properly")
 	}
 
 	// we force the saving of the status on the cluster and cancel the loop
