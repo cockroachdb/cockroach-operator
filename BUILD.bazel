@@ -71,6 +71,7 @@ filegroup(
         "//e2e/pvcresize:all-srcs",
         "//e2e/upgrades:all-srcs",
         "//e2e/upgradessha256:all-srcs",
+        "//e2e/versionchecker:all-srcs",
         "//examples:all-srcs",
         "//hack:all-srcs",
         "//manifests:all-srcs",
