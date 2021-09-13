@@ -40,7 +40,7 @@ var update = flag.Bool("update", false, "update the golden files of this test")
 
 func TestStatefulSetBuilder(t *testing.T) {
 	// turn on featuregate to test rules
-	utilfeature.DefaultMutableFeatureGate.Set("AffinityRules=true")
+	utilfeature.DefaultMutableFeatureGate.Set("AffinityRules=true,TolerationRules=true")
 	sc := testutil.InitScheme(t)
 
 	decoder, encoder := testutil.Yamlizers(t, sc)

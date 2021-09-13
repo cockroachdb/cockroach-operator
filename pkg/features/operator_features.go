@@ -66,14 +66,14 @@ const (
 	// alpha: v0.1
 	// beta: v1.0
 	// GA: v1.7.7
-	// GenerateCerts uses crdb binary to generate self signed certifcates
+	// GenerateCerts uses crdb binary to generate self-signed certifcates
 	GenerateCerts featuregate.Feature = "GenerateCerts"
 
 	// owner: @alina
 	// alpha: v0.1
 	// beta: v1.0
 	// ga: v1.7.13
-	// RestartCluster uses crdb binary to generate self signed certifcates
+	// RestartCluster uses crdb binary to generate self-signed certifcates
 	ClusterRestart featuregate.Feature = "ClusterRestart"
 
 	// owner: @alina
@@ -85,6 +85,11 @@ const (
 	// alpha: v2.0
 	// AffinityRules allows setting affinity rules on the sts
 	AffinityRules featuregate.Feature = "AffinityRules"
+
+	// owner: @abhishekdwivedi3060
+	// alpha: v1.0
+	// TolerationRules allows setting toleration rules for scheduling sts pods onto some dedicated nodes
+	TolerationRules featuregate.Feature = "TolerationRules"
 )
 
 func init() {
@@ -103,11 +108,12 @@ var defaultOperatorFeatureGates = map[featuregate.Feature]featuregate.FeatureSpe
 	ClusterRestart:       {Default: true, PreRelease: featuregate.GA},
 
 	// We are leaving this in alpha because it can delete data at this point.
-	// We are still testing decommision, and are concerned that if a deco fails
+	// We are still testing decommission, and are concerned that if a deco fails
 	// data is deleted and the database is corrupted.
 	// You can enable the feature by setting the feature gate
 	AutoPrunePVC: {Default: false, PreRelease: featuregate.Alpha},
 
 	// New features
-	AffinityRules: {Default: false, PreRelease: featuregate.Alpha},
+	AffinityRules:   {Default: false, PreRelease: featuregate.Alpha},
+	TolerationRules: {Default: false, PreRelease: featuregate.Alpha},
 }

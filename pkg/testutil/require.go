@@ -22,6 +22,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"io"
+	v1 "k8s.io/api/batch/v1"
 	"os"
 	"strconv"
 	"strings"
@@ -36,7 +37,7 @@ import (
 	"github.com/cockroachdb/cockroach-operator/pkg/labels"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	testenv "github.com/cockroachdb/cockroach-operator/pkg/testutil/env"
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -72,6 +73,42 @@ func RequireClusterToBeReadyEventuallyTimeout(t *testing.T, sb testenv.DiffingSa
 		return true, nil
 	})
 	require.NoError(t, err)
+}
+
+func RequireAtMostOneVersionCheckerJob(t *testing.T, sb testenv.DiffingSandbox, timeout time.Duration) {
+	numTimesVersionCheckerSeen := 0
+	err := wait.Poll(10*time.Second, timeout, func() (bool, error) {
+		jobs, err := fetchJobs(sb)
+		if err != nil {
+			return false, errors.Newf("error fetching jobs: %v", err)
+		}
+
+		numVersionCheckerJobs := 0
+		for _, job := range jobs {
+			if strings.Contains(job.Name, resource.VersionCheckJobName) {
+				numVersionCheckerJobs++
+			}
+		}
+		if numVersionCheckerJobs > 1 {
+			return false, errors.New("too many version checker jobs")
+		} else if numVersionCheckerJobs == 1 {
+			numTimesVersionCheckerSeen++
+		}
+
+		return false, nil
+	})
+
+	// Require that there was never more than one version checker job, and that the version checker job was in fact observed.
+	require.Greater(t, numTimesVersionCheckerSeen, 0)
+	require.ErrorIs(t, err, wait.ErrWaitTimeout)
+}
+
+func fetchJobs(sb testenv.DiffingSandbox) ([]v1.Job, error) {
+	var jobs v1.JobList
+	if err := sb.List(&jobs, nil); err != nil {
+		return nil, err
+	}
+	return jobs.Items, nil
 }
 
 // TODO are we using this??

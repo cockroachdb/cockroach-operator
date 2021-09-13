@@ -15,7 +15,11 @@
 #
 # This project requires the use of bazel.
 # Install instuctions https://docs.bazel.build/versions/master/install.html
-#
+
+# load env vars from .envrc if it exists
+ifneq ("$(wildcard .envrc)","")
+include .envrc
+endif
 
 # values used in workspace-status.sh
 DOCKER_REGISTRY?=cockroachdb
@@ -210,14 +214,13 @@ dev/fmt:
 dev/generate:
 	bazel run //hack:update-codegen && bazel run //hack:update-crds
 
-.PHONY: dev/run
-dev/run:
-	bazel run //hack/run
+.PHONY: dev/up
+dev/up:
+	@hack/dev.sh up
 
-.PHONY: dev/run-shell
-dev/run-shell:
-	KUBECONFIG=/tmp/.kube/config $(shell printenv SHELL)
-
+.PHONY: dev/down
+dev/down:
+	@hack/dev.sh down
 #
 # Targets that allow to install the operator on an existing cluster
 #

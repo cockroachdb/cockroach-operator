@@ -32,6 +32,7 @@ import (
 type CrdbClusterSpec struct {
 	// Number of nodes (pods) in the cluster
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Number of nodes",xDescriptors="urn:alm:descriptor:com.tectonic.ui:podCount"
+	// +kubebuilder:validation:Minimum=3
 	// +required
 	Nodes int32 `json:"nodes"`
 	// Container image information
@@ -108,6 +109,10 @@ type CrdbClusterSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Map of additional custom labels"
 	// +optional
 	AdditionalLabels map[string]string `json:"additionalLabels,omitempty"`
+	// (Optional) Tolerations for scheduling pods onto some dedicated nodes
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Cockroach Database Tolerations"
+	// +optional
+	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
 }
 
 // +k8s:openapi-gen=true
@@ -195,7 +200,7 @@ type PodImage struct {
 	// This defaults to the version pinned to the operator and requires a full container and tag/sha name.
 	// For instance: cockroachdb/cockroachdb:v20.1
 	// +required
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 	// (Optional) PullPolicy for the image, which defaults to IfNotPresent.
 	// Default: IfNotPresent
 	// +optional

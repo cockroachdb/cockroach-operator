@@ -212,6 +212,10 @@ func (b StatefulSetBuilder) makePodTemplate() corev1.PodTemplateSpec {
 		pod.Spec.Affinity = b.Spec().Affinity
 	}
 
+	if utilfeature.DefaultMutableFeatureGate.Enabled(features.TolerationRules) {
+		pod.Spec.Tolerations = b.Spec().Tolerations
+	}
+
 	secret := b.Spec().Image.PullSecret
 	if secret != nil {
 		local := corev1.LocalObjectReference{

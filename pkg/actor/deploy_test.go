@@ -24,8 +24,8 @@ import (
 	"github.com/cockroachdb/cockroach-operator/pkg/actor"
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
 	"github.com/cockroachdb/cockroach-operator/pkg/testutil"
+	"github.com/cockroachdb/errors"
 	"github.com/go-logr/zapr"
-	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap/zaptest"
 )

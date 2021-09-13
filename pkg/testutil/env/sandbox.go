@@ -28,7 +28,7 @@ import (
 	"github.com/cenkalti/backoff"
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 	corev1 "k8s.io/api/core/v1"
 	rbac "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -111,6 +111,12 @@ func (s Sandbox) Update(obj client.Object) error {
 	obj = s.setNamespaceIfMissing(obj)
 
 	return s.env.Update(context.TODO(), obj)
+}
+
+func (s Sandbox) Delete(obj client.Object) error {
+	obj = s.setNamespaceIfMissing(obj)
+
+	return s.env.Delete(context.TODO(), obj)
 }
 
 func (s Sandbox) Get(o client.Object) error {
