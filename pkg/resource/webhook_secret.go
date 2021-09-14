@@ -128,10 +128,9 @@ func webhookFromSecret(s *corev1.Secret) *WebhookSecret {
 
 // WebhookSecret defines the TLS secret used to secure communication between the K8s API server and our webhooks.
 type WebhookSecret struct {
-	ca     []byte
-	key    []byte
-	cert   []byte
-	client v1.SecretInterface
+	ca   []byte
+	key  []byte
+	cert []byte
 }
 
 // PrivateKey returns the PEM-encoded private key.
