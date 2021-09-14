@@ -21,19 +21,21 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-
-	"github.com/cockroachdb/cockroach-operator/pkg/controller"
-
 	crdbv1alpha1 "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
+	"github.com/cockroachdb/cockroach-operator/pkg/controller"
+	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
+	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
-const WatchNamespaceEnvVar = "WATCH_NAMESPACE"
+const (
+	certDir              = "/tmp/webhook-certs"
+	watchNamespaceEnvVar = "WATCH_NAMESPACE"
+)
 
 var (
 	scheme   = runtime.NewScheme()
@@ -72,7 +74,7 @@ func main() {
 		}
 	}
 
-	namespace, err := GetWatchNamespace()
+	namespace, err := getWatchNamespace()
 	if err != nil {
 		setupLog.Error(err, "unable to get watch namespace")
 		os.Exit(1)
@@ -84,9 +86,15 @@ func main() {
 		MetricsBindAddress: metricsAddr,
 		LeaderElection:     enableLeaderElection,
 		Port:               9443,
+		CertDir:            certDir,
 	})
 	if err != nil {
-		setupLog.Error(err, "unable to start manager")
+		setupLog.Error(err, "unable to create manager")
+		os.Exit(1)
+	}
+
+	if err := (&crdbv1alpha1.CrdbCluster{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to setup webhook")
 		os.Exit(1)
 	}
 
@@ -96,18 +104,27 @@ func main() {
 		os.Exit(1)
 	}
 
+	// add a logger to the main context
+	ctx := logr.NewContext(ctrl.SetupSignalHandler(), logger)
+
+	// ensure TLS is all set up for webhooks
+	if err := SetupWebhookTLS(ctx, namespace, certDir); err != nil {
+		setupLog.Error(err, "failed to setup TLS")
+		os.Exit(1)
+	}
+
 	setupLog.Info("starting manager")
-	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
+	if err := mgr.Start(ctx); err != nil {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
 }
 
-// GetWatchNamespace returns the namespace the operation should be watching for changes
-func GetWatchNamespace() (string, error) {
-	ns, found := os.LookupEnv(WatchNamespaceEnvVar)
+// getWatchNamespace returns the namespace the operation should be watching for changes
+func getWatchNamespace() (string, error) {
+	ns, found := os.LookupEnv(watchNamespaceEnvVar)
 	if !found {
-		return "", fmt.Errorf("%s must be set", WatchNamespaceEnvVar)
+		return "", fmt.Errorf("%s must be set", watchNamespaceEnvVar)
 	}
 	return ns, nil
 }
