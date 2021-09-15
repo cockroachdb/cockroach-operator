@@ -62,7 +62,6 @@ func (b DiscoveryServiceBuilder) Build(obj client.Object) error {
 		Selector: b.Selector,
 	}
 
-	fmt.Println(*b.Cluster.Spec().SQLPort)
 	return nil
 }
 
