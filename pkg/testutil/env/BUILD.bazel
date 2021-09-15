@@ -7,7 +7,17 @@ go_library(
         "path.go",
         "sandbox.go",
     ],
-    data = ["//config/crd/bases:crd_manifest"],
+    data = [
+        "//config/crd:manifest",
+        "//config/webhook:manifest",
+        "//hack/bin:cockroach",
+        "//hack/bin:etcd",
+        "//hack/bin:kind",
+        "//hack/bin:kube-apiserver",
+        "//hack/bin:kubectl",
+        "//hack/bin:kubetest2",
+        "//hack/bin:kubetest2-kind",
+    ],
     importpath = "github.com/cockroachdb/cockroach-operator/pkg/testutil/env",
     visibility = ["//visibility:public"],
     deps = [
@@ -44,16 +54,6 @@ go_test(
     srcs = [
         "env_test.go",
         "path_test.go",
-    ],
-    data = [
-        "//config/crd/bases:crd_manifest",
-        "//hack/bin:cockroach",
-        "//hack/bin:etcd",
-        "//hack/bin:kind",
-        "//hack/bin:kube-apiserver",
-        "//hack/bin:kubectl",
-        "//hack/bin:kubetest2",
-        "//hack/bin:kubetest2-kind",
     ],
     deps = [
         ":go_default_library",

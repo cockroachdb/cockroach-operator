@@ -54,18 +54,11 @@ do
 done
 
 fix_webhook_manifest() {
-  local selector='namespaceSelector:\n    matchLabels:\n      cockroach-namespace: default'
-
   for file in config/webhook/manifests.yaml; do
     local manifest="${REPO_ROOT}/${file}"
-    # we don't use the "system" namespace here
-    sed 's/namespace: system/namespace: default/g' "${manifest}" > "${manifest}.mod"
     # strip out null creationTimestamp
-    sed '/creationTimestamp: null/d' "${manifest}.mod" > "${manifest}"
-    # add a namespaceSelector to the webhooks (not available via kubebuilder markers)
-    sed "s/name: mcrdbcluster.kb.io/name: mcrdbcluster.kb.io\n  ${selector}/" "${manifest}" > "${manifest}.mod"
-    sed "s/name: vcrdbcluster.kb.io/name: vcrdbcluster.kb.io\n  ${selector}/" "${manifest}.mod" > "${manifest}"
-    rm "${manifest}.mod"
+    sed '/creationTimestamp: null/d' "${manifest}" > "${manifest}.mod"
+    mv "${manifest}.mod" "${manifest}"
   done
 }
 

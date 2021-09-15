@@ -12,18 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("@k8s_deploy//:defaults.bzl", "k8s_deploy")
+load("//hack/build:kustomize.bzl", "kustomization")
 
-k8s_deploy(
-    name = "crd",
-    template = ":crdb.cockroachlabs.com_crdbclusters.yaml",
-    visibility = ["//visibility:public"],
-)
-
-filegroup(
-    name = "crd_manifest",
-    srcs = glob(["**"]),
-    visibility = ["//visibility:public"],
+kustomization(
+    name = "manifest",
+    srcs = [":all-srcs"],
+    out = "manifest.yaml",
 )
 
 filegroup(

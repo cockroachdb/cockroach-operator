@@ -1,4 +1,4 @@
-# Copyright 2020 The Cockroach Authors
+# Copyright 2021 The Cockroach Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,24 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+---
+namespace: default
 
-filegroup(
-    name = "package-srcs",
-    srcs = glob(["**"]),
-    tags = ["automanaged"],
-    visibility = ["//visibility:private"],
-)
+resources:
+  - manifests.yaml
+  - service.yaml
 
-filegroup(
-    name = "all-srcs",
-    srcs = [
-        ":package-srcs",
-        "//config/crd:all-srcs",
-        "//config/manifests:all-srcs",
-        "//config/samples:all-srcs",
-        "//config/scorecard:all-srcs",
-        "//config/webhook:all-srcs",
-    ],
-    tags = ["automanaged"],
-    visibility = ["//visibility:public"],
-)
+replacements:
+  - path: patches/replacements.yaml
+  - path: patches/webhook_config.yaml

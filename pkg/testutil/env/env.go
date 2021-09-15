@@ -20,7 +20,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"path/filepath"
 	"testing"
 
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
@@ -42,7 +41,7 @@ import (
 // environments.
 var testBinaries = flag.String("binaries", "hack/bin", "")
 
-func NewEnv(builder apiruntime.SchemeBuilder, crds ...string) *Env {
+func NewEnv(builder apiruntime.SchemeBuilder) *Env {
 	flag.Parse()
 
 	// ensure hack/bin is added to the path and KUBEBUILDER_ASSETS
@@ -61,7 +60,10 @@ func NewEnv(builder apiruntime.SchemeBuilder, crds ...string) *Env {
 	}
 
 	t := envtest.Environment{
-		CRDDirectoryPaths: crds,
+		CRDDirectoryPaths: []string{
+			ExpandPath("config", "crd"),
+			ExpandPath("config", "webhook"),
+		},
 		CRDInstallOptions: envtest.CRDInstallOptions{
 			CleanUpAfterUse: true,
 		},
@@ -132,28 +134,9 @@ type ActiveEnv struct {
 	resources []schema.GroupVersionResource
 }
 
-func CreateActiveEnvForTest(levels []string) *Env {
+func CreateActiveEnvForTest() *Env {
 	os.Setenv("USE_EXISTING_CLUSTER", "true")
-
-	// TODO do we need RBAC loaded? Because I do not
-	// think the file existed
-
-	levels = append(levels, "config", "crd", "bases")
-	crd := filepath.Join(levels...)
-
-	if _, err := os.Stat(crd); os.IsNotExist(err) {
-		fmt.Sprintln(err)
-		panic("crd directory does not exist")
-	}
-
-	if _, err := os.Stat(filepath.Join(crd, "crdb.cockroachlabs.com_crdbclusters.yaml")); err != nil {
-		fmt.Sprintln(err)
-		panic("crd file does not exist")
-	}
-
-	e := NewEnv(runtime.NewSchemeBuilder(api.AddToScheme), crd)
-
-	return e
+	return NewEnv(runtime.NewSchemeBuilder(api.AddToScheme))
 }
 
 func RunCode(m *testing.M, e *Env) int {
