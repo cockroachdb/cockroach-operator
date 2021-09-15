@@ -45,14 +45,13 @@ var env *testenv.ActiveEnv
 // TestMain wraps the unit tests. Set TEST_DO_NOT_USE_KIND evnvironment variable to any value
 // if you do not want this test to start a k8s cluster using kind.
 func TestMain(m *testing.M) {
-	e := testenv.CreateActiveEnvForTest([]string{"..", ".."})
+	e := testenv.CreateActiveEnvForTest()
 	env = e.Start()
 	code := testenv.RunCode(m, e)
 	os.Exit(code)
 }
 
 func TestCreateInsecureCluster(t *testing.T) {
-
 	// Test Creating an insecure cluster
 	// No actions on the cluster just create it and
 	// tear it down.

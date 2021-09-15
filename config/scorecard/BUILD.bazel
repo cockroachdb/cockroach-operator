@@ -12,6 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("//hack/build:kustomize.bzl", "kustomization")
+
+kustomization(
+    name = "manifest",
+    srcs = [":all-srcs"],
+    out = "manifest.yaml",
+)
+
 filegroup(
     name = "package-srcs",
     srcs = glob(["**"]),
@@ -21,14 +29,7 @@ filegroup(
 
 filegroup(
     name = "all-srcs",
-    srcs = [
-        ":package-srcs",
-        "//config/crd:all-srcs",
-        "//config/manifests:all-srcs",
-        "//config/samples:all-srcs",
-        "//config/scorecard:all-srcs",
-        "//config/webhook:all-srcs",
-    ],
+    srcs = [":package-srcs"],
     tags = ["automanaged"],
     visibility = ["//visibility:public"],
 )

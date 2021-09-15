@@ -23,8 +23,7 @@ import (
 )
 
 func TestCreateEnv(t *testing.T) {
-	env := CreateActiveEnvForTest([]string{"..", "..", ".."})
-	if env == nil {
+	if env := CreateActiveEnvForTest(); env == nil {
 		t.Log("env is nil")
 		t.Fail()
 	}

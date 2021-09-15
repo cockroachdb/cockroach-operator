@@ -365,18 +365,34 @@ def install_operator_sdk():
 
      ## Fetch opm used on generating csv
 def install_kustomize():
-    http_file(
+    http_archive(
        name = "kustomize_darwin",
-       executable = 1,
-       sha256 = "4b8bd021578f90295dbf1145a2ef66e3e25b4d13a9256923e38ce5f85eba1d7d",
-       urls = ["https://storage.googleapis.com/crdb-bazel-artifacts/macos/kustomize"],
+       sha256 = "77898f8b7c37e3ba0c555b4b7c6d0e3301127fa0de7ade6a36ed767ca1715643",
+       urls = ["https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv4.3.0/kustomize_v4.3.0_darwin_amd64.tar.gz"],
+       build_file_content = """
+filegroup(
+    name = "file",
+    srcs = [
+	"kustomize",
+    ],
+    visibility = ["//visibility:public"],
+)
+""",
     )
 
-    http_file(
+    http_archive(
         name = "kustomize_linux",
-        executable = 1,
-        sha256 = "e52e8c194b5084301338d8762bf36b81b5254f525b164ba8b010de123110247f",
-        urls = ["https://storage.googleapis.com/crdb-bazel-artifacts/linux/kustomize"],
+        sha256 = "d34818d2b5d52c2688bce0e10f7965aea1a362611c4f1ddafd95c4d90cb63319",
+        urls = ["https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv4.3.0/kustomize_v4.3.0_linux_amd64.tar.gz"],
+        build_file_content = """
+filegroup(
+    name = "file",
+    srcs = [
+	"kustomize",
+    ],
+    visibility = ["//visibility:public"],
+)
+""",
     )
 
 ## Fetch opm used on generating csv

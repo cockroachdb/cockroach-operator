@@ -13,27 +13,17 @@
 # limitations under the License.
 
 load("@k8s_deploy//:defaults.bzl", "k8s_deploy")
-load("@io_bazel_rules_k8s//k8s:objects.bzl", "k8s_objects")
+load("//hack/build:kustomize.bzl", "kustomization")
 
-k8s_objects(
-    name = "webhooks",
-    objects = [
-        ":webhook-config",
-        ":webhook-service",
-    ],
+kustomization(
+    name = "manifest",
+    srcs = [":all-srcs"],
+)
+
+k8s_deploy(
+    name = "webhook",
+    template = ":manifest",
     visibility = ["//visibility:public"],
-)
-
-k8s_deploy(
-    name = "webhook-config",
-    template = ":manifests.yaml",
-    visibility = ["//visibility:private"],
-)
-
-k8s_deploy(
-    name = "webhook-service",
-    template = ":service.yaml",
-    visibility = ["//visibility:private"],
 )
 
 filegroup(

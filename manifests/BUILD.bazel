@@ -1,5 +1,11 @@
 load("@k8s_deploy//:defaults.bzl", "k8s_deploy")
 load("@io_bazel_rules_k8s//k8s:objects.bzl", "k8s_objects")
+load("//hack/build:kustomize.bzl", "kustomization")
+
+kustomization(
+    name = "manifest",
+    srcs = [":all-srcs"],
+)
 
 k8s_deploy(
     name = "operator",
@@ -23,8 +29,8 @@ genrule(
 k8s_objects(
     name = "install_operator",
     objects = [
-        "//config/crd/bases:crd",
-        "//config/webhook:webhooks",
+        "//config/crd:crd",
+        "//config/webhook:webhook",
         ":operator",
     ],
 )

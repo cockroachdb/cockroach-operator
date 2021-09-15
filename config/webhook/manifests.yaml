@@ -24,13 +24,10 @@ webhooks:
   clientConfig:
     service:
       name: webhook-service
-      namespace: default
+      namespace: system
       path: /mutate-crdb-cockroachlabs-com-v1alpha1-crdbcluster
   failurePolicy: Fail
   name: mcrdbcluster.kb.io
-  namespaceSelector:
-    matchLabels:
-      cockroach-namespace: default
   rules:
   - apiGroups:
     - crdb.cockroachlabs.com
@@ -55,13 +52,10 @@ webhooks:
   clientConfig:
     service:
       name: webhook-service
-      namespace: default
+      namespace: system
       path: /validate-crdb-cockroachlabs-com-v1alpha1-crdbcluster
   failurePolicy: Fail
   name: vcrdbcluster.kb.io
-  namespaceSelector:
-    matchLabels:
-      cockroach-namespace: default
   rules:
   - apiGroups:
     - crdb.cockroachlabs.com
