@@ -28,6 +28,7 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	"go.uber.org/zap/zapcore"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	admv1 "k8s.io/client-go/kubernetes/typed/admissionregistration/v1"
@@ -35,6 +36,8 @@ import (
 )
 
 const (
+	debugLevel = int(zapcore.DebugLevel)
+
 	tlsCAKey = "tls.ca"
 
 	webhookSecretKeySize  = 4096
@@ -47,7 +50,7 @@ const (
 // LoadWebhookSecret loads the secret from K8s and returns it.
 func LoadWebhookSecret(ctx context.Context, client v1.SecretInterface) (*WebhookSecret, error) {
 	log := logr.FromContextOrDiscard(ctx).WithName("webhook_secrets").WithValues("resource", webhookSecretName)
-	log.V(2).Info("Fetching webhook secret")
+	log.V(debugLevel).Info("Fetching webhook secret")
 
 	s, err := client.Get(ctx, webhookSecretName, metav1.GetOptions{})
 	if err != nil {
@@ -62,7 +65,7 @@ func LoadWebhookSecret(ctx context.Context, client v1.SecretInterface) (*Webhook
 // certificate and store those values in the TLS secret.
 func CreateWebhookSecret(ctx context.Context, client v1.SecretInterface) (*WebhookSecret, error) {
 	log := logr.FromContextOrDiscard(ctx).WithName("webhook_secrets").WithValues("resource", webhookSecretName)
-	log.V(2).Info("Creating webhook secret")
+	log.V(debugLevel).Info("Creating webhook secret")
 
 	ca := &x509.Certificate{
 		SerialNumber:          big.NewInt(1),
@@ -75,14 +78,14 @@ func CreateWebhookSecret(ctx context.Context, client v1.SecretInterface) (*Webho
 		BasicConstraintsValid: true,
 	}
 
-	log.V(2).Info("Generating CA certificate")
+	log.V(debugLevel).Info("Generating CA certificate")
 	caCert, caPriv, err := generateCA(ca)
 	if err != nil {
 		log.Error(err, "Failed to generate CA certificate")
 		return nil, err
 	}
 
-	log.V(2).Info("Generating server certificate")
+	log.V(debugLevel).Info("Generating server certificate")
 	tlsCert, tlsKey, err := generateCert(ca, caPriv)
 	if err != nil {
 		log.Error(err, "Failed to generate server certificate")
@@ -105,7 +108,7 @@ func CreateWebhookSecret(ctx context.Context, client v1.SecretInterface) (*Webho
 		},
 	}
 
-	log.V(2).Info("Creating the secret resource")
+	log.V(debugLevel).Info("Creating the secret resource")
 	s, err := client.Create(ctx, secret, metav1.CreateOptions{})
 	if err != nil {
 		log.Error(err, "Failed to create webhook secret")
@@ -125,10 +128,9 @@ func webhookFromSecret(s *corev1.Secret) *WebhookSecret {
 
 // WebhookSecret defines the TLS secret used to secure communication between the K8s API server and our webhooks.
 type WebhookSecret struct {
-	ca     []byte
-	key    []byte
-	cert   []byte
-	client v1.SecretInterface
+	ca   []byte
+	key  []byte
+	cert []byte
 }
 
 // PrivateKey returns the PEM-encoded private key.

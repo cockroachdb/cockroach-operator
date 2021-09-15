@@ -46,8 +46,7 @@ const (
 
 func NewCluster(original *api.CrdbCluster) Cluster {
 	cr := original.DeepCopy()
-
-	api.SetClusterSpecDefaults(&cr.Spec)
+	cr.Default()
 
 	timeNow := metav1.Now()
 	condition.InitConditionsIfNeeded(&cr.Status, timeNow)

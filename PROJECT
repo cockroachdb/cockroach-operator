@@ -1,11 +1,22 @@
 domain: cockroachlabs.com
-layout: go.kubebuilder.io/v2
-projectName: cockroach-operator
-repo: github.com/cockroach-operator
-resources:
-- group: crdb
-  kind: CrdbCluster
-  version: v1alpha1
-version: 3-alpha
+layout:
+- go.kubebuilder.io/v3
 plugins:
   go.sdk.operatorframework.io/v2-alpha: {}
+projectName: cockroach-operator
+repo: github.com/cockroachdb/cockroach-operator
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: cockroachlabs.com
+  group: crdb.cockroachlabs.com
+  kind: CrdbCluster
+  path: github.com/cockroachdb/cockroach-operator/apis/v1alpha1
+  version: v1alpha1
+  webhooks:
+    defaulting: true
+    validation: true
+    webhookVersion: v1
+version: "3"

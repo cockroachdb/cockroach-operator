@@ -12,6 +12,30 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("@k8s_deploy//:defaults.bzl", "k8s_deploy")
+load("@io_bazel_rules_k8s//k8s:objects.bzl", "k8s_objects")
+
+k8s_objects(
+    name = "webhooks",
+    objects = [
+        ":webhook-config",
+        ":webhook-service",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+k8s_deploy(
+    name = "webhook-config",
+    template = ":manifests.yaml",
+    visibility = ["//visibility:private"],
+)
+
+k8s_deploy(
+    name = "webhook-service",
+    template = ":service.yaml",
+    visibility = ["//visibility:private"],
+)
+
 filegroup(
     name = "package-srcs",
     srcs = glob(["**"]),
@@ -21,11 +45,7 @@ filegroup(
 
 filegroup(
     name = "all-srcs",
-    srcs = [
-        ":package-srcs",
-        "//config/crd/bases:all-srcs",
-        "//config/webhook:all-srcs",
-    ],
+    srcs = [":package-srcs"],
     tags = ["automanaged"],
     visibility = ["//visibility:public"],
 )

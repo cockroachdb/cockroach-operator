@@ -14,6 +14,14 @@
 #
 # Generated, do not edit. Please edit this file instead: config/templates/operator.yaml.in
 #
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: default
+  labels:
+    cockroach-namespace: default
+---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:

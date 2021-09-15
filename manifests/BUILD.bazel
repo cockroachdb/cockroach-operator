@@ -24,6 +24,7 @@ k8s_objects(
     name = "install_operator",
     objects = [
         "//config/crd/bases:crd",
+        "//config/webhook:webhooks",
         ":operator",
     ],
 )

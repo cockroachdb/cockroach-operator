@@ -14,6 +14,18 @@
 #
 # {{ .GeneratedWarning }}
 #
+{{- /*
+  Patch the namespace with a label so we can use a namespaceSelector for the webhooks. This ensures that webhooks don't
+  mutate/validate across namespaces.
+*/}}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: default
+  labels:
+    cockroach-namespace: default
+---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
