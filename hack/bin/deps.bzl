@@ -19,19 +19,20 @@ load("@bazel_gazelle//:deps.bzl", "go_repository")
 def install():
     install_misc()
     install_integration_test_dependencies()
+
+    install_crdb()
     install_kubectl()
-    install_oc()
     install_kind()
     install_kubetest2()
-    install_kubetest2_kind()
-    install_kubetest2_gke()
+    install_kubetest2_aws()
     install_kubetest2_exe()
-    install_operator_sdk()
+    install_kubetest2_gke()
+    install_kubetest2_kind()
     install_kustomize()
+    install_oc()
+    install_operator_sdk()
     install_opm()
-    install_crdb()
     install_openshift()
-    install_aws_kubetest2()
 
     # Install golang.org/x/build as kubernetes/repo-infra requires it for the
     # build-tar bazel target.
@@ -48,29 +49,30 @@ def install_misc():
     http_file(
         name = "jq_linux",
         executable = 1,
-        sha256 = "c6b3a7d7d3e7b70c6f51b706a3b90bd01833846c54d32ca32f0027f00226ff6d",
-        urls = ["https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64"],
+        sha256 = "af986793a515d500ab2d35f8d2aecd656e764504b789b66d7e1a0b727a124c44",
+        urls = ["https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64"],
     )
 
     http_file(
         name = "jq_osx",
         executable = 1,
-        sha256 = "386e92c982a56fe4851468d7a931dfca29560cee306a0e66c6a1bd4065d3dac5",
-        urls = ["https://github.com/stedolan/jq/releases/download/jq-1.5/jq-osx-amd64"],
+        sha256 = "5c0a0a3ea600f302ee458b30317425dd9632d1ad8882259fcaf4e9b868b2b1ef",
+        urls = ["https://github.com/stedolan/jq/releases/download/jq-1.6/jq-osx-amd64"],
     )
+
     http_file(
         #this tool is used on open shift generation to generate the csv
         name = "faq_linux",
         executable = 1,
-        sha256 = "53360a0d22b0608d5e29f8e84450f2fdc94573246fb552896afedbf8f1687981",
-        urls = ["https://github.com/jzelinskie/faq/releases/download/0.0.6/faq-linux-amd64"],
+        sha256 = "6c9234d0b2b024bf0e7c845fc092339b51b94e5addeee9612a7219cfd2a7b731",
+        urls = ["https://github.com/jzelinskie/faq/releases/download/0.0.7/faq-linux-amd64"],
     )
 
     http_file(
         name = "faq_osx",
         executable = 1,
-        sha256 = "bfcd6f527d1ba74db6bdd6bfb551a4db9c2c72f01baebf8069e9849b93dceef9",
-        urls = ["https://github.com/jzelinskie/faq/releases/download/0.0.6/faq-darwin-amd64"],
+        sha256 = "869f4d8acaa1feb11ce76b2204c5476b8a04d9451216adde6b18e2ef2f978794",
+        urls = ["https://github.com/jzelinskie/faq/releases/download/0.0.7/faq-darwin-amd64"],
     )
 
 # Install dependencies used by the controller-runtime integration test framework
@@ -388,7 +390,7 @@ filegroup(
    )
 
 # fetch binaries for aws kubetest2
-def install_aws_kubetest2():
+def install_kubetest2_aws():
     http_file(
         name = "aws-k8s-tester-linux",
         executable = 1,
