@@ -32,10 +32,10 @@ http_archive(
 
 http_archive(
     name = "io_bazel_rules_go",
-    sha256 = "69de5c704a05ff37862f7e0f5534d4f479418afc21806c887db544a316f3cb6b",
+    sha256 = "8e968b5fcea1d2d64071872b12737bbb5514524ee5f0a4f54f5920266c261acb",
     urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.27.0/rules_go-v0.27.0.tar.gz",
-        "https://github.com/bazelbuild/rules_go/releases/download/v0.27.0/rules_go-v0.27.0.tar.gz",
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.28.0/rules_go-v0.28.0.zip",
+        "https://github.com/bazelbuild/rules_go/releases/download/v0.28.0/rules_go-v0.28.0.zip",
     ],
 )
 
@@ -45,8 +45,8 @@ http_archive(
     urls = [
         "https://mirror.bazel.build/github.com/bazelbuild/bazel-gazelle/releases/download/v0.23.0/bazel-gazelle-v0.23.0.tar.gz",
         "https://github.com/bazelbuild/bazel-gazelle/releases/download/v0.23.0/bazel-gazelle-v0.23.0.tar.gz",
-    ],
-)
+        ],
+    )
 
 load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_dependencies")
 
@@ -72,12 +72,12 @@ http_archive(
     sha256 = "59d5b42ac315e7eadffa944e86e90c2990110a1c8075f1cd145f487e999d22b3",
     strip_prefix = "rules_docker-0.17.0",
     urls = ["https://github.com/bazelbuild/rules_docker/releases/download/v0.17.0/rules_docker-v0.17.0.tar.gz"],
-)
+    )
 
 load(
     "@io_bazel_rules_docker//repositories:repositories.bzl",
     container_repositories = "repositories",
-)
+    )
 
 container_repositories()
 
@@ -88,11 +88,11 @@ container_deps()
 load(
     "@io_bazel_rules_docker//container:container.bzl",
     "container_pull",
-)
+    )
 load(
     "@io_bazel_rules_docker//go:image.bzl",
     _go_image_repos = "repositories",
-)
+    )
 
 _go_image_repos()
 
@@ -101,7 +101,7 @@ container_pull(
     registry = "registry.access.redhat.com",
     repository = "ubi8/ubi-minimal",
     tag = "latest",
-)
+    )
 
 ################################
 # Load rules_k8s and configure #
@@ -111,7 +111,7 @@ http_archive(
     sha256 = "51f0977294699cd547e139ceff2396c32588575588678d2054da167691a227ef",
     strip_prefix = "rules_k8s-0.6",
     urls = ["https://github.com/bazelbuild/rules_k8s/archive/v0.6.tar.gz"],
-)
+    )
 
 load("@io_bazel_rules_k8s//k8s:k8s.bzl", "k8s_repositories")
 
