@@ -4,6 +4,7 @@ metadata:
   annotations:
     crdb.io/containerimage: ""
     crdb.io/version: ""
+    key: "test-value"
   creationTimestamp: null
   name: test-cluster
 spec:

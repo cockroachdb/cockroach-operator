@@ -55,6 +55,12 @@ spec:
             description: CrdbClusterSpec defines the desired state of a CockroachDB
               Cluster that the operator maintains.
             properties:
+              additionalAnnotations:
+                additionalProperties:
+                  type: string
+                description: (Optional) Additional custom resource annotations that
+                  are added to all resources
+                type: object
               additionalArgs:
                 description: '(Optional) Additional command line arguments for the
                   `cockroach` binary Default: ""'
