@@ -262,20 +262,18 @@ def install_kubetest2_exe():
 
 ## Fetch operator-sdk used on generating csv
 def install_operator_sdk():
-    # install kubetest2-kind binary
-    # TODO osx support
     http_file(
        name = "operator_sdk_darwin",
        executable = 1,
-       sha256 = "7e293cd35b99c1949cbb116275bc50d7f3aa0b520fe7e53e57b09e8096e63d4e",
-       urls = ["https://github.com/operator-framework/operator-sdk/releases/download/v1.1.0/operator-sdk-v1.1.0-x86_64-apple-darwin"],
+       sha256 = "c9aa13d011f49d941edcd70453769dba2b4ab8cc59d5dedb48037897bf7e2a7e",
+       urls = ["https://github.com/operator-framework/operator-sdk/releases/download/v1.12.0/operator-sdk_darwin_amd64"],
     )
 
     http_file(
         name = "operator_sdk_linux",
         executable = 1,
-        sha256 = "e0cfd1408ea8849fb32345d7f9954a2751fef7fcf4505f93db8f675d12f137ad",
-        urls = ["https://github.com/operator-framework/operator-sdk/releases/download/v1.1.0/operator-sdk-v1.1.0-x86_64-linux-gnu"],
+        sha256 = "65f35614cdc8fb2f0d5acece80b0cb16e86966c45fe29c8b2d329260a02133a2",
+        urls = ["https://github.com/operator-framework/operator-sdk/releases/download/v1.12.0/operator-sdk_linux_amd64"],
     )
 
 def install_kustomize():
