@@ -142,8 +142,8 @@ def install_kubectl():
 def install_oc():
     http_archive(
         name = "oc_linux",
-        sha256 = "d3b62b7de6df34b75336fc4720e334b8073cc93dba09c07f2e6a8e7147c0c99a",
-        urls = ["https://mirror.openshift.com/pub/openshift-v4/clients/ocp/4.7.15/openshift-client-linux-4.7.15.tar.gz"],
+        sha256 = "1505efdf7b7ac8c1c275a8f5281db1885fe49bbb4467c08ab599745af802cc98",
+        urls = ["https://mirror.openshift.com/pub/openshift-v4/clients/ocp/4.8.12/openshift-client-linux-4.8.12.tar.gz"],
         build_file_content =
          """
 filegroup(
@@ -158,8 +158,8 @@ filegroup(
 
     http_archive(
         name = "oc_darwin",
-        sha256 = "835218ded58cdda11f83c7e777a79a36c97c30c00c72f28a5ee29d8fb7e8830e",
-        urls = ["https://mirror.openshift.com/pub/openshift-v4/clients/ocp/4.7.15/openshift-client-mac-4.7.15.tar.gz"],
+        sha256 = "684f9413c7dfcc5963630b948576f0e4765db1ee355b6cc69ea556e76acf6f3e",
+        urls = ["https://mirror.openshift.com/pub/openshift-v4/clients/ocp/4.8.12/openshift-client-mac-4.8.12.tar.gz"],
         build_file_content =
          """
 filegroup(
@@ -259,6 +259,7 @@ def install_kubetest2_exe():
         sha256 = "4483f40f48b98e8a6aa41f58bfdf1f2787066a4e1ad1343e4281892aa1326736",
         urls = ["https://storage.googleapis.com/crdb-bazel-artifacts/linux/kubetest2-tester-exec"],
     )
+
 ## Fetch operator-sdk used on generating csv
 def install_operator_sdk():
     # install kubetest2-kind binary
@@ -277,7 +278,6 @@ def install_operator_sdk():
         urls = ["https://github.com/operator-framework/operator-sdk/releases/download/v1.1.0/operator-sdk-v1.1.0-x86_64-linux-gnu"],
     )
 
-     ## Fetch opm used on generating csv
 def install_kustomize():
     http_archive(
        name = "kustomize_darwin",
@@ -329,8 +329,8 @@ def install_opm():
 def install_openshift():
     http_archive(
        name = "openshift_darwin",
-       sha256 = "ed2144b31aa15bd27cbea11c3e94f7329531775b13b0b1dabb1c0ffa82ca4dc6",
-       urls = ["https://mirror.openshift.com/pub/openshift-v4/clients/ocp/4.7.9/openshift-install-mac-4.7.9.tar.gz"],
+       sha256 = "e3efcadbe554ad84283ac8caf2677b79a745895a0275647cef0b10971c7a3f0f",
+       urls = ["https://mirror.openshift.com/pub/openshift-v4/clients/ocp/4.8.12/openshift-install-mac-4.8.12.tar.gz"],
        build_file_content = """
 filegroup(
     name = "file",
@@ -344,8 +344,8 @@ filegroup(
 
     http_archive(
         name = "openshift_linux",
-        sha256 = "a41682490aabdb6e0d0ca608f76c91b9db5c4b295febc9d6b9182932d5e34760",
-        urls = ["https://mirror.openshift.com/pub/openshift-v4/clients/ocp/4.7.9/openshift-install-linux-4.7.9.tar.gz"],
+        sha256 = "f8612aad0f5f0f9c95049543169af53dcd4e1d3f7fbf425a70a7aa5c61c036ec",
+        urls = ["https://mirror.openshift.com/pub/openshift-v4/clients/ocp/4.8.12/openshift-install-linux-4.8.12.tar.gz"],
         build_file_content = """
 filegroup(
     name = "file",
