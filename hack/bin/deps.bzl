@@ -19,9 +19,6 @@ load("@bazel_gazelle//:deps.bzl", "go_repository")
 def install():
     install_misc()
     install_integration_test_dependencies()
-    install_bazel_tools()
-    install_staticcheck()
-    #install_helm()
     install_kubectl()
     install_oc()
     install_kind()
@@ -45,37 +42,6 @@ def install():
         importpath = "golang.org/x/build",
         sum = "h1:hXVePvSFG7tPGX4Pwk1d10ePFfoTCc0QmISfpKOHsS8=",
         version = "v0.0.0-20190927031335-2835ba2e683f",
-    )
-
-def install_staticcheck():
-    http_archive(
-        name = "co_honnef_go_tools_staticcheck_linux",
-        sha256 = "09d2c2002236296de2c757df111fe3ae858b89f9e183f645ad01f8135c83c519",
-        urls = ["https://github.com/dominikh/go-tools/releases/download/2020.1.4/staticcheck_linux_amd64.tar.gz"],
-        build_file_content = """
-filegroup(
-    name = "file",
-    srcs = [
-        "staticcheck/staticcheck",
-    ],
-    visibility = ["//visibility:public"],
-)
-""",
-    )
-
-    http_archive(
-        name = "co_honnef_go_tools_staticcheck_osx",
-        sha256 = "5706d101426c025e8f165309e0cb2932e54809eb035ff23ebe19df0f810699d8",
-        urls = ["https://github.com/dominikh/go-tools/releases/download/2020.1.4/staticcheck_darwin_amd64.tar.gz"],
-        build_file_content = """
-filegroup(
-    name = "file",
-    srcs = [
-        "staticcheck/staticcheck",
-    ],
-    visibility = ["//visibility:public"],
-)
-""",
     )
 
 def install_misc():
@@ -147,60 +113,6 @@ filegroup(
     name = "file",
     srcs = [
         "etcd-v3.3.12-linux-amd64/etcd",
-    ],
-    visibility = ["//visibility:public"],
-)
-""",
-    )
-
-# Install additional tools for Bazel management
-def install_bazel_tools():
-    ## Install buildozer, for mass-editing BUILD files
-    http_file(
-        name = "buildozer_darwin",
-        executable = 1,
-        sha256 = "f2bcb59b96b1899bc27d5791f17a218f9ce76261f5dcdfdbd7ad678cf545803f",
-        urls = ["https://github.com/bazelbuild/buildtools/releases/download/0.22.0/buildozer.osx"],
-    )
-
-    http_file(
-        name = "buildozer_linux",
-        executable = 1,
-        sha256 = "7750fe5bfb1247e8a858f3c87f63a5fb554ee43cb10efc1ce46c2387f1720064",
-        urls = ["https://github.com/bazelbuild/buildtools/releases/download/0.22.0/buildozer"],
-    )
-
-# Install Helm targets
-def install_helm():
-    ## Fetch helm & tiller for use in template generation and testing
-    ## You can bump the version of Helm & Tiller used during e2e tests by tweaking
-    ## the version numbers in these rules.
-    http_archive(
-        name = "helm_darwin",
-        sha256 = "92b10652b05a150e76995e08910a662c200a8179cfdb16bd51766d0d5ecc981a",
-        urls = ["https://get.helm.sh/helm-v3.1.2-darwin-amd64.tar.gz"],
-        build_file_content =
-            """
-filegroup(
-    name = "file",
-    srcs = [
-        "darwin-amd64/helm",
-    ],
-    visibility = ["//visibility:public"],
-)
-""",
-    )
-
-    http_archive(
-        name = "helm_linux",
-        sha256 = "e6be589df85076108c33e12e60cfb85dcd82c5d756a6f6ebc8de0ee505c9fd4c",
-        urls = ["https://get.helm.sh/helm-v3.1.2-linux-amd64.tar.gz"],
-        build_file_content =
-            """
-filegroup(
-    name = "file",
-    srcs = [
-        "linux-amd64/helm",
     ],
     visibility = ["//visibility:public"],
 )
