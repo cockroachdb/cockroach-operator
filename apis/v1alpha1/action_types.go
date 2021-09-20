@@ -38,8 +38,8 @@ const (
 	ResizePVCAction ActionType = "ResizePVC"
 	//UpgradeAction string
 	UpgradeAction ActionType = "Upgrade"
-	//PartialUpdateAction string
-	PartialUpdateAction ActionType = "PartialUpdate"
+	//PartitionedUpdateAction string
+	PartitionedUpdateAction ActionType = "PartitionedUpdate"
 	//UnknownAction string
 	UnknownAction ActionType = "Unknown"
 )

@@ -155,5 +155,5 @@ func TestVersionCheckedAndInitialized(t *testing.T) {
 	cluster.SetTrue(api.CrdbVersionChecked)
 
 	actors := director.GetActorsToExecute(cluster)
-	require.True(t, actorsHaveTypes(actors, []api.ActionType{api.DecommissionAction, api.PartialUpdateAction, api.ResizePVCAction, api.DeployAction, api.ClusterRestartAction}))
+	require.True(t, actorsHaveTypes(actors, []api.ActionType{api.DecommissionAction, api.PartitionedUpdateAction, api.ResizePVCAction, api.DeployAction, api.ClusterRestartAction}))
 }
