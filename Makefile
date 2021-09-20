@@ -221,6 +221,10 @@ dev/fmt:
 	@echo +++ Running gofmt
 	@bazel run //hack/bin:gofmt -- -s -w $(shell pwd)
 
+.PHONY: dev/fmt
+dev/golangci-lint:
+	bazel run //hack:update-golangci-lint
+
 .PHONY: dev/generate
 dev/generate: | dev/update-codegen dev/update-crds
 
