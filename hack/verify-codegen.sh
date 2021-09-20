@@ -47,12 +47,6 @@ tmpfiles=$TEST_TMPDIR/files
   "$@"
 )
 
-(
-  # Remove the platform/binary for gazelle and kazel
-  gazelle=$(dirname "$3")
-  kazel=$(dirname "$4")
-  rm -rf {.,"$tmpfiles"}/{"$gazelle","$kazel"}
-)
 # Avoid diff -N so we handle empty files correctly
 diff=$(diff -upr \
   "./pkg" "$tmpfiles/pkg" 2>/dev/null || true)
