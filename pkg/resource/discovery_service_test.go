@@ -31,7 +31,8 @@ import (
 )
 
 func TestDiscoveryServiceBuilder(t *testing.T) {
-	cluster := testutil.NewBuilder("test-cluster").Namespaced("test-ns")
+	cluster := testutil.NewBuilder("test-cluster").Namespaced("test-ns").
+		WithAnnotations(map[string]string{"key": "test-discovery-svc"})
 	commonLabels := labels.Common(cluster.Cr())
 
 	tests := []struct {
@@ -52,6 +53,7 @@ func TestDiscoveryServiceBuilder(t *testing.T) {
 						"prometheus.io/scrape": "true",
 						"prometheus.io/path":   "_status/vars",
 						"prometheus.io/port":   "8080",
+						"key":                  "test-discovery-svc",
 					},
 				},
 				Spec: corev1.ServiceSpec{

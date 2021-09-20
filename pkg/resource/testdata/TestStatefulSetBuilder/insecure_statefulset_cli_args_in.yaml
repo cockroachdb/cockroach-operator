@@ -56,4 +56,6 @@ spec:
     - key: "key"
       operator: "Exists"
       effect: "NoSchedule"
+  additionalAnnotations:
+    key: "test-value"
 status: {}

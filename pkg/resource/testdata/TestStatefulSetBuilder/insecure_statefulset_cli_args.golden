@@ -4,6 +4,7 @@ metadata:
   annotations:
     crdb.io/containerimage: ""
     crdb.io/version: ""
+    key: "test-value"
   creationTimestamp: null
   name: test-cluster
 spec:
@@ -22,6 +23,8 @@ spec:
         app.kubernetes.io/component: database
         app.kubernetes.io/instance: test-cluster
         app.kubernetes.io/name: cockroachdb
+      annotations:
+        key: "test-value"
     spec:
       affinity:
         podAntiAffinity:

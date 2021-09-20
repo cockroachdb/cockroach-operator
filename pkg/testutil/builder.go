@@ -117,6 +117,11 @@ func (b ClusterBuilder) WithLabels(labels map[string]string) ClusterBuilder {
 	return b
 }
 
+func (b ClusterBuilder) WithAnnotations(annotations map[string]string) ClusterBuilder {
+	b.cluster.Spec.AdditionalAnnotations = annotations
+	return b
+}
+
 func (b ClusterBuilder) WithAffinity(affinity *corev1.Affinity) ClusterBuilder {
 	b.cluster.Spec.Affinity = affinity
 	return b

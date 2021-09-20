@@ -175,6 +175,13 @@ func (in *CrdbClusterSpec) DeepCopyInto(out *CrdbClusterSpec) {
 			(*out)[key] = val
 		}
 	}
+	if in.AdditionalAnnotations != nil {
+		in, out := &in.AdditionalAnnotations, &out.AdditionalAnnotations
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
 	if in.Tolerations != nil {
 		in, out := &in.Tolerations, &out.Tolerations
 		*out = make([]v1.Toleration, len(*in))

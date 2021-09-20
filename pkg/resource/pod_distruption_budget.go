@@ -49,6 +49,8 @@ func (b PdbBuilder) Build(obj client.Object) error {
 		pdb.ObjectMeta.Labels = map[string]string{}
 	}
 
+	pdb.Annotations = b.Spec().AdditionalAnnotations
+
 	// Using the Common labels that will match
 	// the statefulset
 	commonLabels := labels.Common(b.Cluster.cr)

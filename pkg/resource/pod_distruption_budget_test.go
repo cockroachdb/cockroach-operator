@@ -33,7 +33,10 @@ import (
 
 func TestPDBBuilder(t *testing.T) {
 	var maxUnavailable int32 = 3
-	cluster := testutil.NewBuilder("test-cluster").Namespaced("test-ns").WithMaxUnavailable(&maxUnavailable)
+	annotations := map[string]string{"key": "test-pdb"}
+
+	cluster := testutil.NewBuilder("test-cluster").Namespaced("test-ns").WithMaxUnavailable(&maxUnavailable).
+		WithAnnotations(annotations)
 	commonLabels := labels.Common(cluster.Cr())
 	selector := commonLabels.Selector(cluster.Cr().Spec.AdditionalLabels)
 
@@ -51,8 +54,9 @@ func TestPDBBuilder(t *testing.T) {
 			selector: commonLabels.Selector(cluster.Cr().Spec.AdditionalLabels),
 			expected: &policy.PodDisruptionBudget{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:   "test-cluster",
-					Labels: map[string]string{},
+					Name:        "test-cluster",
+					Labels:      map[string]string{},
+					Annotations: annotations,
 				},
 				Spec: policy.PodDisruptionBudgetSpec{
 					MaxUnavailable: &maxUnavailableIS,
