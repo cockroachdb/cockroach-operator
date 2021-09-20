@@ -23,6 +23,8 @@ spec:
         app.kubernetes.io/component: database
         app.kubernetes.io/instance: test-cluster
         app.kubernetes.io/name: cockroachdb
+      annotations:
+        key: "test-value"
     spec:
       affinity:
         podAntiAffinity:

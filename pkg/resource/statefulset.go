@@ -193,9 +193,8 @@ func (b StatefulSetBuilder) SetAnnotations(obj client.Object) error {
 func (b StatefulSetBuilder) makePodTemplate() corev1.PodTemplateSpec {
 	pod := corev1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
-			Labels: b.Selector,
-			// TOOO: should we add custom annotations to pod as well ?
-			//Annotations: b.Spec().AdditionalAnnotations,
+			Labels:      b.Selector,
+			Annotations: b.Spec().AdditionalAnnotations,
 		},
 		Spec: corev1.PodSpec{
 			SecurityContext: &corev1.PodSecurityContext{
