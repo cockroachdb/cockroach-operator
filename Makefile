@@ -223,7 +223,7 @@ dev/fmt:
 
 .PHONY: dev/fmt
 dev/golangci-lint:
-	bazel run //hack:update-golangci-lint
+	bazel run //hack:golangci-lint
 
 .PHONY: dev/generate
 dev/generate: | dev/update-codegen dev/update-crds

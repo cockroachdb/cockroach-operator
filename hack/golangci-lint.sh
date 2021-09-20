@@ -27,7 +27,7 @@ elif ! command -v bazel &>/dev/null; then
 else
   (
     set -o xtrace
-    bazel run //hack:update-golangci-lint
+    bazel run //hack:golangci-lint
   )
   exit 0
 fi
@@ -35,8 +35,6 @@ fi
 golangci_lint=$(realpath "$1")
 
 cd "$BUILD_WORKSPACE_DIRECTORY"
-
-export GO111MODULE=on
 
 echo "+++ Running golangci-lint"
 "$golangci_lint" run

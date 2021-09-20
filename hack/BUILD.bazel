@@ -107,8 +107,8 @@ sh_test(
 )
 
 sh_binary(
-    name = "update-golangci-lint",
-    srcs = ["update-golangci-lint.sh"],
+    name = "golangci-lint",
+    srcs = ["golangci-lint.sh"],
     args = [
         "$(location %s)" % GOLANGCILINT,
     ],

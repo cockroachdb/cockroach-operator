@@ -141,7 +141,7 @@ def install_kubectl():
 # Define rules for different golangci-lint versions
 def install_golangci_lint():
     http_archive(
-        name = "golangci_lint_1_42_darwin",
+        name = "golangci_lint_darwin",
         sha256 = "d4bd25b9814eeaa2134197dd2c7671bb791eae786d42010d9d788af20dee4bfa",
         urls = ["https://github.com/golangci/golangci-lint/releases/download/v1.42.0/golangci-lint-1.42.0-darwin-amd64.tar.gz"],
         build_file_content =
@@ -157,7 +157,7 @@ filegroup(
     )
 
     http_archive(
-        name = "golangci_lint_1_42_linux",
+        name = "golangci_lint_linux",
         sha256 = "6937f62f8e2329e94822dc11c10b871ace5557ae1fcc4ee2f9980cd6aecbc159",
         urls = ["https://github.com/golangci/golangci-lint/releases/download/v1.42.0/golangci-lint-1.42.0-linux-amd64.tar.gz"],
         build_file_content =

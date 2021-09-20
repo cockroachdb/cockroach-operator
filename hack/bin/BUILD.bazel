@@ -83,8 +83,8 @@ genrule(
 genrule(
     name = "fetch_golangci_lint",
     srcs = select({
-        ":darwin": ["@golangci_lint_1_42_darwin//:file"],
-        ":k8": ["@golangci_lint_1_42_linux//:file"],
+        ":darwin": ["@golangci_lint_darwin//:file"],
+        ":k8": ["@golangci_lint_linux//:file"],
     }),
     outs = ["golangci-lint"],
     cmd = "cp $(SRCS) $@",
