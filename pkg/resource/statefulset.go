@@ -64,6 +64,9 @@ func (b StatefulSetBuilder) Build(obj client.Object) error {
 	if ss.ObjectMeta.Name == "" {
 		ss.ObjectMeta.Name = b.StatefulSetName()
 	}
+
+	ss.Annotations = b.Spec().AdditionalAnnotations
+
 	if ss.Annotations == nil {
 		ss.Annotations = make(map[string]string)
 	}
@@ -190,7 +193,8 @@ func (b StatefulSetBuilder) SetAnnotations(obj client.Object) error {
 func (b StatefulSetBuilder) makePodTemplate() corev1.PodTemplateSpec {
 	pod := corev1.PodTemplateSpec{
 		ObjectMeta: metav1.ObjectMeta{
-			Labels: b.Selector,
+			Labels:      b.Selector,
+			Annotations: b.Spec().AdditionalAnnotations,
 		},
 		Spec: corev1.PodSpec{
 			SecurityContext: &corev1.PodSecurityContext{

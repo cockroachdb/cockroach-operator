@@ -52,6 +52,8 @@ func (b JobBuilder) Build(obj client.Object) error {
 		job.ObjectMeta.Name = b.JobName
 	}
 
+	job.Annotations = b.Spec().AdditionalAnnotations
+
 	// we recreate spec from ground only if we do not find the container job
 	if dbContainer, err := kube.FindContainer(JobContainerName, &job.Spec.Template.Spec); err != nil {
 		job.Spec = kbatch.JobSpec{

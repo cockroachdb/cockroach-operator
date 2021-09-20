@@ -23,6 +23,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/cockroachdb/cockroach-operator/pkg/kube"
 )
 
 // This service only exists to create DNS entries for each pod in
@@ -49,7 +51,13 @@ func (b DiscoveryServiceBuilder) Build(obj client.Object) error {
 		service.ObjectMeta.Labels = map[string]string{}
 	}
 
-	service.ObjectMeta.Annotations = b.monitoringAnnotations()
+	service.Annotations = b.Spec().AdditionalAnnotations
+
+	if service.ObjectMeta.Annotations == nil {
+		service.ObjectMeta.Annotations = map[string]string{}
+	}
+
+	kube.MergeAnnotations(service.ObjectMeta.Annotations, b.monitoringAnnotations())
 
 	service.Spec = corev1.ServiceSpec{
 		ClusterIP:                "None",
