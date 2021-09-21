@@ -144,6 +144,8 @@ type CrdbClusterStatus struct {
 	DirectorState string `json:"directorState,omitempty"`
 	// DirectorStateUpdatedAt keeps track of the last time DirectorState was updated
 	DirectorStateUpdatedAt metav1.Time `json:"directorStateUpdatedAt,omitempty"`
+	// DirectorObservedGeneration increments whenever DirectorState is updated
+	DirectorObservedGeneration int `json:"directorObservedGeneration,omitempty"`
 	// ActiveActor keeps track of which Actor is currently running
 	ActiveActor string `json:"activeActor,omitempty"`
 }

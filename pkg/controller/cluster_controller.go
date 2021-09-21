@@ -107,6 +107,7 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req reconcile.Request
 	}
 
 	if cluster.Status().DirectorState == "" {
+		log.V(int(zapcore.InfoLevel)).Info("initializing director state")
 		cluster.UpdateDirectorState(actor.DirectorStateAvailable)
 		if err := r.Client.Status().Update(ctx, cluster.Unwrap()); err != nil {
 			log.Error(err, "failed to initialize director state")

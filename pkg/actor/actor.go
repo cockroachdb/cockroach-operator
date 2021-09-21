@@ -205,7 +205,7 @@ func (cd *clusterDirector) ActAtomically(actorCtx context.Context, cluster *reso
 
 	lockCtx := context.Background()
 
-	directorUpdatedAt := cluster.UpdateDirectorState(DirectorStateBusy)
+	directorUpdatedAt, newGeneration := cluster.UpdateDirectorState(DirectorStateBusy)
 	cluster.SetActiveActor(string(a.GetActionType()))
 	if err := cd.client.Status().Update(lockCtx, cluster.Unwrap()); err != nil {
 		return DirectorLockError{Err: errors.New("failed to acquire director lock")}
@@ -214,7 +214,7 @@ func (cd *clusterDirector) ActAtomically(actorCtx context.Context, cluster *reso
 	actorErr := a.Act(actorCtx, cluster)
 
 	fetcher := resource.NewKubeFetcher(lockCtx, clusterNamespace, cd.client)
-	// rewrite using retry on conflict
+	// TODO: rewrite using retry on conflict or similar backoff
 	for {
 		cr := resource.ClusterPlaceholder(clusterName)
 		if err := fetcher.Fetch(cr); err != nil {
@@ -222,8 +222,14 @@ func (cd *clusterDirector) ActAtomically(actorCtx context.Context, cluster *reso
 		}
 		refreshedCluster := resource.NewCluster(cr)
 		status = refreshedCluster.Status()
+
+		// It's possible that the newly retrieved cluster does not yet reflect the update just made. If this is the case,
+		// try again.
+		if status.DirectorObservedGeneration < newGeneration {
+			continue
+		}
+
 		if status.DirectorState != DirectorStateBusy || !status.DirectorStateUpdatedAt.Equal(&directorUpdatedAt) {
-			fmt.Println(status.DirectorState, status.DirectorStateUpdatedAt.String(), directorUpdatedAt.String())
 			return PermanentErr{Err: fmt.Errorf("active director lost lock; this should not have happened")}
 		}
 
@@ -237,8 +243,6 @@ func (cd *clusterDirector) ActAtomically(actorCtx context.Context, cluster *reso
 		}
 		break
 	}
-
-	fmt.Println("ASKDFJ", a.GetActionType())
 
 	return actorErr
 }
