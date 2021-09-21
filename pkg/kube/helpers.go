@@ -328,3 +328,10 @@ func HandleStsError(err error, l logr.Logger, stsName string, ns string) error {
 	l.Error(err, "error getting statefulset", "stsName", stsName, "namspace", ns)
 	return err
 }
+
+// MergeAnnotations merges the `from` annotations into `to` annotations
+func MergeAnnotations(to, from map[string]string) {
+	for key, value := range from {
+		to[key] = value
+	}
+}

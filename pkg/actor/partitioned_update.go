@@ -53,9 +53,9 @@ type partitionedUpdate struct {
 	config *rest.Config
 }
 
-// GetActionType returns api.PartialUpdateAction action used to set the cluster status errors
+// GetActionType returns api.PartitionedUpdateAction action used to set the cluster status errors
 func (up *partitionedUpdate) GetActionType() api.ActionType {
-	return api.PartialUpdateAction
+	return api.PartitionedUpdateAction
 }
 
 // Act runs a new partitionUpdate.

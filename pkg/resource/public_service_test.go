@@ -31,7 +31,8 @@ import (
 )
 
 func TestPublicServiceBuilder(t *testing.T) {
-	cluster := testutil.NewBuilder("test-cluster").Namespaced("test-ns")
+	annotations := map[string]string{"key": "test-public-svc"}
+	cluster := testutil.NewBuilder("test-cluster").Namespaced("test-ns").WithAnnotations(annotations)
 	commonLabels := labels.Common(cluster.Cr())
 
 	tests := []struct {
@@ -46,8 +47,9 @@ func TestPublicServiceBuilder(t *testing.T) {
 			selector: commonLabels.Selector(cluster.Cr().Spec.AdditionalLabels),
 			expected: &corev1.Service{
 				ObjectMeta: metav1.ObjectMeta{
-					Name:   "test-cluster-public",
-					Labels: map[string]string{},
+					Name:        "test-cluster-public",
+					Labels:      map[string]string{},
+					Annotations: annotations,
 				},
 				Spec: corev1.ServiceSpec{
 					Type: corev1.ServiceTypeClusterIP,

@@ -18,7 +18,6 @@ package v1alpha1_test
 
 import (
 	"context"
-	"path/filepath"
 	"testing"
 
 	. "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
@@ -32,10 +31,7 @@ import (
 )
 
 func TestCrdbCluster(t *testing.T) {
-	env := env.NewEnv(
-		runtime.NewSchemeBuilder(AddToScheme),
-		filepath.Join("..", "..", "config", "crd", "bases"),
-	)
+	env := env.NewEnv(runtime.NewSchemeBuilder(AddToScheme))
 
 	env.Start()
 	defer env.Stop()

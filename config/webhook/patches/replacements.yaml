@@ -11,15 +11,20 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
----
-apiVersion: v1
-kind: Service
-metadata:
+#
+# This kustomization.yaml is not intended to be run by itself,
+# since it depends on service name and namespace that are out of this kustomize package.
+# It should be run by config/default
+source:
+  kind: Service
   name: webhook-service
-spec:
-  ports:
-    - port: 443
-      targetPort: 9443
-  selector:
-    app: cockroach-operator
+  fieldPath: metadata.namespace
+targets:
+  - select:
+      kind: MutatingWebhookConfiguration
+    fieldPaths:
+      - webhooks.[name=mcrdbcluster.kb.io].clientConfig.service.namespace
+  - select:
+      kind: ValidatingWebhookConfiguration
+    fieldPaths:
+      - webhooks.[name=vcrdbcluster.kb.io].clientConfig.service.namespace

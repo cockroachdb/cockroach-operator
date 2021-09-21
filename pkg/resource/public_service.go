@@ -44,6 +44,8 @@ func (b PublicServiceBuilder) Build(obj client.Object) error {
 		service.ObjectMeta.Labels = map[string]string{}
 	}
 
+	service.Annotations = b.Spec().AdditionalAnnotations
+
 	if service.Spec.Type != corev1.ServiceTypeClusterIP {
 		service.Spec = corev1.ServiceSpec{
 			Type: corev1.ServiceTypeClusterIP,

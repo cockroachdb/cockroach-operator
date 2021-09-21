@@ -228,8 +228,8 @@ genrule(
 genrule(
     name = "fetch_kustomize",
     srcs = select({
-        ":darwin": ["@kustomize_darwin//file"],
-        ":k8": ["@kustomize_linux//file"],
+        ":darwin": ["@kustomize_darwin//:file"],
+        ":k8": ["@kustomize_linux//:file"],
     }),
     outs = ["kustomize"],
     cmd = "cp $(SRCS) $@",

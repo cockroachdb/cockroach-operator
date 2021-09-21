@@ -18,11 +18,12 @@ package versionchecker_test
 
 import (
 	"flag"
-	corev1 "k8s.io/api/core/v1"
-	apiresource "k8s.io/apimachinery/pkg/api/resource"
 	"os"
 	"testing"
 	"time"
+
+	corev1 "k8s.io/api/core/v1"
+	apiresource "k8s.io/apimachinery/pkg/api/resource"
 
 	"github.com/cockroachdb/cockroach-operator/pkg/actor"
 	"github.com/cockroachdb/cockroach-operator/pkg/controller"
@@ -44,7 +45,7 @@ var env *testenv.ActiveEnv
 // TestMain wraps the unit tests. Set TEST_DO_NOT_USE_KIND environment variable to any value
 // if you do not want this test to start a k8s cluster using kind.
 func TestMain(m *testing.M) {
-	e := testenv.CreateActiveEnvForTest([]string{"..", ".."})
+	e := testenv.CreateActiveEnvForTest()
 	env = e.Start()
 	code := testenv.RunCode(m, e)
 	os.Exit(code)

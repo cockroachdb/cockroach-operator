@@ -89,14 +89,14 @@ type clusterDirector struct {
 
 func NewDirector(scheme *runtime.Scheme, cl client.Client, config *rest.Config) Director {
 	actors := map[api.ActionType]Actor{
-		api.DecommissionAction:   newDecommission(scheme, cl, config),
-		api.VersionCheckerAction: newVersionChecker(scheme, cl, config),
-		api.GenerateCertAction:   newGenerateCert(scheme, cl, config),
-		api.PartialUpdateAction:  newPartitionedUpdate(scheme, cl, config),
-		api.ResizePVCAction:      newResizePVC(scheme, cl, config),
-		api.DeployAction:         newDeploy(scheme, cl, config, kube.NewKubernetesDistribution()),
-		api.InitializeAction:     newInitialize(scheme, cl, config),
-		api.ClusterRestartAction: newClusterRestart(scheme, cl, config),
+		api.DecommissionAction:      newDecommission(scheme, cl, config),
+		api.VersionCheckerAction:    newVersionChecker(scheme, cl, config),
+		api.GenerateCertAction:      newGenerateCert(scheme, cl, config),
+		api.PartitionedUpdateAction: newPartitionedUpdate(scheme, cl, config),
+		api.ResizePVCAction:         newResizePVC(scheme, cl, config),
+		api.DeployAction:            newDeploy(scheme, cl, config, kube.NewKubernetesDistribution()),
+		api.InitializeAction:        newInitialize(scheme, cl, config),
+		api.ClusterRestartAction:    newClusterRestart(scheme, cl, config),
 	}
 	return &clusterDirector{
 		actors: actors,
@@ -131,9 +131,9 @@ func (cd *clusterDirector) GetActorsToExecute(cluster *resource.Cluster) []Actor
 	}
 
 	if featureVersionValidatorEnabled && conditionVersionCheckedTrue && conditionInitializedTrue {
-		actorsToExecute = append(actorsToExecute, cd.actors[api.PartialUpdateAction])
+		actorsToExecute = append(actorsToExecute, cd.actors[api.PartitionedUpdateAction])
 	} else if !featureVersionValidatorEnabled && conditionInitializedTrue {
-		actorsToExecute = append(actorsToExecute, cd.actors[api.PartialUpdateAction])
+		actorsToExecute = append(actorsToExecute, cd.actors[api.PartitionedUpdateAction])
 	}
 
 	if featureResizePVCEnabled && conditionInitializedTrue {
