@@ -18,10 +18,12 @@ package actor
 
 import (
 	"context"
+	"fmt"
 	"github.com/cockroachdb/cockroach-operator/pkg/condition"
 	"github.com/cockroachdb/cockroach-operator/pkg/features"
 	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
 	"github.com/cockroachdb/errors"
+	errors2 "k8s.io/apimachinery/pkg/api/errors"
 	"time"
 
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
@@ -79,6 +81,15 @@ type ValidationError struct {
 }
 
 func (e ValidationError) Error() string {
+	return e.Err.Error()
+}
+
+// DirectorLockError indicates that the director is busy when an actor tries to act
+type DirectorLockError struct {
+	Err error
+}
+
+func (e DirectorLockError) Error() string {
 	return e.Err.Error()
 }
 
@@ -172,8 +183,12 @@ func (cd *clusterDirector) GetActorsToExecute(cluster *resource.Cluster) []Actor
 	return actorsToExecute
 }
 
-func (cd *clusterDirector) ActAtomically(ctx context.Context, cluster *resource.Cluster, a Actor) error {
-	currentState := cluster.Status().DirectorState
+func (cd *clusterDirector) ActAtomically(actorCtx context.Context, cluster *resource.Cluster, a Actor) error {
+	clusterName := cluster.Name()
+	clusterNamespace := cluster.Namespace()
+
+	status := cluster.Status()
+	currentState := status.DirectorState
 	switch currentState {
 	case DirectorStateAvailable:
 		break
@@ -182,23 +197,48 @@ func (cd *clusterDirector) ActAtomically(ctx context.Context, cluster *resource.
 		if currentStateUpdatedAt.Add(maxTimeBusy).Before(time.Now()) {
 			return PermanentErr{Err: errors.New("director has timed out")}
 		} else {
-			return NotReadyErr{Err: errors.New("an actor is currently performing an action")}
+			return DirectorLockError{Err: errors.Newf("an actor is currently performing an action: %s", status.ActiveActor)}
 		}
 	default:
 		return PermanentErr{Err: errors.Newf("director is in an unknown state: %s", currentState)}
 	}
 
-	cluster.UpdateDirectorState(DirectorStateBusy)
-	if err := cd.client.Status().Update(ctx, cluster.Unwrap()); err != nil {
-		return NotReadyErr{Err: errors.New("failed to acquire director lock")}
+	lockCtx := context.Background()
+
+	directorUpdatedAt := cluster.UpdateDirectorState(DirectorStateBusy)
+	cluster.SetActiveActor(string(a.GetActionType()))
+	if err := cd.client.Status().Update(lockCtx, cluster.Unwrap()); err != nil {
+		return DirectorLockError{Err: errors.New("failed to acquire director lock")}
 	}
 
-	actorErr := a.Act(ctx, cluster)
+	actorErr := a.Act(actorCtx, cluster)
 
-	cluster.UpdateDirectorState(DirectorStateAvailable)
-	if err := cd.client.Status().Update(ctx, cluster.Unwrap()); err != nil {
-		return PermanentErr{Err: errors.New("active director lost lock; this should not have happened")}
+	fetcher := resource.NewKubeFetcher(lockCtx, clusterNamespace, cd.client)
+	// rewrite using retry on conflict
+	for {
+		cr := resource.ClusterPlaceholder(clusterName)
+		if err := fetcher.Fetch(cr); err != nil {
+			return PermanentErr{Err: fmt.Errorf("could not retrieve cluster: %w", err)}
+		}
+		refreshedCluster := resource.NewCluster(cr)
+		status = refreshedCluster.Status()
+		if status.DirectorState != DirectorStateBusy || !status.DirectorStateUpdatedAt.Equal(&directorUpdatedAt) {
+			fmt.Println(status.DirectorState, status.DirectorStateUpdatedAt.String(), directorUpdatedAt.String())
+			return PermanentErr{Err: fmt.Errorf("active director lost lock; this should not have happened")}
+		}
+
+		refreshedCluster.UpdateDirectorState(DirectorStateAvailable)
+		refreshedCluster.SetActiveActor("")
+		if err := cd.client.Status().Update(lockCtx, refreshedCluster.Unwrap()); err != nil {
+			if !errors2.IsConflict(err) {
+				return PermanentErr{Err: fmt.Errorf("failed to set director back to available: %w", err)}
+			}
+			continue
+		}
+		break
 	}
+
+	fmt.Println("ASKDFJ", a.GetActionType())
 
 	return actorErr
 }

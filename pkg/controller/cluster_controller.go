@@ -134,8 +134,20 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req reconcile.Request
 	// necessary for that state.
 	actorsToExecute := r.Director.GetActorsToExecute(&cluster)
 	for _, a := range actorsToExecute {
+		cr := resource.ClusterPlaceholder(req.Name)
+		if err := fetcher.Fetch(cr); err != nil {
+			log.Error(err, "failed to retrieve CrdbCluster resource")
+			return requeueIfError(client.IgnoreNotFound(err))
+		}
+		cluster := resource.NewCluster(cr)
+
 		log.Info(fmt.Sprintf("Running action with name: %s", a.GetActionType()))
 		if err := r.Director.ActAtomically(ctx, &cluster, a); err != nil {
+			if directorLockErr, ok := err.(actor.DirectorLockError); ok {
+				log.V(int(zapcore.DebugLevel)).Info("requeueing due to ongoing actor", "reason", directorLockErr.Error(), "Action", a.GetActionType())
+				return requeueAfter(30*time.Second, nil)
+			}
+
 			// Save the error on the Status for each action
 			log.Info("Error on action", "Action", a.GetActionType(), "err", err.Error())
 			cluster.SetActionFailed(a.GetActionType(), err.Error())

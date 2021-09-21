@@ -110,9 +110,16 @@ func (cluster Cluster) SetActionUnknown(atype api.ActionType) {
 	clusterstatus.SetActionUnknown(atype, &cluster.cr.Status)
 }
 
-func (cluster Cluster) UpdateDirectorState(state string) {
+func (cluster Cluster) UpdateDirectorState(state string) metav1.Time {
+	// Round to the nearest second; more granular information does not persist through various transformations
+	now := metav1.NewTime(time.Now().Round(time.Second))
+
 	cluster.cr.Status.DirectorState = state
-	cluster.cr.Status.DirectorStateUpdatedAt = metav1.Now()
+	cluster.cr.Status.DirectorStateUpdatedAt = now
+	return now
+}
+func (cluster Cluster) SetActiveActor(actor string) {
+	cluster.cr.Status.ActiveActor = actor
 }
 
 func (cluster Cluster) Failed(atype api.ActionType) bool {

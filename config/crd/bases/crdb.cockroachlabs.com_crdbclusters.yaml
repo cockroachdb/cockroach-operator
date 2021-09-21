@@ -1089,6 +1089,9 @@ spec:
           status:
             description: CrdbClusterStatus defines the observed state of Cluster
             properties:
+              activeActor:
+                description: ActiveActor keeps track of which Actor is currently running
+                type: string
               clusterStatus:
                 description: OperatorStatus represent the status of the operator(Failed,
                   Starting, Running or Other)
