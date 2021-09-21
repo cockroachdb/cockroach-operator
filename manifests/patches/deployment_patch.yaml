@@ -99,4 +99,6 @@ spec:
               value: RH_COCKROACH_DB_IMAGE_PLACEHOLDER_v21_1_7
             - name: RELATED_IMAGE_COCKROACH_v21_1_8
               value: RH_COCKROACH_DB_IMAGE_PLACEHOLDER_v21_1_8
+            - name: RELATED_IMAGE_COCKROACH_v21_1_9
+              value: RH_COCKROACH_DB_IMAGE_PLACEHOLDER_v21_1_9
           image: RH_COCKROACH_OP_IMAGE_PLACEHOLDER
