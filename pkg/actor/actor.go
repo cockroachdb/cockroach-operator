@@ -81,6 +81,7 @@ type Actor interface {
 
 type Director interface {
 	GetActorsToExecute(*resource.Cluster) []Actor
+	ActAtomically(context.Context, *resource.Cluster, Actor) error
 }
 
 type clusterDirector struct {
@@ -158,6 +159,10 @@ func (cd *clusterDirector) GetActorsToExecute(cluster *resource.Cluster) []Actor
 	}
 
 	return actorsToExecute
+}
+
+func (cd *clusterDirector) ActAtomically(context.Context, *resource.Cluster, Actor) error {
+	return nil
 }
 
 //Log var

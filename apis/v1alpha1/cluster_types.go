@@ -139,6 +139,11 @@ type CrdbClusterStatus struct {
 	// OperatorStatus represent the status of the operator(Failed, Starting, Running or Other)
 	// +operator-sdk:csv:customresourcedefinitions:type=status, displayName="OperatorStatus"
 	ClusterStatus string `json:"clusterStatus,omitempty"`
+
+	// OperatorState is used internally by the operator to coordinate actors
+	OperatorState string `json:"operatorState,omitempty"`
+	// OperatorStateUpdatedAt keeps track of the last time OperatorState was updated
+	OperatorStateUpdatedAt metav1.Time `json:"operatorStateUpdatedAt,omitempty"`
 }
 
 // +k8s:openapi-gen=true
