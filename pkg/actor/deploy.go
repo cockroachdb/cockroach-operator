@@ -52,12 +52,11 @@ func (d deploy) GetActionType() api.ActionType {
 
 func (d deploy) Act(ctx context.Context, cluster *resource.Cluster) error {
 	log := d.log.WithValues("CrdbCluster", cluster.ObjectKey())
-
 	log.V(DEBUGLEVEL).Info("reconciling resources on deploy action")
 
+	owner := cluster.Unwrap()
 	r := resource.NewManagedKubeResource(ctx, d.client, cluster, kube.AnnotatingPersister)
 
-	owner := cluster.Unwrap()
 	kubernetesDistro, err := d.kd.Get(ctx, d.config, log)
 	if err != nil {
 		return errors.Wrap(err, "failed to get Kubernetes distribution")
@@ -65,82 +64,28 @@ func (d deploy) Act(ctx context.Context, cluster *resource.Cluster) error {
 
 	kubernetesDistro = "kubernetes-operator-" + kubernetesDistro
 
-	changed, err := (resource.Reconciler{
-		ManagedResource: r,
-		Builder: resource.DiscoveryServiceBuilder{
-			Cluster:  cluster,
-			Selector: r.Labels.Selector(cluster.Spec().AdditionalLabels),
-		},
-		Owner:  owner,
-		Scheme: d.scheme,
-	}).Reconcile()
-	if err != nil {
-		return errors.Wrap(err, "failed to reconcile discovery service")
+	labelSelector := r.Labels.Selector(cluster.Spec().AdditionalLabels)
+	builders := []resource.Builder{
+		resource.DiscoveryServiceBuilder{Cluster: cluster, Selector: labelSelector},
+		resource.PublicServiceBuilder{Cluster: cluster, Selector: labelSelector},
+		resource.StatefulSetBuilder{Cluster: cluster, Selector: labelSelector, Telemetry: kubernetesDistro},
+		resource.PdbBuilder{Cluster: cluster, Selector: labelSelector},
 	}
 
-	if changed {
-		log.Info("created/updated discovery service, stopping request processing")
-		CancelLoop(ctx)
-		return nil
-	}
-
-	changed, err = (resource.Reconciler{
-		ManagedResource: r,
-		Builder: resource.PublicServiceBuilder{
-			Cluster:  cluster,
-			Selector: r.Labels.Selector(cluster.Spec().AdditionalLabels),
-		},
-		Owner:  owner,
-		Scheme: d.scheme,
-	}).Reconcile()
-	if err != nil {
-		return errors.Wrap(err, "failed to reconcile public service")
-	}
-
-	if changed {
-		log.Info("created/updated public service, stopping request processing")
-		CancelLoop(ctx)
-		return nil
-	}
-
-	changed, err = (resource.Reconciler{
-		ManagedResource: r,
-		Builder: resource.StatefulSetBuilder{
-			Cluster:   cluster,
-			Selector:  r.Labels.Selector(cluster.Spec().AdditionalLabels),
-			Telemetry: kubernetesDistro,
-		},
-		Owner:  owner,
-		Scheme: d.scheme,
-	}).Reconcile()
-	if err != nil {
-		return errors.Wrap(err, "failed to reconcile statefulset")
-	}
-
-	if changed {
-		log.Info("created/updated statefulset, stopping request processing")
-		CancelLoop(ctx)
-		return nil
-	}
-
-	// if we only have one Node we cannot have a PDB
-	// TODO we need to validate this in the CRD API
-	if cluster.Spec().Nodes > 1 {
-		changed, err = (resource.Reconciler{
+	for _, b := range builders {
+		changed, err := resource.Reconciler{
 			ManagedResource: r,
-			Builder: resource.PdbBuilder{
-				Cluster:  cluster,
-				Selector: r.Labels.Selector(cluster.Spec().AdditionalLabels),
-			},
-			Owner:  owner,
-			Scheme: d.scheme,
-		}).Reconcile()
+			Builder:         b,
+			Owner:           owner,
+			Scheme:          d.scheme,
+		}.Reconcile()
+
 		if err != nil {
-			return errors.Wrap(err, "failed to reconcile pdb")
+			return errors.Wrapf(err, "failed to reconcile %s", b.ResourceName())
 		}
 
 		if changed {
-			log.Info("created/updated pdb, stopping request processing")
+			log.Info("created/updated a resource, stopping request processing", "resource", b.ResourceName())
 			CancelLoop(ctx)
 			return nil
 		}

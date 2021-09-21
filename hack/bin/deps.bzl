@@ -19,22 +19,20 @@ load("@bazel_gazelle//:deps.bzl", "go_repository")
 def install():
     install_misc()
     install_integration_test_dependencies()
-    install_bazel_tools()
-    install_staticcheck()
-    #install_helm()
+
+    install_crdb()
     install_kubectl()
-    install_oc()
     install_kind()
     install_kubetest2()
-    install_kubetest2_kind()
-    install_kubetest2_gke()
+    install_kubetest2_aws()
     install_kubetest2_exe()
-    install_operator_sdk()
+    install_kubetest2_gke()
+    install_kubetest2_kind()
     install_kustomize()
+    install_oc()
+    install_operator_sdk()
     install_opm()
-    install_crdb()
     install_openshift()
-    install_aws_kubetest2()
 
     # Install golang.org/x/build as kubernetes/repo-infra requires it for the
     # build-tar bazel target.
@@ -47,64 +45,34 @@ def install():
         version = "v0.0.0-20190927031335-2835ba2e683f",
     )
 
-def install_staticcheck():
-    http_archive(
-        name = "co_honnef_go_tools_staticcheck_linux",
-        sha256 = "09d2c2002236296de2c757df111fe3ae858b89f9e183f645ad01f8135c83c519",
-        urls = ["https://github.com/dominikh/go-tools/releases/download/2020.1.4/staticcheck_linux_amd64.tar.gz"],
-        build_file_content = """
-filegroup(
-    name = "file",
-    srcs = [
-        "staticcheck/staticcheck",
-    ],
-    visibility = ["//visibility:public"],
-)
-""",
-    )
-
-    http_archive(
-        name = "co_honnef_go_tools_staticcheck_osx",
-        sha256 = "5706d101426c025e8f165309e0cb2932e54809eb035ff23ebe19df0f810699d8",
-        urls = ["https://github.com/dominikh/go-tools/releases/download/2020.1.4/staticcheck_darwin_amd64.tar.gz"],
-        build_file_content = """
-filegroup(
-    name = "file",
-    srcs = [
-        "staticcheck/staticcheck",
-    ],
-    visibility = ["//visibility:public"],
-)
-""",
-    )
-
 def install_misc():
     http_file(
         name = "jq_linux",
         executable = 1,
-        sha256 = "c6b3a7d7d3e7b70c6f51b706a3b90bd01833846c54d32ca32f0027f00226ff6d",
-        urls = ["https://github.com/stedolan/jq/releases/download/jq-1.5/jq-linux64"],
+        sha256 = "af986793a515d500ab2d35f8d2aecd656e764504b789b66d7e1a0b727a124c44",
+        urls = ["https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64"],
     )
 
     http_file(
         name = "jq_osx",
         executable = 1,
-        sha256 = "386e92c982a56fe4851468d7a931dfca29560cee306a0e66c6a1bd4065d3dac5",
-        urls = ["https://github.com/stedolan/jq/releases/download/jq-1.5/jq-osx-amd64"],
+        sha256 = "5c0a0a3ea600f302ee458b30317425dd9632d1ad8882259fcaf4e9b868b2b1ef",
+        urls = ["https://github.com/stedolan/jq/releases/download/jq-1.6/jq-osx-amd64"],
     )
+
     http_file(
         #this tool is used on open shift generation to generate the csv
         name = "faq_linux",
         executable = 1,
-        sha256 = "53360a0d22b0608d5e29f8e84450f2fdc94573246fb552896afedbf8f1687981",
-        urls = ["https://github.com/jzelinskie/faq/releases/download/0.0.6/faq-linux-amd64"],
+        sha256 = "6c9234d0b2b024bf0e7c845fc092339b51b94e5addeee9612a7219cfd2a7b731",
+        urls = ["https://github.com/jzelinskie/faq/releases/download/0.0.7/faq-linux-amd64"],
     )
 
     http_file(
         name = "faq_osx",
         executable = 1,
-        sha256 = "bfcd6f527d1ba74db6bdd6bfb551a4db9c2c72f01baebf8069e9849b93dceef9",
-        urls = ["https://github.com/jzelinskie/faq/releases/download/0.0.6/faq-darwin-amd64"],
+        sha256 = "869f4d8acaa1feb11ce76b2204c5476b8a04d9451216adde6b18e2ef2f978794",
+        urls = ["https://github.com/jzelinskie/faq/releases/download/0.0.7/faq-darwin-amd64"],
     )
 
 # Install dependencies used by the controller-runtime integration test framework
@@ -153,60 +121,6 @@ filegroup(
 """,
     )
 
-# Install additional tools for Bazel management
-def install_bazel_tools():
-    ## Install buildozer, for mass-editing BUILD files
-    http_file(
-        name = "buildozer_darwin",
-        executable = 1,
-        sha256 = "f2bcb59b96b1899bc27d5791f17a218f9ce76261f5dcdfdbd7ad678cf545803f",
-        urls = ["https://github.com/bazelbuild/buildtools/releases/download/0.22.0/buildozer.osx"],
-    )
-
-    http_file(
-        name = "buildozer_linux",
-        executable = 1,
-        sha256 = "7750fe5bfb1247e8a858f3c87f63a5fb554ee43cb10efc1ce46c2387f1720064",
-        urls = ["https://github.com/bazelbuild/buildtools/releases/download/0.22.0/buildozer"],
-    )
-
-# Install Helm targets
-def install_helm():
-    ## Fetch helm & tiller for use in template generation and testing
-    ## You can bump the version of Helm & Tiller used during e2e tests by tweaking
-    ## the version numbers in these rules.
-    http_archive(
-        name = "helm_darwin",
-        sha256 = "92b10652b05a150e76995e08910a662c200a8179cfdb16bd51766d0d5ecc981a",
-        urls = ["https://get.helm.sh/helm-v3.1.2-darwin-amd64.tar.gz"],
-        build_file_content =
-            """
-filegroup(
-    name = "file",
-    srcs = [
-        "darwin-amd64/helm",
-    ],
-    visibility = ["//visibility:public"],
-)
-""",
-    )
-
-    http_archive(
-        name = "helm_linux",
-        sha256 = "e6be589df85076108c33e12e60cfb85dcd82c5d756a6f6ebc8de0ee505c9fd4c",
-        urls = ["https://get.helm.sh/helm-v3.1.2-linux-amd64.tar.gz"],
-        build_file_content =
-            """
-filegroup(
-    name = "file",
-    srcs = [
-        "linux-amd64/helm",
-    ],
-    visibility = ["//visibility:public"],
-)
-""",
-    )
-
 # Define rules for different kubectl versions
 def install_kubectl():
     http_file(
@@ -228,8 +142,8 @@ def install_kubectl():
 def install_oc():
     http_archive(
         name = "oc_linux",
-        sha256 = "d3b62b7de6df34b75336fc4720e334b8073cc93dba09c07f2e6a8e7147c0c99a",
-        urls = ["https://mirror.openshift.com/pub/openshift-v4/clients/ocp/4.7.15/openshift-client-linux-4.7.15.tar.gz"],
+        sha256 = "1505efdf7b7ac8c1c275a8f5281db1885fe49bbb4467c08ab599745af802cc98",
+        urls = ["https://mirror.openshift.com/pub/openshift-v4/clients/ocp/4.8.12/openshift-client-linux-4.8.12.tar.gz"],
         build_file_content =
          """
 filegroup(
@@ -244,8 +158,8 @@ filegroup(
 
     http_archive(
         name = "oc_darwin",
-        sha256 = "835218ded58cdda11f83c7e777a79a36c97c30c00c72f28a5ee29d8fb7e8830e",
-        urls = ["https://mirror.openshift.com/pub/openshift-v4/clients/ocp/4.7.15/openshift-client-mac-4.7.15.tar.gz"],
+        sha256 = "684f9413c7dfcc5963630b948576f0e4765db1ee355b6cc69ea556e76acf6f3e",
+        urls = ["https://mirror.openshift.com/pub/openshift-v4/clients/ocp/4.8.12/openshift-client-mac-4.8.12.tar.gz"],
         build_file_content =
          """
 filegroup(
@@ -264,15 +178,15 @@ def install_kind():
     http_file(
         name = "kind_darwin",
         executable = 1,
-        sha256 = "a934e573621917a2785f3ddfa7b6187d18fa1c20c94c013919736b3256d37f57",
-        urls = ["https://github.com/kubernetes-sigs/kind/releases/download/v0.10.0/kind-darwin-amd64"],
+        sha256 = "432bef555a70e9360b44661c759658265b9eaaf7f75f1beec4c4d1e6bbf97ce3",
+        urls = ["https://github.com/kubernetes-sigs/kind/releases/download/v0.11.1/kind-darwin-amd64"],
     )
 
     http_file(
         name = "kind_linux",
         executable = 1,
-        sha256 = "74767776488508d847b0bb941212c1cb76ace90d9439f4dee256d8a04f1309c6",
-        urls = ["https://github.com/kubernetes-sigs/kind/releases/download/v0.10.0/kind-linux-amd64"],
+        sha256 = "949f81b3c30ca03a3d4effdecda04f100fa3edc07a28b19400f72ede7c5f0491",
+        urls = ["https://github.com/kubernetes-sigs/kind/releases/download/v0.11.1/kind-linux-amd64"],
     )
 
 ## Fetch kubetest2 binary used during e2e tests
@@ -345,25 +259,23 @@ def install_kubetest2_exe():
         sha256 = "4483f40f48b98e8a6aa41f58bfdf1f2787066a4e1ad1343e4281892aa1326736",
         urls = ["https://storage.googleapis.com/crdb-bazel-artifacts/linux/kubetest2-tester-exec"],
     )
+
 ## Fetch operator-sdk used on generating csv
 def install_operator_sdk():
-    # install kubetest2-kind binary
-    # TODO osx support
     http_file(
        name = "operator_sdk_darwin",
        executable = 1,
-       sha256 = "7e293cd35b99c1949cbb116275bc50d7f3aa0b520fe7e53e57b09e8096e63d4e",
-       urls = ["https://github.com/operator-framework/operator-sdk/releases/download/v1.1.0/operator-sdk-v1.1.0-x86_64-apple-darwin"],
+       sha256 = "c9aa13d011f49d941edcd70453769dba2b4ab8cc59d5dedb48037897bf7e2a7e",
+       urls = ["https://github.com/operator-framework/operator-sdk/releases/download/v1.12.0/operator-sdk_darwin_amd64"],
     )
 
     http_file(
         name = "operator_sdk_linux",
         executable = 1,
-        sha256 = "e0cfd1408ea8849fb32345d7f9954a2751fef7fcf4505f93db8f675d12f137ad",
-        urls = ["https://github.com/operator-framework/operator-sdk/releases/download/v1.1.0/operator-sdk-v1.1.0-x86_64-linux-gnu"],
+        sha256 = "65f35614cdc8fb2f0d5acece80b0cb16e86966c45fe29c8b2d329260a02133a2",
+        urls = ["https://github.com/operator-framework/operator-sdk/releases/download/v1.12.0/operator-sdk_linux_amd64"],
     )
 
-     ## Fetch opm used on generating csv
 def install_kustomize():
     http_archive(
        name = "kustomize_darwin",
@@ -415,8 +327,8 @@ def install_opm():
 def install_openshift():
     http_archive(
        name = "openshift_darwin",
-       sha256 = "ed2144b31aa15bd27cbea11c3e94f7329531775b13b0b1dabb1c0ffa82ca4dc6",
-       urls = ["https://mirror.openshift.com/pub/openshift-v4/clients/ocp/4.7.9/openshift-install-mac-4.7.9.tar.gz"],
+       sha256 = "e3efcadbe554ad84283ac8caf2677b79a745895a0275647cef0b10971c7a3f0f",
+       urls = ["https://mirror.openshift.com/pub/openshift-v4/clients/ocp/4.8.12/openshift-install-mac-4.8.12.tar.gz"],
        build_file_content = """
 filegroup(
     name = "file",
@@ -430,8 +342,8 @@ filegroup(
 
     http_archive(
         name = "openshift_linux",
-        sha256 = "a41682490aabdb6e0d0ca608f76c91b9db5c4b295febc9d6b9182932d5e34760",
-        urls = ["https://mirror.openshift.com/pub/openshift-v4/clients/ocp/4.7.9/openshift-install-linux-4.7.9.tar.gz"],
+        sha256 = "f8612aad0f5f0f9c95049543169af53dcd4e1d3f7fbf425a70a7aa5c61c036ec",
+        urls = ["https://mirror.openshift.com/pub/openshift-v4/clients/ocp/4.8.12/openshift-install-linux-4.8.12.tar.gz"],
         build_file_content = """
 filegroup(
     name = "file",
@@ -476,7 +388,7 @@ filegroup(
    )
 
 # fetch binaries for aws kubetest2
-def install_aws_kubetest2():
+def install_kubetest2_aws():
     http_file(
         name = "aws-k8s-tester-linux",
         executable = 1,

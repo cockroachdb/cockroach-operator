@@ -32,6 +32,7 @@ import (
 
 // Builder populates a given Kubernetes resource or creates its default instance (placeholder)
 type Builder interface {
+	ResourceName() string
 	Build(client.Object) error
 	Placeholder() client.Object
 }
