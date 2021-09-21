@@ -1119,6 +1119,15 @@ spec:
               crdbcontainerimage:
                 description: CrdbContainerImage is the container that will be installed
                 type: string
+              directorState:
+                description: DirectorState is used internally by the director to coordinate
+                  actors
+                type: string
+              directorStateUpdatedAt:
+                description: DirectorStateUpdatedAt keeps track of the last time DirectorState
+                  was updated
+                format: date-time
+                type: string
               operatorActions:
                 items:
                   description: ClusterAction represents cluster status as it is perceived

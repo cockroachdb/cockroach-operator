@@ -22,7 +22,6 @@ import (
 	"github.com/cockroachdb/cockroach-operator/pkg/features"
 	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
 	"github.com/cockroachdb/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"time"
 
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
@@ -189,16 +188,14 @@ func (cd *clusterDirector) ActAtomically(ctx context.Context, cluster *resource.
 		return PermanentErr{Err: errors.Newf("director is in an unknown state: %s", currentState)}
 	}
 
-	cluster.Status().DirectorState = DirectorStateBusy
-	cluster.Status().DirectorStateUpdatedAt = metav1.Now()
+	cluster.UpdateDirectorState(DirectorStateBusy)
 	if err := cd.client.Status().Update(ctx, cluster.Unwrap()); err != nil {
 		return NotReadyErr{Err: errors.New("failed to acquire director lock")}
 	}
 
 	actorErr := a.Act(ctx, cluster)
 
-	cluster.Status().DirectorState = DirectorStateAvailable
-	cluster.Status().DirectorStateUpdatedAt = metav1.Now()
+	cluster.UpdateDirectorState(DirectorStateAvailable)
 	if err := cd.client.Status().Update(ctx, cluster.Unwrap()); err != nil {
 		return PermanentErr{Err: errors.New("active director lost lock; this should not have happened")}
 	}

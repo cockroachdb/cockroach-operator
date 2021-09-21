@@ -219,6 +219,7 @@ func (in *CrdbClusterStatus) DeepCopyInto(out *CrdbClusterStatus) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
+	in.DirectorStateUpdatedAt.DeepCopyInto(&out.DirectorStateUpdatedAt)
 	return
 }
 

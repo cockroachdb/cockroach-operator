@@ -110,6 +110,11 @@ func (cluster Cluster) SetActionUnknown(atype api.ActionType) {
 	clusterstatus.SetActionUnknown(atype, &cluster.cr.Status)
 }
 
+func (cluster Cluster) UpdateDirectorState(state string) {
+	cluster.cr.Status.DirectorState = state
+	cluster.cr.Status.DirectorStateUpdatedAt = metav1.Now()
+}
+
 func (cluster Cluster) Failed(atype api.ActionType) bool {
 	return clusterstatus.Failed(atype, cluster.Status().OperatorActions)
 }
