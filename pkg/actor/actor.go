@@ -161,8 +161,8 @@ func (cd *clusterDirector) GetActorsToExecute(cluster *resource.Cluster) []Actor
 	return actorsToExecute
 }
 
-func (cd *clusterDirector) ActAtomically(context.Context, *resource.Cluster, Actor) error {
-	return nil
+func (cd *clusterDirector) ActAtomically(ctx context.Context, cluster *resource.Cluster, a Actor) error {
+	return a.Act(ctx, cluster)
 }
 
 //Log var
