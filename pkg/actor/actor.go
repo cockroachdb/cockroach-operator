@@ -21,6 +21,9 @@ import (
 	"github.com/cockroachdb/cockroach-operator/pkg/condition"
 	"github.com/cockroachdb/cockroach-operator/pkg/features"
 	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
+	"github.com/cockroachdb/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"time"
 
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
@@ -36,6 +39,13 @@ import (
 // Different logging levels
 var DEBUGLEVEL = int(zapcore.DebugLevel)
 var WARNLEVEL = int(zapcore.WarnLevel)
+
+const (
+	DirectorStateAvailable = "available"
+	DirectorStateBusy      = "busy"
+
+	maxTimeBusy = 12 * time.Hour
+)
 
 //NotReadyErr strut
 type NotReadyErr struct {
@@ -86,6 +96,7 @@ type Director interface {
 
 type clusterDirector struct {
 	actors map[api.ActionType]Actor
+	client client.Client
 }
 
 func NewDirector(scheme *runtime.Scheme, cl client.Client, config *rest.Config) Director {
@@ -101,6 +112,7 @@ func NewDirector(scheme *runtime.Scheme, cl client.Client, config *rest.Config) 
 	}
 	return &clusterDirector{
 		actors: actors,
+		client: cl,
 	}
 }
 
@@ -162,7 +174,36 @@ func (cd *clusterDirector) GetActorsToExecute(cluster *resource.Cluster) []Actor
 }
 
 func (cd *clusterDirector) ActAtomically(ctx context.Context, cluster *resource.Cluster, a Actor) error {
-	return a.Act(ctx, cluster)
+	currentState := cluster.Status().DirectorState
+	switch currentState {
+	case DirectorStateAvailable:
+		break
+	case DirectorStateBusy:
+		currentStateUpdatedAt := cluster.Status().DirectorStateUpdatedAt
+		if currentStateUpdatedAt.Add(maxTimeBusy).Before(time.Now()) {
+			return PermanentErr{Err: errors.New("director has timed out")}
+		} else {
+			return NotReadyErr{Err: errors.New("an actor is currently performing an action")}
+		}
+	default:
+		return PermanentErr{Err: errors.Newf("director is in an unknown state: %s", currentState)}
+	}
+
+	cluster.Status().DirectorState = DirectorStateBusy
+	cluster.Status().DirectorStateUpdatedAt = metav1.Now()
+	if err := cd.client.Status().Update(ctx, cluster.Unwrap()); err != nil {
+		return NotReadyErr{Err: errors.New("failed to acquire director lock")}
+	}
+
+	actorErr := a.Act(ctx, cluster)
+
+	cluster.Status().DirectorState = DirectorStateAvailable
+	cluster.Status().DirectorStateUpdatedAt = metav1.Now()
+	if err := cd.client.Status().Update(ctx, cluster.Unwrap()); err != nil {
+		return PermanentErr{Err: errors.New("active director lost lock; this should not have happened")}
+	}
+
+	return actorErr
 }
 
 //Log var

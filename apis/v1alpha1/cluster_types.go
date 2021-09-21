@@ -140,10 +140,10 @@ type CrdbClusterStatus struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=status, displayName="OperatorStatus"
 	ClusterStatus string `json:"clusterStatus,omitempty"`
 
-	// OperatorState is used internally by the operator to coordinate actors
-	OperatorState string `json:"operatorState,omitempty"`
-	// OperatorStateUpdatedAt keeps track of the last time OperatorState was updated
-	OperatorStateUpdatedAt metav1.Time `json:"operatorStateUpdatedAt,omitempty"`
+	// DirectorState is used internally by the director to coordinate actors
+	DirectorState string `json:"directorState,omitempty"`
+	// DirectorStateUpdatedAt keeps track of the last time DirectorState was updated
+	DirectorStateUpdatedAt metav1.Time `json:"directorStateUpdatedAt,omitempty"`
 }
 
 // +k8s:openapi-gen=true

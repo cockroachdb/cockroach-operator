@@ -19,6 +19,7 @@ package controller
 import (
 	"context"
 	"fmt"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"time"
 
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
@@ -104,6 +105,17 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req reconcile.Request
 			return requeueIfError(err)
 		}
 		return requeueImmediately()
+	}
+
+	if cluster.Status().DirectorState == "" {
+		cluster.Status().DirectorState = actor.DirectorStateAvailable
+		cluster.Status().DirectorStateUpdatedAt = metav1.Now()
+		if err := r.Client.Status().Update(ctx, cluster.Unwrap()); err != nil {
+			log.Error(err, "failed to initialize director state")
+			return requeueIfError(err)
+		}
+		return requeueImmediately()
+
 	}
 
 	//force version validation on mismatch between status and spec
