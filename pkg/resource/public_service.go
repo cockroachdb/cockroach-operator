@@ -30,6 +30,10 @@ type PublicServiceBuilder struct {
 	Selector map[string]string
 }
 
+func (b PublicServiceBuilder) ResourceName() string {
+	return b.PublicServiceName()
+}
+
 func (b PublicServiceBuilder) Build(obj client.Object) error {
 	service, ok := obj.(*corev1.Service)
 	if !ok {
