@@ -37,6 +37,10 @@ type DiscoveryServiceBuilder struct {
 	Selector map[string]string
 }
 
+func (b DiscoveryServiceBuilder) ResourceName() string {
+	return b.DiscoveryServiceName()
+}
+
 func (b DiscoveryServiceBuilder) Build(obj client.Object) error {
 	service, ok := obj.(*corev1.Service)
 	if !ok {
@@ -44,7 +48,7 @@ func (b DiscoveryServiceBuilder) Build(obj client.Object) error {
 	}
 
 	if service.ObjectMeta.Name == "" {
-		service.ObjectMeta.Name = b.DiscoveryServiceName()
+		service.ObjectMeta.Name = b.ResourceName()
 	}
 
 	if service.ObjectMeta.Labels == nil {
@@ -76,7 +80,7 @@ func (b DiscoveryServiceBuilder) Build(obj client.Object) error {
 func (b DiscoveryServiceBuilder) Placeholder() client.Object {
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: b.DiscoveryServiceName(),
+			Name: b.ResourceName(),
 		},
 	}
 }

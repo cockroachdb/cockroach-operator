@@ -166,10 +166,14 @@ func (b StatefulSetBuilder) Build(obj client.Object) error {
 	return nil
 }
 
+func (b StatefulSetBuilder) ResourceName() string {
+	return b.StatefulSetName()
+}
+
 func (b StatefulSetBuilder) Placeholder() client.Object {
 	return &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: b.StatefulSetName(),
+			Name: b.Name(),
 		},
 	}
 }
