@@ -27,7 +27,7 @@ func requeueIfError(err error) (ctrl.Result, error) {
 }
 
 func noRequeue() (ctrl.Result, error) {
-	return requeueIfError(nil)
+	return ctrl.Result{}, nil
 }
 
 func requeueAfter(interval time.Duration, err error) (ctrl.Result, error) {
