@@ -153,7 +153,7 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req reconcile.Request
 			// Long pause
 			if cantRecoverErr, ok := err.(actor.PermanentErr); ok {
 				log.Error(cantRecoverErr, "can't proceed with reconcile", "Action", a.GetActionType())
-				return requeueAfter(5*time.Minute, err)
+				return noRequeue()
 			}
 
 			// No requeue until the user makes changes

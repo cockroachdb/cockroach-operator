@@ -42,6 +42,10 @@ type JobBuilder struct {
 	JobName  string
 }
 
+func (b JobBuilder) ResourceName() string {
+	return b.JobName
+}
+
 func (b JobBuilder) Build(obj client.Object) error {
 	job, ok := obj.(*kbatch.Job)
 	if !ok {

@@ -33,6 +33,10 @@ type PdbBuilder struct {
 	Selector map[string]string
 }
 
+func (b PdbBuilder) ResourceName() string {
+	return b.DiscoveryServiceName()
+}
+
 // Build creates a policy.PodDisruptionBudget for the
 // StatefulSet.
 func (b PdbBuilder) Build(obj client.Object) error {
@@ -42,7 +46,7 @@ func (b PdbBuilder) Build(obj client.Object) error {
 	}
 
 	if pdb.ObjectMeta.Name == "" {
-		pdb.ObjectMeta.Name = b.DiscoveryServiceName()
+		pdb.ObjectMeta.Name = b.ResourceName()
 	}
 
 	if pdb.ObjectMeta.Labels == nil {
@@ -85,7 +89,7 @@ func (b PdbBuilder) Build(obj client.Object) error {
 func (b PdbBuilder) Placeholder() client.Object {
 	return &policy.PodDisruptionBudget{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: b.DiscoveryServiceName(),
+			Name: b.ResourceName(),
 		},
 	}
 }
