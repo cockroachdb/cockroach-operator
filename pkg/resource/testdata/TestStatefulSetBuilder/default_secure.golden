@@ -141,6 +141,11 @@ spec:
   - metadata:
       creationTimestamp: null
       name: datadir
+      labels:
+        app.kubernetes.io/component: database
+        app.kubernetes.io/instance: test-cluster
+        app.kubernetes.io/name: cockroachdb
+        car: koenigsegg
     spec:
       accessModes:
       - ReadWriteOnce

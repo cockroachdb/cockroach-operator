@@ -39,14 +39,15 @@ const (
 	grpcPortName = "grpc"
 	sqlPortName  = "sql"
 
-	DataDirName      = "datadir"
-	DataDirMountPath = "/cockroach/cockroach-data/"
+	dataDirName      = "datadir"
+	dataDirMountPath = "/cockroach/cockroach-data/"
 
 	certsDirName = "certs"
+	certCpCmd    = ">- cp -p /cockroach/cockroach-certs-prestage/..data/* /cockroach/cockroach-certs/ && chmod 700 /cockroach/cockroach-certs/*.key && chown 1000581000:1000581000 /cockroach/cockroach-certs/*.key"
 	emptyDirName = "emptydir"
 
+	// DbContainerName is the name of the container definition in the pod spec
 	DbContainerName = "db"
-	certCpCmd       = ">- cp -p /cockroach/cockroach-certs-prestage/..data/* /cockroach/cockroach-certs/ && chmod 700 /cockroach/cockroach-certs/*.key && chown 1000581000:1000581000 /cockroach/cockroach-certs/*.key"
 )
 
 type StatefulSetBuilder struct {
@@ -85,10 +86,11 @@ func (b StatefulSetBuilder) Build(obj client.Object) error {
 		Template: b.makePodTemplate(),
 	}
 
-	if err := b.Spec().DataStore.Apply(DataDirName, DbContainerName, DataDirMountPath, &ss.Spec,
+	if err := b.Spec().DataStore.Apply(dataDirName, DbContainerName, dataDirMountPath, &ss.Spec,
 		func(name string) metav1.ObjectMeta {
 			return metav1.ObjectMeta{
-				Name: DataDirName,
+				Name:   dataDirName,
+				Labels: b.Selector,
 			}
 		}); err != nil {
 		return err
