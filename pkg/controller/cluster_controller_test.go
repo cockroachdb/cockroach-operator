@@ -58,8 +58,12 @@ type fakeDirector struct {
 	actorsToExecute []actor.Actor
 }
 
-func (fd *fakeDirector) GetActorsToExecute(cluster *resource.Cluster) []actor.Actor {
+func (fd *fakeDirector) GetActorsToExecute(_ *resource.Cluster) []actor.Actor {
 	return fd.actorsToExecute
+}
+
+func (fd *fakeDirector) ActAtomically(ctx context.Context, cluster *resource.Cluster, a actor.Actor) error {
+	return a.Act(ctx, cluster)
 }
 
 func TestReconcile(t *testing.T) {
@@ -104,6 +108,12 @@ func TestReconcile(t *testing.T) {
 		// },
 		{
 			name:    "on first reconcile we update and requeue",
+			action:  fakeActor{},
+			want:    ctrl.Result{Requeue: true},
+			wantErr: "",
+		},
+		{
+			name:    "on second reconcile we initialize director state",
 			action:  fakeActor{},
 			want:    ctrl.Result{Requeue: true},
 			wantErr: "",
