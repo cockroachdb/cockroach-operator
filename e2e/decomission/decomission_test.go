@@ -101,6 +101,12 @@ func TestDecommissionFunctionalityWithPrune(t *testing.T) {
 				testutil.RequireNumberOfPVCs(t, context.TODO(), sb, builder, 3)
 			},
 		},
+		{
+			Name: "teardown",
+			Test: func(t *testing.T) {
+				require.NoError(t, sb.Delete(builder.Cr()))
+			},
+		},
 	}
 	steps.Run(t)
 }
@@ -152,6 +158,12 @@ func TestDecommissionFunctionality(t *testing.T) {
 				t.Log("Done with decommission")
 
 				testutil.RequireNumberOfPVCs(t, context.TODO(), sb, builder, 4)
+			},
+		},
+		{
+			Name: "teardown",
+			Test: func(t *testing.T) {
+				require.NoError(t, sb.Delete(builder.Cr()))
 			},
 		},
 	}

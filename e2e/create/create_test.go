@@ -86,6 +86,12 @@ func TestCreateInsecureCluster(t *testing.T) {
 				t.Log("Done with basic cluster")
 			},
 		},
+		{
+			Name: "teardown",
+			Test: func(t *testing.T) {
+				require.NoError(t, sb.Delete(builder.Cr()))
+			},
+		},
 	}
 	steps.Run(t)
 }
@@ -123,6 +129,12 @@ func TestCreatesSecureCluster(t *testing.T) {
 				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
 				testutil.RequireDatabaseToFunction(t, sb, builder)
 				t.Log("Done with basic cluster")
+			},
+		},
+		{
+			Name: "teardown",
+			Test: func(t *testing.T) {
+				require.NoError(t, sb.Delete(builder.Cr()))
 			},
 		},
 	}
