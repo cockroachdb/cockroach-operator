@@ -48,9 +48,6 @@ func (v *Volume) Apply(name string, container string, path string,
 		pvc := corev1.PersistentVolumeClaim{
 			ObjectMeta: metaMutator(v.VolumeClaim.PersistentVolumeSource.ClaimName),
 			Spec:       v.VolumeClaim.PersistentVolumeClaimSpec,
-			//Status: corev1.PersistentVolumeClaimStatus{`
-			//	Phase: corev1.ClaimPending,
-			//},
 		}
 
 		spec.VolumeClaimTemplates = append(spec.VolumeClaimTemplates, pvc)
