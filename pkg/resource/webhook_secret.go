@@ -87,7 +87,6 @@ func CreateWebhookSecret(ctx context.Context, client v1.SecretInterface, namespa
 	}
 
 	log.V(debugLevel).Info("Generating server certificate")
-	print(client)
 	tlsCert, tlsKey, err := generateCert(ca, caPriv, namespace)
 	if err != nil {
 		log.Error(err, "Failed to generate server certificate")
