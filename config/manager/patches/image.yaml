@@ -11,21 +11,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
+# Generated, do not edit. Please edit this file instead: config/templates/deployment_image.yaml.in
+#
 ---
-source:
-  kind: Service
-  name: webhook-service
-  fieldPath: metadata.namespace
-targets:
-  - select:
-      kind: MutatingWebhookConfiguration
-    fieldPaths:
-      - webhooks.[name=mcrdbcluster.kb.io].namespaceSelector.matchLabels.cockroach-operator
-    options:
-      create: true
-  - select:
-      kind: ValidatingWebhookConfiguration
-    fieldPaths:
-      - webhooks.[name=vcrdbcluster.kb.io].namespaceSelector.matchLabels.cockroach-operator
-    options:
-      create: true
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cockroach-operator
+spec:
+  template:
+    spec:
+      containers:
+        - name: cockroach-operator
+          image: cockroachdb/cockroach-operator:v2.2.0-beta.1

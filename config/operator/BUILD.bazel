@@ -11,6 +11,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+load("//hack/build:kustomize.bzl", "kustomization")
+
+# Builds the operator manifest that is written to install/operator.yaml.
+kustomization(
+    name = "manifest",
+    srcs = [
+        ":all-srcs",
+        "//config/default:manifest.srcs",
+        "//config/manager:manifest.srcs",
+        "//config/rbac:manifest.srcs",
+        "//config/webhook:manifest.srcs",
+    ],
+)
 
 filegroup(
     name = "package-srcs",
@@ -21,18 +34,7 @@ filegroup(
 
 filegroup(
     name = "all-srcs",
-    srcs = [
-        ":package-srcs",
-        "//config/crd:all-srcs",
-        "//config/default:all-srcs",
-        "//config/manager:all-srcs",
-        "//config/manifests:all-srcs",
-        "//config/operator:all-srcs",
-        "//config/rbac:all-srcs",
-        "//config/samples:all-srcs",
-        "//config/scorecard:all-srcs",
-        "//config/webhook:all-srcs",
-    ],
+    srcs = [":package-srcs"],
     tags = ["automanaged"],
     visibility = ["//visibility:public"],
 )

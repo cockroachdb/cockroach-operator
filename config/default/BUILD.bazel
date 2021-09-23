@@ -11,19 +11,38 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+load("@k8s_deploy//:defaults.bzl", "k8s_deploy")
+load("@io_bazel_rules_k8s//k8s:objects.bzl", "k8s_objects")
 load("//hack/build:kustomize.bzl", "kustomization")
 
-# This base is used for deployment to OpenShift (et al.). In includes all of the
-# CSV, CRDs, RBAC details, deployments, samples, and the bundle scorecard tests.
+# Builds the whole enchilada including the crds, rbac sa(s)/roles/bindings, manager
+# deployment, and webhook configuration.
 kustomization(
     name = "manifest",
     srcs = [
         ":all-srcs",
-        "//config/default:manifest.srcs",
-        "//config/samples:manifest.srcs",
-        "//config/scorecard:manifest.srcs",
+        "//config/crd:manifest.srcs",
+        "//config/manager:manifest.srcs",
+        "//config/rbac:manifest.srcs",
+        "//config/webhook:manifest.srcs",
     ],
+)
+
+k8s_deploy(
+    name = "image",
+    images = {
+        # when running locally, use the image from the local codebase
+        "cockroachdb/cockroach-operator:latest": "//cmd/cockroach-operator:operator_image",
+    },
+    template = ":manifest",
+)
+
+k8s_objects(
+    name = "install",
+    objects = [
+        ":image",
+    ],
+    visibility = ["//visibility:public"],
 )
 
 filegroup(

@@ -12,12 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ---
-namespace: default
-
-resources:
-  - ../default
-  - ../samples
-  - ../scorecard
-
-patchesStrategicMerge:
-  - patches/deployment_patch.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: placeholder
+  labels:
+    control-plane: cockroach-operator

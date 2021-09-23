@@ -286,9 +286,14 @@ release/new:
 
 # Generate various config files, which usually contain the current operator
 # version, latest CRDB version, a list of supported CRDB versions, etc.
+#
+# This also generates install/crds.yaml and install/operator.yaml which are
+# pre-built kustomize bases used in our docs.
 .PHONY: release/gen-templates
 release/gen-templates:
 	bazel run //hack/crdbversions:crdbversions -- -operator-version $(APP_VERSION) -crdb-versions $(PWD)/crdb-versions.yaml -repo-root $(PWD)
+	bazel run //config/crd:manifest.preview > install/crds.yaml
+	bazel run //config/operator:manifest.preview > install/operator.yaml
 
 # Generate various manifest files for OpenShift. We run this target after the
 # operator version is changed. The results are committed to Git.
