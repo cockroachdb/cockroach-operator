@@ -74,7 +74,7 @@ func findOrCreateSecret(ctx context.Context, api kubernetes.Interface, ns string
 
 	if apiErrors.IsNotFound(err) {
 		// secret needs to be created
-		return resource.CreateWebhookSecret(ctx, secrets)
+		return resource.CreateWebhookSecret(ctx, secrets, ns)
 	}
 
 	// an unrecoverable error occured
