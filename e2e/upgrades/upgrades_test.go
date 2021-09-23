@@ -18,6 +18,7 @@ package upgrades
 
 import (
 	"flag"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"os"
 	"testing"
 	"time"
@@ -70,6 +71,10 @@ func TestUpgradesMinorVersion(t *testing.T) {
 
 	actor.Log = testLog
 
+	e := testenv.CreateActiveEnvForTest()
+	env := e.Start()
+	defer e.Stop()
+
 	sb := testenv.NewDiffingSandbox(t, env)
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
 
@@ -91,11 +96,12 @@ func TestUpgradesMinorVersion(t *testing.T) {
 				current := builder.Cr()
 				require.NoError(t, sb.Get(current))
 
-				current.Spec.Image.Name = MinorVersion2
-				require.NoError(t, sb.Update(current))
+				updated := current.DeepCopy()
+				updated.Spec.Image.Name = MinorVersion2
+				require.NoError(t, sb.Patch(updated, client.MergeFrom(current)))
 
 				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
-				testutil.RequireDbContainersToUseImage(t, sb, current)
+				testutil.RequireDbContainersToUseImage(t, sb, updated)
 				t.Log("Done with upgrade")
 			},
 		},
@@ -120,6 +126,10 @@ func TestUpgradesMajorVersion20to21(t *testing.T) {
 	testLog := zapr.NewLogger(zaptest.NewLogger(t))
 
 	actor.Log = testLog
+
+	e := testenv.CreateActiveEnvForTest()
+	env := e.Start()
+	defer e.Stop()
 
 	sb := testenv.NewDiffingSandbox(t, env)
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
@@ -169,6 +179,10 @@ func TestUpgradesMajorVersion20_1To20_2(t *testing.T) {
 	testLog := zapr.NewLogger(zaptest.NewLogger(t))
 
 	actor.Log = testLog
+
+	e := testenv.CreateActiveEnvForTest()
+	env := e.Start()
+	defer e.Stop()
 
 	sb := testenv.NewDiffingSandbox(t, env)
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
@@ -224,6 +238,10 @@ func TestUpgradesMinorVersionThenRollback(t *testing.T) {
 	testLog := zapr.NewLogger(zaptest.NewLogger(t))
 
 	actor.Log = testLog
+
+	e := testenv.CreateActiveEnvForTest()
+	env := e.Start()
+	defer e.Stop()
 
 	sb := testenv.NewDiffingSandbox(t, env)
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
