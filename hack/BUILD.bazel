@@ -128,12 +128,6 @@ sh_binary(
 sh_binary(
     name = "update-pkg-manifest",
     srcs = ["update-pkg-manifest.sh"],
-    args = [
-        "$(location %s)" % OPERATORSDK,
-        "$(location %s)" % KUSTOMIZE,
-        "$(location %s)" % OPM,
-        "$(location %s)" % FAQ,
-    ],
     data = [
         OPERATORSDK,
         KUSTOMIZE,
@@ -160,9 +154,6 @@ sh_binary(
 sh_binary(
     name = "opm-build-bundle",
     srcs = ["opm-build-bundle.sh"],
-    args = [
-        "$(location %s)" % OPM,
-    ],
     data = [
         OPM,
         "@//:all-srcs",
