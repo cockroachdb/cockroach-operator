@@ -94,12 +94,6 @@ func TestPVCResize(t *testing.T) {
 				t.Log("here resized")
 			},
 		},
-		{
-			Name: "teardown",
-			Test: func(t *testing.T) {
-				require.NoError(t, sb.Delete(builder.Cr()))
-			},
-		},
 	}
 	steps.Run(t)
 }

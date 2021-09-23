@@ -99,12 +99,6 @@ func TestUpgradesMinorVersion(t *testing.T) {
 				t.Log("Done with upgrade")
 			},
 		},
-		{
-			Name: "teardown",
-			Test: func(t *testing.T) {
-				require.NoError(t, sb.Delete(builder.Cr()))
-			},
-		},
 	}
 
 	steps.Run(t)
@@ -157,12 +151,6 @@ func TestUpgradesMajorVersion20to21(t *testing.T) {
 				t.Log("Done with major upgrade")
 			},
 		},
-		{
-			Name: "teardown",
-			Test: func(t *testing.T) {
-				require.NoError(t, sb.Delete(builder.Cr()))
-			},
-		},
 	}
 
 	steps.Run(t)
@@ -211,12 +199,6 @@ func TestUpgradesMajorVersion20_1To20_2(t *testing.T) {
 				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
 				testutil.RequireDbContainersToUseImage(t, sb, current)
 				t.Log("Done with major upgrade")
-			},
-		},
-		{
-			Name: "teardown",
-			Test: func(t *testing.T) {
-				require.NoError(t, sb.Delete(builder.Cr()))
 			},
 		},
 	}
@@ -284,12 +266,6 @@ func TestUpgradesMinorVersionThenRollback(t *testing.T) {
 				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
 				testutil.RequireDbContainersToUseImage(t, sb, current)
 				t.Log("Done with downgrade")
-			},
-		},
-		{
-			Name: "teardown",
-			Test: func(t *testing.T) {
-				require.NoError(t, sb.Delete(builder.Cr()))
 			},
 		},
 	}
