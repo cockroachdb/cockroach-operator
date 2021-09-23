@@ -24,6 +24,7 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
+	"fmt"
 	"math/big"
 	"time"
 
@@ -63,7 +64,7 @@ func LoadWebhookSecret(ctx context.Context, client v1.SecretInterface) (*Webhook
 
 // CreateWebhookSecret creates the cockroach-operator-webhook-tls secret. It will generate a new private key and
 // certificate and store those values in the TLS secret.
-func CreateWebhookSecret(ctx context.Context, client v1.SecretInterface) (*WebhookSecret, error) {
+func CreateWebhookSecret(ctx context.Context, client v1.SecretInterface, namespace string) (*WebhookSecret, error) {
 	log := logr.FromContextOrDiscard(ctx).WithName("webhook_secrets").WithValues("resource", webhookSecretName)
 	log.V(debugLevel).Info("Creating webhook secret")
 
@@ -86,7 +87,8 @@ func CreateWebhookSecret(ctx context.Context, client v1.SecretInterface) (*Webho
 	}
 
 	log.V(debugLevel).Info("Generating server certificate")
-	tlsCert, tlsKey, err := generateCert(ca, caPriv)
+	print(client)
+	tlsCert, tlsKey, err := generateCert(ca, caPriv, namespace)
 	if err != nil {
 		log.Error(err, "Failed to generate server certificate")
 		return nil, err
@@ -166,7 +168,7 @@ func generateCA(ca *x509.Certificate) ([]byte, crypto.PrivateKey, error) {
 	return cert, pk, nil
 }
 
-func generateCert(ca *x509.Certificate, caPrivateKey crypto.PrivateKey) ([]byte, crypto.PrivateKey, error) {
+func generateCert(ca *x509.Certificate, caPrivateKey crypto.PrivateKey, namespace string) ([]byte, crypto.PrivateKey, error) {
 	cert := &x509.Certificate{
 		SerialNumber:          big.NewInt(1),
 		NotBefore:             time.Now(),
@@ -175,14 +177,14 @@ func generateCert(ca *x509.Certificate, caPrivateKey crypto.PrivateKey) ([]byte,
 		KeyUsage:              x509.KeyUsageDigitalSignature,
 		BasicConstraintsValid: true,
 		Subject: pkix.Name{
-			CommonName:   webhookServiceName + ".default.svc",
+			CommonName:   fmt.Sprintf("%s.%s.svc", webhookServiceName, namespace),
 			Organization: []string{webhookSecretOrg},
 		},
 		DNSNames: []string{
 			webhookServiceName,
-			webhookServiceName + ".default",
-			webhookServiceName + ".default.svc",
-			webhookServiceName + ".default.svc.cluster.local",
+			fmt.Sprintf("%s.%s", webhookServiceName, namespace),
+			fmt.Sprintf("%s.%s.svc", webhookServiceName, namespace),
+			fmt.Sprintf("%s.%s.svc.cluster.local", webhookServiceName, namespace),
 		},
 	}
 
