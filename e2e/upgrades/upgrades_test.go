@@ -18,8 +18,8 @@ package upgrades
 
 import (
 	"flag"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"os"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"testing"
 	"time"
 
@@ -70,10 +70,6 @@ func TestUpgradesMinorVersion(t *testing.T) {
 	testLog := zapr.NewLogger(zaptest.NewLogger(t))
 
 	actor.Log = testLog
-
-	e := testenv.CreateActiveEnvForTest()
-	env := e.Start()
-	defer e.Stop()
 
 	sb := testenv.NewDiffingSandbox(t, env)
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
@@ -127,10 +123,6 @@ func TestUpgradesMajorVersion20to21(t *testing.T) {
 
 	actor.Log = testLog
 
-	e := testenv.CreateActiveEnvForTest()
-	env := e.Start()
-	defer e.Stop()
-
 	sb := testenv.NewDiffingSandbox(t, env)
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
 
@@ -179,10 +171,6 @@ func TestUpgradesMajorVersion20_1To20_2(t *testing.T) {
 	testLog := zapr.NewLogger(zaptest.NewLogger(t))
 
 	actor.Log = testLog
-
-	e := testenv.CreateActiveEnvForTest()
-	env := e.Start()
-	defer e.Stop()
 
 	sb := testenv.NewDiffingSandbox(t, env)
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
@@ -238,10 +226,6 @@ func TestUpgradesMinorVersionThenRollback(t *testing.T) {
 	testLog := zapr.NewLogger(zaptest.NewLogger(t))
 
 	actor.Log = testLog
-
-	e := testenv.CreateActiveEnvForTest()
-	env := e.Start()
-	defer e.Stop()
 
 	sb := testenv.NewDiffingSandbox(t, env)
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
