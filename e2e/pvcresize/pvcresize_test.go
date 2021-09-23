@@ -20,6 +20,7 @@ import (
 	"context"
 	"flag"
 	"os"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"testing"
 	"time"
 
@@ -86,8 +87,11 @@ func TestPVCResize(t *testing.T) {
 				current := builder.Cr()
 				require.NoError(t, sb.Get(current))
 				quantity := apiresource.MustParse("2Gi")
-				current.Spec.DataStore.VolumeClaim.PersistentVolumeClaimSpec.Resources.Requests[corev1.ResourceStorage] = quantity
-				require.NoError(t, sb.Update(current))
+
+				updated := current.DeepCopy()
+				updated.Spec.DataStore.VolumeClaim.PersistentVolumeClaimSpec.Resources.Requests[corev1.ResourceStorage] = quantity
+				require.NoError(t, sb.Patch(updated, client.MergeFrom(current)))
+
 				t.Log("updated CR")
 
 				testutil.RequirePVCToResize(t, context.TODO(), sb, builder, quantity)

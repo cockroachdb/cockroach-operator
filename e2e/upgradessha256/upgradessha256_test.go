@@ -19,6 +19,7 @@ package upgradessha256
 import (
 	"flag"
 	"os"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"testing"
 	"time"
 
@@ -90,11 +91,12 @@ func TestUpgradesMinorVersion(t *testing.T) {
 				current := builder.Cr()
 				require.NoError(t, sb.Get(current))
 
-				current.Spec.CockroachDBVersion = "v20.2.9"
-				require.NoError(t, sb.Update(current))
+				updated := current.DeepCopy()
+				updated.Spec.Image.Name = "v20.2.9"
+				require.NoError(t, sb.Patch(updated, client.MergeFrom(current)))
 
 				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
-				testutil.RequireDbContainersToUseImage(t, sb, current)
+				testutil.RequireDbContainersToUseImage(t, sb, updated)
 				t.Log("Done with upgrade")
 			},
 		},
@@ -148,11 +150,12 @@ func TestUpgradesMajorVersion20to21(t *testing.T) {
 				current := builder.Cr()
 				require.NoError(t, sb.Get(current))
 
-				current.Spec.CockroachDBVersion = "v21.1.1"
-				require.NoError(t, sb.Update(current))
+				updated := current.DeepCopy()
+				updated.Spec.Image.Name = "v21.1.1"
+				require.NoError(t, sb.Patch(updated, client.MergeFrom(current)))
 
 				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
-				testutil.RequireDbContainersToUseImage(t, sb, current)
+				testutil.RequireDbContainersToUseImage(t, sb, updated)
 				t.Log("Done with upgrade")
 			},
 		},
@@ -203,10 +206,12 @@ func TestUpgradesMajorVersion20_1To20_2(t *testing.T) {
 				current := builder.Cr()
 				require.NoError(t, sb.Get(current))
 
-				current.Spec.CockroachDBVersion = "v20.2.10"
-				require.NoError(t, sb.Update(current))
+				updated := current.DeepCopy()
+				updated.Spec.Image.Name = "v20.2.10"
+				require.NoError(t, sb.Patch(updated, client.MergeFrom(current)))
+
 				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
-				testutil.RequireDbContainersToUseImage(t, sb, current)
+				testutil.RequireDbContainersToUseImage(t, sb, updated)
 				t.Log("Done with major upgrade")
 			},
 		},
