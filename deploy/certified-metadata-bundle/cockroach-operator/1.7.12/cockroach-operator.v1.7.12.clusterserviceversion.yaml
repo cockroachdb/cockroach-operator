@@ -274,7 +274,7 @@ spec:
             spec:
               containers:
               - args:
-                - feature-gates
+                - -feature-gates
                 - Upgrade=false,ResizePVC=true
                 - -zap-log-level
                 - info

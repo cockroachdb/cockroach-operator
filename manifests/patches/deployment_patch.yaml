@@ -24,7 +24,7 @@ spec:
       containers:
         - name: cockroach-operator
           args:
-            - feature-gates
+            - -feature-gates
             - Upgrade=false,ResizePVC=true
             # the below log level accepts "info" "debug" "warn" or "error"
             - -zap-log-level
