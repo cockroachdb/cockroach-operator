@@ -17,12 +17,12 @@ name: e2e-kind-upgradessha256
 on:
   # Triggers the workflow on push or pull request events but only for the master branch
   push:
-    branches: [master]
+    branches: [ master ]
     paths-ignore:
       - "**.md"
       - "docs/**"
   pull_request:
-    branches: [master]
+    branches: [ master ]
     paths-ignore:
       - "**.md"
       - "docs/**"
@@ -31,12 +31,12 @@ on:
   workflow_dispatch:
 
 jobs:
-  e2e-kind-upgrades:
+  e2e-kind-upgradessha256:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        bazel: ["4.0.0"]
+        bazel: [ "4.0.0" ]
     steps:
       - uses: actions/checkout@v2
 
