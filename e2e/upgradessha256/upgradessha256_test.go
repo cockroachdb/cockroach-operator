@@ -36,18 +36,6 @@ import (
 // We may have a threadsafe problem where one test starts messing with another test
 var parallel = *flag.Bool("parallel", false, "run tests in parallel")
 
-// TODO should we make this an atomic that is created by evn pkg?
-var env *testenv.ActiveEnv
-
-// TestMain wraps the unit tests. Set TEST_DO_NOT_USE_KIND evnvironment variable to any value
-// if you do not want this test to start a k8s cluster using kind.
-func TestMain(m *testing.M) {
-	e := testenv.CreateActiveEnvForTest()
-	env = e.Start()
-	code := testenv.RunCode(m, e)
-	os.Exit(code)
-}
-
 // TestUpgradesMinorVersion tests a minor version bump
 func TestUpgradesMinorVersion(t *testing.T) {
 
@@ -65,6 +53,10 @@ func TestUpgradesMinorVersion(t *testing.T) {
 	testLog := zapr.NewLogger(zaptest.NewLogger(t))
 
 	actor.Log = testLog
+
+	e := testenv.CreateActiveEnvForTest()
+	env := e.Start()
+	defer e.Stop()
 
 	sb := testenv.NewDiffingSandbox(t, env)
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
@@ -125,6 +117,10 @@ func TestUpgradesMajorVersion20to21(t *testing.T) {
 
 	actor.Log = testLog
 
+	e := testenv.CreateActiveEnvForTest()
+	env := e.Start()
+	defer e.Stop()
+
 	sb := testenv.NewDiffingSandbox(t, env)
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
 	//related images must be in sha256 format
@@ -177,6 +173,10 @@ func TestUpgradesMajorVersion20_1To20_2(t *testing.T) {
 	testLog := zapr.NewLogger(zaptest.NewLogger(t))
 
 	actor.Log = testLog
+
+	e := testenv.CreateActiveEnvForTest()
+	env := e.Start()
+	defer e.Stop()
 
 	sb := testenv.NewDiffingSandbox(t, env)
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))

@@ -19,7 +19,6 @@ package pvcresize
 import (
 	"context"
 	"flag"
-	"os"
 	"testing"
 	"time"
 
@@ -42,18 +41,6 @@ var parallel = *flag.Bool("parallel", false, "run tests in parallel")
 // run the pvc test
 var pvc = flag.Bool("pvc", false, "run pvc test")
 
-// TODO should we make this an atomic that is created by evn pkg?
-var env *testenv.ActiveEnv
-
-// TestMain wraps the unit tests. Set TEST_DO_NOT_USE_KIND evnvironment variable to any value
-// if you do not want this test to start a k8s cluster using kind.
-func TestMain(m *testing.M) {
-	e := testenv.CreateActiveEnvForTest()
-	env = e.Start()
-	code := testenv.RunCode(m, e)
-	os.Exit(code)
-}
-
 func TestPVCResize(t *testing.T) {
 	// Testing PVCResize
 	if !*pvc {
@@ -67,6 +54,11 @@ func TestPVCResize(t *testing.T) {
 	}
 	testLog := zapr.NewLogger(zaptest.NewLogger(t))
 	actor.Log = testLog
+
+	e := testenv.CreateActiveEnvForTest()
+	env := e.Start()
+	defer e.Stop()
+
 	sb := testenv.NewDiffingSandbox(t, env)
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().

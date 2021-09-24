@@ -19,9 +19,6 @@ package env
 import (
 	"flag"
 	"fmt"
-	"os"
-	"testing"
-
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	customClient "github.com/cockroachdb/cockroach-operator/pkg/client/clientset/versioned"
 	"github.com/cockroachdb/errors"
@@ -33,6 +30,7 @@ import (
 	kscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp" // GCP auth support
 	"k8s.io/client-go/rest"
+	"os"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 )
@@ -137,13 +135,6 @@ type ActiveEnv struct {
 func CreateActiveEnvForTest() *Env {
 	os.Setenv("USE_EXISTING_CLUSTER", "true")
 	return NewEnv(runtime.NewSchemeBuilder(api.AddToScheme))
-}
-
-func RunCode(m *testing.M, e *Env) int {
-	e.Start()
-	code := m.Run()
-	e.Stop()
-	return code
 }
 
 func loadResources(k *k8s) ([]schema.GroupVersionResource, error) {
