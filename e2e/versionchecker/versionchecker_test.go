@@ -18,7 +18,6 @@ package versionchecker_test
 
 import (
 	"flag"
-	"os"
 	"testing"
 	"time"
 
@@ -39,18 +38,6 @@ import (
 // We may have a threadsafe problem where one test starts messing with another test
 var parallel = *flag.Bool("parallel", false, "run tests in parallel")
 
-// TODO should we make this an atomic that is created by env pkg?
-var env *testenv.ActiveEnv
-
-// TestMain wraps the unit tests. Set TEST_DO_NOT_USE_KIND environment variable to any value
-// if you do not want this test to start a k8s cluster using kind.
-func TestMain(m *testing.M) {
-	e := testenv.CreateActiveEnvForTest()
-	env = e.Start()
-	code := testenv.RunCode(m, e)
-	os.Exit(code)
-}
-
 // TestVersionCheckerJobPodPending creates a cluster and then tries to run an unscheduleable version checker job.
 // It checks that there is never more than one version checker job running.
 func TestVersionCheckerJobPodPending(t *testing.T) {
@@ -63,6 +50,11 @@ func TestVersionCheckerJobPodPending(t *testing.T) {
 	}
 	testLog := zapr.NewLogger(zaptest.NewLogger(t))
 	actor.Log = testLog
+
+	e := testenv.CreateActiveEnvForTest()
+	env := e.Start()
+	defer e.Stop()
+
 	sb := testenv.NewDiffingSandbox(t, env)
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
 
@@ -83,12 +75,6 @@ func TestVersionCheckerJobPodPending(t *testing.T) {
 			Test: func(t *testing.T) {
 				require.NoError(t, sb.Create(builder.Cr()))
 				testutil.RequireAtMostOneVersionCheckerJob(t, sb, 300*time.Second)
-			},
-		},
-		{
-			Name: "teardown",
-			Test: func(t *testing.T) {
-				require.NoError(t, sb.Delete(builder.Cr()))
 			},
 		},
 	}

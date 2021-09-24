@@ -36,22 +36,10 @@ import (
 // for openshift.  We need to create those only once.
 var parallel = *flag.Bool("parallel", false, "run tests in parallel")
 
-// TODO should we make this an atomic that is created by evn pkg?
-var env *testenv.ActiveEnv
-
 // TODO move these into a common file
 var MinorVersion1 string = "cockroachdb/cockroach:v20.2.8"
 var MinorVersion2 string = "cockroachdb/cockroach:v20.2.9"
 var MajorVersion string = "cockroachdb/cockroach:v21.1.0"
-
-// TestMain wraps the unit tests. Set TEST_DO_NOT_USE_KIND evnvironment variable to any value
-// if you do not want this test to start a k8s cluster using kind.
-func TestMain(m *testing.M) {
-	e := testenv.CreateActiveEnvForTest()
-	env = e.Start()
-	code := testenv.RunCode(m, e)
-	os.Exit(code)
-}
 
 // TestUpgradesMinorVersion tests a minor version bump
 func TestUpgradesMinorVersion(t *testing.T) {
@@ -70,6 +58,10 @@ func TestUpgradesMinorVersion(t *testing.T) {
 	testLog := zapr.NewLogger(zaptest.NewLogger(t))
 
 	actor.Log = testLog
+
+	e := testenv.CreateActiveEnvForTest()
+	env := e.Start()
+	defer e.Stop()
 
 	sb := testenv.NewDiffingSandbox(t, env)
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
@@ -123,6 +115,10 @@ func TestUpgradesMajorVersion20to21(t *testing.T) {
 
 	actor.Log = testLog
 
+	e := testenv.CreateActiveEnvForTest()
+	env := e.Start()
+	defer e.Stop()
+
 	sb := testenv.NewDiffingSandbox(t, env)
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
 
@@ -172,6 +168,10 @@ func TestUpgradesMajorVersion20_1To20_2(t *testing.T) {
 	testLog := zapr.NewLogger(zaptest.NewLogger(t))
 
 	actor.Log = testLog
+
+	e := testenv.CreateActiveEnvForTest()
+	env := e.Start()
+	defer e.Stop()
 
 	sb := testenv.NewDiffingSandbox(t, env)
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
@@ -228,6 +228,10 @@ func TestUpgradesMinorVersionThenRollback(t *testing.T) {
 	testLog := zapr.NewLogger(zaptest.NewLogger(t))
 
 	actor.Log = testLog
+
+	e := testenv.CreateActiveEnvForTest()
+	env := e.Start()
+	defer e.Stop()
 
 	sb := testenv.NewDiffingSandbox(t, env)
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
