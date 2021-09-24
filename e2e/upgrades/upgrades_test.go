@@ -18,7 +18,6 @@ package upgrades
 
 import (
 	"flag"
-	"os"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"testing"
 	"time"

@@ -19,7 +19,6 @@ package decommission
 import (
 	"context"
 	"flag"
-	"os"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"testing"
 	"time"
