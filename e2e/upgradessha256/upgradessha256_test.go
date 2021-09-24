@@ -84,7 +84,7 @@ func TestUpgradesMinorVersion(t *testing.T) {
 				require.NoError(t, sb.Get(current))
 
 				updated := current.DeepCopy()
-				updated.Spec.Image.Name = "v20.2.9"
+				updated.Spec.CockroachDBVersion = "v20.2.9"
 				require.NoError(t, sb.Patch(updated, client.MergeFrom(current)))
 
 				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
@@ -147,7 +147,7 @@ func TestUpgradesMajorVersion20to21(t *testing.T) {
 				require.NoError(t, sb.Get(current))
 
 				updated := current.DeepCopy()
-				updated.Spec.Image.Name = "v21.1.1"
+				updated.Spec.CockroachDBVersion = "v21.1.1"
 				require.NoError(t, sb.Patch(updated, client.MergeFrom(current)))
 
 				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
@@ -207,7 +207,7 @@ func TestUpgradesMajorVersion20_1To20_2(t *testing.T) {
 				require.NoError(t, sb.Get(current))
 
 				updated := current.DeepCopy()
-				updated.Spec.Image.Name = "v20.2.10"
+				updated.Spec.CockroachDBVersion = "v20.2.10"
 				require.NoError(t, sb.Patch(updated, client.MergeFrom(current)))
 
 				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
