@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Copyright 2021 The Cockroach Authors
 #
@@ -13,30 +13,20 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+set -euo pipefail
 
-set -o errexit
-set -o nounset
-set -o pipefail
-set -o xtrace
+main() {
+  local template="${1}"
+  local query=$(head -n1 "${template}")
+  shift
 
-if [[ -n "${BUILD_WORKSPACE_DIRECTORY:-}" ]]; then # Running inside bazel
-  echo "Formatting go source files..." >&2
-elif ! command -v bazel &>/dev/null; then
-  echo "Install bazel at https://bazel.build" >&2
-  exit 1
-else
-  (
-    set -o xtrace
-    bazel run //hack:update-gofmt
-  )
-  exit 0
-fi
+  for file in "$@"; do
+    # skip when content is found
+    if head -n20 ${file} | grep "${query}" >/dev/null; then continue; fi
 
-gofmt=$(realpath "$1")
+    cat "${template}" "${file}" > "${file}.mod"
+    mv "${file}.mod" "${file}"
+  done
+}
 
-cd "$BUILD_WORKSPACE_DIRECTORY"
-
-export GO111MODULE=on
-
-echo "+++ Running gofmt"
-find . -type f -name '*.go' | grep -v 'vendor/' | xargs "$gofmt" -s -w
+main "$@"
