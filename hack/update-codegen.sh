@@ -18,17 +18,9 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-if [[ -n "${BUILD_WORKSPACE_DIRECTORY:-}" ]]; then # Running inside bazel
-  echo "Updating generated clients..." >&2
-elif ! command -v bazel &>/dev/null; then
-  echo "Install bazel at https://bazel.build" >&2
+if [[ -z "${BUILD_WORKSPACE_DIRECTORY:-}" ]]; then
+  echo 'Must be run with bazel via "bazel run //hack:update-codegen"' >&2
   exit 1
-else
-  (
-    set -o xtrace
-    bazel run //hack:update-codegen
-  )
-  exit 0
 fi
 
 module_name="github.com/cockroachdb/cockroach-operator"
@@ -188,12 +180,8 @@ export GOSUMDB=sum.golang.org
 export GO111MODULE=off
 export GOCACHE=$old
 
-gen-deepcopy
+echo "Updating generated clients..." >&2
 gen-clientsets
 gen-listers
 gen-informers
-
-## Call update-bazel
-export GO111MODULE=on
-cd "$runfiles"
-"$@"
+gen-deepcopy
