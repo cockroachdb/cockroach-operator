@@ -113,6 +113,12 @@ func (s Sandbox) Update(obj client.Object) error {
 	return s.env.Update(context.TODO(), obj)
 }
 
+func (s Sandbox) Patch(obj client.Object, patch client.Patch) error {
+	obj = s.setNamespaceIfMissing(obj)
+
+	return s.env.Patch(context.TODO(), obj, patch)
+}
+
 func (s Sandbox) Delete(obj client.Object) error {
 	obj = s.setNamespaceIfMissing(obj)
 

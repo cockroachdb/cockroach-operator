@@ -18,6 +18,7 @@ package upgrades
 
 import (
 	"flag"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"testing"
 	"time"
 
@@ -82,11 +83,12 @@ func TestUpgradesMinorVersion(t *testing.T) {
 				current := builder.Cr()
 				require.NoError(t, sb.Get(current))
 
-				current.Spec.Image.Name = MinorVersion2
-				require.NoError(t, sb.Update(current))
+				updated := current.DeepCopy()
+				updated.Spec.Image.Name = MinorVersion2
+				require.NoError(t, sb.Patch(updated, client.MergeFrom(current)))
 
 				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
-				testutil.RequireDbContainersToUseImage(t, sb, current)
+				testutil.RequireDbContainersToUseImage(t, sb, updated)
 				t.Log("Done with upgrade")
 			},
 		},
@@ -138,11 +140,12 @@ func TestUpgradesMajorVersion20to21(t *testing.T) {
 				current := builder.Cr()
 				require.NoError(t, sb.Get(current))
 
-				current.Spec.Image.Name = MajorVersion
-				require.NoError(t, sb.Update(current))
+				updated := current.DeepCopy()
+				updated.Spec.Image.Name = MajorVersion
+				require.NoError(t, sb.Patch(updated, client.MergeFrom(current)))
 
 				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
-				testutil.RequireDbContainersToUseImage(t, sb, current)
+				testutil.RequireDbContainersToUseImage(t, sb, updated)
 				t.Log("Done with major upgrade")
 			},
 		},
@@ -191,12 +194,13 @@ func TestUpgradesMajorVersion20_1To20_2(t *testing.T) {
 				current := builder.Cr()
 				require.NoError(t, sb.Get(current))
 
-				current.Spec.Image.Name = "cockroachdb/cockroach:v20.2.10"
-				require.NoError(t, sb.Update(current))
+				updated := current.DeepCopy()
+				updated.Spec.Image.Name = "cockroachdb/cockroach:v20.2.10"
+				require.NoError(t, sb.Patch(updated, client.MergeFrom(current)))
 				// we wait 10 min because we will be waiting 3 min for each pod because
 				// v20.1.16 does not have curl installed
 				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
-				testutil.RequireDbContainersToUseImage(t, sb, current)
+				testutil.RequireDbContainersToUseImage(t, sb, updated)
 				t.Log("Done with major upgrade")
 			},
 		},
@@ -249,11 +253,12 @@ func TestUpgradesMinorVersionThenRollback(t *testing.T) {
 				current := builder.Cr()
 				require.NoError(t, sb.Get(current))
 
-				current.Spec.Image.Name = MinorVersion2
-				require.NoError(t, sb.Update(current))
+				updated := current.DeepCopy()
+				updated.Spec.Image.Name = MinorVersion2
+				require.NoError(t, sb.Patch(updated, client.MergeFrom(current)))
 
 				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
-				testutil.RequireDbContainersToUseImage(t, sb, current)
+				testutil.RequireDbContainersToUseImage(t, sb, updated)
 				t.Log("Done with upgrade")
 			},
 		},
@@ -263,11 +268,12 @@ func TestUpgradesMinorVersionThenRollback(t *testing.T) {
 				current := builder.Cr()
 				require.NoError(t, sb.Get(current))
 
-				current.Spec.Image.Name = MinorVersion1
-				require.NoError(t, sb.Update(current))
+				updated := current.DeepCopy()
+				updated.Spec.Image.Name = MinorVersion1
+				require.NoError(t, sb.Patch(updated, client.MergeFrom(current)))
 
 				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
-				testutil.RequireDbContainersToUseImage(t, sb, current)
+				testutil.RequireDbContainersToUseImage(t, sb, updated)
 				t.Log("Done with downgrade")
 			},
 		},

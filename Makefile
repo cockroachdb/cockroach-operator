@@ -21,6 +21,8 @@ ifneq ("$(wildcard .envrc)","")
 include .envrc
 endif
 
+SHELL:=/usr/bin/env bash -O globstar
+
 # values used in workspace-status.sh
 DOCKER_REGISTRY?=cockroachdb
 DOCKER_IMAGE_REPOSITORY?=cockroachdb-operator
@@ -42,22 +44,25 @@ EXTRA_KUBETEST2_PARAMS?=
 # Unit Testing Targets
 #
 .PHONY: test/all
-test/all:
-	bazel test //apis/... //pkg/... //hack/... --test_arg=--test.v
+test/all: | test/apis test/pkg test/verify
 
 .PHONY: test/apis
 test/apis:
-	bazel test //apis/...
+	bazel test //apis/... --test_arg=-test.v
 
 .PHONY: test/pkg
 test/pkg:
-	bazel test //pkg/...
+	bazel test //pkg/... --test_arg=-test.v
 
 # This runs the all of the verify scripts and
 # takes a bit of time.
 .PHONY: test/verify
 test/verify:
 	bazel test //hack/...
+
+.PHONY: test/lint
+test/lint:
+	bazel run //hack:verify-gofmt
 
 # Run only e2e stort tests
 # We can use this to only run one specific test
@@ -203,16 +208,46 @@ test/e2e/testrunner-openshift-packaging: test/openshift-package
 # Different dev targets
 #
 .PHONY: dev/build
-dev/build:
+dev/build: dev/syncdeps
 	bazel build //...
 
 .PHONY: dev/fmt
 dev/fmt:
-	bazel run //hack:update-gofmt
+	@echo +++ Running gofmt
+	@bazel run //hack/bin:gofmt -- -s -w $(shell pwd)
 
 .PHONY: dev/generate
-dev/generate:
-	bazel run //hack:update-codegen && bazel run //hack:update-crds
+dev/generate: | dev/update-codegen dev/update-crds
+
+.PHONY: dev/update-codegen
+dev/update-codegen:
+	@bazel run //hack:update-codegen
+
+# TODO: Be sure to update hack/verify-crds.sh if/when this changes
+.PHONY: dev/update-crds
+dev/update-crds:
+	@bazel run //hack/bin:controller-gen \
+		crd:trivialVersions=true \
+		rbac:roleName=cockroach-operator-role \
+		webhook \
+		paths=./... \
+		output:crd:artifacts:config=config/crd/bases
+	@hack/boilerplaterize hack/boilerplate/boilerplate.yaml.txt config/**/*.yaml
+
+.PHONY: dev/syncbazel
+dev/syncbazel:
+	@bazel run //:gazelle -- fix -external=external -go_naming_convention go_default_library
+	@bazel run //hack/bin:kazel -- --cfg-path hack/build/.kazelcfg.json
+
+.PHONY: dev/syncdeps
+dev/syncdeps:
+	@bazel run //:gazelle -- update-repos \
+		-from_file=go.mod \
+		-to_macro=hack/build/repos.bzl%_go_dependencies \
+		-build_file_generation=on \
+		-build_file_proto_mode=disable \
+		-prune
+	@make dev/syncbazel
 
 .PHONY: dev/up
 dev/up:
@@ -237,14 +272,6 @@ k8s/delete:
 	DEV_REGISTRY=$(DEV_REGISTRY) \
 	bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
 		//manifests:install_operator.delete
-
-#
-# Dev target that updates bazel files and dependecies
-#
-.PHONY: dev/syncdeps
-dev/syncdeps:
-	bazel run //hack:update-deps && \
-	bazel run //hack:update-bazel
 
 #
 # Release targets
