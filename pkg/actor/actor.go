@@ -128,6 +128,7 @@ func NewDirector(scheme *runtime.Scheme, cl client.Client, config *rest.Config) 
 
 func (cd *clusterDirector) GetActorsToExecute(cluster *resource.Cluster) []Actor {
 	conditions := cluster.Status().Conditions
+
 	featureVersionValidatorEnabled := utilfeature.DefaultMutableFeatureGate.Enabled(features.CrdbVersionValidator)
 	featureDecommissionEnabled := utilfeature.DefaultMutableFeatureGate.Enabled(features.Decommission)
 	featureResizePVCEnabled := utilfeature.DefaultMutableFeatureGate.Enabled(features.ResizePVC)
@@ -214,7 +215,6 @@ func (cd *clusterDirector) ActAtomically(actorCtx context.Context, cluster *reso
 	actorErr := a.Act(actorCtx, cluster)
 
 	fetcher := resource.NewKubeFetcher(lockCtx, clusterNamespace, cd.client)
-	// TODO: rewrite using retry on conflict or similar backoff
 	for {
 		cr := resource.ClusterPlaceholder(clusterName)
 		if err := fetcher.Fetch(cr); err != nil {

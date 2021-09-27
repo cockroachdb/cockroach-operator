@@ -192,20 +192,27 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req reconcile.Request
 		}
 	}
 
+	refreshedCr := resource.ClusterPlaceholder(cluster.Name())
+	if err := fetcher.Fetch(refreshedCr); err != nil {
+		log.Error(err, "failed to retrieve refreshed CrdbCluster resource")
+		return requeueIfError(client.IgnoreNotFound(err))
+	}
+
 	// Check if the resource has been updated while the controller worked on it
-	fresh, err := cluster.IsFresh(fetcher)
+	specChanged, err := cluster.SpecChanged(refreshedCr)
 	if err != nil {
 		return requeueIfError(err)
 	}
-
 	// If the resource was updated, it is needed to start all over again
 	// to ensure that the latest state was reconciled
-	if !fresh {
+	if specChanged {
 		log.V(int(zapcore.DebugLevel)).Info("cluster resources is not up to date")
 		return requeueImmediately()
 	}
-	cluster.SetClusterStatus()
-	if err := r.Client.Status().Update(ctx, cluster.Unwrap()); err != nil {
+
+	refreshedCluster := resource.NewCluster(refreshedCr)
+	refreshedCluster.SetClusterStatus()
+	if err := r.Client.Status().Update(ctx, refreshedCluster.Unwrap()); err != nil {
 		log.Error(err, "failed to update cluster status")
 		return requeueIfError(err)
 	}

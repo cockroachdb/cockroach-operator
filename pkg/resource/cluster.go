@@ -19,13 +19,13 @@ package resource
 import (
 	"fmt"
 	"os"
+	"reflect"
 	"strings"
 	"time"
 
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/clusterstatus"
 	"github.com/cockroachdb/cockroach-operator/pkg/condition"
-	"github.com/cockroachdb/errors"
 	"github.com/gosimple/slug"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -283,13 +283,8 @@ func (cluster Cluster) SecureMode() string {
 	return "--insecure"
 }
 
-func (cluster Cluster) IsFresh(fetcher Fetcher) (bool, error) {
-	actual := ClusterPlaceholder(cluster.Name())
-	if err := fetcher.Fetch(actual); err != nil {
-		return false, errors.Wrapf(err, "failed to fetch cluster resource")
-	}
-
-	return cluster.cr.ResourceVersion == actual.ResourceVersion, nil
+func (cluster Cluster) SpecChanged(refreshedCluster *api.CrdbCluster) (bool, error) {
+	return !reflect.DeepEqual(cluster.cr.Spec, refreshedCluster.Spec), nil
 }
 
 // TODO add error handling to ensure that env variables are set correctly and
