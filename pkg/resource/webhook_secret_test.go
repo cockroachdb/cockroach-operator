@@ -70,9 +70,10 @@ func TestCreateWebhookSecret(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("when successfully created", func(t *testing.T) {
-		secrets := fake.NewSimpleClientset().CoreV1().Secrets("bogus-ns")
+		namespace := "bogus-ns"
+		secrets := fake.NewSimpleClientset().CoreV1().Secrets(namespace)
 
-		s, err := CreateWebhookSecret(ctx, secrets)
+		s, err := CreateWebhookSecret(ctx, secrets, namespace)
 		require.NoError(t, err)
 		require.Contains(t, string(s.PrivateKey()), "BEGIN RSA PRIVATE KEY")
 		require.Contains(t, string(s.Certificate()), "BEGIN CERTIFICATE")
@@ -80,12 +81,13 @@ func TestCreateWebhookSecret(t *testing.T) {
 	})
 
 	t.Run("when it already exists", func(t *testing.T) {
-		secrets := fake.NewSimpleClientset().CoreV1().Secrets("bogus-ns")
+		namespace := "bogus-ns"
+		secrets := fake.NewSimpleClientset().CoreV1().Secrets(namespace)
 
-		_, err := CreateWebhookSecret(ctx, secrets)
+		_, err := CreateWebhookSecret(ctx, secrets, namespace)
 		require.NoError(t, err)
 
-		s, err := CreateWebhookSecret(ctx, secrets)
+		s, err := CreateWebhookSecret(ctx, secrets, namespace)
 		require.Nil(t, s)
 		require.True(t, apiErrors.IsAlreadyExists(err))
 	})
@@ -109,7 +111,8 @@ func TestWebhookSecretApplyWebhookConfig(t *testing.T) {
 		client := fake.NewSimpleClientset()
 		hookAPI := client.AdmissionregistrationV1()
 
-		s, err := CreateWebhookSecret(ctx, client.CoreV1().Secrets("default"))
+		namespace := "default"
+		s, err := CreateWebhookSecret(ctx, client.CoreV1().Secrets(namespace), namespace)
 		require.NoError(t, err, tt.name)
 
 		if tt.defineMutatingHook {

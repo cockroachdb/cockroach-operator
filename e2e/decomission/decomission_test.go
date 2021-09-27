@@ -19,7 +19,7 @@ package decommission
 import (
 	"context"
 	"flag"
-	"os"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"testing"
 	"time"
 
@@ -37,18 +37,6 @@ import (
 // deployed in the cluster helps
 // We may have a threadsafe problem where one test starts messing with another test
 var parallel = *flag.Bool("parallel", false, "run tests in parallel")
-
-// TODO should we make this an atomic that is created by env pkg?
-var env *testenv.ActiveEnv
-
-// TestMain wraps the unit tests. Set TEST_DO_NOT_USE_KIND environment variable to any value
-// if you do not want this test to start a k8s cluster using kind.
-func TestMain(m *testing.M) {
-	e := testenv.CreateActiveEnvForTest()
-	env = e.Start()
-	code := testenv.RunCode(m, e)
-	os.Exit(code)
-}
 
 // TODO once prune pvc feature gate is set to "true" by default, we can
 // remove this test.
@@ -72,6 +60,11 @@ func TestDecommissionFunctionalityWithPrune(t *testing.T) {
 	}
 	testLog := zapr.NewLogger(zaptest.NewLogger(t))
 	actor.Log = testLog
+
+	e := testenv.CreateActiveEnvForTest()
+	env := e.Start()
+	defer e.Stop()
+
 	sb := testenv.NewDiffingSandbox(t, env)
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
 	builder := testutil.NewBuilder("crdb").Namespaced(sb.Namespace).WithNodeCount(4).WithTLS().
@@ -92,8 +85,10 @@ func TestDecommissionFunctionalityWithPrune(t *testing.T) {
 				current := builder.Cr()
 				require.NoError(t, sb.Get(current))
 
-				current.Spec.Nodes = 3
-				require.NoError(t, sb.Update(current))
+				updated := current.DeepCopy()
+				updated.Spec.Nodes = 3
+				require.NoError(t, sb.Patch(updated, client.MergeFrom(current)))
+
 				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
 				testutil.RequireDecommissionNode(t, sb, builder, 3)
 				testutil.RequireDatabaseToFunction(t, sb, builder)
@@ -124,6 +119,11 @@ func TestDecommissionFunctionality(t *testing.T) {
 	}
 	testLog := zapr.NewLogger(zaptest.NewLogger(t))
 	actor.Log = testLog
+
+	e := testenv.CreateActiveEnvForTest()
+	env := e.Start()
+	defer e.Stop()
+
 	sb := testenv.NewDiffingSandbox(t, env)
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
 	builder := testutil.NewBuilder("crdb").Namespaced(sb.Namespace).WithNodeCount(4).WithTLS().
@@ -144,8 +144,10 @@ func TestDecommissionFunctionality(t *testing.T) {
 				current := builder.Cr()
 				require.NoError(t, sb.Get(current))
 
-				current.Spec.Nodes = 3
-				require.NoError(t, sb.Update(current))
+				updated := current.DeepCopy()
+				updated.Spec.Nodes = 3
+				require.NoError(t, sb.Patch(updated, client.MergeFrom(current)))
+
 				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
 				testutil.RequireDecommissionNode(t, sb, builder, 3)
 				testutil.RequireDatabaseToFunction(t, sb, builder)

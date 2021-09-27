@@ -18,7 +18,7 @@ package upgrades
 
 import (
 	"flag"
-	"os"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"testing"
 	"time"
 
@@ -35,22 +35,10 @@ import (
 // for openshift.  We need to create those only once.
 var parallel = *flag.Bool("parallel", false, "run tests in parallel")
 
-// TODO should we make this an atomic that is created by evn pkg?
-var env *testenv.ActiveEnv
-
 // TODO move these into a common file
 var MinorVersion1 string = "cockroachdb/cockroach:v20.2.8"
 var MinorVersion2 string = "cockroachdb/cockroach:v20.2.9"
 var MajorVersion string = "cockroachdb/cockroach:v21.1.0"
-
-// TestMain wraps the unit tests. Set TEST_DO_NOT_USE_KIND evnvironment variable to any value
-// if you do not want this test to start a k8s cluster using kind.
-func TestMain(m *testing.M) {
-	e := testenv.CreateActiveEnvForTest()
-	env = e.Start()
-	code := testenv.RunCode(m, e)
-	os.Exit(code)
-}
 
 // TestUpgradesMinorVersion tests a minor version bump
 func TestUpgradesMinorVersion(t *testing.T) {
@@ -69,6 +57,10 @@ func TestUpgradesMinorVersion(t *testing.T) {
 	testLog := zapr.NewLogger(zaptest.NewLogger(t))
 
 	actor.Log = testLog
+
+	e := testenv.CreateActiveEnvForTest()
+	env := e.Start()
+	defer e.Stop()
 
 	sb := testenv.NewDiffingSandbox(t, env)
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
@@ -91,11 +83,12 @@ func TestUpgradesMinorVersion(t *testing.T) {
 				current := builder.Cr()
 				require.NoError(t, sb.Get(current))
 
-				current.Spec.Image.Name = MinorVersion2
-				require.NoError(t, sb.Update(current))
+				updated := current.DeepCopy()
+				updated.Spec.Image.Name = MinorVersion2
+				require.NoError(t, sb.Patch(updated, client.MergeFrom(current)))
 
 				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
-				testutil.RequireDbContainersToUseImage(t, sb, current)
+				testutil.RequireDbContainersToUseImage(t, sb, updated)
 				t.Log("Done with upgrade")
 			},
 		},
@@ -121,6 +114,10 @@ func TestUpgradesMajorVersion20to21(t *testing.T) {
 
 	actor.Log = testLog
 
+	e := testenv.CreateActiveEnvForTest()
+	env := e.Start()
+	defer e.Stop()
+
 	sb := testenv.NewDiffingSandbox(t, env)
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
 
@@ -143,11 +140,12 @@ func TestUpgradesMajorVersion20to21(t *testing.T) {
 				current := builder.Cr()
 				require.NoError(t, sb.Get(current))
 
-				current.Spec.Image.Name = MajorVersion
-				require.NoError(t, sb.Update(current))
+				updated := current.DeepCopy()
+				updated.Spec.Image.Name = MajorVersion
+				require.NoError(t, sb.Patch(updated, client.MergeFrom(current)))
 
 				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
-				testutil.RequireDbContainersToUseImage(t, sb, current)
+				testutil.RequireDbContainersToUseImage(t, sb, updated)
 				t.Log("Done with major upgrade")
 			},
 		},
@@ -169,6 +167,10 @@ func TestUpgradesMajorVersion20_1To20_2(t *testing.T) {
 	testLog := zapr.NewLogger(zaptest.NewLogger(t))
 
 	actor.Log = testLog
+
+	e := testenv.CreateActiveEnvForTest()
+	env := e.Start()
+	defer e.Stop()
 
 	sb := testenv.NewDiffingSandbox(t, env)
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
@@ -192,12 +194,13 @@ func TestUpgradesMajorVersion20_1To20_2(t *testing.T) {
 				current := builder.Cr()
 				require.NoError(t, sb.Get(current))
 
-				current.Spec.Image.Name = "cockroachdb/cockroach:v20.2.10"
-				require.NoError(t, sb.Update(current))
+				updated := current.DeepCopy()
+				updated.Spec.Image.Name = "cockroachdb/cockroach:v20.2.10"
+				require.NoError(t, sb.Patch(updated, client.MergeFrom(current)))
 				// we wait 10 min because we will be waiting 3 min for each pod because
 				// v20.1.16 does not have curl installed
 				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
-				testutil.RequireDbContainersToUseImage(t, sb, current)
+				testutil.RequireDbContainersToUseImage(t, sb, updated)
 				t.Log("Done with major upgrade")
 			},
 		},
@@ -225,6 +228,10 @@ func TestUpgradesMinorVersionThenRollback(t *testing.T) {
 
 	actor.Log = testLog
 
+	e := testenv.CreateActiveEnvForTest()
+	env := e.Start()
+	defer e.Stop()
+
 	sb := testenv.NewDiffingSandbox(t, env)
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
 
@@ -246,11 +253,12 @@ func TestUpgradesMinorVersionThenRollback(t *testing.T) {
 				current := builder.Cr()
 				require.NoError(t, sb.Get(current))
 
-				current.Spec.Image.Name = MinorVersion2
-				require.NoError(t, sb.Update(current))
+				updated := current.DeepCopy()
+				updated.Spec.Image.Name = MinorVersion2
+				require.NoError(t, sb.Patch(updated, client.MergeFrom(current)))
 
 				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
-				testutil.RequireDbContainersToUseImage(t, sb, current)
+				testutil.RequireDbContainersToUseImage(t, sb, updated)
 				t.Log("Done with upgrade")
 			},
 		},
@@ -260,11 +268,12 @@ func TestUpgradesMinorVersionThenRollback(t *testing.T) {
 				current := builder.Cr()
 				require.NoError(t, sb.Get(current))
 
-				current.Spec.Image.Name = MinorVersion1
-				require.NoError(t, sb.Update(current))
+				updated := current.DeepCopy()
+				updated.Spec.Image.Name = MinorVersion1
+				require.NoError(t, sb.Patch(updated, client.MergeFrom(current)))
 
 				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
-				testutil.RequireDbContainersToUseImage(t, sb, current)
+				testutil.RequireDbContainersToUseImage(t, sb, updated)
 				t.Log("Done with downgrade")
 			},
 		},
