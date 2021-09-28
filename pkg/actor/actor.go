@@ -206,10 +206,9 @@ func (cd *clusterDirector) ActAtomically(actorCtx context.Context, cluster *reso
 
 	lockCtx := context.Background()
 
-	directorUpdatedAt, newGeneration := cluster.UpdateDirectorState(DirectorStateBusy)
-	cluster.SetActiveActor(string(a.GetActionType()))
+	directorUpdatedAt, newGeneration := cluster.UpdateDirectorState(DirectorStateBusy, string(a.GetActionType()))
 	if err := cd.client.Status().Update(lockCtx, cluster.Unwrap()); err != nil {
-		return DirectorLockError{Err: errors.New("failed to acquire director lock")}
+		return DirectorLockError{Err: fmt.Errorf("failed to acquire director lock: %w", err)}
 	}
 
 	actorErr := a.Act(actorCtx, cluster)
@@ -226,6 +225,7 @@ func (cd *clusterDirector) ActAtomically(actorCtx context.Context, cluster *reso
 		// It's possible that the newly retrieved cluster does not yet reflect the update just made. If this is the case,
 		// try again.
 		if status.DirectorObservedGeneration < newGeneration {
+			time.Sleep(5 * time.Second)
 			continue
 		}
 
@@ -233,8 +233,7 @@ func (cd *clusterDirector) ActAtomically(actorCtx context.Context, cluster *reso
 			return PermanentErr{Err: fmt.Errorf("active director lost lock; this should not have happened")}
 		}
 
-		refreshedCluster.UpdateDirectorState(DirectorStateAvailable)
-		refreshedCluster.SetActiveActor("")
+		refreshedCluster.UpdateDirectorState(DirectorStateAvailable, "")
 		if err := cd.client.Status().Update(lockCtx, refreshedCluster.Unwrap()); err != nil {
 			if !errors2.IsConflict(err) {
 				return PermanentErr{Err: fmt.Errorf("failed to set director back to available: %w", err)}
