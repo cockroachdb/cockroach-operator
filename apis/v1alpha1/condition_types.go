@@ -26,8 +26,8 @@ const (
 	CrdbVersionChecked ClusterConditionType = "CrdbVersionChecked"
 	//DecommissionCondition string
 	DecommissionCondition ClusterConditionType = "Decommission"
-	//InitializedCondition string
-	InitializedCondition ClusterConditionType = "Initialized"
+	//CrdbInitializedCondition string
+	CrdbInitializedCondition ClusterConditionType = "Initialized"
 	//ClusterRestartCondition string
 	ClusterRestartCondition ClusterConditionType = "RestartedCluster"
 )

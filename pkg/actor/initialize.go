@@ -19,6 +19,7 @@ package actor
 import (
 	"context"
 	"fmt"
+	"k8s.io/client-go/util/retry"
 	"strconv"
 	"strings"
 
@@ -127,9 +128,38 @@ func (init initialize) Act(ctx context.Context, cluster *resource.Cluster) error
 		return errors.Wrap(err, msg)
 	}
 
-	cluster.SetTrue(api.InitializedCondition)
+	// If we got here, we need to update the CrdbClusterStatus object with an updated CrdbInitialized condition.
+	fetcher := resource.NewKubeFetcher(ctx, cluster.Namespace(), init.client)
+	err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		// Fetch the latest CrdbClusterStatus
+		newcr := resource.ClusterPlaceholder(cluster.Name())
+		if err := fetcher.Fetch(newcr); err != nil {
+			msg := "failed to retrieve CrdbCluster resource"
+			log.Error(err, msg)
+			return errors.Wrap(err, msg)
+		}
 
-	log.V(DEBUGLEVEL).Info("completed intializing database")
+		// Set the CrdbInitialized condition in the cluster status to true
+		refreshedCluster := resource.NewCluster(newcr)
+		refreshedCluster.SetTrue(api.CrdbInitializedCondition)
+
+		// Actually attempt to update the CrdbClusterStatus object. If the update runs into a conflict for any reason
+		// (say, someone adds a label to the CrdbCluster object after we just retrieved it), we will retry.
+		err = init.client.Status().Update(ctx, refreshedCluster.Unwrap())
+		if err != nil {
+			msg := "failed to update initialized annotation; will try again"
+			log.Error(err, msg)
+			return errors.Wrap(err, msg)
+		}
+		return err
+	})
+	if err != nil {
+		msg := "failed to update initialized annotation"
+		log.Error(err, msg)
+		return errors.Wrap(err, msg)
+	}
+
+	log.V(DEBUGLEVEL).Info("completed initializing database")
 	return nil
 }
 
