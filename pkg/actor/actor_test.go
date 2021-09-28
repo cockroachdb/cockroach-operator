@@ -52,7 +52,7 @@ func createTestDirectorAndCluster(t *testing.T) (*resource.Cluster, actor.Direct
 func TestDecommissionFeatureGate(t *testing.T) {
 	cluster, director := createTestDirectorAndCluster(t)
 
-	cluster.SetTrue(api.InitializedCondition)
+	cluster.SetTrue(api.CrdbInitializedCondition)
 
 	utilfeature.DefaultMutableFeatureGate.Set("UseDecommission=true")
 	actors := director.GetActorsToExecute(cluster)
@@ -66,7 +66,7 @@ func TestDecommissionFeatureGate(t *testing.T) {
 func TestVersionValidatorFeatureGate(t *testing.T) {
 	cluster, director := createTestDirectorAndCluster(t)
 
-	cluster.SetTrue(api.InitializedCondition)
+	cluster.SetTrue(api.CrdbInitializedCondition)
 
 	utilfeature.DefaultMutableFeatureGate.Set("CrdbVersionValidator=true")
 	actors := director.GetActorsToExecute(cluster)
@@ -80,7 +80,7 @@ func TestVersionValidatorFeatureGate(t *testing.T) {
 func TestResizePVCFeatureGate(t *testing.T) {
 	cluster, director := createTestDirectorAndCluster(t)
 
-	cluster.SetTrue(api.InitializedCondition)
+	cluster.SetTrue(api.CrdbInitializedCondition)
 
 	utilfeature.DefaultMutableFeatureGate.Set("ResizePVC=true")
 	actors := director.GetActorsToExecute(cluster)
@@ -94,7 +94,7 @@ func TestResizePVCFeatureGate(t *testing.T) {
 func TestClusterRestartFeatureGate(t *testing.T) {
 	cluster, director := createTestDirectorAndCluster(t)
 
-	cluster.SetTrue(api.InitializedCondition)
+	cluster.SetTrue(api.CrdbInitializedCondition)
 	cluster.SetTrue(api.CrdbVersionChecked)
 
 	utilfeature.DefaultMutableFeatureGate.Set("ClusterRestart=true")
@@ -141,7 +141,7 @@ func TestInitializedButNotVersionChecked(t *testing.T) {
 	cluster, director := createTestDirectorAndCluster(t)
 
 	utilfeature.DefaultMutableFeatureGate.Set("UseDecommission=true,CrdbVersionValidator=true,ResizePVC=true,ClusterRestart=true")
-	cluster.SetTrue(api.InitializedCondition)
+	cluster.SetTrue(api.CrdbInitializedCondition)
 
 	actors := director.GetActorsToExecute(cluster)
 	require.True(t, actorsHaveTypes(actors, []api.ActionType{api.DecommissionAction, api.VersionCheckerAction, api.ResizePVCAction}))
@@ -151,7 +151,7 @@ func TestVersionCheckedAndInitialized(t *testing.T) {
 	cluster, director := createTestDirectorAndCluster(t)
 
 	utilfeature.DefaultMutableFeatureGate.Set("UseDecommission=true,CrdbVersionValidator=true,ResizePVC=true,ClusterRestart=true")
-	cluster.SetTrue(api.InitializedCondition)
+	cluster.SetTrue(api.CrdbInitializedCondition)
 	cluster.SetTrue(api.CrdbVersionChecked)
 
 	actors := director.GetActorsToExecute(cluster)

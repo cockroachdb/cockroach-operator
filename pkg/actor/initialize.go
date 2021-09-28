@@ -137,7 +137,7 @@ func (init initialize) Act(ctx context.Context, cluster *resource.Cluster) error
 			return errors.Wrap(err, msg)
 		}
 		refreshedCluster := resource.NewCluster(newcr)
-		refreshedCluster.SetTrue(api.InitializedCondition)
+		refreshedCluster.SetTrue(api.CrdbInitializedCondition)
 
 		err = init.client.Status().Update(ctx, refreshedCluster.Unwrap())
 		if err != nil {

@@ -27,7 +27,7 @@ func InitConditionsIfNeeded(status *api.CrdbClusterStatus, now metav1.Time) {
 	}
 
 	if len(status.Conditions) == 0 {
-		SetFalse(api.InitializedCondition, status, now)
+		SetFalse(api.CrdbInitializedCondition, status, now)
 		//we make sure we will use version validator on first run
 		SetFalse(api.CrdbVersionChecked, status, now)
 	}
