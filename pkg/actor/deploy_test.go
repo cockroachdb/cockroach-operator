@@ -18,6 +18,8 @@ package actor_test
 
 import (
 	"context"
+	"github.com/go-logr/zapr"
+	"go.uber.org/zap/zaptest"
 	"testing"
 
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
@@ -74,10 +76,11 @@ func TestDeploysNotInitalizedClusterAfterVersionChecker(t *testing.T) {
 	deploy := actor.NewDeploy(scheme, client, nil, mock)
 	t.Log(cluster.Status().Conditions)
 
+	testLog := zapr.NewLogger(zaptest.NewLogger(t))
 	// 3 is the number of resources we expect to be created. The action should be repeated as it is
 	// restarted on successful creation or update
 	for i := 0; i < 3; i++ {
-		assert.NoError(t, deploy.Act(actor.ContextWithCancelFn(context.TODO(), func() {}), cluster, nil))
+		assert.NoError(t, deploy.Act(actor.ContextWithCancelFn(context.TODO(), func() {}), cluster, testLog))
 	}
 
 	assert.Equal(t, expected, actual)
