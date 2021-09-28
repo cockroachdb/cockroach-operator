@@ -144,7 +144,7 @@ func (init initialize) Act(ctx context.Context, cluster *resource.Cluster) error
 		refreshedCluster.SetTrue(api.CrdbInitializedCondition)
 
 		// Actually attempt to update the CrdbClusterStatus object. If the update runs into a conflict for any reason
-		// (say, the client adds a label to the CrdbCluster object), we will retry.
+		// (say, someone adds a label to the CrdbCluster object after we just retrieved it), we will retry.
 		err = init.client.Status().Update(ctx, refreshedCluster.Unwrap())
 		if err != nil {
 			msg := "failed to update initialized annotation; will try again"
