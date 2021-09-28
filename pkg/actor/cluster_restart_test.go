@@ -19,6 +19,8 @@ package actor
 import (
 	"context"
 	"fmt"
+	"github.com/go-logr/zapr"
+	"go.uber.org/zap/zaptest"
 	"testing"
 
 	"github.com/go-logr/logr"
@@ -100,7 +102,8 @@ func TestFullClusterRestart(t *testing.T) {
 		Version:  "v1",
 		Resource: "statefulset",
 	}, &sts, sts.Namespace)
-	require.NoError(t, cr.fullClusterRestart(context.TODO(), &sts, Log, cltSet))
+	testLog := zapr.NewLogger(zaptest.NewLogger(t))
+	require.NoError(t, cr.fullClusterRestart(context.TODO(), &sts, testLog, cltSet))
 }
 
 func TestRollingClusterRestart(t *testing.T) {
@@ -153,7 +156,8 @@ func TestRollingClusterRestart(t *testing.T) {
 		Resource: "statefulsets",
 	}, &sts, sts.Namespace)
 	hcTest := HealthCheckerTest{}
-	require.NoError(t, cr.rollingSts(context.TODO(), &sts, cltSet, Log, &hcTest))
+	testLog := zapr.NewLogger(zaptest.NewLogger(t))
+	require.NoError(t, cr.rollingSts(context.TODO(), &sts, cltSet, testLog, &hcTest))
 }
 
 func createStatefulSet(stsReplicas int32) appsv1.StatefulSet {

@@ -62,8 +62,7 @@ func (r *clusterRestart) GetActionType() api.ActionType {
 	return api.ClusterRestartAction
 }
 
-func (r *clusterRestart) Act(ctx context.Context, cluster *resource.Cluster) error {
-	log := r.log.WithValues("CrdbCluster", cluster.ObjectKey())
+func (r *clusterRestart) Act(ctx context.Context, cluster *resource.Cluster, log logr.Logger) error {
 	log.V(DEBUGLEVEL).Info("starting cluster restart action")
 	restartType := cluster.GetAnnotationRestartType()
 	if restartType == "" {
@@ -98,7 +97,7 @@ func (r *clusterRestart) Act(ctx context.Context, cluster *resource.Cluster) err
 	healthChecker := healthchecker.NewHealthChecker(cluster, clientset, r.scheme, r.config)
 	if strings.EqualFold(restartType, api.ClusterRestartType(api.RollingRestart).String()) {
 		log.V(DEBUGLEVEL).Info("initiating rolling restart action")
-		if err := r.rollingSts(ctx, statefulSet.DeepCopy(), clientset, r.log, healthChecker); err != nil {
+		if err := r.rollingSts(ctx, statefulSet.DeepCopy(), clientset, log, healthChecker); err != nil {
 			return errors.Wrapf(err, "error restarting statefulset %s.%s", cluster.Namespace(), cluster.StatefulSetName())
 		}
 		log.V(DEBUGLEVEL).Info("completed rolling cluster restart")
@@ -133,7 +132,7 @@ func (r *clusterRestart) Act(ctx context.Context, cluster *resource.Cluster) err
 		log.Error(err, "failed reseting the restart cluster field")
 	}
 	log.V(DEBUGLEVEL).Info("completed cluster restart")
-	CancelLoop(ctx)
+	CancelLoop(ctx, log)
 	return nil
 }
 

@@ -19,7 +19,6 @@ package actor
 import (
 	"context"
 	"fmt"
-
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/clustersql"
 	"github.com/cockroachdb/cockroach-operator/pkg/database"
@@ -29,6 +28,7 @@ import (
 	"github.com/cockroachdb/cockroach-operator/pkg/scale"
 	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
 	"github.com/cockroachdb/errors"
+	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	kubetypes "k8s.io/apimachinery/pkg/types"
@@ -56,9 +56,7 @@ func (d decommission) GetActionType() api.ActionType {
 	return api.DecommissionAction
 }
 
-func (d decommission) Act(ctx context.Context, cluster *resource.Cluster) error {
-
-	log := d.log.WithValues("CrdbCluster", cluster.ObjectKey())
+func (d decommission) Act(ctx context.Context, cluster *resource.Cluster, log logr.Logger) error {
 	log.V(DEBUGLEVEL).Info("check decommission opportunities")
 	//we are not running decommission logic if a restart must be done
 	restartType := cluster.GetAnnotationRestartType()
@@ -136,16 +134,16 @@ func (d decommission) Act(ctx context.Context, cluster *resource.Cluster) error 
 		return errors.Wrap(err, "failed to get range move duration")
 	}
 
-	drainer := scale.NewCockroachNodeDrainer(d.log, cluster.Namespace(), ss.Name, d.config, clientset, cluster.Spec().TLSEnabled, 3*timeout)
+	drainer := scale.NewCockroachNodeDrainer(log, cluster.Namespace(), ss.Name, d.config, clientset, cluster.Spec().TLSEnabled, 3*timeout)
 	pvcPruner := scale.PersistentVolumePruner{
 		Namespace:   cluster.Namespace(),
 		StatefulSet: ss.Name,
 		ClientSet:   clientset,
-		Logger:      d.log,
+		Logger:      log,
 	}
 	//we should start scale down
 	scaler := scale.Scaler{
-		Logger: d.log,
+		Logger: log,
 		CRDB: &scale.CockroachStatefulSet{
 			ClientSet: clientset,
 			Namespace: cluster.Namespace(),
@@ -158,12 +156,12 @@ func (d decommission) Act(ctx context.Context, cluster *resource.Cluster) error 
 		/// now check if the decommissionStaleErr and update status
 		log.Error(err, "decommission failed")
 		cluster.SetFalse(api.DecommissionCondition)
-		CancelLoop(ctx)
+		CancelLoop(ctx, log)
 		return err
 	}
 	// TO DO @alina we will need to save the status foreach action
 	cluster.SetTrue(api.DecommissionCondition)
 	log.V(DEBUGLEVEL).Info("decommission completed", "cond", ss.Status.Conditions)
-	CancelLoop(ctx)
+	CancelLoop(ctx, log)
 	return nil
 }

@@ -22,7 +22,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cockroachdb/cockroach-operator/pkg/actor"
 	"github.com/cockroachdb/cockroach-operator/pkg/controller"
 	"github.com/cockroachdb/cockroach-operator/pkg/testutil"
 	testenv "github.com/cockroachdb/cockroach-operator/pkg/testutil/env"
@@ -55,8 +54,6 @@ func TestUpgradesMinorVersion(t *testing.T) {
 	}
 
 	testLog := zapr.NewLogger(zaptest.NewLogger(t))
-
-	actor.Log = testLog
 
 	e := testenv.CreateActiveEnvForTest()
 	env := e.Start()
@@ -112,8 +109,6 @@ func TestUpgradesMajorVersion20to21(t *testing.T) {
 
 	testLog := zapr.NewLogger(zaptest.NewLogger(t))
 
-	actor.Log = testLog
-
 	e := testenv.CreateActiveEnvForTest()
 	env := e.Start()
 	defer e.Stop()
@@ -165,8 +160,6 @@ func TestUpgradesMajorVersion20_1To20_2(t *testing.T) {
 	}
 
 	testLog := zapr.NewLogger(zaptest.NewLogger(t))
-
-	actor.Log = testLog
 
 	e := testenv.CreateActiveEnvForTest()
 	env := e.Start()
@@ -225,8 +218,6 @@ func TestUpgradesMinorVersionThenRollback(t *testing.T) {
 	}
 
 	testLog := zapr.NewLogger(zaptest.NewLogger(t))
-
-	actor.Log = testLog
 
 	e := testenv.CreateActiveEnvForTest()
 	env := e.Start()
