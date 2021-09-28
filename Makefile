@@ -58,7 +58,7 @@ test/pkg:
 # takes a bit of time.
 .PHONY: test/verify
 test/verify:
-	bazel test //hack/... --test_arg=-test.v
+	bazel test //hack/...
 
 .PHONY: test/lint
 test/lint:
