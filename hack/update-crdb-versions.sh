@@ -13,17 +13,21 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+set -euo pipefail
 
-set -o nounset
-set -o pipefail
-
+VERSIONS_FILE="${VERSIONS_FILE:-crdb-versions.yaml}"
 
 # TODO(rail): we may need to add pagination handling in case we pass 500 versions
 # Use anonymous API to get the list of published images from the RedHat Catalog.
 URL="https://catalog.redhat.com/api/containers/v1/repositories/registry/registry.connect.redhat.com/repository/cockroachdb/cockroach/images?exclude=data.repositories.comparison.advisory_rpm_mapping,data.brew,data.cpe_ids,data.top_layer_id&page_size=500&page=0"
 
+main() {
+  create_versions_file
+  dump_versions
+}
 
-cat > crdb-versions.yaml << EOF
+create_versions_file() {
+  cat > "${VERSIONS_FILE}" << EOF
 # Copyright 2021 The Cockroach Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -47,8 +51,14 @@ cat > crdb-versions.yaml << EOF
 
 CrdbVersions:
 EOF
+}
 
-# Skip unsupported versions and the latest tag
-for version in $(curl -s $URL | jq -r '.data[] .repositories[] .tags[] .name' | grep -v ^v19 | grep -v latest | grep -v ubi$ | sort --version-sort); do
-    echo "  - $version" >> crdb-versions.yaml
-done
+dump_versions() {
+  local nameFilter=".data[] .repositories[] .tags[] .name"
+  # Skip unsupported versions and the latest tag
+  for version in $(curl -s $URL | jq -r "${nameFilter}" | grep -v ^v19 | grep -v ^v21.1.8$ | grep -v latest | grep -v ubi$ | sort --version-sort); do
+    echo "  - $version" >> "${VERSIONS_FILE}"
+  done
+}
+
+main "$@"
