@@ -24,7 +24,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apiresource "k8s.io/apimachinery/pkg/api/resource"
 
-	"github.com/cockroachdb/cockroach-operator/pkg/actor"
 	"github.com/cockroachdb/cockroach-operator/pkg/controller"
 	"github.com/cockroachdb/cockroach-operator/pkg/testutil"
 	testenv "github.com/cockroachdb/cockroach-operator/pkg/testutil/env"
@@ -49,7 +48,6 @@ func TestVersionCheckerJobPodPending(t *testing.T) {
 		t.Parallel()
 	}
 	testLog := zapr.NewLogger(zaptest.NewLogger(t))
-	actor.Log = testLog
 
 	e := testenv.CreateActiveEnvForTest()
 	env := e.Start()

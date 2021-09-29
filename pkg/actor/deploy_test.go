@@ -18,6 +18,8 @@ package actor_test
 
 import (
 	"context"
+	"github.com/go-logr/zapr"
+	"go.uber.org/zap/zaptest"
 	"testing"
 
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
@@ -25,9 +27,7 @@ import (
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
 	"github.com/cockroachdb/cockroach-operator/pkg/testutil"
 	"github.com/cockroachdb/errors"
-	"github.com/go-logr/zapr"
 	"github.com/stretchr/testify/assert"
-	"go.uber.org/zap/zaptest"
 )
 
 type key struct {
@@ -48,8 +48,6 @@ func (t callTracker) calledOnceFor(resource, name string) error {
 }
 
 func TestDeploysNotInitalizedClusterAfterVersionChecker(t *testing.T) {
-	actor.Log = zapr.NewLogger(zaptest.NewLogger(t)).WithName("deploy-test")
-
 	var expected, actual callTracker = make(map[key]int), make(map[key]int)
 	_ = expected.calledOnceFor("services", "default/cockroachdb")
 	_ = expected.calledOnceFor("services", "default/cockroachdb-public")
@@ -78,10 +76,11 @@ func TestDeploysNotInitalizedClusterAfterVersionChecker(t *testing.T) {
 	deploy := actor.NewDeploy(scheme, client, nil, mock)
 	t.Log(cluster.Status().Conditions)
 
+	testLog := zapr.NewLogger(zaptest.NewLogger(t))
 	// 3 is the number of resources we expect to be created. The action should be repeated as it is
 	// restarted on successful creation or update
 	for i := 0; i < 3; i++ {
-		assert.NoError(t, deploy.Act(actor.ContextWithCancelFn(context.TODO(), func() {}), cluster))
+		assert.NoError(t, deploy.Act(actor.ContextWithCancelFn(context.TODO(), func() {}), cluster, testLog))
 	}
 
 	assert.Equal(t, expected, actual)

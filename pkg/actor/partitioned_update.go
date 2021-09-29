@@ -19,6 +19,7 @@ package actor
 import (
 	"context"
 	"fmt"
+	"github.com/go-logr/logr"
 	"os"
 	"strings"
 	"time"
@@ -61,12 +62,11 @@ func (up *partitionedUpdate) GetActionType() api.ActionType {
 // Act runs a new partitionUpdate.
 // This update pattern handles the sql calls and workflow in order to
 // update a cr cluster.  This is replacing the old update actor.
-func (up *partitionedUpdate) Act(ctx context.Context, cluster *resource.Cluster) error {
+func (up *partitionedUpdate) Act(ctx context.Context, cluster *resource.Cluster, log logr.Logger) error {
 
 	// TODO we have edge cases that we are not covering
 	// see https://github.com/cockroachdb/cockroach-operator/issues/202
 
-	log := up.log.WithValues("CrdbCluster", cluster.ObjectKey())
 	log.V(DEBUGLEVEL).Info("checking update opportunities, using a partitioned update")
 
 	stsName := cluster.StatefulSetName()
@@ -222,7 +222,7 @@ func (up *partitionedUpdate) Act(ctx context.Context, cluster *resource.Cluster)
 
 	// TODO set status that we are completed.
 	log.V(DEBUGLEVEL).Info("update completed with partitioned update", "new version", versionWantedCalFmtStr)
-	CancelLoop(ctx)
+	CancelLoop(ctx, log)
 	return nil
 }
 

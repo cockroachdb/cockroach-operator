@@ -21,7 +21,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cockroachdb/cockroach-operator/pkg/actor"
 	"github.com/cockroachdb/cockroach-operator/pkg/controller"
 	"github.com/cockroachdb/cockroach-operator/pkg/testutil"
 	testenv "github.com/cockroachdb/cockroach-operator/pkg/testutil/env"
@@ -51,8 +50,6 @@ func TestCreateInsecureCluster(t *testing.T) {
 	}
 
 	testLog := zapr.NewLogger(zaptest.NewLogger(t))
-
-	actor.Log = testLog
 
 	e := testenv.CreateActiveEnvForTest()
 	env := e.Start()
@@ -95,8 +92,6 @@ func TestCreatesSecureCluster(t *testing.T) {
 	}
 
 	testLog := zapr.NewLogger(zaptest.NewLogger(t))
-
-	actor.Log = testLog
 
 	e := testenv.CreateActiveEnvForTest()
 	env := e.Start()

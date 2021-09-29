@@ -19,6 +19,8 @@ package controller_test
 import (
 	"context"
 	"errors"
+	"github.com/go-logr/logr"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 	"testing"
 	"time"
 
@@ -44,9 +46,9 @@ type fakeActor struct {
 	err       error
 }
 
-func (a *fakeActor) Act(ctx context.Context, _ *resource.Cluster) error {
+func (a *fakeActor) Act(ctx context.Context, _ *resource.Cluster, logger logr.Logger) error {
 	if a.cancelCtx {
-		actor.CancelLoop(ctx)
+		actor.CancelLoop(ctx, log.NullLogger{})
 	}
 	return a.err
 }

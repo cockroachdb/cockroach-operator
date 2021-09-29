@@ -19,6 +19,7 @@ package actor
 import (
 	"context"
 	"fmt"
+	"github.com/go-logr/logr"
 	"k8s.io/client-go/util/retry"
 	"strconv"
 	"strings"
@@ -57,8 +58,7 @@ func (init initialize) GetActionType() api.ActionType {
 	return api.InitializeAction
 }
 
-func (init initialize) Act(ctx context.Context, cluster *resource.Cluster) error {
-	log := init.log.WithValues("CrdbCluster", cluster.ObjectKey())
+func (init initialize) Act(ctx context.Context, cluster *resource.Cluster, log logr.Logger) error {
 	log.V(DEBUGLEVEL).Info("initializing CockroachDB")
 
 	stsName := cluster.StatefulSetName()

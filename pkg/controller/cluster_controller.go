@@ -25,6 +25,7 @@ import (
 	"github.com/cockroachdb/cockroach-operator/pkg/actor"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	"github.com/go-logr/logr"
+	"github.com/lithammer/shortuuid/v3"
 	"go.uber.org/zap/zapcore"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -83,7 +84,7 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req reconcile.Request
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Hour)
 	defer cancel()
 
-	log := r.Log.WithValues("CrdbCluster", req.NamespacedName)
+	log := r.Log.WithValues("CrdbCluster", req.NamespacedName, "ReconcileId", shortuuid.New())
 	log.V(int(zapcore.InfoLevel)).Info("reconciling CockroachDB cluster")
 
 	fetcher := resource.NewKubeFetcher(ctx, req.Namespace, r.Client)
@@ -96,7 +97,7 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req reconcile.Request
 
 	cluster := resource.NewCluster(cr)
 	// on first run we need to save the status and exit to pass Openshift CI
-	// we added actorToExecute state called Starting for field ClusterStatus to accomplish this
+	// we added a state called Starting for field ClusterStatus to accomplish this
 	if cluster.Status().ClusterStatus == "" {
 		cluster.SetClusterStatusOnFirstReconcile()
 		if err := r.Client.Status().Update(ctx, cluster.Unwrap()); err != nil {

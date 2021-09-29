@@ -15,6 +15,7 @@ require (
 	github.com/google/go-cmp v0.5.4
 	github.com/gosimple/slug v1.9.0
 	github.com/jackc/pgx/v4 v4.9.0
+	github.com/lithammer/shortuuid/v3 v3.0.7
 	github.com/octago/sflags v0.2.0
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.7.0
