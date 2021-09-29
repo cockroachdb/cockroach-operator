@@ -18,22 +18,19 @@ package actor
 
 import (
 	"context"
-	"github.com/go-logr/logr"
-
+	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/condition"
 	"github.com/cockroachdb/cockroach-operator/pkg/features"
-	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
-
-	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
 	"github.com/go-logr/logr"
 	"go.uber.org/zap/zapcore"
+	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	kubetypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 // Different logging levels
@@ -83,7 +80,7 @@ type Actor interface {
 }
 
 type Director interface {
-	GetActorToExecute(context.Context, *resource.Cluster) Actor
+	GetActorToExecute(context.Context, *resource.Cluster, logr.Logger) (Actor, error)
 }
 
 type clusterDirector struct {
@@ -108,7 +105,7 @@ func NewDirector(scheme *runtime.Scheme, cl client.Client, config *rest.Config) 
 	}
 }
 
-func (cd *clusterDirector) GetActorToExecute(ctx context.Context, cluster *resource.Cluster) Actor {
+func (cd *clusterDirector) GetActorToExecute(ctx context.Context, cluster *resource.Cluster, log logr.Logger) (Actor, error) {
 	conditions := cluster.Status().Conditions
 	featureVersionValidatorEnabled := utilfeature.DefaultMutableFeatureGate.Enabled(features.CrdbVersionValidator)
 	featureDecommissionEnabled := utilfeature.DefaultMutableFeatureGate.Enabled(features.Decommission)
@@ -118,6 +115,7 @@ func (cd *clusterDirector) GetActorToExecute(ctx context.Context, cluster *resou
 	conditionInitializedFalse := condition.False(api.CrdbInitializedCondition, conditions)
 	conditionVersionCheckedTrue := condition.True(api.CrdbVersionChecked, conditions)
 	conditionVersionCheckedFalse := condition.False(api.CrdbVersionChecked, conditions)
+	conditionCertificateGeneratedTrue := condition.True(api.CertificateGenerated, conditions)
 
 	// cluster restart
 	// decommission
@@ -132,42 +130,39 @@ func (cd *clusterDirector) GetActorToExecute(ctx context.Context, cluster *resou
 		if featureVersionValidatorEnabled && conditionVersionCheckedTrue && (conditionInitializedTrue || conditionInitializedFalse) {
 			restartType := cluster.GetAnnotationRestartType()
 			if restartType != "" {
-				return cd.actors[api.ClusterRestartAction]
+				return cd.actors[api.ClusterRestartAction], nil
 			}
 		}
 	}
 
-	//if featureDecommissionEnabled && conditionInitializedTrue {
-	//	stsName := cluster.StatefulSetName()
-	//
-	//	key := kubetypes.NamespacedName{
-	//		Namespace: cluster.Namespace(),
-	//		Name:      stsName,
-	//	}
-	//	ss := &appsv1.StatefulSet{}
-	//	if err := cd.client.Get(ctx, key, ss); err != nil {
-	//		log.Error(err, "decommission failed to fetch statefulset")
-	//		return kube.IgnoreNotFound(err)
-	//	}
-	//	status := &ss.Status
-	//
-	//	if status.CurrentReplicas == 0 || status.CurrentReplicas < status.Replicas {
-	//		log.V(WARNLEVEL).Info("decommission statefulset does not have all replicas up")
-	//		return NotReadyErr{Err: errors.New("decommission statefulset does not have all replicas up")}
-	//	}
-	//
-	//	nodes := uint(cluster.Spec().Nodes)
-	//	log.Info("replicas decommissioning", "status.CurrentReplicas", status.CurrentReplicas, "expected", cluster.Spec().Nodes)
-	//	if status.CurrentReplicas <= cluster.Spec().Nodes {
-	//		return nil
-	//	}
-	//}
+	if featureDecommissionEnabled && conditionInitializedTrue {
+		stsName := cluster.StatefulSetName()
 
-	if conditionVersionCheckedFalse && {
-		return cd.actors[api.VersionCheckerAction]
+		key := kubetypes.NamespacedName{
+			Namespace: cluster.Namespace(),
+			Name:      stsName,
+		}
+		ss := &appsv1.StatefulSet{}
+		err := kube.IgnoreNotFound(cd.client.Get(ctx, key, ss))
+		if err != nil {
+			return nil, err
+		}
+
+		status := &ss.Status
+		if status.CurrentReplicas == status.Replicas && status.CurrentReplicas > cluster.Spec().Nodes {
+			return cd.actors[api.DecommissionAction], nil
+		}
 	}
 
-	return nil
+	if featureVersionValidatorEnabled && conditionVersionCheckedFalse && (conditionInitializedTrue || conditionInitializedFalse) {
+		return cd.actors[api.VersionCheckerAction], nil
+	}
+
+	if !conditionCertificateGeneratedTrue {
+		return cd.actors[api.GenerateCertAction], nil
+	}
+
+	return nil, nil
 }
 
 func (cd *clusterDirector) GetActorsToExecute(cluster *resource.Cluster) []Actor {

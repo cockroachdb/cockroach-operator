@@ -119,8 +119,11 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req reconcile.Request
 		}
 	}
 
-	actorToExecute := r.Director.GetActorToExecute(ctx, &cluster)
-	if actorToExecute == nil {
+	actorToExecute, err := r.Director.GetActorToExecute(ctx, &cluster, log)
+	if err != nil {
+		// TODO think this through
+		return requeueAfter(5*time.Second, nil)
+	} else if actorToExecute == nil {
 		return noRequeue()
 	}
 
@@ -128,7 +131,7 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req reconcile.Request
 	ctx = actor.ContextWithCancelFn(ctx, cancel)
 
 	log.Info(fmt.Sprintf("Running action with name: %s", actorToExecute.GetActionType()))
-	if err := actorToExecute.Act(ctx, &cluster); err != nil {
+	if err := actorToExecute.Act(ctx, &cluster, log); err != nil {
 		// Save the error on the Status for each action
 		log.Info("Error on action", "Action", actorToExecute.GetActionType(), "err", err.Error())
 		cluster.SetActionFailed(actorToExecute.GetActionType(), err.Error())
