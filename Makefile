@@ -107,7 +107,7 @@ test/e2e/kind-%:
 	bazel build //hack/bin/...
 	PATH=${PATH}:bazel-bin/hack/bin kubetest2 kind --cluster-name=$(CLUSTER_NAME) \
 		--up --down -v 10 --test=exec -- make test/e2e/testrunner-kind-$(PACKAGE)
-	
+
 # This target is used by kubetest2-eks to run e2e tests.
 .PHONY: test/e2e/testrunner-eks
 test/e2e/testrunner-eks:
@@ -295,12 +295,8 @@ release/gen-templates:
 # Generate various manifest files for OpenShift. We run this target after the
 # operator version is changed. The results are committed to Git.
 .PHONY: release/gen-files
-release/gen-files: release/gen-templates
-	$(MAKE) release/update-pkg-manifest && \
-	$(MAKE) release/opm-build-bundle && \
-	git add . && \
-	git commit -m "Bump version to $(VERSION)"
-
+release/gen-files: | release/gen-templates release/opm-build-bundle
+	git add . && git commit -m "Bump version to $(VERSION)"
 
 .PHONY: release/image
 release/image:
@@ -345,13 +341,13 @@ PKG_MAN_OPTS ?= "$(PKG_FROM_VERSION) $(PKG_CHANNELS) $(PKG_IS_DEFAULT_CHANNEL)"
 
 # Build the packagemanifests
 .PHONY: release/update-pkg-manifest
-release/update-pkg-manifest:dev/generate
-	bazel run  //hack:update-pkg-manifest  -- $(RH_BUNDLE_VERSION) $(RH_OPERATOR_IMAGE) $(PKG_MAN_OPTS) $(RH_COCKROACH_DATABASE_IMAGE)
+release/update-pkg-manifest: dev/generate
+	bazel run //hack:update-pkg-manifest -- $(RH_BUNDLE_VERSION) $(RH_OPERATOR_IMAGE) $(PKG_MAN_OPTS) $(RH_COCKROACH_DATABASE_IMAGE)
 
-#  Build the packagemanifests
+#  Build the OPM bundle
 .PHONY: release/opm-build-bundle
-release/opm-build-bundle:
-	bazel run  //hack:opm-build-bundle  -- $(RH_BUNDLE_VERSION) $(RH_OPERATOR_IMAGE) $(PKG_MAN_OPTS)
+release/opm-build-bundle: release/update-pkg-manifest
+	bazel run //hack:opm-build-bundle -- $(RH_BUNDLE_VERSION) $(RH_OPERATOR_IMAGE) $(PKG_MAN_OPTS)
 
 #
 # Release bundle image
@@ -384,7 +380,7 @@ release/bundle-image:
 #
 # See hack/openshift-test-packaging.sh for more information on running this target.
 .PHONY: test/openshift-package
-test/openshift-package: release/update-pkg-manifest release/image release/opm-build-bundle test/push-openshift-images
+test/openshift-package: release/opm-build-bundle release/image test/push-openshift-images
 	VERSION=$(VERSION) \
 	hack/cleanup-packaging.sh
 
