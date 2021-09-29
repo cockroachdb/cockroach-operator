@@ -4,10 +4,6 @@ load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library", "go_test")
 
 package(default_visibility = ["//visibility:public"])
 
-GAZELLE = "@bazel_gazelle//cmd/gazelle"
-
-KAZEL = "@io_k8s_repo_infra//cmd/kazel"
-
 GO = "@go_sdk//:bin/go"
 
 GOROOT = "@go_sdk//:files"
@@ -33,40 +29,6 @@ KUBETEST2KIND = "//hack/bin:kubetest2-kind"
 CONTROLLER_GEN = "@io_k8s_sigs_controller_tools//cmd/controller-gen"
 
 sh_binary(
-    name = "update-deps",
-    srcs = ["update-deps.sh"],
-    args = [
-        "$(location %s)" % GO,
-        "$(location %s)" % GAZELLE,
-        "$(location %s)" % KAZEL,
-        "$(location %s)" % JQ,
-        "$(location :update-bazel)",
-        # "$(location :update-deps-licenses)",
-    ],
-    data = [
-        GAZELLE,
-        GO,
-        KAZEL,
-        JQ,
-        ":update-bazel",
-        # ":update-deps-licenses",
-    ],
-)
-
-sh_binary(
-    name = "update-bazel",
-    srcs = ["update-bazel.sh"],
-    args = [
-        "$(location %s)" % GAZELLE,
-        "$(location %s)" % KAZEL,
-    ],
-    data = [
-        GAZELLE,
-        KAZEL,
-    ],
-)
-
-sh_binary(
     name = "update-codegen",
     srcs = ["update-codegen.sh"],
     args = [
@@ -77,16 +39,10 @@ sh_binary(
         "$(location @io_k8s_code_generator//cmd/lister-gen)",
         "$(location @io_k8s_code_generator//cmd/defaulter-gen)",
         "$(location @io_k8s_code_generator//cmd/conversion-gen)",
-        "$(location :update-bazel)",
-        "$(location %s)" % GAZELLE,
-        "$(location %s)" % KAZEL,
     ],
     data = [
-        ":update-bazel",
         GO,
         GOROOT,
-        GAZELLE,
-        KAZEL,
         "@io_k8s_code_generator//cmd/client-gen",
         "@io_k8s_code_generator//cmd/conversion-gen",
         "@io_k8s_code_generator//cmd/deepcopy-gen",
@@ -108,17 +64,11 @@ sh_test(
         "$(location @io_k8s_code_generator//cmd/lister-gen)",
         "$(location @io_k8s_code_generator//cmd/defaulter-gen)",
         "$(location @io_k8s_code_generator//cmd/conversion-gen)",
-        "$(location :update-bazel)",
-        "$(location %s)" % GAZELLE,
-        "$(location %s)" % KAZEL,
     ],
     data = [
-        ":update-bazel",
         ":update-codegen",
         GO,
         GOROOT,
-        GAZELLE,
-        KAZEL,
         "@//:all-srcs",
         "@io_k8s_code_generator//cmd/client-gen",
         "@io_k8s_code_generator//cmd/conversion-gen",
@@ -129,58 +79,29 @@ sh_test(
     ],
 )
 
-sh_binary(
-    name = "update-crds",
-    srcs = ["update-crds.sh"],
-    args = [
-        "$(location %s)" % GO,
-        "$(location %s)" % CONTROLLER_GEN,
-    ],
-    data = [
-        GO,
-        CONTROLLER_GEN,
-    ],
-)
-
 sh_test(
     name = "verify-crds",
     srcs = ["verify-crds.sh"],
     args = [
-        "$(location :update-crds)",
         "$(location %s)" % GO,
         "$(location %s)" % CONTROLLER_GEN,
     ],
     data = [
-        ":update-crds",
         GO,
         CONTROLLER_GEN,
         "@//:all-srcs",
-    ],
-)
-
-# Gofmt rules
-
-sh_binary(
-    name = "update-gofmt",
-    srcs = ["update-gofmt.sh"],
-    args = [
-        "$(location %s)" % GOFMT,
-    ],
-    data = [
-        GOFMT,
     ],
 )
 
 sh_test(
     name = "verify-gofmt",
-    srcs = ["verify-gofmt.sh"],
+    srcs = ["//hack/bin:gofmt"],
     args = [
-        "$(location %s)" % GOFMT,
+        "-s",
+        "-d",
+        "./",
     ],
-    data = [
-        GOFMT,
-        "@//:all-srcs",
-    ],
+    data = ["@//:all-srcs"],
 )
 
 # update-csv generates bundle format for DEV only
@@ -207,12 +128,6 @@ sh_binary(
 sh_binary(
     name = "update-pkg-manifest",
     srcs = ["update-pkg-manifest.sh"],
-    args = [
-        "$(location %s)" % OPERATORSDK,
-        "$(location %s)" % KUSTOMIZE,
-        "$(location %s)" % OPM,
-        "$(location %s)" % FAQ,
-    ],
     data = [
         OPERATORSDK,
         KUSTOMIZE,
@@ -239,9 +154,6 @@ sh_binary(
 sh_binary(
     name = "opm-build-bundle",
     srcs = ["opm-build-bundle.sh"],
-    args = [
-        "$(location %s)" % OPM,
-    ],
     data = [
         OPM,
         "@//:all-srcs",

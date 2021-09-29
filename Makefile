@@ -21,6 +21,8 @@ ifneq ("$(wildcard .envrc)","")
 include .envrc
 endif
 
+SHELL:=/usr/bin/env bash -O globstar
+
 # values used in workspace-status.sh
 DOCKER_REGISTRY?=cockroachdb
 DOCKER_IMAGE_REPOSITORY?=cockroachdb-operator
@@ -42,22 +44,25 @@ EXTRA_KUBETEST2_PARAMS?=
 # Unit Testing Targets
 #
 .PHONY: test/all
-test/all:
-	bazel test //apis/... //pkg/... //hack/... --test_arg=--test.v
+test/all: | test/apis test/pkg test/verify
 
 .PHONY: test/apis
 test/apis:
-	bazel test //apis/...
+	bazel test //apis/... --test_arg=-test.v
 
 .PHONY: test/pkg
 test/pkg:
-	bazel test //pkg/...
+	bazel test //pkg/... --test_arg=-test.v
 
 # This runs the all of the verify scripts and
 # takes a bit of time.
 .PHONY: test/verify
 test/verify:
 	bazel test //hack/...
+
+.PHONY: test/lint
+test/lint:
+	bazel run //hack:verify-gofmt
 
 # Run only e2e stort tests
 # We can use this to only run one specific test
@@ -102,7 +107,7 @@ test/e2e/kind-%:
 	bazel build //hack/bin/...
 	PATH=${PATH}:bazel-bin/hack/bin kubetest2 kind --cluster-name=$(CLUSTER_NAME) \
 		--up --down -v 10 --test=exec -- make test/e2e/testrunner-kind-$(PACKAGE)
-	
+
 # This target is used by kubetest2-eks to run e2e tests.
 .PHONY: test/e2e/testrunner-eks
 test/e2e/testrunner-eks:
@@ -203,16 +208,46 @@ test/e2e/testrunner-openshift-packaging: test/openshift-package
 # Different dev targets
 #
 .PHONY: dev/build
-dev/build:
+dev/build: dev/syncdeps
 	bazel build //...
 
 .PHONY: dev/fmt
 dev/fmt:
-	bazel run //hack:update-gofmt
+	@echo +++ Running gofmt
+	@bazel run //hack/bin:gofmt -- -s -w $(shell pwd)
 
 .PHONY: dev/generate
-dev/generate:
-	bazel run //hack:update-codegen && bazel run //hack:update-crds
+dev/generate: | dev/update-codegen dev/update-crds
+
+.PHONY: dev/update-codegen
+dev/update-codegen:
+	@bazel run //hack:update-codegen
+
+# TODO: Be sure to update hack/verify-crds.sh if/when this changes
+.PHONY: dev/update-crds
+dev/update-crds:
+	@bazel run //hack/bin:controller-gen \
+		crd:trivialVersions=true \
+		rbac:roleName=cockroach-operator-role \
+		webhook \
+		paths=./... \
+		output:crd:artifacts:config=config/crd/bases
+	@hack/boilerplaterize hack/boilerplate/boilerplate.yaml.txt config/**/*.yaml
+
+.PHONY: dev/syncbazel
+dev/syncbazel:
+	@bazel run //:gazelle -- fix -external=external -go_naming_convention go_default_library
+	@bazel run //hack/bin:kazel -- --cfg-path hack/build/.kazelcfg.json
+
+.PHONY: dev/syncdeps
+dev/syncdeps:
+	@bazel run //:gazelle -- update-repos \
+		-from_file=go.mod \
+		-to_macro=hack/build/repos.bzl%_go_dependencies \
+		-build_file_generation=on \
+		-build_file_proto_mode=disable \
+		-prune
+	@make dev/syncbazel
 
 .PHONY: dev/up
 dev/up:
@@ -239,14 +274,6 @@ k8s/delete:
 		//manifests:install_operator.delete
 
 #
-# Dev target that updates bazel files and dependecies
-#
-.PHONY: dev/syncdeps
-dev/syncdeps:
-	bazel run //hack:update-deps && \
-	bazel run //hack:update-bazel
-
-#
 # Release targets
 #
 
@@ -268,12 +295,8 @@ release/gen-templates:
 # Generate various manifest files for OpenShift. We run this target after the
 # operator version is changed. The results are committed to Git.
 .PHONY: release/gen-files
-release/gen-files: release/gen-templates
-	$(MAKE) release/update-pkg-manifest && \
-	$(MAKE) release/opm-build-bundle && \
-	git add . && \
-	git commit -m "Bump version to $(VERSION)"
-
+release/gen-files: | release/gen-templates release/opm-build-bundle
+	git add . && git commit -m "Bump version to $(VERSION)"
 
 .PHONY: release/image
 release/image:
@@ -318,13 +341,13 @@ PKG_MAN_OPTS ?= "$(PKG_FROM_VERSION) $(PKG_CHANNELS) $(PKG_IS_DEFAULT_CHANNEL)"
 
 # Build the packagemanifests
 .PHONY: release/update-pkg-manifest
-release/update-pkg-manifest:dev/generate
-	bazel run  //hack:update-pkg-manifest  -- $(RH_BUNDLE_VERSION) $(RH_OPERATOR_IMAGE) $(PKG_MAN_OPTS) $(RH_COCKROACH_DATABASE_IMAGE)
+release/update-pkg-manifest: dev/generate
+	bazel run //hack:update-pkg-manifest -- $(RH_BUNDLE_VERSION) $(RH_OPERATOR_IMAGE) $(PKG_MAN_OPTS) $(RH_COCKROACH_DATABASE_IMAGE)
 
-#  Build the packagemanifests
+#  Build the OPM bundle
 .PHONY: release/opm-build-bundle
-release/opm-build-bundle:
-	bazel run  //hack:opm-build-bundle  -- $(RH_BUNDLE_VERSION) $(RH_OPERATOR_IMAGE) $(PKG_MAN_OPTS)
+release/opm-build-bundle: release/update-pkg-manifest
+	bazel run //hack:opm-build-bundle -- $(RH_BUNDLE_VERSION) $(RH_OPERATOR_IMAGE) $(PKG_MAN_OPTS)
 
 #
 # Release bundle image
@@ -357,7 +380,7 @@ release/bundle-image:
 #
 # See hack/openshift-test-packaging.sh for more information on running this target.
 .PHONY: test/openshift-package
-test/openshift-package: release/update-pkg-manifest release/image release/opm-build-bundle test/push-openshift-images
+test/openshift-package: release/opm-build-bundle release/image test/push-openshift-images
 	VERSION=$(VERSION) \
 	hack/cleanup-packaging.sh
 

@@ -18,6 +18,7 @@ package actor
 
 import (
 	"context"
+
 	"github.com/cockroachdb/cockroach-operator/pkg/condition"
 	"github.com/cockroachdb/cockroach-operator/pkg/features"
 	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
@@ -109,8 +110,8 @@ func (cd *clusterDirector) GetActorsToExecute(cluster *resource.Cluster) []Actor
 	featureDecommissionEnabled := utilfeature.DefaultMutableFeatureGate.Enabled(features.Decommission)
 	featureResizePVCEnabled := utilfeature.DefaultMutableFeatureGate.Enabled(features.ResizePVC)
 	featureClusterRestartEnabled := utilfeature.DefaultMutableFeatureGate.Enabled(features.ClusterRestart)
-	conditionInitializedTrue := condition.True(api.InitializedCondition, conditions)
-	conditionInitializedFalse := condition.False(api.InitializedCondition, conditions)
+	conditionInitializedTrue := condition.True(api.CrdbInitializedCondition, conditions)
+	conditionInitializedFalse := condition.False(api.CrdbInitializedCondition, conditions)
 	conditionVersionCheckedTrue := condition.True(api.CrdbVersionChecked, conditions)
 	conditionVersionCheckedFalse := condition.False(api.CrdbVersionChecked, conditions)
 

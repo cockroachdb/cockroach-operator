@@ -18,50 +18,60 @@ set -o nounset
 set -o errexit
 set -o pipefail
 
-if [[ -n "${TEST_WORKSPACE:-}" ]]; then # Running inside bazel
-  echo "Verifying generated CRD manifests are up-to-date..." >&2
-elif ! command -v bazel &>/dev/null; then
-  echo "Install bazel at https://bazel.build" >&2
-  exit 1
-else
-  (
-    set -o xtrace
-    bazel test --test_output=streamed //hack:verify-crds
-  )
-  exit 0
-fi
+# enable **/*.yaml
+shopt -s globstar
 
-tmpfiles=$TEST_TMPDIR/files
-
-(
-  mkdir -p "$tmpfiles"
-  rm -f bazel-*
-  cp -aL "." "$tmpfiles"
-  export BUILD_WORKSPACE_DIRECTORY=$tmpfiles
-  export HOME=$(realpath "$TEST_TMPDIR/home")
-  unset GOPATH
-  go=$(realpath "$2")
-  export PATH=$(dirname "$go"):$PATH
-  "$@"
-)
-
-(
-  # Remove the platform/binary for gazelle and kazel
-  controllergen=$(dirname "$3")
-  rm -rf {.,"$tmpfiles"}/{"controllergen"}
-)
-# Avoid diff -N so we handle empty files correctly
-echo "diffing"
-diff=$(diff -upr \
-  -x ".git" \
-  -x "bazel-*" \
-  -x "_output" \
-  "." "$tmpfiles" 2>/dev/null || true)
-
-if [[ -n "${diff}" ]]; then
-  echo "${diff}" >&2
-  echo >&2
-  echo "generated CRDs are out of date. Please run './hack/update-crds.sh'" >&2
+if [[ -z "${TEST_WORKSPACE:-}" ]]; then
+  echo 'Must be run with bazel via "bazel test //hack:verify-crds"' >&2
   exit 1
 fi
-echo "SUCCESS: generated CRDs up-to-date"
+
+FILES=(apis cmd config external go.mod go.sum hack pkg)
+
+echo "Verifying generated CRD manifests are up-to-date..." >&2
+
+create_working_dir() {
+  local dir="${TEST_TMPDIR}/files"
+  mkdir -p "${dir}"
+
+  # copy necessary files
+  cp -RL ${FILES[@]} "${dir}"
+
+  # copy config to config_
+  pushd "${dir}" >/dev/null
+  cp -RHL config config_
+}
+
+# TODO: Ideally we'd back able to share this with the makefile
+generate_crds() {
+  HOME="${TEST_TMPDIR}/home" "${1}" crd:trivialVersions=true \
+    rbac:roleName=cockroach-operator-role \
+    webhook \
+    paths=./... \
+    output:crd:artifacts:config=config/crd/bases
+
+  hack/boilerplaterize hack/boilerplate/boilerplate.yaml.txt config/**/*.yaml
+}
+
+run_diff() {
+  # Avoid diff -N so we handle empty files correctly
+  echo "diffing"
+  diff=$(diff -upr "config_" "config" 2>/dev/null || true)
+
+  if [[ -n "${diff}" ]]; then
+    echo "${diff}" >&2
+    echo >&2
+    echo "generated CRDs are out of date. Please run 'make dev/update-crds" >&2
+    exit 1
+  fi
+
+  echo "SUCCESS: generated CRDs up-to-date"
+}
+
+main() {
+  create_working_dir
+  generate_crds "${2}"
+  run_diff
+}
+
+main "$@"

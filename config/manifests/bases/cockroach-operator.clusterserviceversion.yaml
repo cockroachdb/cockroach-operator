@@ -23,65 +23,15 @@ metadata:
     createdAt: CREATED_AT_PLACEHOLDER
     description: CockroachDB Operator
     operators.operatorframework.io/builder: operator-sdk-v1.1.0
-    operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
+    operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: https://github.com/cockroachdb/cockroach-operator
     support: Cockroach Labs
-  name: cockroach-operator.vX.Y.Z
+  name: cockroach-operator.v0.0.0
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
-    - description: CrdbCluster is the CRD for the cockroachDB clusters API
-      displayName: CockroachDB Operator
-      kind: CrdbCluster
-      name: crdbclusters.crdb.cockroachlabs.com
-      specDescriptors:
-      - description: (Required) Database disk storage configuration
-        displayName: Data Store
-        path: dataStore
-      - description: 'SupportsAutoResize marks that a PVC will resize without restarting the entire cluster Default: false'
-        displayName: PVC Supports Auto Resizing
-        path: dataStore.supportsAutoResize
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
-      - description: (Required) Container image information
-        displayName: Cockroach Database Image
-        path: image
-      - description: Number of nodes (pods) in the cluster
-        displayName: Number of nodes
-        path: nodes
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:podCount
-      - description: (Optional) TLSEnabled determines if TLS is enabled for your CockroachDB Cluster
-        displayName: TLS Enabled
-        path: tlsEnabled
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
-      statusDescriptors:
-      - description: OperatorStatus represent the status of the operator(Failed, Starting, Running or Other)
-        displayName: OperatorStatus
-        path: clusterStatus
-      - description: List of conditions representing the current status of the cluster resource.
-        displayName: Cluster Conditions
-        path: conditions
-        x-descriptors:
-        - urn:alm:descriptor:io.kubernetes.conditions
-      - description: CrdbContainerImage is the container that will be installed
-        displayName: CrdbContainerImage
-        path: crdbcontainerimage
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:hidden
-      - displayName: Crdb Actions
-        path: operatorActions
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:hidden
-      - description: Database service version. Not populated and is just a placeholder currently.
-        displayName: Version
-        path: version
-        x-descriptors:
-        - urn:alm:descriptor:com.tectonic.ui:hidden
-      version: v1alpha1
     - description: CrdbCluster is the CRD for the cockroachDB clusters API
       displayName: CoachroachDB Operator
       kind: CrdbCluster
@@ -99,17 +49,87 @@ spec:
         path: nodes
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:podCount
-      - description: (Optional) TLSEnabled determines if TLS is enabled for your CockroachDB Cluster
+      - description: (Optional) TLSEnabled determines if TLS is enabled for your CockroachDB
+          Cluster
         displayName: TLS Enabled
         path: tlsEnabled
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
       statusDescriptors:
-      - description: List of conditions representing the current status of the cluster resource.
+      - description: List of conditions representing the current status of the cluster
+          resource.
         displayName: Cluster Conditions
         path: conditions
         x-descriptors:
         - urn:alm:descriptor:io.kubernetes.conditions
+      version: v1alpha1
+    - description: CrdbCluster is the CRD for the cockroachDB clusters API
+      displayName: CockroachDB Operator
+      kind: CrdbCluster
+      name: crdbclusters.crdb.cockroachlabs.com
+      specDescriptors:
+      - description: (Optional) Additional custom resource annotations that are added
+          to all resources. Changing `AdditionalAnnotations` field will result in
+          cockroachDB cluster restart.
+        displayName: Map of additional custom annotations
+        path: additionalAnnotations
+      - description: (Optional) Additional custom resource labels that are added to
+          all resources
+        displayName: Map of additional custom labels
+        path: additionalLabels
+      - description: Database disk storage configuration
+        displayName: Data Store
+        path: dataStore
+      - description: '(Optional) SupportsAutoResize marks that a PVC will resize without
+          restarting the entire cluster Default: false'
+        displayName: PVC Supports Auto Resizing
+        path: dataStore.supportsAutoResize
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+      - description: Container image information
+        displayName: Cockroach Database Image
+        path: image
+      - description: Number of nodes (pods) in the cluster
+        displayName: Number of nodes
+        path: nodes
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:podCount
+      - description: (Optional) TLSEnabled determines if TLS is enabled for your CockroachDB
+          Cluster
+        displayName: TLS Enabled
+        path: tlsEnabled
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+      - description: (Optional) Tolerations for scheduling pods onto some dedicated
+          nodes
+        displayName: Cockroach Database Tolerations
+        path: tolerations
+      statusDescriptors:
+      - description: OperatorStatus represent the status of the operator(Failed, Starting,
+          Running or Other)
+        displayName: OperatorStatus
+        path: clusterStatus
+      - description: List of conditions representing the current status of the cluster
+          resource.
+        displayName: Cluster Conditions
+        path: conditions
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes.conditions
+      - description: CrdbContainerImage is the container that will be installed
+        displayName: CrdbContainerImage
+        path: crdbcontainerimage
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - displayName: Crdb Actions
+        path: operatorActions
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: Database service version. Not populated and is just a placeholder
+          currently.
+        displayName: Version
+        path: version
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
       version: v1alpha1
   description: This operator launches and manages a 3+ node cluster of CockroachDB.
   displayName: CockroachDB Operator
