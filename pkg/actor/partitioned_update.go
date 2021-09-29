@@ -68,12 +68,6 @@ func (up *partitionedUpdate) Act(ctx context.Context, cluster *resource.Cluster)
 
 	log := up.log.WithValues("CrdbCluster", cluster.ObjectKey())
 	log.V(DEBUGLEVEL).Info("checking update opportunities, using a partitioned update")
-	//we are not running decommission logic if a restart must be done
-	restartType := cluster.GetAnnotationRestartType()
-	if restartType != "" {
-		log.V(DEBUGLEVEL).Info("Not running partial update cluster action because restart already runs")
-		return nil
-	}
 
 	stsName := cluster.StatefulSetName()
 

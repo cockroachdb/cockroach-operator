@@ -96,7 +96,7 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req reconcile.Request
 
 	cluster := resource.NewCluster(cr)
 	// on first run we need to save the status and exit to pass Openshift CI
-	// we added a state called Starting for field ClusterStatus to accomplish this
+	// we added actorToExecute state called Starting for field ClusterStatus to accomplish this
 	if cluster.Status().ClusterStatus == "" {
 		cluster.SetClusterStatusOnFirstReconcile()
 		if err := r.Client.Status().Update(ctx, cluster.Unwrap()); err != nil {
@@ -118,57 +118,59 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req reconcile.Request
 		}
 	}
 
+	actorToExecute := r.Director.GetActorToExecute(ctx, &cluster)
+	if actorToExecute == nil {
+		return noRequeue()
+	}
+
 	// Save context cancellation function for actors to call if needed
 	ctx = actor.ContextWithCancelFn(ctx, cancel)
 
-	// TODO: refactor this so that it's more like a state machine: determine what state we're in, and execute the actions
-	// necessary for that state.
-	actorsToExecute := r.Director.GetActorsToExecute(&cluster)
-	for _, a := range actorsToExecute {
-		log.Info(fmt.Sprintf("Running action with name: %s", a.GetActionType()))
-		if err := a.Act(ctx, &cluster); err != nil {
-			// Save the error on the Status for each action
-			log.Info("Error on action", "Action", a.GetActionType(), "err", err.Error())
-			cluster.SetActionFailed(a.GetActionType(), err.Error())
-			defer func(ctx context.Context, cluster *resource.Cluster) {
-				if err := r.Client.Status().Update(ctx, cluster.Unwrap()); err != nil {
-					log.Error(err, "failed to update cluster status")
-				}
-			}(ctx, &cluster)
-			// Short pause
-			if notReadyErr, ok := err.(actor.NotReadyErr); ok {
-				log.V(int(zapcore.DebugLevel)).Info("requeueing", "reason", notReadyErr.Error(), "Action", a.GetActionType())
-				return requeueAfter(5*time.Second, nil)
+	log.Info(fmt.Sprintf("Running action with name: %s", actorToExecute.GetActionType()))
+	if err := actorToExecute.Act(ctx, &cluster); err != nil {
+		// Save the error on the Status for each action
+		log.Info("Error on action", "Action", actorToExecute.GetActionType(), "err", err.Error())
+		cluster.SetActionFailed(actorToExecute.GetActionType(), err.Error())
+		defer func(ctx context.Context, cluster *resource.Cluster) {
+			if err := r.Client.Status().Update(ctx, cluster.Unwrap()); err != nil {
+				log.Error(err, "failed to update cluster status")
 			}
-
-			// Long pause
-			if cantRecoverErr, ok := err.(actor.PermanentErr); ok {
-				log.Error(cantRecoverErr, "can't proceed with reconcile", "Action", a.GetActionType())
-				return noRequeue()
-			}
-
-			// No requeue until the user makes changes
-			if validationError, ok := err.(actor.ValidationError); ok {
-				log.Error(validationError, "can't proceed with reconcile")
-				return noRequeue()
-			}
-
-			log.Error(err, "action failed")
-			return requeueIfError(err)
-		}
-		// reset errors on each run  if there was an error,
-		// this is to cover the not ready case
-		if cluster.Failed(a.GetActionType()) {
-			cluster.SetActionFinished(a.GetActionType())
+		}(ctx, &cluster)
+		// Short pause
+		if notReadyErr, ok := err.(actor.NotReadyErr); ok {
+			log.V(int(zapcore.DebugLevel)).Info("requeueing", "reason", notReadyErr.Error(), "Action", actorToExecute.GetActionType())
+			return requeueAfter(5*time.Second, nil)
 		}
 
-		// Stop processing and wait for Kubernetes scheduler to call us again as the actor
-		// modified a resource owned by the controller
-		if cancelled(ctx) {
-			log.V(int(zapcore.InfoLevel)).Info("request was interrupted")
+		// Long pause
+		if cantRecoverErr, ok := err.(actor.PermanentErr); ok {
+			log.Error(cantRecoverErr, "can't proceed with reconcile", "Action", actorToExecute.GetActionType())
 			return noRequeue()
 		}
+
+		// No requeue until the user makes changes
+		if validationError, ok := err.(actor.ValidationError); ok {
+			log.Error(validationError, "can't proceed with reconcile")
+			return noRequeue()
+		}
+
+		log.Error(err, "action failed")
+		return requeueIfError(err)
 	}
+	// reset errors on each run  if there was an error,
+	// this is to cover the not ready case
+	if cluster.Failed(actorToExecute.GetActionType()) {
+		cluster.SetActionFinished(actorToExecute.GetActionType())
+	}
+
+	// Stop processing and wait for Kubernetes scheduler to call us again as the actor
+	// modified actorToExecute resource owned by the controller
+	if cancelled(ctx) {
+		log.V(int(zapcore.InfoLevel)).Info("request was interrupted")
+		return noRequeue()
+	}
+
+	// TODO: think about everything after this. do we even need it
 
 	// Check if the resource has been updated while the controller worked on it
 	fresh, err := cluster.IsFresh(fetcher)
