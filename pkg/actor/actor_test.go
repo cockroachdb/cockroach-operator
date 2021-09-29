@@ -17,6 +17,7 @@ limitations under the License.
 package actor_test
 
 import (
+	"fmt"
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/actor"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
@@ -106,54 +107,65 @@ func TestClusterRestartFeatureGate(t *testing.T) {
 	require.False(t, containsAction(actors, api.ClusterRestartAction))
 }
 
-func actorsHaveTypes(actors []actor.Actor, actionTypes []api.ActionType) bool {
-	if len(actors) != len(actionTypes) {
-		return false
+func actorTypes(actors []actor.Actor) []api.ActionType {
+	types := make([]api.ActionType, 0, len(actors))
+	for _, a := range actors {
+		types = append(types, a.GetActionType())
 	}
-	for i, a := range actors {
-		if a.GetActionType() != actionTypes[i] {
-			return false
+	return types
+}
+
+func TestAllConditionCombinations(t *testing.T) {
+	cluster, director := createTestDirectorAndCluster(t)
+	utilfeature.DefaultMutableFeatureGate.Set("UseDecommission=true,CrdbVersionValidator=true,ResizePVC=true,ClusterRestart=true")
+
+	tests := []struct {
+		trueConditions []api.ClusterConditionType
+		expectedActors []api.ActionType
+	}{
+		{
+			trueConditions: []api.ClusterConditionType{},
+			expectedActors: []api.ActionType{api.VersionCheckerAction, api.RequestCertAction},
+		},
+		{
+			trueConditions: []api.ClusterConditionType{api.CrdbInitializedCondition},
+			expectedActors: []api.ActionType{api.DecommissionAction, api.VersionCheckerAction, api.RequestCertAction, api.ResizePVCAction},
+		},
+		{
+			trueConditions: []api.ClusterConditionType{api.CertificateGenerated},
+			expectedActors: []api.ActionType{api.VersionCheckerAction},
+		},
+		{
+			trueConditions: []api.ClusterConditionType{api.CrdbVersionChecked},
+			expectedActors: []api.ActionType{api.RequestCertAction, api.DeployAction, api.InitializeAction, api.ClusterRestartAction},
+		},
+		{
+			trueConditions: []api.ClusterConditionType{api.CrdbInitializedCondition, api.CertificateGenerated},
+			expectedActors: []api.ActionType{api.DecommissionAction, api.VersionCheckerAction, api.ResizePVCAction},
+		},
+		{
+			trueConditions: []api.ClusterConditionType{api.CrdbInitializedCondition, api.CrdbVersionChecked},
+			expectedActors: []api.ActionType{api.DecommissionAction, api.RequestCertAction, api.PartitionedUpdateAction, api.ResizePVCAction, api.DeployAction, api.ClusterRestartAction},
+		},
+		{
+			trueConditions: []api.ClusterConditionType{api.CertificateGenerated, api.CrdbVersionChecked},
+			expectedActors: []api.ActionType{api.DeployAction, api.InitializeAction, api.ClusterRestartAction},
+		},
+		{
+			trueConditions: []api.ClusterConditionType{api.CrdbInitializedCondition, api.CertificateGenerated, api.CrdbVersionChecked},
+			expectedActors: []api.ActionType{api.DecommissionAction, api.PartitionedUpdateAction, api.ResizePVCAction, api.DeployAction, api.ClusterRestartAction},
+		},
+	}
+
+	for _, test := range tests {
+		cluster.SetFalse(api.CrdbInitializedCondition)
+		cluster.SetFalse(api.CertificateGenerated)
+		cluster.SetFalse(api.CrdbVersionChecked)
+		for _, c := range test.trueConditions {
+			cluster.SetTrue(c)
 		}
+
+		actors := director.GetActorsToExecute(cluster)
+		require.Equal(t, test.expectedActors, actorTypes(actors), fmt.Sprintf("true conditions: %v", test.trueConditions))
 	}
-	return true
-}
-
-func TestTotallyUninitialized(t *testing.T) {
-	cluster, director := createTestDirectorAndCluster(t)
-
-	utilfeature.DefaultMutableFeatureGate.Set("UseDecommission=true,CrdbVersionValidator=true,ResizePVC=true,ClusterRestart=true")
-
-	actors := director.GetActorsToExecute(cluster)
-	require.True(t, actorsHaveTypes(actors, []api.ActionType{api.VersionCheckerAction, api.RequestCertAction}))
-}
-
-func TestVersionCheckedButNotInitialized(t *testing.T) {
-	cluster, director := createTestDirectorAndCluster(t)
-
-	utilfeature.DefaultMutableFeatureGate.Set("UseDecommission=true,CrdbVersionValidator=true,ResizePVC=true,ClusterRestart=true")
-	cluster.SetTrue(api.CrdbVersionChecked)
-
-	actors := director.GetActorsToExecute(cluster)
-	require.True(t, actorsHaveTypes(actors, []api.ActionType{api.RequestCertAction, api.DeployAction, api.InitializeAction, api.ClusterRestartAction}))
-}
-
-func TestInitializedButNotVersionChecked(t *testing.T) {
-	cluster, director := createTestDirectorAndCluster(t)
-
-	utilfeature.DefaultMutableFeatureGate.Set("UseDecommission=true,CrdbVersionValidator=true,ResizePVC=true,ClusterRestart=true")
-	cluster.SetTrue(api.CrdbInitializedCondition)
-
-	actors := director.GetActorsToExecute(cluster)
-	require.True(t, actorsHaveTypes(actors, []api.ActionType{api.DecommissionAction, api.VersionCheckerAction, api.ResizePVCAction}))
-}
-
-func TestVersionCheckedAndInitialized(t *testing.T) {
-	cluster, director := createTestDirectorAndCluster(t)
-
-	utilfeature.DefaultMutableFeatureGate.Set("UseDecommission=true,CrdbVersionValidator=true,ResizePVC=true,ClusterRestart=true")
-	cluster.SetTrue(api.CrdbInitializedCondition)
-	cluster.SetTrue(api.CrdbVersionChecked)
-
-	actors := director.GetActorsToExecute(cluster)
-	require.True(t, actorsHaveTypes(actors, []api.ActionType{api.DecommissionAction, api.PartitionedUpdateAction, api.ResizePVCAction, api.DeployAction, api.ClusterRestartAction}))
 }
