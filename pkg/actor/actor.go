@@ -175,6 +175,7 @@ func (cd *clusterDirector) GetActorsToExecute(cluster *resource.Cluster) []Actor
 	conditionInitializedFalse := condition.False(api.CrdbInitializedCondition, conditions)
 	conditionVersionCheckedTrue := condition.True(api.CrdbVersionChecked, conditions)
 	conditionVersionCheckedFalse := condition.False(api.CrdbVersionChecked, conditions)
+	conditionCertificateGeneratedTrue := condition.True(api.CertificateGenerated, conditions)
 
 	var actorsToExecute []Actor
 
@@ -186,9 +187,7 @@ func (cd *clusterDirector) GetActorsToExecute(cluster *resource.Cluster) []Actor
 		actorsToExecute = append(actorsToExecute, cd.actors[api.VersionCheckerAction])
 	}
 
-	// TODO (this todo was copy/pasted from the deprecated Handles func): this is not working am I doing this correctly?
-	// condition.True(api.CertificateGenerated, conds)
-	if conditionInitializedFalse {
+	if !conditionCertificateGeneratedTrue {
 		actorsToExecute = append(actorsToExecute, cd.actors[api.GenerateCertAction])
 	}
 
