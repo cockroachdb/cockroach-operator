@@ -117,37 +117,25 @@ func (cd *clusterDirector) GetActorToExecute(ctx context.Context, cluster *resou
 	conditionVersionCheckedFalse := condition.False(api.CrdbVersionChecked, conditions)
 	conditionCertificateGeneratedTrue := condition.True(api.CertificateGenerated, conditions)
 
-	// cluster restart
-	// decommission
-	// version checker
-	// generate cert
-	// partitioned update
-	// resize pvc
-	// deploy
-	// initialize
-
-	if featureClusterRestartEnabled {
-		if featureVersionValidatorEnabled && conditionVersionCheckedTrue && (conditionInitializedTrue || conditionInitializedFalse) {
-			restartType := cluster.GetAnnotationRestartType()
-			if restartType != "" {
-				return cd.actors[api.ClusterRestartAction], nil
-			}
+	if featureClusterRestartEnabled && featureVersionValidatorEnabled && conditionVersionCheckedTrue && (conditionInitializedTrue || conditionInitializedFalse) {
+		restartType := cluster.GetAnnotationRestartType()
+		if restartType != "" {
+			return cd.actors[api.ClusterRestartAction], nil
 		}
 	}
 
+	stsName := cluster.StatefulSetName()
+	key := kubetypes.NamespacedName{
+		Namespace: cluster.Namespace(),
+		Name:      stsName,
+	}
+	ss := &appsv1.StatefulSet{}
+	err := kube.IgnoreNotFound(cd.client.Get(ctx, key, ss))
+	if err != nil {
+		return nil, err
+	}
+
 	if featureDecommissionEnabled && conditionInitializedTrue {
-		stsName := cluster.StatefulSetName()
-
-		key := kubetypes.NamespacedName{
-			Namespace: cluster.Namespace(),
-			Name:      stsName,
-		}
-		ss := &appsv1.StatefulSet{}
-		err := kube.IgnoreNotFound(cd.client.Get(ctx, key, ss))
-		if err != nil {
-			return nil, err
-		}
-
 		status := &ss.Status
 		if status.CurrentReplicas == status.Replicas && status.CurrentReplicas > cluster.Spec().Nodes {
 			return cd.actors[api.DecommissionAction], nil
@@ -162,7 +150,67 @@ func (cd *clusterDirector) GetActorToExecute(ctx context.Context, cluster *resou
 		return cd.actors[api.GenerateCertAction], nil
 	}
 
+	if (featureVersionValidatorEnabled && conditionVersionCheckedTrue && conditionInitializedTrue) ||
+		(!featureVersionValidatorEnabled && conditionInitializedTrue) {
+		versionWanted := cluster.GetVersionAnnotation()
+		currentVersion := ss.Annotations[resource.CrdbVersionAnnotation]
+		if currentVersion != versionWanted && currentVersion != "" && versionWanted != "" {
+			return cd.actors[api.PartitionedUpdateAction], nil
+		}
+	}
+
+	if featureResizePVCEnabled && conditionInitializedTrue {
+		if cluster.Spec().DataStore.VolumeClaim != nil && len(ss.Spec.VolumeClaimTemplates) != 0 {
+			stsStorageSizeDeployed := ss.Spec.VolumeClaimTemplates[0].Spec.Resources.Requests.Storage()
+			stsStorageSizeSet := cluster.Spec().DataStore.VolumeClaim.PersistentVolumeClaimSpec.Resources.Requests.Storage()
+			if !stsStorageSizeDeployed.Equal(stsStorageSizeSet.DeepCopy()) {
+				return cd.actors[api.ResizePVCAction], nil
+			}
+		}
+	}
+
+	if (featureVersionValidatorEnabled && conditionVersionCheckedTrue && (conditionInitializedTrue || conditionInitializedFalse)) ||
+		(!featureVersionValidatorEnabled && (conditionInitializedTrue || conditionInitializedFalse)) {
+		needsDeploy, err := cd.needsDeploy(ctx, cluster)
+		if err != nil {
+			return nil, err
+		} else if needsDeploy {
+			return cd.actors[api.DeployAction], nil
+		}
+	}
+
+	if (featureVersionValidatorEnabled && conditionVersionCheckedTrue && conditionInitializedFalse) ||
+		(!featureVersionValidatorEnabled && conditionInitializedFalse) {
+		return cd.actors[api.InitializeAction], nil
+	}
+
 	return nil, nil
+}
+
+func (cd *clusterDirector) needsDeploy(ctx context.Context, cluster *resource.Cluster) (bool, error) {
+	r := resource.NewManagedKubeResource(ctx, cd.client, cluster, kube.AnnotatingPersister)
+
+	labelSelector := r.Labels.Selector(cluster.Spec().AdditionalLabels)
+	builders := []resource.Builder{
+		resource.DiscoveryServiceBuilder{Cluster: cluster, Selector: labelSelector},
+		resource.PublicServiceBuilder{Cluster: cluster, Selector: labelSelector},
+		resource.StatefulSetBuilder{Cluster: cluster, Selector: labelSelector},
+		resource.PdbBuilder{Cluster: cluster, Selector: labelSelector},
+	}
+
+	for _, b := range builders {
+		needsDeploy, err := resource.Reconciler{
+			ManagedResource: r,
+			Builder:         b,
+		}.NeedsBuild()
+
+		if err != nil {
+			return false, err
+		} else if needsDeploy {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 func (cd *clusterDirector) GetActorsToExecute(cluster *resource.Cluster) []Actor {

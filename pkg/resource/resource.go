@@ -18,7 +18,6 @@ package resource
 
 import (
 	"context"
-
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
 	"github.com/cockroachdb/cockroach-operator/pkg/labels"
 	"github.com/cockroachdb/errors"
@@ -112,6 +111,28 @@ func (r Reconciler) Reconcile() (upserted bool, err error) {
 
 		return nil
 	})
+}
+
+func (r Reconciler) NeedsBuild() (bool, error) {
+	current := r.Placeholder()
+	err := r.Fetch(current)
+
+	if err != nil {
+		if kube.IsNotFound(err) {
+			return true, nil
+		}
+		return false, err
+	}
+
+	new := r.Placeholder()
+	r.Build(new)
+
+	changed, err := kube.ObjectChanged(current, new)
+	if err != nil {
+		return false, err
+	}
+
+	return changed, nil
 }
 
 func (r Reconciler) reconcileLabels(current, desired runtime.Object) error {
