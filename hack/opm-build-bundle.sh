@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-
 # Copyright 2021 The Cockroach Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,46 +12,50 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+set -euo pipefail
+shopt -s globstar
 
-set -o errexit
-set -o nounset
-set -o pipefail
+################################################################################
+# This script generates an OPM bundle for distribution to OpenShift.
+#
+# It generates an overlay for creating the bundle image consisting of the
+# manifests and crds for the current version.
+################################################################################
 
-if [[ -n "${BUILD_WORKSPACE_DIRECTORY:-}" ]]; then # Running inside bazel
-  echo "Running opm to cretae the bundle.." >&2
-elif ! command -v bazel &>/dev/null; then
-  echo "Install bazel at https://bazel.build" >&2
+if [[ -z "${BUILD_WORKSPACE_DIRECTORY:-}" ]]; then
+  echo 'Must be run via "make release/opm-build-bundle"' >&2
   exit 1
-else
-  (
-    set -o xtrace
-    bazel run //hack:opm-build-bundle
-  )
-  exit 0
 fi
-opm=$(realpath "$1")
-export PATH=$(dirname "$opm"):$PATH
-# This script should be run via `bazel //hack:opm-build-bundle`
-# TO DO: this will be merged in one script that will release the OpenShift bundle 
-# This script validates the bundle in the OpenShift format
-REPO_ROOT=${BUILD_WORKSPACE_DIRECTORY}
-cd "${REPO_ROOT}"
-echo ${REPO_ROOT}
-echo "+++ Running opm to create bundle"
-VERSION="$2"
-echo "VERSION:$VERSION"
-IMG="$3"
-echo $IMG
-PKG_MAN_OPTS="$4"
-echo "PKG_MAN_OPTS: $PKG_MAN_OPTS"
-DEPLOY_PATH="deploy/certified-metadata-bundle/cockroach-operator"
-DEPLOY_CERTIFICATION_PATH="deploy/certified-metadata-bundle"
-cd ${DEPLOY_PATH} &&  "$opm" alpha bundle generate -d ./${VERSION}/ -u ./${VERSION}/ -c beta,stable -e stable
-sed "s/VERSION/${VERSION}/g" ../bundle.Dockerfile > ./bundle-${VERSION}.Dockerfile
-cp ./bundle-${VERSION}.Dockerfile ./bundle.Dockerfile
-# Move to latest folder for release -> I need a fixed folder name for the docker image that runs from bazel
-rm -rf ./latest/*/*.yaml
-rm -rf ./latest/*.yaml
-cp -R ./${VERSION}/manifests/*.yaml ./latest/manifests
-cp -R ./${VERSION}/manifests/*.yaml ./latest
-cp -R ./${VERSION}/metadata/*.yaml ./latest/metadata
+
+export PATH="$(pwd)/hack/bin:${PATH}"
+
+main() {
+  local version="${1}"
+  local image="${2}"
+  local package_opts="${3}"
+  local cert_path="deploy/certified-metadata-bundle"
+  local deploy_path="${cert_path}/cockroach-operator"
+
+  echo "+++ Running opm to create bundle"
+  echo "VERSION=${version}"
+
+	mkdir -p "${deploy_path}"
+  cd "${BUILD_WORKSPACE_DIRECTORY}/${deploy_path}"
+  generate_bundle "${version}"
+  copy_files "${version}"
+}
+
+generate_bundle() {
+  opm alpha bundle generate -d "./${1}/" -u "./${1}/" -c beta,stable -e stable
+  sed "s/VERSION/${1}/g" ../bundle.Dockerfile > ./bundle-${1}.Dockerfile
+}
+
+copy_files() {
+  cp ./bundle-${1}.Dockerfile ./bundle.Dockerfile
+	rm latest/**/*.yaml
+  cp -R ./${1}/manifests/*.yaml ./latest/manifests
+  cp -R ./${1}/manifests/*.yaml ./latest
+  cp -R ./${1}/metadata/*.yaml ./latest/metadata
+}
+
+main "$@"
