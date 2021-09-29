@@ -111,6 +111,8 @@ func (rc *generateCert) Act(ctx context.Context, cluster *resource.Cluster, log 
 		return errors.Wrap(err, msg)
 	}
 
+	// Write the cert expiration annotation to the object. This is an annotation, which is NOT on the CrdbClusterStatus
+	// object, so we need to call rc.client.Update(ctx, crdbobj).
 	fetcher := resource.NewKubeFetcher(ctx, cluster.Namespace(), rc.client)
 	err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		newcr := resource.ClusterPlaceholder(cluster.Name())
@@ -137,6 +139,8 @@ func (rc *generateCert) Act(ctx context.Context, cluster *resource.Cluster, log 
 		return errors.Wrap(err, msg)
 	}
 
+	// Write the certificate generated condition to the object. This condition IS on the CrdbClusterStatus object,
+	// so we need to call rc.client.Status().Update(ctx, crdbobj).
 	err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		newcr := resource.ClusterPlaceholder(cluster.Name())
 		if err := fetcher.Fetch(newcr); err != nil {
