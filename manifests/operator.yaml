@@ -273,7 +273,7 @@ spec:
       serviceAccountName: cockroach-operator-sa
       containers:
         - name: cockroach-operator
-          image: cockroachdb/cockroach-operator:v2.1.0
+          image: cockroachdb/cockroach-operator:v2.2.0-beta.1
           imagePullPolicy: IfNotPresent
           # new alpha features are disabled via feature gates
           # uncomment the feature-gates argument to enable the feature
