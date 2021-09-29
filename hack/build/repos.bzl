@@ -2195,8 +2195,8 @@ def _go_dependencies():
         build_file_generation = "on",
         build_file_proto_mode = "disable",
         importpath = "github.com/google/uuid",
-        sum = "h1:0ecGp3skIrHWPNGPJDaBIghfA6Sp7Ruo2Io8eLKzWm0=",
-        version = "v1.1.4",
+        sum = "h1:qJYtXnJRWmpe7m/3XlyhrsLrEURqHRM2kxzoxXqyUDs=",
+        version = "v1.2.0",
     )
     go_repository(
         name = "com_github_google_wire",
@@ -3134,6 +3134,15 @@ def _go_dependencies():
         sum = "h1:VNzHMVCBNG1j0fh3OrsFRkVUwStdDArbgBWoPAffktY=",
         version = "v1.1.0",
     )
+    go_repository(
+        name = "com_github_lithammer_shortuuid_v3",
+        build_file_generation = "on",
+        build_file_proto_mode = "disable",
+        importpath = "github.com/lithammer/shortuuid/v3",
+        sum = "h1:trX0KTHy4Pbwo/6ia8fscyHoGA+mf1jWbPJVuvyJQQ8=",
+        version = "v3.0.7",
+    )
+
     go_repository(
         name = "com_github_logrusorgru_aurora",
         build_file_generation = "on",

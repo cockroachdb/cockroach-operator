@@ -25,6 +25,7 @@ import (
 	"github.com/cockroachdb/cockroach-operator/pkg/actor"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	"github.com/go-logr/logr"
+	"github.com/lithammer/shortuuid/v3"
 	"go.uber.org/zap/zapcore"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -83,7 +84,7 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req reconcile.Request
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Hour)
 	defer cancel()
 
-	log := r.Log.WithValues("CrdbCluster", req.NamespacedName)
+	log := r.Log.WithValues("CrdbCluster", req.NamespacedName, "ReconcileId", shortuuid.New())
 	log.V(int(zapcore.InfoLevel)).Info("reconciling CockroachDB cluster")
 
 	fetcher := resource.NewKubeFetcher(ctx, req.Namespace, r.Client)
@@ -126,7 +127,7 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req reconcile.Request
 	actorsToExecute := r.Director.GetActorsToExecute(&cluster)
 	for _, a := range actorsToExecute {
 		log.Info(fmt.Sprintf("Running action with name: %s", a.GetActionType()))
-		if err := a.Act(ctx, &cluster); err != nil {
+		if err := a.Act(ctx, &cluster, log); err != nil {
 			// Save the error on the Status for each action
 			log.Info("Error on action", "Action", a.GetActionType(), "err", err.Error())
 			cluster.SetActionFailed(a.GetActionType(), err.Error())

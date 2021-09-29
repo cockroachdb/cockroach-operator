@@ -18,6 +18,7 @@ package actor
 
 import (
 	"context"
+	"github.com/go-logr/logr"
 
 	"github.com/cockroachdb/cockroach-operator/pkg/condition"
 	"github.com/cockroachdb/cockroach-operator/pkg/features"
@@ -26,12 +27,10 @@ import (
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
-	"github.com/go-logr/logr"
 	"go.uber.org/zap/zapcore"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 // Different logging levels
@@ -76,7 +75,7 @@ func (e ValidationError) Error() string {
 
 // Actor is one action against the cluster if the cluster resource state can be handled
 type Actor interface {
-	Act(context.Context, *resource.Cluster) error
+	Act(context.Context, *resource.Cluster, logr.Logger) error
 	GetActionType() api.ActionType
 }
 
@@ -161,12 +160,8 @@ func (cd *clusterDirector) GetActorsToExecute(cluster *resource.Cluster) []Actor
 	return actorsToExecute
 }
 
-//Log var
-var Log = logf.Log.WithName("action")
-
 func newAction(atype string, scheme *runtime.Scheme, cl client.Client) action {
 	return action{
-		log:    Log.WithValues("action", atype),
 		client: cl,
 		scheme: scheme,
 	}
@@ -174,7 +169,6 @@ func newAction(atype string, scheme *runtime.Scheme, cl client.Client) action {
 
 // action is the base set of common parameters required by other actions
 type action struct {
-	log    logr.Logger
 	client client.Client
 	scheme *runtime.Scheme
 }

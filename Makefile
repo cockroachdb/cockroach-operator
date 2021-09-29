@@ -91,7 +91,7 @@ test/e2e/testrunner-kind-%: PACKAGE=$*
 test/e2e/testrunner-kind-%:
 	bazel-bin/hack/bin/kind export kubeconfig --name $(CLUSTER_NAME)
 	bazel run //hack/k8s:k8s -- -type kind
-	bazel test --stamp //e2e/$(PACKAGE)/... --test_arg=-test.parallel=8 --test_arg=parallel=true
+	bazel test --stamp //e2e/$(PACKAGE)/... --test_arg=-test.v --test_arg=-test.parallel=8 --test_arg=parallel=true
 
 # Use this target to run e2e tests using a kind k8s cluster.
 # This target uses kind to start a k8s cluster  and runs the e2e tests

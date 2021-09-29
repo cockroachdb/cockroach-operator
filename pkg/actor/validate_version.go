@@ -62,8 +62,7 @@ func (v *versionChecker) GetActionType() api.ActionType {
 	return api.VersionCheckerAction
 }
 
-func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) error {
-	log := v.log.WithValues("CrdbCluster", cluster.ObjectKey())
+func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster, log logr.Logger) error {
 	log.V(DEBUGLEVEL).Info("starting to check the crdb version of the container provided")
 
 	r := resource.NewManagedKubeResource(ctx, v.client, cluster, kube.AnnotatingPersister)
@@ -119,7 +118,7 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 
 	if changed {
 		log.V(int(zapcore.DebugLevel)).Info("created/updated job, stopping request processing")
-		CancelLoop(ctx)
+		CancelLoop(ctx, log)
 		return nil
 	}
 
@@ -182,7 +181,7 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 
 	// check if the job is completed or failed before EXEC
 	if finished, _ := isJobCompletedOrFailed(job); !finished {
-		if err := WaitUntilJobPodIsRunning(ctx, clientset, job, v.log); err != nil {
+		if err := WaitUntilJobPodIsRunning(ctx, clientset, job, log); err != nil {
 			// if after 2 minutes the job pod is not ready and container status is ImagePullBackoff
 			// We need to stop requeueing until further changes on the CR
 			image := cluster.GetCockroachDBImageName()
@@ -324,7 +323,7 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 		return err
 	}
 	log.V(int(zapcore.DebugLevel)).Info("completed version checker", "calVersion", calVersion, "containerImage", containerImage)
-	CancelLoop(ctx)
+	CancelLoop(ctx, log)
 	return nil
 }
 

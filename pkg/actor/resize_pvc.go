@@ -19,6 +19,7 @@ package actor
 import (
 	"context"
 	"fmt"
+	"github.com/go-logr/logr"
 	"time"
 
 	"github.com/cenkalti/backoff"
@@ -68,9 +69,7 @@ func (rp *resizePVC) GetActionType() api.ActionType {
 }
 
 // Act in this implementation resizes PVC volumes of a CR sts.
-func (rp *resizePVC) Act(ctx context.Context, cluster *resource.Cluster) error {
-	log := rp.log.WithValues("CrdbCluster", cluster.ObjectKey())
-
+func (rp *resizePVC) Act(ctx context.Context, cluster *resource.Cluster, log logr.Logger) error {
 	// If we do not have a volume claim we do not have PVCs
 	if cluster.Spec().DataStore.VolumeClaim == nil {
 		log.Info("Skipping PVC resize as VolumeClaim does not exist")
@@ -122,7 +121,7 @@ func (rp *resizePVC) Act(ctx context.Context, cluster *resource.Cluster) error {
 	log.Info("Starting PVC resize")
 
 	// Find all of the PVCs and resize them
-	if err := rp.findAndResizePVC(ctx, statefulSet, cluster, clientset); err != nil {
+	if err := rp.findAndResizePVC(ctx, statefulSet, cluster, clientset, log); err != nil {
 		return errors.Wrapf(err, "updating PVCs for statefulset %s.%s", cluster.Namespace(), cluster.StatefulSetName())
 	}
 
@@ -131,7 +130,7 @@ func (rp *resizePVC) Act(ctx context.Context, cluster *resource.Cluster) error {
 	// Update the STS with the correct volume size, in case more pods are created
 	// We will create a copy and update the copy, and then delete the original without
 	// deleting the Pods.  The new sts is then used to create a new statefulset.
-	if err := rp.updateSts(ctx, statefulSet, cluster); err != nil {
+	if err := rp.updateSts(ctx, statefulSet, cluster, log); err != nil {
 		return errors.Wrapf(err, "updating statefulset %s.%s", cluster.Namespace(), cluster.StatefulSetName())
 	}
 
@@ -150,7 +149,7 @@ func (rp *resizePVC) Act(ctx context.Context, cluster *resource.Cluster) error {
 		}*/
 
 	log.Info("PVC resize completed")
-	CancelLoop(ctx)
+	CancelLoop(ctx, log)
 
 	return nil
 }
@@ -158,7 +157,7 @@ func (rp *resizePVC) Act(ctx context.Context, cluster *resource.Cluster) error {
 // updateSts updates the size of an STS' VolumeClaimTemplate to match the new size in the CR.
 // In order to update the volume claim template we have to delete the STS without cascading and then
 // create the sts.
-func (rp *resizePVC) updateSts(ctx context.Context, sts *appsv1.StatefulSet, cluster *resource.Cluster) error {
+func (rp *resizePVC) updateSts(ctx context.Context, sts *appsv1.StatefulSet, cluster *resource.Cluster, log logr.Logger) error {
 
 	// delete the original sts, but do not delete the Pods
 	orphan := metav1.DeletePropagationOrphan
@@ -167,15 +166,14 @@ func (rp *resizePVC) updateSts(ctx context.Context, sts *appsv1.StatefulSet, clu
 	}
 
 	f := func() error {
-		return rp.recreateSTS(ctx, cluster)
+		return rp.recreateSTS(ctx, cluster, log)
 	}
 
 	b := backoffFactory(5 * time.Minute)
 	return backoff.Retry(f, backoff.WithContext(b, ctx))
 }
 
-func (rp *resizePVC) recreateSTS(ctx context.Context, cluster *resource.Cluster) error {
-	log := rp.log.WithValues("CrdbCluster", cluster.ObjectKey())
+func (rp *resizePVC) recreateSTS(ctx context.Context, cluster *resource.Cluster, log logr.Logger) error {
 	// Use same StatefulSetBuilder that we run in Deploy to
 	// rebuild and save the StatefulSet with the new PVC size
 	r := resource.NewManagedKubeResource(ctx, rp.client, cluster, kube.AnnotatingPersister)
@@ -198,7 +196,7 @@ func (rp *resizePVC) recreateSTS(ctx context.Context, cluster *resource.Cluster)
 // findAndResizePVC finds all active PVCs and resizes them to the new size contained in the cluster
 // definition.
 func (rp *resizePVC) findAndResizePVC(ctx context.Context, sts *appsv1.StatefulSet, cluster *resource.Cluster,
-	clientset *kubernetes.Clientset) error {
+	clientset *kubernetes.Clientset, log logr.Logger) error {
 	// K8s doesn't provide a way to tell if a PVC or PV is currently in use by
 	// a pod. However, it is safe to assume that any PVCs with an ordinal great
 	// than or equal to the sts' Replicas is not in use. As only pods with with
@@ -206,7 +204,6 @@ func (rp *resizePVC) findAndResizePVC(ctx context.Context, sts *appsv1.StatefulS
 	// Replicas is in use. To detect this, we build a map of PVCs that we
 	// consider to be in use and skip and PVCs that it contains
 	// the name of.
-	log := rp.log.WithValues("CrdbCluster", cluster.ObjectKey())
 	log.Info("starting finding and resizing all PVCs")
 	prefixes := make([]string, len(sts.Spec.VolumeClaimTemplates))
 	pvcsToKeep := make(map[string]bool, int(*sts.Spec.Replicas)*len(sts.Spec.VolumeClaimTemplates))

@@ -19,6 +19,7 @@ package actor
 import (
 	"context"
 	"errors"
+	"github.com/go-logr/logr"
 )
 
 type cancelFuncKey struct{}
@@ -28,12 +29,12 @@ func ContextWithCancelFn(ctx context.Context, fn context.CancelFunc) context.Con
 	return context.WithValue(ctx, cancelFuncKey{}, fn)
 }
 
-func getCancelFn(ctx context.Context) context.CancelFunc {
+func getCancelFn(ctx context.Context, logger logr.Logger) context.CancelFunc {
 	f, ok := ctx.Value(cancelFuncKey{}).(context.CancelFunc)
 
 	if f == nil || !ok {
 		return func() {
-			Log.Error(errors.New("missing parent cancel function in context"), "")
+			logger.Error(errors.New("missing parent cancel function in context"), "")
 		}
 	}
 
@@ -41,6 +42,6 @@ func getCancelFn(ctx context.Context) context.CancelFunc {
 }
 
 //CancelLoop func
-func CancelLoop(ctx context.Context) {
-	getCancelFn(ctx)()
+func CancelLoop(ctx context.Context, logger logr.Logger) {
+	getCancelFn(ctx, logger)()
 }

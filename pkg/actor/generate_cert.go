@@ -70,10 +70,7 @@ func (rc *generateCert) GetActionType() api.ActionType {
 
 // Act func generates the various certificates required and then stores
 // the certificates in secrets.
-func (rc *generateCert) Act(ctx context.Context, cluster *resource.Cluster) error {
-
-	log := rc.log.WithValues("CrdbCluster", cluster.ObjectKey())
-
+func (rc *generateCert) Act(ctx context.Context, cluster *resource.Cluster, log logr.Logger) error {
 	if !cluster.Spec().TLSEnabled || cluster.Spec().NodeTLSSecret != "" {
 		log.V(DEBUGLEVEL).Info("Skipping TLS cert generation", "enabled", cluster.Spec().TLSEnabled, "secret", cluster.Spec().NodeTLSSecret)
 		return nil

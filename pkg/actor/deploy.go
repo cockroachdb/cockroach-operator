@@ -18,11 +18,11 @@ package actor
 
 import (
 	"context"
-
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	"github.com/cockroachdb/errors"
+	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -50,8 +50,7 @@ func (d deploy) GetActionType() api.ActionType {
 	return api.DeployAction
 }
 
-func (d deploy) Act(ctx context.Context, cluster *resource.Cluster) error {
-	log := d.log.WithValues("CrdbCluster", cluster.ObjectKey())
+func (d deploy) Act(ctx context.Context, cluster *resource.Cluster, log logr.Logger) error {
 	log.V(DEBUGLEVEL).Info("reconciling resources on deploy action")
 
 	owner := cluster.Unwrap()
@@ -86,7 +85,7 @@ func (d deploy) Act(ctx context.Context, cluster *resource.Cluster) error {
 
 		if changed {
 			log.Info("created/updated a resource, stopping request processing", "resource", b.ResourceName())
-			CancelLoop(ctx)
+			CancelLoop(ctx, log)
 			return nil
 		}
 	}

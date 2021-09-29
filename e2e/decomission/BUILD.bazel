@@ -5,7 +5,6 @@ go_test(
     size = "enormous",
     srcs = ["decomission_test.go"],
     deps = [
-        "//pkg/actor:go_default_library",
         "//pkg/controller:go_default_library",
         "//pkg/testutil:go_default_library",
         "//pkg/testutil/env:go_default_library",
