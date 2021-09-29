@@ -11,7 +11,7 @@ metadata:
             "name": "crdb-tls-example"
           },
           "spec": {
-            "cockroachDBVersion": "v21.1.7",
+            "cockroachDBVersion": "v21.1.9",
             "dataStore": {
               "pvc": {
                 "spec": {
@@ -35,14 +35,14 @@ metadata:
     capabilities: Full Lifecycle
     categories: Database
     certified: "true"
-    containerImage: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v2.1.0
-    createdAt: "2021-08-27T10:38:01Z"
+    containerImage: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v2.2.0-beta.1
+    createdAt: "2021-09-29T12:16:07Z"
     description: CockroachDB Operator
-    operators.operatorframework.io/builder: operator-sdk-v1.1.0
-    operators.operatorframework.io/project_layout: go.kubebuilder.io/v2
+    operators.operatorframework.io/builder: operator-sdk-v1.11.0+git
+    operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: https://github.com/cockroachdb/cockroach-operator
     support: Cockroach Labs
-  name: cockroach-operator.v2.1.0
+  name: cockroach-operator.v2.2.0-beta.1
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -53,16 +53,25 @@ spec:
       kind: CrdbCluster
       name: crdbclusters.crdb.cockroachlabs.com
       specDescriptors:
-      - description: (Required) Database disk storage configuration
+      - description: (Optional) Additional custom resource annotations that are added
+          to all resources. Changing `AdditionalAnnotations` field will result in
+          cockroachDB cluster restart.
+        displayName: Map of additional custom annotations
+        path: additionalAnnotations
+      - description: (Optional) Additional custom resource labels that are added to
+          all resources
+        displayName: Map of additional custom labels
+        path: additionalLabels
+      - description: Database disk storage configuration
         displayName: Data Store
         path: dataStore
-      - description: 'SupportsAutoResize marks that a PVC will resize without restarting
-          the entire cluster Default: false'
+      - description: '(Optional) SupportsAutoResize marks that a PVC will resize without
+          restarting the entire cluster Default: false'
         displayName: PVC Supports Auto Resizing
         path: dataStore.supportsAutoResize
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
-      - description: (Required) Container image information
+      - description: Container image information
         displayName: Cockroach Database Image
         path: image
       - description: Number of nodes (pods) in the cluster
@@ -76,6 +85,10 @@ spec:
         path: tlsEnabled
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+      - description: (Optional) Tolerations for scheduling pods onto some dedicated
+          nodes
+        displayName: Cockroach Database Tolerations
+        path: tolerations
       statusDescriptors:
       - description: OperatorStatus represent the status of the operator(Failed, Starting,
           Running or Other)
@@ -327,6 +340,8 @@ spec:
                   value: registry.connect.redhat.com/cockroachdb/cockroach:v20.2.14
                 - name: RELATED_IMAGE_COCKROACH_v20_2_15
                   value: registry.connect.redhat.com/cockroachdb/cockroach:v20.2.15
+                - name: RELATED_IMAGE_COCKROACH_v20_2_16
+                  value: registry.connect.redhat.com/cockroachdb/cockroach:v20.2.16
                 - name: RELATED_IMAGE_COCKROACH_v21_1_0
                   value: registry.connect.redhat.com/cockroachdb/cockroach:v21.1.0
                 - name: RELATED_IMAGE_COCKROACH_v21_1_1
@@ -343,6 +358,8 @@ spec:
                   value: registry.connect.redhat.com/cockroachdb/cockroach:v21.1.6
                 - name: RELATED_IMAGE_COCKROACH_v21_1_7
                   value: registry.connect.redhat.com/cockroachdb/cockroach:v21.1.7
+                - name: RELATED_IMAGE_COCKROACH_v21_1_9
+                  value: registry.connect.redhat.com/cockroachdb/cockroach:v21.1.9
                 - name: WATCH_NAMESPACE
                   valueFrom:
                     fieldRef:
@@ -353,7 +370,7 @@ spec:
                       fieldPath: metadata.name
                 - name: OPERATOR_NAME
                   value: cockroachdb
-                image: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v2.1.0
+                image: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v2.2.0-beta.1
                 imagePullPolicy: IfNotPresent
                 name: cockroach-operator
                 resources:
@@ -396,4 +413,47 @@ spec:
   maturity: stable
   provider:
     name: Cockroach Labs
-  version: 2.1.0
+  version: 2.2.0-beta.1
+  webhookdefinitions:
+  - admissionReviewVersions:
+    - v1
+    - v1beta1
+    containerPort: 443
+    deploymentName: cockroach-operator
+    failurePolicy: Fail
+    generateName: mcrdbcluster.kb.io
+    rules:
+    - apiGroups:
+      - crdb.cockroachlabs.com
+      apiVersions:
+      - v1alpha1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - crdbclusters
+    sideEffects: None
+    targetPort: 9443
+    type: MutatingAdmissionWebhook
+    webhookPath: /mutate-crdb-cockroachlabs-com-v1alpha1-crdbcluster
+  - admissionReviewVersions:
+    - v1
+    - v1beta1
+    containerPort: 443
+    deploymentName: cockroach-operator
+    failurePolicy: Fail
+    generateName: vcrdbcluster.kb.io
+    rules:
+    - apiGroups:
+      - crdb.cockroachlabs.com
+      apiVersions:
+      - v1alpha1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - crdbclusters
+    sideEffects: None
+    targetPort: 9443
+    type: ValidatingAdmissionWebhook
+    webhookPath: /validate-crdb-cockroachlabs-com-v1alpha1-crdbcluster
