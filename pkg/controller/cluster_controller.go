@@ -19,6 +19,7 @@ package controller
 import (
 	"context"
 	"fmt"
+	kbatch "k8s.io/api/batch/v1"
 	"time"
 
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
@@ -200,6 +201,7 @@ func (r *ClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&corev1.Service{}).
 		Owns(&appsv1.StatefulSet{}).
 		Owns(&policy.PodDisruptionBudget{}).
+		Owns(&kbatch.Job{}).
 		Complete(r)
 }
 
