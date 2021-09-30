@@ -8,37 +8,25 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"os/exec"
 	"regexp"
-	"strings"
+	"sort"
+	"time"
 
+	"github.com/Masterminds/semver/v3"
 	"gopkg.in/yaml.v3"
 )
 
-const INVERTED_VERSIONS_REGEXP = "^v19|^v21.1.8$|latest|ubi$"
-const FILE_NAME = "crdb-versions.yaml"
+const crdbVersionsInvertedRegexp = "^v19|^v21.1.8$|latest|ubi$"
+const crdbVersionsFileName = "crdb-versions.yaml"
 
 // TODO(rail): we may need to add pagination handling in case we pass 500 versions
 // Use anonymous API to get the list of published images from the RedHat Catalog.
-const URL = "https://catalog.redhat.com/api/containers/v1/repositories/registry/" +
+const crdbVersionsUrl = "https://catalog.redhat.com/api/containers/v1/repositories/registry/" +
 	"registry.connect.redhat.com/repository/cockroachdb/cockroach/images?" +
 	"exclude=data.repositories.comparison.advisory_rpm_mapping,data.brew," +
 	"data.cpe_ids,data.top_layer_id&page_size=500&page=0"
-
-const COPYRIGHT = `# Copyright 2021 The Cockroach Authors
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     https://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
+const DefaultTimeout = 30
+const crdbVersionsFileDescription = `#
 # Supported CockroachDB versions.
 #
 # This file contains a list of CockroachDB versions that are supported by the
@@ -48,7 +36,7 @@ const COPYRIGHT = `# Copyright 2021 The Cockroach Authors
 
 `
 
-type Response struct {
+type crdbVersionsResponse struct {
 	Data []struct {
 		Repositories []struct {
 			Tags []struct {
@@ -59,12 +47,13 @@ type Response struct {
 }
 
 func main() {
-	_, err := os.Create(FILE_NAME)
+	f, err := os.Create(crdbVersionsFileName)
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer f.Close()
 
-	responseData := Response{}
+	responseData := crdbVersionsResponse{}
 	err = getData(&responseData)
 	if err != nil {
 		log.Fatal(err)
@@ -72,7 +61,7 @@ func main() {
 
 	// Get filtered and sorted versions in yaml representation
 	versions := getVersions(responseData)
-	sortedVersions := sort(versions)
+	sortedVersions := sortVersions(versions)
 	yamlVersions := map[string][]string{"CrdbVersions": sortedVersions}
 
 	var b bytes.Buffer
@@ -80,15 +69,17 @@ func main() {
 	yamlEncoder.SetIndent(2)
 	yamlEncoder.Encode(&yamlVersions)
 
-	result := append([]byte(COPYRIGHT), b.Bytes()...)
-	err = ioutil.WriteFile(FILE_NAME, result, 0)
+	annotation := append(getCopyrightText(), []byte(crdbVersionsFileDescription)...)
+	result := append(annotation, b.Bytes()...)
+	err = ioutil.WriteFile(crdbVersionsFileName, result, 0)
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
-func getData(data *Response) error {
-	r, err := http.Get(URL)
+func getData(data *crdbVersionsResponse) error {
+	client := http.Client{Timeout: DefaultTimeout * time.Second}
+	r, err := client.Get(crdbVersionsUrl)
 	if err != nil {
 		return err
 	}
@@ -97,7 +88,7 @@ func getData(data *Response) error {
 	return json.NewDecoder(r.Body).Decode(data)
 }
 
-func getVersions(data Response) []string {
+func getVersions(data crdbVersionsResponse) []string {
 	var versions []string
 	for _, data := range data.Data {
 		for _, repo := range data.Repositories {
@@ -112,18 +103,39 @@ func getVersions(data Response) []string {
 }
 
 func validVersion(version string) bool {
-	match, _ := regexp.MatchString(INVERTED_VERSIONS_REGEXP, version)
+	match, _ := regexp.MatchString(crdbVersionsInvertedRegexp, version)
 	return !match
 }
 
-func sort(versions []string) []string {
-	cmd := "echo " + "\"\n" + strings.Join(versions, "\n") + "\"" + " | sort -V"
-	out, err := exec.Command("bash", "-c", cmd).Output()
+func sortVersions(versions []string) []string {
+	vs := make([]*semver.Version, len(versions))
+	for i, r := range versions {
+		v, err := semver.NewVersion(r)
+		if err != nil {
+			fmt.Errorf("Error parsing version: %s", err)
+		}
+
+		vs[i] = v
+	}
+	sort.Sort(semver.Collection(vs))
+
+	var sortedVersions []string
+	for _, v := range vs {
+		sortedVersions = append(sortedVersions, "v"+v.String())
+	}
+	return sortedVersions
+}
+
+func getCopyrightText() []byte {
+	file, err := os.Open("hack/boilerplate/boilerplate.yaml.txt")
 	if err != nil {
-		fmt.Sprintf("Failed to execute command: %s", cmd)
+		log.Fatal(err)
 	}
-	splitFn := func(c rune) bool {
-		return c == '\n'
+	defer file.Close()
+
+	b, err := ioutil.ReadAll(file)
+	if err != nil {
+		log.Fatal(err)
 	}
-	return strings.FieldsFunc(string(out), splitFn)
+	return b
 }
