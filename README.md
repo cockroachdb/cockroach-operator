@@ -166,28 +166,39 @@ kubectl delete -f https://raw.githubusercontent.com/cockroachdb/cockroach-operat
 
 # Releases
 
-The pre-release procedure requires you to adjust the version in `version.txt`
-and run a command to generate the OpenShift metadata. See details below.
+We have a few phases to our releases. The first involves creating a new branch, updating the version, and then getting a
+PR merged into master with all of the generated files.
 
-The version from the `version.txt` file is used for the following artifacts:
+Subsequent steps will need to be carried out in TeamCity and RedHat Connect.
 
-- Operator docker image published to Docker hub (using the "v" prefix, e.g. `v1.0.0`)
-- Operator docker image published to RedHat Connect (using the "v" prefix, e.g. `v1.0.0`)
-- OpenShift Metadata bundle (no "v" prefix, e.g. `1.0.0`), committed in the source directory
-- OpenShift Metadata bundle docker image published to RedHat Connect (using the "v" prefix, e.g. `v1.0.0`)
+## Creating a new release PR
 
-## Bump the version in `version.txt`
+From a clean, up-to-date master (seriously...check), run the following where `<version>` is the desired new version
+(e.g. `2.2.0` or `2.2.1-beta.1`).
 
-- Create a PR branch in your local checkout, e.g. `git checkout -b release-1.0.0 origin/master`.
-- Adjust the version in the `version.txt` file or set it from command line. Use
-the semantic version schema (do not use the "v" prefix).
-- Edit `Makefile` and adjust the `release/versionbump` target.
-  - Set the `CHANNEL` to `beta` or `stable`.
-  - Set the `DEFAULT_CHANNEL` to `0` or `1`.
-- Run `make release/versionbump`.
-- Push the local branch and request a review.
-- After the PR is merged, tag the corresponding commit, e.g. `git tag v1.0.0 1234567890abcdef`.
+```
+$ make release/new VERSION=<version>
+...
+...
+$ git push origin release-$(cat version.txt)
+```
+
+This will do the following for you:
+
+- Create a new branch named `release-<version>`
+- Update version.txt
+- Generate the manifest, bundles, etc.
+- Commit the changes with the message `Bump version to <version>`.
+- Push to a new branch on origin (that wasn't automated)
+
+## Tag the release
+
+After the PR is merged run the following to create the tag (you'll need to be a member of CRL to do this).
+
+    git tag v$(cat version.txt)
+    git push upstream v$(cat version.txt)
 
 ## Run Release Automation
-Release automation is run in TeamCity. This section will be updated after the
-corresponding changes are merged.
+
+From here, the rest of the release process is done with TeamCity. A CRL team member will need to perform some manual
+steps in RedHat Connect as well. Ping one of us in Slack for info.

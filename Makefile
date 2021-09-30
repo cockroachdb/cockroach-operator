@@ -277,14 +277,12 @@ k8s/delete:
 # Release targets
 #
 
-# This target reads the current version from version.txt, increments the patch
-# part of the version, saves the result in the same file, and calls make with
-# the next release-specific target in a separate shell in order to reread the
-# new version.
-.PHONY: release/versionbump
-release/versionbump:
-	bazel run //hack/versionbump:versionbump -- patch $(VERSION) > $(PWD)/version.txt
-	$(MAKE) release/gen-files
+# This target sets the version in version.txt, creates a new branch for the
+# release, and generates all of the files required to cut a new release.
+.PHONY: release/new
+release/new:
+	# TODO: verify clean, up to date master branch...
+	@bazel run //hack/release -- -dir $(PWD) -version $(VERSION)
 
 # Generate various config files, which usually contain the current operator
 # version, latest CRDB version, a list of supported CRDB versions, etc.
