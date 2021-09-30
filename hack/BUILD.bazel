@@ -177,7 +177,7 @@ filegroup(
         "//hack/crdbversions:all-srcs",
         "//hack/gke:all-srcs",
         "//hack/k8s:all-srcs",
-        "//hack/versionbump:all-srcs",
+        "//hack/release:all-srcs",
     ],
     tags = ["automanaged"],
     visibility = ["//visibility:public"],
