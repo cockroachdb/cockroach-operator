@@ -16,8 +16,6 @@ FAQ = "//hack/bin:faq"
 
 OPERATORSDK = "//hack/bin:operator-sdk"
 
-GOLANGCILINT = "//hack/bin:golangci-lint"
-
 KUSTOMIZE = "//hack/bin:kustomize"
 
 OPM = "//hack/bin:opm"
@@ -106,15 +104,18 @@ sh_test(
     data = ["@//:all-srcs"],
 )
 
-sh_binary(
-    name = "golangci-lint",
-    srcs = ["golangci-lint.sh"],
+sh_test(
+    name = "verify-golangci-lint",
+    srcs = ["//hack/bin:golangci-lint"],
     args = [
-        "$(location %s)" % GOLANGCILINT,
+        "run",
     ],
-    data = [
-        GOLANGCILINT,
-    ],
+    env = {
+        "GOLANGCI_LINT_CACHE": "/tmp",
+        "XDG_CACHE_HOME": "/tmp",
+        "GOPATH": "/tmp",
+    },
+    data = ["@//:all-srcs"],
 )
 
 # update-pkg-manifest script generates manifests and metadata for OpenShift certification release

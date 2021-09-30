@@ -22,6 +22,7 @@ import (
 
 	. "github.com/cockroachdb/cockroach-operator/pkg/kuberecord"
 	"github.com/cockroachdb/cockroach-operator/pkg/testutil/env"
+	"github.com/prometheus/common/log"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -34,7 +35,11 @@ func TestRecorder(t *testing.T) {
 
 	cfg, err := env.Start()
 	require.NoError(t, err)
-	defer env.Stop()
+	defer func(env *envtest.Environment) {
+		if err := env.Stop(); err != nil {
+			log.Error()
+		}
+	}(env)
 
 	cfg = Recorder(
 		t,

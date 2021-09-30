@@ -39,6 +39,7 @@ import (
 
 	"github.com/spf13/pflag"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestFeatureGateFlag(t *testing.T) {
@@ -222,13 +223,15 @@ func TestFeatureGateFlag(t *testing.T) {
 		t.Run(test.arg, func(t *testing.T) {
 			fs := pflag.NewFlagSet("testfeaturegateflag", pflag.ContinueOnError)
 			f := NewFeatureGate()
-			f.Add(map[Feature]FeatureSpec{
+			err := f.Add(map[Feature]FeatureSpec{
 				testAlphaGate: {Default: false, PreRelease: Alpha},
 				testBetaGate:  {Default: false, PreRelease: Beta},
 			})
+			assert.NoError(t, err)
+
 			f.AddFlag(fs)
 
-			err := fs.Parse([]string{fmt.Sprintf("--%s=%s", flagName, test.arg)})
+			err = fs.Parse([]string{fmt.Sprintf("--%s=%s", flagName, test.arg)})
 			if test.parseError != "" {
 				if !strings.Contains(err.Error(), test.parseError) {
 					t.Errorf("%d: Parse() Expected %v, Got %v", i, test.parseError, err)
@@ -250,13 +253,14 @@ func TestFeatureGateOverride(t *testing.T) {
 	const testBetaGate Feature = "TestBeta"
 
 	// Don't parse the flag, assert defaults are used.
-	var f *featureGate = NewFeatureGate()
-	f.Add(map[Feature]FeatureSpec{
+	var f = NewFeatureGate()
+	err := f.Add(map[Feature]FeatureSpec{
 		testAlphaGate: {Default: false, PreRelease: Alpha},
 		testBetaGate:  {Default: false, PreRelease: Beta},
 	})
+	require.NoError(t, err)
 
-	f.Set("TestAlpha=true,TestBeta=true")
+	require.NoError(t, f.Set("TestAlpha=true,TestBeta=true"))
 	if f.Enabled(testAlphaGate) != true {
 		t.Errorf("Expected true")
 	}
@@ -264,7 +268,7 @@ func TestFeatureGateOverride(t *testing.T) {
 		t.Errorf("Expected true")
 	}
 
-	f.Set("TestAlpha=false")
+	require.NoError(t, f.Set("TestAlpha=false"))
 	if f.Enabled(testAlphaGate) != false {
 		t.Errorf("Expected false")
 	}
@@ -280,10 +284,11 @@ func TestFeatureGateFlagDefaults(t *testing.T) {
 
 	// Don't parse the flag, assert defaults are used.
 	var f *featureGate = NewFeatureGate()
-	f.Add(map[Feature]FeatureSpec{
+	err := f.Add(map[Feature]FeatureSpec{
 		testAlphaGate: {Default: false, PreRelease: Alpha},
 		testBetaGate:  {Default: true, PreRelease: Beta},
 	})
+	require.NoError(t, err)
 
 	if f.Enabled(testAlphaGate) != false {
 		t.Errorf("Expected false")
@@ -304,13 +309,13 @@ func TestFeatureGateKnownFeatures(t *testing.T) {
 
 	// Don't parse the flag, assert defaults are used.
 	var f *featureGate = NewFeatureGate()
-	f.Add(map[Feature]FeatureSpec{
+	err := f.Add(map[Feature]FeatureSpec{
 		testAlphaGate:      {Default: false, PreRelease: Alpha},
 		testBetaGate:       {Default: true, PreRelease: Beta},
 		testGAGate:         {Default: true, PreRelease: GA},
 		testDeprecatedGate: {Default: false, PreRelease: Deprecated},
 	})
-
+	require.NoError(t, err)
 	known := strings.Join(f.KnownFeatures(), " ")
 
 	assert.Contains(t, known, testAlphaGate)
@@ -411,13 +416,15 @@ func TestFeatureGateSetFromMap(t *testing.T) {
 	for i, test := range tests {
 		t.Run(fmt.Sprintf("SetFromMap %s", test.name), func(t *testing.T) {
 			f := NewFeatureGate()
-			f.Add(map[Feature]FeatureSpec{
+			err := f.Add(map[Feature]FeatureSpec{
 				testAlphaGate:       {Default: false, PreRelease: Alpha},
 				testBetaGate:        {Default: false, PreRelease: Beta},
 				testLockedTrueGate:  {Default: true, PreRelease: GA, LockToDefault: true},
 				testLockedFalseGate: {Default: false, PreRelease: GA, LockToDefault: true},
 			})
-			err := f.SetFromMap(test.setmap)
+			require.NoError(t, err)
+
+			err = f.SetFromMap(test.setmap)
 			if test.setmapError != "" {
 				if err == nil {
 					t.Errorf("expected error, got none")
@@ -477,8 +484,8 @@ func TestFeatureGateString(t *testing.T) {
 	for i, test := range tests {
 		t.Run(fmt.Sprintf("SetFromMap %s", test.expect), func(t *testing.T) {
 			f := NewFeatureGate()
-			f.Add(featuremap)
-			f.SetFromMap(test.setmap)
+			require.NoError(t, f.Add(featuremap))
+			require.NoError(t, f.SetFromMap(test.setmap))
 			result := f.String()
 			if result != test.expect {
 				t.Errorf("%d: SetFromMap(%#v) Expected %s, Got %s", i, test.setmap, test.expect, result)

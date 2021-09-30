@@ -45,6 +45,7 @@ func SetClusterStatus(status *api.CrdbClusterStatus) {
 		}
 
 		status.ClusterStatus = api.ActionStatus(api.Finished).String()
+		// TODO: Do we need to check for all OperatorActions or for just the 0th element
 		return
 	}
 	status.ClusterStatus = api.ActionStatus(api.Finished).String()

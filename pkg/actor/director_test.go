@@ -18,6 +18,8 @@ package actor_test
 
 import (
 	"fmt"
+	"testing"
+
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/actor"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
@@ -25,7 +27,6 @@ import (
 	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
 	"github.com/stretchr/testify/require"
 	"k8s.io/client-go/kubernetes/fake"
-	"testing"
 )
 
 func containsAction(actors []actor.Actor, action api.ActionType) bool {
@@ -57,11 +58,11 @@ func TestDecommissionFeatureGate(t *testing.T) {
 
 	cluster.SetTrue(api.CrdbInitializedCondition)
 
-	utilfeature.DefaultMutableFeatureGate.Set("UseDecommission=true")
+	require.NoError(t, utilfeature.DefaultMutableFeatureGate.Set("UseDecommission=true"))
 	actors := director.GetActorsToExecute(cluster)
 	require.True(t, containsAction(actors, api.DecommissionAction))
 
-	utilfeature.DefaultMutableFeatureGate.Set("UseDecommission=false")
+	require.NoError(t, utilfeature.DefaultMutableFeatureGate.Set("UseDecommission=false"))
 	actors = director.GetActorsToExecute(cluster)
 	require.False(t, containsAction(actors, api.DecommissionAction))
 }
@@ -71,11 +72,11 @@ func TestVersionValidatorFeatureGate(t *testing.T) {
 
 	cluster.SetTrue(api.CrdbInitializedCondition)
 
-	utilfeature.DefaultMutableFeatureGate.Set("CrdbVersionValidator=true")
+	require.NoError(t, utilfeature.DefaultMutableFeatureGate.Set("CrdbVersionValidator=true"))
 	actors := director.GetActorsToExecute(cluster)
 	require.True(t, containsAction(actors, api.VersionCheckerAction))
 
-	utilfeature.DefaultMutableFeatureGate.Set("CrdbVersionValidator=false")
+	require.NoError(t, utilfeature.DefaultMutableFeatureGate.Set("CrdbVersionValidator=false"))
 	actors = director.GetActorsToExecute(cluster)
 	require.False(t, containsAction(actors, api.VersionCheckerAction))
 }
@@ -85,11 +86,11 @@ func TestResizePVCFeatureGate(t *testing.T) {
 
 	cluster.SetTrue(api.CrdbInitializedCondition)
 
-	utilfeature.DefaultMutableFeatureGate.Set("ResizePVC=true")
+	require.NoError(t, utilfeature.DefaultMutableFeatureGate.Set("ResizePVC=true"))
 	actors := director.GetActorsToExecute(cluster)
 	require.True(t, containsAction(actors, api.ResizePVCAction))
 
-	utilfeature.DefaultMutableFeatureGate.Set("ResizePVC=false")
+	require.NoError(t, utilfeature.DefaultMutableFeatureGate.Set("ResizePVC=false"))
 	actors = director.GetActorsToExecute(cluster)
 	require.False(t, containsAction(actors, api.ResizePVCAction))
 }
@@ -100,11 +101,11 @@ func TestClusterRestartFeatureGate(t *testing.T) {
 	cluster.SetTrue(api.CrdbInitializedCondition)
 	cluster.SetTrue(api.CrdbVersionChecked)
 
-	utilfeature.DefaultMutableFeatureGate.Set("ClusterRestart=true")
+	require.NoError(t, utilfeature.DefaultMutableFeatureGate.Set("ClusterRestart=true"))
 	actors := director.GetActorsToExecute(cluster)
 	require.True(t, containsAction(actors, api.ClusterRestartAction))
 
-	utilfeature.DefaultMutableFeatureGate.Set("ClusterRestart=false")
+	require.NoError(t, utilfeature.DefaultMutableFeatureGate.Set("ClusterRestart=false"))
 	actors = director.GetActorsToExecute(cluster)
 	require.False(t, containsAction(actors, api.ClusterRestartAction))
 }
@@ -119,7 +120,8 @@ func actorTypes(actors []actor.Actor) []api.ActionType {
 
 func TestAllConditionCombinations(t *testing.T) {
 	cluster, director := createTestDirectorAndCluster(t)
-	utilfeature.DefaultMutableFeatureGate.Set("UseDecommission=true,CrdbVersionValidator=true,ResizePVC=true,ClusterRestart=true")
+	err := utilfeature.DefaultMutableFeatureGate.Set("UseDecommission=true,CrdbVersionValidator=true,ResizePVC=true,ClusterRestart=true")
+	require.NoError(t, err)
 
 	tests := []struct {
 		trueConditions []api.ClusterConditionType

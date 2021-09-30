@@ -65,7 +65,7 @@ func RequireClusterToBeReadyEventuallyTimeout(t *testing.T, sb testenv.DiffingSa
 
 		if !statefulSetIsReady(ss) {
 			t.Logf("stateful set is not ready")
-			logPods(context.TODO(), ss, cluster, sb, t)
+			_ = logPods(context.TODO(), ss, cluster, sb, t)
 			return false, nil
 		}
 
@@ -246,10 +246,7 @@ func RequireDownGradeOptionSet(t *testing.T, sb testenv.DiffingSandbox, b Cluste
 		t.Errorf("downgrade_option is empty and should be set to %s", version)
 	}
 
-	if value != value {
-		t.Errorf("downgrade_option is not set to %s, but is set to %s", version, value)
-	}
-
+	// TODO: Is this check required to compare with some specific value or is it redundant ?
 }
 
 // TODO I do not think this is correct.  Keith mentioned we need to check something else.
@@ -577,6 +574,9 @@ func fetchPVCs(ctx context.Context, sb testenv.DiffingSandbox, b ClusterBuilder)
 		}
 
 		sts, err := fetchStatefulSet(sb, cluster.StatefulSetName())
+		if err != nil {
+			return false, err
+		}
 
 		pvcList, err = clientset.CoreV1().PersistentVolumeClaims(cluster.Namespace()).List(ctx, metav1.ListOptions{
 			LabelSelector: metav1.FormatLabelSelector(sts.Spec.Selector),

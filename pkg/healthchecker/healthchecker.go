@@ -232,6 +232,7 @@ func extractMetric(l logr.Logger, output, underepmetric string, partition int32)
 	}
 	metric := strings.TrimSuffix(out[1], "\n")
 	//the value of the metric should be 0 to return nil
+	// TODO: bitsize must be either 32 or 64
 	if i, err := strconv.ParseFloat(metric, 1); err != nil {
 		l.V(int(zapcore.DebugLevel)).Info(err.Error())
 		return -1, err
@@ -245,8 +246,6 @@ func extractMetric(l logr.Logger, output, underepmetric string, partition int32)
 // inK8s checks to see if the a file exists
 func inK8s(file string) bool {
 	_, err := os.Stat(file)
-	if os.IsNotExist(err) {
-		return false
-	}
-	return true
+
+	return !os.IsNotExist(err)
 }

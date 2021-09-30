@@ -52,6 +52,7 @@ go_test(
         "@com_github_cenkalti_backoff//:go_default_library",
         "@com_github_dnaeon_go_vcr//cassette:go_default_library",
         "@com_github_dnaeon_go_vcr//recorder:go_default_library",
+        "@com_github_prometheus_common//log:go_default_library",
         "@com_github_stretchr_testify//require:go_default_library",
         "@io_k8s_api//core/v1:go_default_library",
         "@io_k8s_apimachinery//pkg/apis/meta/v1:go_default_library",

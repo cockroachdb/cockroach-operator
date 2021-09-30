@@ -123,6 +123,7 @@ func TestRangeMoveDuration(t *testing.T) {
 					{Target: "zone-1", Config: ZoneConfig{RangeMaxBytes: 10}},
 					{Target: "zone-2", Config: ZoneConfig{RangeMaxBytes: 20}},
 				},
+				// TODO: Is it required. Output will always be 0s because of interger division
 				exp: time.Duration(10/1000000) * time.Second,
 			},
 			{
@@ -133,6 +134,7 @@ func TestRangeMoveDuration(t *testing.T) {
 					{Target: "zone-1", Config: ZoneConfig{RangeMaxBytes: 10}},
 					{Target: "zone-2", Config: ZoneConfig{RangeMaxBytes: 20}},
 				},
+				// TODO: Is it required. Output will always be 0s because of interger division
 				exp: time.Duration(20/1000000) * time.Second,
 			},
 			{
@@ -143,6 +145,7 @@ func TestRangeMoveDuration(t *testing.T) {
 					{Target: "zone-1", Config: ZoneConfig{RangeMaxBytes: 20}},
 					{Target: "zone-2", Config: ZoneConfig{RangeMaxBytes: 30}},
 				},
+				// TODO: Is it required. Output will always be 0s because of interger division
 				exp: time.Duration(20/2000000) * time.Second,
 			},
 		}

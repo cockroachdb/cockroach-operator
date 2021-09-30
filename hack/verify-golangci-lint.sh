@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Copyright 2021 The Cockroach Authors
 #
@@ -14,27 +14,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -o errexit
 set -o nounset
 set -o pipefail
-set -o xtrace
 
-if [[ -n "${BUILD_WORKSPACE_DIRECTORY:-}" ]]; then # Running inside bazel
-  echo "Linting go source files..." >&2
-elif ! command -v bazel &>/dev/null; then
+if [[ -n "${TEST_WORKSPACE:-}" ]]; then # Running inside bazel
+  echo "Validating go source file linting..." >&2
+elif ! command -v bazel &> /dev/null; then
   echo "Install bazel at https://bazel.build" >&2
   exit 1
 else
   (
     set -o xtrace
-    bazel run //hack:golangci-lint
+    bazel test --test_output=streamed //hack:verify-golangci-lint
   )
   exit 0
 fi
 
 golangci_lint=$(realpath "$1")
 
-cd "$BUILD_WORKSPACE_DIRECTORY"
-
 echo "+++ Running golangci-lint"
-"$golangci_lint" run
+
+"${golangci_lint}" run
+exit_status=$?
+
+if [ $exit_status -ne 0 ]; then
+     echo "Please run 'bazel run //hack:golangci-lint'"
+fi
+
+exit $exit_status
