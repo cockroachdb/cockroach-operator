@@ -20,6 +20,22 @@ metadata:
   name: cockroach-operator-role
 rules:
 - apiGroups:
+  - admissionregistration.k8s.io
+  resources:
+  - mutatingwebhookconfigurations
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - admissionregistration.k8s.io
+  resources:
+  - validatingwebhookconfigurations
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
   - apps
   resources:
   - statefulsets
@@ -108,18 +124,26 @@ rules:
   - nodes
   verbs:
   - get
+  - list
 - apiGroups:
   - ""
   resources:
   - pods
   verbs:
   - get
+  - list
 - apiGroups:
   - ""
   resources:
   - pods/exec
   verbs:
   - create
+- apiGroups:
+  - ""
+  resources:
+  - pods/log
+  verbs:
+  - get
 - apiGroups:
   - ""
   resources:

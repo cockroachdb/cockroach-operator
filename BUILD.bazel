@@ -74,7 +74,6 @@ filegroup(
         "//e2e/versionchecker:all-srcs",
         "//examples:all-srcs",
         "//hack:all-srcs",
-        "//manifests:all-srcs",
         "//pkg/actor:all-srcs",
         "//pkg/client/clientset/versioned:all-srcs",
         "//pkg/client/informers/externalversions:all-srcs",

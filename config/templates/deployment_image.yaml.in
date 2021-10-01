@@ -1,4 +1,4 @@
-# Copyright 2021 The Cockroach Authors
+# Copyright {{ .Year }} The Cockroach Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,13 +11,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
+# {{ .GeneratedWarning }}
+#
 ---
-namespace: default
-
-resources:
-  - ../default
-  - ../samples
-  - ../scorecard
-
-patchesStrategicMerge:
-  - patches/deployment_patch.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cockroach-operator
+spec:
+  template:
+    spec:
+      containers:
+        - name: cockroach-operator
+          image: cockroachdb/cockroach-operator:{{.OperatorVersion}}
