@@ -171,6 +171,7 @@ func CreateOrUpdateAnnotated(ctx context.Context, c client.Client, obj client.Ob
 	}
 
 	changed, err := ObjectChanged(existing, obj)
+	fmt.Println("changed", changed)
 	if err != nil {
 		return false, err
 	}
@@ -203,7 +204,7 @@ func ObjectChanged(current, updated runtime.Object) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-
+	fmt.Println("patch result", patchResult.String())
 	return !patchResult.IsEmpty(), nil
 }
 

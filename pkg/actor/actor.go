@@ -18,6 +18,7 @@ package actor
 
 import (
 	"context"
+	"fmt"
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/condition"
 	"github.com/cockroachdb/cockroach-operator/pkg/features"
@@ -86,6 +87,7 @@ type Director interface {
 type clusterDirector struct {
 	actors map[api.ActionType]Actor
 	client client.Client
+	scheme *runtime.Scheme
 }
 
 func NewDirector(scheme *runtime.Scheme, cl client.Client, config *rest.Config) Director {
@@ -102,6 +104,7 @@ func NewDirector(scheme *runtime.Scheme, cl client.Client, config *rest.Config) 
 	return &clusterDirector{
 		actors: actors,
 		client: cl,
+		scheme: scheme,
 	}
 }
 
@@ -202,7 +205,12 @@ func (cd *clusterDirector) needsDeploy(ctx context.Context, cluster *resource.Cl
 		needsDeploy, err := resource.Reconciler{
 			ManagedResource: r,
 			Builder:         b,
+			Owner:           cluster.Unwrap(),
+			Scheme:          cd.scheme,
 		}.NeedsBuild()
+		fmt.Println("needs deploy, err", needsDeploy, err)
+
+		fmt.Println(b.ResourceName())
 
 		if err != nil {
 			return false, err
@@ -211,62 +219,6 @@ func (cd *clusterDirector) needsDeploy(ctx context.Context, cluster *resource.Cl
 		}
 	}
 	return false, nil
-}
-
-func (cd *clusterDirector) GetActorsToExecute(cluster *resource.Cluster) []Actor {
-	conditions := cluster.Status().Conditions
-	featureVersionValidatorEnabled := utilfeature.DefaultMutableFeatureGate.Enabled(features.CrdbVersionValidator)
-	featureDecommissionEnabled := utilfeature.DefaultMutableFeatureGate.Enabled(features.Decommission)
-	featureResizePVCEnabled := utilfeature.DefaultMutableFeatureGate.Enabled(features.ResizePVC)
-	featureClusterRestartEnabled := utilfeature.DefaultMutableFeatureGate.Enabled(features.ClusterRestart)
-	conditionInitializedTrue := condition.True(api.CrdbInitializedCondition, conditions)
-	conditionInitializedFalse := condition.False(api.CrdbInitializedCondition, conditions)
-	conditionVersionCheckedTrue := condition.True(api.CrdbVersionChecked, conditions)
-	conditionVersionCheckedFalse := condition.False(api.CrdbVersionChecked, conditions)
-	conditionCertificateGeneratedTrue := condition.True(api.CertificateGenerated, conditions)
-
-	var actorsToExecute []Actor
-
-	if featureDecommissionEnabled && conditionInitializedTrue {
-		actorsToExecute = append(actorsToExecute, cd.actors[api.DecommissionAction])
-	}
-
-	if featureVersionValidatorEnabled && conditionVersionCheckedFalse && (conditionInitializedTrue || conditionInitializedFalse) {
-		actorsToExecute = append(actorsToExecute, cd.actors[api.VersionCheckerAction])
-	}
-
-	if !conditionCertificateGeneratedTrue {
-		actorsToExecute = append(actorsToExecute, cd.actors[api.GenerateCertAction])
-	}
-
-	if featureVersionValidatorEnabled && conditionVersionCheckedTrue && conditionInitializedTrue {
-		actorsToExecute = append(actorsToExecute, cd.actors[api.PartitionedUpdateAction])
-	} else if !featureVersionValidatorEnabled && conditionInitializedTrue {
-		actorsToExecute = append(actorsToExecute, cd.actors[api.PartitionedUpdateAction])
-	}
-
-	if featureResizePVCEnabled && conditionInitializedTrue {
-		actorsToExecute = append(actorsToExecute, cd.actors[api.ResizePVCAction])
-	}
-
-	if featureVersionValidatorEnabled && conditionVersionCheckedTrue && (conditionInitializedTrue || conditionInitializedFalse) {
-		actorsToExecute = append(actorsToExecute, cd.actors[api.DeployAction])
-	} else if !featureVersionValidatorEnabled && (conditionInitializedTrue || conditionInitializedFalse) {
-		actorsToExecute = append(actorsToExecute, cd.actors[api.DeployAction])
-	}
-
-	if featureVersionValidatorEnabled && conditionVersionCheckedTrue && conditionInitializedFalse {
-		actorsToExecute = append(actorsToExecute, cd.actors[api.InitializeAction])
-	} else if !featureVersionValidatorEnabled && conditionInitializedFalse {
-		actorsToExecute = append(actorsToExecute, cd.actors[api.InitializeAction])
-	}
-
-	// TODO: conditionVersionCheckedTrue should probably be contingent on featureVersionValidatorEnabled, like with other actions
-	if featureClusterRestartEnabled && conditionVersionCheckedTrue && (conditionInitializedTrue || conditionInitializedFalse) {
-		actorsToExecute = append(actorsToExecute, cd.actors[api.ClusterRestartAction])
-	}
-
-	return actorsToExecute
 }
 
 func newAction(atype string, scheme *runtime.Scheme, cl client.Client) action {

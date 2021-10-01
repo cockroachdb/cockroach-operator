@@ -18,6 +18,7 @@ package resource
 
 import (
 	"context"
+	"fmt"
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
 	"github.com/cockroachdb/cockroach-operator/pkg/labels"
 	"github.com/cockroachdb/errors"
@@ -93,39 +94,44 @@ func (r Reconciler) Reconcile() (upserted bool, err error) {
 	original := current.DeepCopyObject()
 
 	return r.Persist(current, func() error {
-		if err := r.Build(current); err != nil {
-			return err
-		}
-
-		if err := r.reconcileLabels(original, current); err != nil {
-			return errors.Wrap(err, "failed to reconcile labels")
-		}
-
-		if err := r.reconcileAnnotations(original, current); err != nil {
-			return errors.Wrap(err, "failed to reconcile annotations")
-		}
-
-		if err := r.ensureIsOwned(current); err != nil {
-			return errors.Wrap(err, "failed to set object ownership")
-		}
-
-		return nil
+		return r.CompleteBuild(original, current)
 	})
 }
 
+func (r Reconciler) CompleteBuild(current runtime.Object, desired client.Object) error {
+	if err := r.Build(desired); err != nil {
+		return err
+	}
+	if err := r.reconcileLabels(current, desired); err != nil {
+		return errors.Wrap(err, "failed to reconcile labels")
+	}
+	if err := r.reconcileAnnotations(current, desired); err != nil {
+		return errors.Wrap(err, "failed to reconcile annotations")
+	}
+	if err := r.ensureIsOwned(desired); err != nil {
+		return errors.Wrap(err, "failed to set object ownership")
+	}
+	return nil
+}
+
 func (r Reconciler) NeedsBuild() (bool, error) {
-	current := r.Placeholder()
-	err := r.Fetch(current)
+	new := r.Placeholder()
+	err := r.Fetch(new)
 
 	if err != nil {
 		if kube.IsNotFound(err) {
+			fmt.Println("not found", r.ResourceName())
 			return true, nil
 		}
 		return false, err
 	}
 
-	new := r.Placeholder()
-	r.Build(new)
+	current := new.DeepCopyObject()
+	if err := r.CompleteBuild(current, new); err != nil {
+		return false, err
+	}
+
+	fmt.Println("build completed")
 
 	changed, err := kube.ObjectChanged(current, new)
 	if err != nil {
