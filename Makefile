@@ -277,20 +277,23 @@ k8s/delete:
 # Release targets
 #
 
-# This target reads the current version from version.txt, increments the patch
-# part of the version, saves the result in the same file, and calls make with
-# the next release-specific target in a separate shell in order to reread the
-# new version.
-.PHONY: release/versionbump
-release/versionbump:
-	bazel run //hack/versionbump:versionbump -- patch $(VERSION) > $(PWD)/version.txt
-	$(MAKE) release/gen-files
+# This target sets the version in version.txt, creates a new branch for the
+# release, and generates all of the files required to cut a new release.
+.PHONY: release/new
+release/new:
+	# TODO: verify clean, up to date master branch...
+	@bazel run //hack/release -- -dir $(PWD) -version $(VERSION)
 
 # Generate various config files, which usually contain the current operator
 # version, latest CRDB version, a list of supported CRDB versions, etc.
+#
+# This also generates install/crds.yaml and install/operator.yaml which are
+# pre-built kustomize bases used in our docs.
 .PHONY: release/gen-templates
 release/gen-templates:
 	bazel run //hack/crdbversions:crdbversions -- -operator-version $(APP_VERSION) -crdb-versions $(PWD)/crdb-versions.yaml -repo-root $(PWD)
+	bazel run //config/crd:manifest.preview > install/crds.yaml
+	bazel run //config/operator:manifest.preview > install/operator.yaml
 
 # Generate various manifest files for OpenShift. We run this target after the
 # operator version is changed. The results are committed to Git.

@@ -12,12 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
 namespace: default
 
 resources:
-  - ../default
-  - ../samples
-  - ../scorecard
-
-patchesStrategicMerge:
-  - patches/deployment_patch.yaml
+  - namespace.yaml
+  - ../crd
+  - ../rbac
+  - ../manager
+  - ../webhook

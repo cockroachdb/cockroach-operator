@@ -12,20 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 ---
-source:
-  kind: Service
-  name: webhook-service
-  fieldPath: metadata.namespace
-targets:
-  - select:
-      kind: MutatingWebhookConfiguration
-    fieldPaths:
-      - webhooks.[name=mcrdbcluster.kb.io].namespaceSelector.matchLabels.cockroach-operator
-    options:
-      create: true
-  - select:
-      kind: ValidatingWebhookConfiguration
-    fieldPaths:
-      - webhooks.[name=vcrdbcluster.kb.io].namespaceSelector.matchLabels.cockroach-operator
-    options:
-      create: true
+resources:
+- deployment.yaml
+
+patchesStrategicMerge:
+- patches/image.yaml

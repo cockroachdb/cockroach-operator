@@ -12,19 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# This kustomization.yaml is not intended to be run by itself,
-# since it depends on service name and namespace that are out of this kustomize package.
-# It should be run by config/default
+# This file is here to ensure that we create a namespaceSelector for the webhooks. This is necessary since, at least at
+# the moment, the operator only operates in it's own namespace. This means we could have 2 different versions of the
+# operator running on a cluster and we need to be sure the hooks only work with CRs in their own namespace.
+---
 source:
   kind: Service
   name: webhook-service
-  fieldPath: metadata.namespace
+  fieldPath: metadata.labels.control-plane
 targets:
   - select:
       kind: MutatingWebhookConfiguration
     fieldPaths:
-      - webhooks.[name=mcrdbcluster.kb.io].clientConfig.service.namespace
+      - webhooks.[name=mcrdbcluster.kb.io].namespaceSelector.matchLabels.control-plane
+    options:
+      create: true
   - select:
       kind: ValidatingWebhookConfiguration
     fieldPaths:
-      - webhooks.[name=vcrdbcluster.kb.io].clientConfig.service.namespace
+      - webhooks.[name=vcrdbcluster.kb.io].namespaceSelector.matchLabels.control-plane
+    options:
+      create: true

@@ -11,13 +11,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
+# Generated, do not edit. Please edit this file instead: config/templates/deployment_image.yaml.in
+#
 ---
-namespace: default
-
-resources:
-  - ../default
-  - ../samples
-  - ../scorecard
-
-patchesStrategicMerge:
-  - patches/deployment_patch.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cockroach-operator
+spec:
+  template:
+    spec:
+      containers:
+        - name: cockroach-operator
+          image: cockroachdb/cockroach-operator:v2.2.0-beta.2

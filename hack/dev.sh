@@ -58,7 +58,7 @@ EOF
 install_operator() {
   K8S_CLUSTER="kind-${CLUSTER_NAME}" \
     DEV_REGISTRY="localhost:${REGISTRY_PORT}" \
-    bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 //manifests:install_operator.apply
+    bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 //config/default:install.apply
 }
 
 wait_for_ready() {

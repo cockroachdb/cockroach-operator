@@ -8,7 +8,8 @@ metadata:
           "apiVersion": "crdb.cockroachlabs.com/v1alpha1",
           "kind": "CrdbCluster",
           "metadata": {
-            "name": "crdb-tls-example"
+            "name": "crdb-tls-example",
+            "namespace": "default"
           },
           "spec": {
             "cockroachDBVersion": "v21.1.9",
@@ -35,14 +36,14 @@ metadata:
     capabilities: Full Lifecycle
     categories: Database
     certified: "true"
-    containerImage: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v2.2.0-beta.1
-    createdAt: "2021-09-29T12:16:07Z"
+    containerImage: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v2.2.0-beta.2
+    createdAt: "2021-10-01T14:21:07Z"
     description: CockroachDB Operator
     operators.operatorframework.io/builder: operator-sdk-v1.11.0+git
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
     repository: https://github.com/cockroachdb/cockroach-operator
     support: Cockroach Labs
-  name: cockroach-operator.v2.2.0-beta.1
+  name: cockroach-operator.v2.2.0-beta.2
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -126,65 +127,96 @@ spec:
       clusterPermissions:
       - rules:
         - apiGroups:
-          - '*'
+          - admissionregistration.k8s.io
           resources:
-          - '*'
-          verbs:
-          - '*'
-        - apiGroups:
-          - rbac.authorization.k8s.io
-          resources:
-          - clusterroles
+          - mutatingwebhookconfigurations
           verbs:
           - get
-          - list
-          - delete
+          - patch
+          - update
+        - apiGroups:
+          - admissionregistration.k8s.io
+          resources:
+          - validatingwebhookconfigurations
+          verbs:
+          - get
+          - patch
+          - update
         - apiGroups:
           - apps
           resources:
           - statefulsets
           verbs:
-          - '*'
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
         - apiGroups:
           - apps
           resources:
           - statefulsets/finalizers
           verbs:
-          - '*'
+          - get
+          - list
+          - watch
         - apiGroups:
           - apps
           resources:
           - statefulsets/status
           verbs:
-          - '*'
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - batch
+          resources:
+          - jobs
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - batch
+          resources:
+          - jobs/status
+          verbs:
+          - get
         - apiGroups:
           - certificates.k8s.io
           resources:
           - certificatesigningrequests
           verbs:
-          - '*'
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - watch
         - apiGroups:
           - certificates.k8s.io
           resources:
           - certificatesigningrequests/approval
           verbs:
-          - '*'
+          - update
         - apiGroups:
           - certificates.k8s.io
           resources:
           - certificatesigningrequests/status
           verbs:
-          - '*'
+          - get
+          - patch
+          - update
         - apiGroups:
           - ""
           resources:
           - configmaps
-          verbs:
-          - '*'
-        - apiGroups:
-          - ""
-          resources:
-          - nodes
           verbs:
           - get
         - apiGroups:
@@ -192,75 +224,118 @@ spec:
           resources:
           - configmaps/status
           verbs:
-          - '*'
+          - get
+        - apiGroups:
+          - ""
+          resources:
+          - nodes
+          verbs:
+          - get
+          - list
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          verbs:
+          - get
+          - list
         - apiGroups:
           - ""
           resources:
           - pods/exec
           verbs:
-          - '*'
+          - create
+        - apiGroups:
+          - ""
+          resources:
+          - pods/log
+          verbs:
+          - get
         - apiGroups:
           - ""
           resources:
           - secrets
           verbs:
-          - '*'
+          - create
+          - get
+          - list
+          - patch
+          - update
+          - watch
         - apiGroups:
           - ""
           resources:
           - services
           verbs:
-          - '*'
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
         - apiGroups:
           - ""
           resources:
           - services/finalizers
           verbs:
-          - '*'
+          - get
+          - list
+          - watch
         - apiGroups:
           - ""
           resources:
           - services/status
           verbs:
-          - '*'
+          - get
+          - patch
+          - update
         - apiGroups:
           - crdb.cockroachlabs.com
           resources:
           - crdbclusters
           verbs:
-          - '*'
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
         - apiGroups:
           - crdb.cockroachlabs.com
           resources:
           - crdbclusters/status
           verbs:
-          - '*'
+          - get
+          - patch
+          - update
         - apiGroups:
           - policy
           resources:
           - poddisruptionbudgets
           verbs:
-          - '*'
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
         - apiGroups:
           - policy
           resources:
           - poddisruptionbudgets/finalizers
           verbs:
-          - '*'
+          - get
+          - list
+          - watch
         - apiGroups:
           - policy
           resources:
           - poddisruptionbudgets/status
           verbs:
-          - '*'
-        - apiGroups:
-          - security.openshift.io
-          resourceNames:
-          - nonroot
-          resources:
-          - securitycontextconstraints
-          verbs:
-          - use
+          - get
         serviceAccountName: cockroach-operator-sa
       - rules:
         - apiGroups:
@@ -360,17 +435,17 @@ spec:
                   value: registry.connect.redhat.com/cockroachdb/cockroach:v21.1.7
                 - name: RELATED_IMAGE_COCKROACH_v21_1_9
                   value: registry.connect.redhat.com/cockroachdb/cockroach:v21.1.9
-                - name: WATCH_NAMESPACE
-                  valueFrom:
-                    fieldRef:
-                      fieldPath: metadata.annotations['olm.targetNamespaces']
+                - name: OPERATOR_NAME
+                  value: cockroachdb
                 - name: POD_NAME
                   valueFrom:
                     fieldRef:
                       fieldPath: metadata.name
-                - name: OPERATOR_NAME
-                  value: cockroachdb
-                image: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v2.2.0-beta.1
+                - name: WATCH_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.annotations['olm.targetNamespaces']
+                image: registry.connect.redhat.com/cockroachdb/cockroachdb-operator:v2.2.0-beta.2
                 imagePullPolicy: IfNotPresent
                 name: cockroach-operator
                 resources:
@@ -378,15 +453,6 @@ spec:
                     cpu: 10m
                     memory: 32Mi
               serviceAccountName: cockroach-operator-sa
-      permissions:
-      - rules:
-        - apiGroups:
-          - '*'
-          resources:
-          - '*'
-          verbs:
-          - '*'
-        serviceAccountName: cockroach-operator-sa
     strategy: deployment
   installModes:
   - supported: true
@@ -413,7 +479,7 @@ spec:
   maturity: stable
   provider:
     name: Cockroach Labs
-  version: 2.2.0-beta.1
+  version: 2.2.0-beta.2
   webhookdefinitions:
   - admissionReviewVersions:
     - v1

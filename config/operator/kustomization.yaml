@@ -11,13 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
+# This is used to generate //manifests/operator.yaml
 ---
 namespace: default
 
 resources:
-  - ../default
-  - ../samples
-  - ../scorecard
-
-patchesStrategicMerge:
-  - patches/deployment_patch.yaml
+  - ../default/namespace.yaml
+  - ../rbac
+  - ../manager
+  - ../webhook
