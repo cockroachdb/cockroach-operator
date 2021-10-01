@@ -128,6 +128,7 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req reconcile.Request
 		// TODO think this through
 		return requeueAfter(5*time.Second, nil)
 	} else if actorToExecute == nil {
+		log.Info("No actor to run; not requeueing")
 		return noRequeue()
 	}
 

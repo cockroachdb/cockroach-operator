@@ -18,7 +18,6 @@ package resource
 
 import (
 	"context"
-	"fmt"
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
 	"github.com/cockroachdb/cockroach-operator/pkg/labels"
 	"github.com/cockroachdb/errors"
@@ -114,13 +113,12 @@ func (r Reconciler) CompleteBuild(current runtime.Object, desired client.Object)
 	return nil
 }
 
-func (r Reconciler) NeedsBuild() (bool, error) {
+func (r Reconciler) HasChanged() (bool, error) {
 	new := r.Placeholder()
 	err := r.Fetch(new)
 
 	if err != nil {
 		if kube.IsNotFound(err) {
-			fmt.Println("not found", r.ResourceName())
 			return true, nil
 		}
 		return false, err
@@ -130,8 +128,6 @@ func (r Reconciler) NeedsBuild() (bool, error) {
 	if err := r.CompleteBuild(current, new); err != nil {
 		return false, err
 	}
-
-	fmt.Println("build completed")
 
 	changed, err := kube.ObjectChanged(current, new)
 	if err != nil {

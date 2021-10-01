@@ -18,7 +18,6 @@ package actor
 
 import (
 	"context"
-	"fmt"
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/condition"
 	"github.com/cockroachdb/cockroach-operator/pkg/features"
@@ -85,26 +84,31 @@ type Director interface {
 }
 
 type clusterDirector struct {
-	actors map[api.ActionType]Actor
-	client client.Client
-	scheme *runtime.Scheme
+	actors     map[api.ActionType]Actor
+	client     client.Client
+	scheme     *runtime.Scheme
+	kubeDistro kube.KubernetesDistribution
+	config     *rest.Config
 }
 
 func NewDirector(scheme *runtime.Scheme, cl client.Client, config *rest.Config) Director {
+	kd := kube.NewKubernetesDistribution()
 	actors := map[api.ActionType]Actor{
 		api.DecommissionAction:      newDecommission(scheme, cl, config),
 		api.VersionCheckerAction:    newVersionChecker(scheme, cl, config),
 		api.GenerateCertAction:      newGenerateCert(scheme, cl, config),
 		api.PartitionedUpdateAction: newPartitionedUpdate(scheme, cl, config),
 		api.ResizePVCAction:         newResizePVC(scheme, cl, config),
-		api.DeployAction:            newDeploy(scheme, cl, config, kube.NewKubernetesDistribution()),
+		api.DeployAction:            newDeploy(scheme, cl, config, kd),
 		api.InitializeAction:        newInitialize(scheme, cl, config),
 		api.ClusterRestartAction:    newClusterRestart(scheme, cl, config),
 	}
 	return &clusterDirector{
-		actors: actors,
-		client: cl,
-		scheme: scheme,
+		actors:     actors,
+		client:     cl,
+		scheme:     scheme,
+		kubeDistro: kd,
+		config:     config,
 	}
 }
 
@@ -174,7 +178,7 @@ func (cd *clusterDirector) GetActorToExecute(ctx context.Context, cluster *resou
 
 	if (featureVersionValidatorEnabled && conditionVersionCheckedTrue && (conditionInitializedTrue || conditionInitializedFalse)) ||
 		(!featureVersionValidatorEnabled && (conditionInitializedTrue || conditionInitializedFalse)) {
-		needsDeploy, err := cd.needsDeploy(ctx, cluster)
+		needsDeploy, err := cd.needsDeploy(ctx, cluster, log)
 		if err != nil {
 			return nil, err
 		} else if needsDeploy {
@@ -190,14 +194,20 @@ func (cd *clusterDirector) GetActorToExecute(ctx context.Context, cluster *resou
 	return nil, nil
 }
 
-func (cd *clusterDirector) needsDeploy(ctx context.Context, cluster *resource.Cluster) (bool, error) {
+func (cd *clusterDirector) needsDeploy(ctx context.Context, cluster *resource.Cluster, log logr.Logger) (bool, error) {
 	r := resource.NewManagedKubeResource(ctx, cd.client, cluster, kube.AnnotatingPersister)
+
+	kubernetesDistro, err := cd.kubeDistro.Get(ctx, cd.config, log)
+	if err != nil {
+		return false, err
+	}
+	kubernetesDistro = "kubernetes-operator-" + kubernetesDistro
 
 	labelSelector := r.Labels.Selector(cluster.Spec().AdditionalLabels)
 	builders := []resource.Builder{
 		resource.DiscoveryServiceBuilder{Cluster: cluster, Selector: labelSelector},
 		resource.PublicServiceBuilder{Cluster: cluster, Selector: labelSelector},
-		resource.StatefulSetBuilder{Cluster: cluster, Selector: labelSelector},
+		resource.StatefulSetBuilder{Cluster: cluster, Selector: labelSelector, Telemetry: kubernetesDistro},
 		resource.PdbBuilder{Cluster: cluster, Selector: labelSelector},
 	}
 
@@ -207,10 +217,7 @@ func (cd *clusterDirector) needsDeploy(ctx context.Context, cluster *resource.Cl
 			Builder:         b,
 			Owner:           cluster.Unwrap(),
 			Scheme:          cd.scheme,
-		}.NeedsBuild()
-		fmt.Println("needs deploy, err", needsDeploy, err)
-
-		fmt.Println(b.ResourceName())
+		}.HasChanged()
 
 		if err != nil {
 			return false, err
