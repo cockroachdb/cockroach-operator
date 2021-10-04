@@ -48,6 +48,9 @@ type CmdFn func(cmd *exec.Cmd) error
 // ExecFn describes a function that executes shell commands.
 type ExecFn func(cmd string, args, env []string) error
 
+// FileFn describes a function that reads a file and returns it's contents
+type FileFn func(path string) ([]byte, error)
+
 // ValidateVersion ensures the supplied version matches our expected version regexp.
 func ValidateVersion() Step {
 	return StepFn(func(version string) error {
@@ -122,5 +125,35 @@ func GenerateFiles(fn ExecFn) Step {
 			[]string{"release/gen-files", "CHANNEL=" + ch, "IS_DEFAULT_CHANNEL=" + isDefault},
 			os.Environ(),
 		)
+	})
+}
+
+// UpdateChangelog ensures that the release is setup correctly in the changelog and that a new [Unreleased] section is
+// added appropriately.
+func UpdateChangelog(fn FileFn) Step {
+	const fileName = "CHANGELOG.md"
+	const urlFmt = "https://github.com/cockroachdb/cockroach-operator/compare/%s...%s"
+
+	return StepFn(func(version string) error {
+		data, err := fn(fileName)
+		if err != nil {
+			return err
+		}
+
+		// get the existing and new [Unreleased] lines
+		start := bytes.Index(data, []byte("[Unreleased]"))
+		end := bytes.Index(data[start:], []byte("\n"))
+		prevUnreleased := data[start : start+end]
+		newUnreleased := []byte(fmt.Sprintf("[Unreleased](%s)", fmt.Sprintf(urlFmt, version, "master")))
+
+		// fix up the previous unreleased line to reference the new version
+		latestRelease := bytes.Replace(prevUnreleased, []byte("...master"), []byte("..."+version), 1)
+		latestRelease = bytes.Replace(latestRelease, []byte("[Unreleased]"), []byte(fmt.Sprintf("[%s]", version)), 1)
+
+		// update to include the new and previous versions
+		newUnreleased = append(newUnreleased, append([]byte("\n\n"), latestRelease...)...)
+		data = bytes.Replace(data, prevUnreleased, newUnreleased, 1)
+
+		return ioutil.WriteFile(fileName, data, 0644)
 	})
 }
