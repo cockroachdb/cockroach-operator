@@ -154,7 +154,9 @@ func (cd *clusterDirector) GetActorToExecute(ctx context.Context, cluster *resou
 	}
 
 	if !conditionCertificateGeneratedTrue {
-		return cd.actors[api.GenerateCertAction], nil
+		if cluster.Spec().TLSEnabled && cluster.Spec().NodeTLSSecret == "" {
+			return cd.actors[api.GenerateCertAction], nil
+		}
 	}
 
 	if (featureVersionValidatorEnabled && conditionVersionCheckedTrue && conditionInitializedTrue) ||
