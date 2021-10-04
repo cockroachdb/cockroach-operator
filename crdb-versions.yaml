@@ -18,6 +18,8 @@
 # operator. hack/crdbversions/main.go uses this list to generate various
 # manifests.
 # Please update this file when CockroachDB releases new versions.
+#
+# Generated. DO NOT EDIT. This file is created via make release/gen-templates
 
 CrdbVersions:
   - v20.1.4
