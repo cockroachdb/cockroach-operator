@@ -132,3 +132,38 @@ func TestGenerateFiles(t *testing.T) {
 		require.Equal(t, os.Environ(), fn.env)
 	}
 }
+
+func TestUpdateChangelog(t *testing.T) {
+	input := `
+# CHANGELOG yada yada yada
+...
+[Unreleased](https://github.com/cockroachdb/cockroach-operator/compare/v1.0.0...master)
+
+* Some unreleased content
+
+[v1.0.0](https://github.com/cockroachdb/cockroach-operator/compare/v0.9.0...v1.0.0)
+...
+[v0.9.0](https://github.com/cockroachdb/cockroach-operator/compare/v0.8.0...v0.9.0)
+`
+
+	expected := `
+# CHANGELOG yada yada yada
+...
+[Unreleased](https://github.com/cockroachdb/cockroach-operator/compare/v1.1.0...master)
+
+[v1.1.0](https://github.com/cockroachdb/cockroach-operator/compare/v1.0.0...v1.1.0)
+
+* Some unreleased content
+
+[v1.0.0](https://github.com/cockroachdb/cockroach-operator/compare/v0.9.0...v1.0.0)
+...
+[v0.9.0](https://github.com/cockroachdb/cockroach-operator/compare/v0.8.0...v0.9.0)
+`
+
+	err := UpdateChangelog(func(_ string) ([]byte, error) { return []byte(input), nil }).Apply("v1.1.0")
+	require.NoError(t, err)
+
+	data, err := ioutil.ReadFile("CHANGELOG.md")
+	require.NoError(t, err)
+	require.Equal(t, string(data), expected)
+}
