@@ -94,7 +94,6 @@ filegroup(
         "//pkg/scale:all-srcs",
         "//pkg/security:all-srcs",
         "//pkg/testutil:all-srcs",
-        "//pkg/tls:all-srcs",
         "//pkg/update:all-srcs",
         "//pkg/util:all-srcs",
         "//pkg/utilfeature:all-srcs",
