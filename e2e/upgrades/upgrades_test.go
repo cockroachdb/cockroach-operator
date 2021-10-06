@@ -289,8 +289,6 @@ func TestUpgradeWithInvalidVersion(t *testing.T) {
 
 	testLog := zapr.NewLogger(zaptest.NewLogger(t))
 
-	actor.Log = testLog
-
 	e := testenv.CreateActiveEnvForTest()
 	env := e.Start()
 	defer e.Stop()
@@ -344,8 +342,6 @@ func TestUpgradeWithInvalidImage(t *testing.T) {
 
 	testLog := zapr.NewLogger(zaptest.NewLogger(t))
 
-	actor.Log = testLog
-
 	e := testenv.CreateActiveEnvForTest()
 	env := e.Start()
 	defer e.Stop()
@@ -398,8 +394,6 @@ func TestUpgradeWithMajorVersionExcludingMajorFeature(t *testing.T) {
 	}
 
 	testLog := zapr.NewLogger(zaptest.NewLogger(t))
-
-	actor.Log = testLog
 
 	e := testenv.CreateActiveEnvForTest()
 	env := e.Start()

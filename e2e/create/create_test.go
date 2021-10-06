@@ -18,7 +18,6 @@ package e2e
 
 import (
 	"flag"
-	"github.com/cockroachdb/cockroach-operator/bazel-cockroach-operator/pkg/actor"
 	"os"
 	"testing"
 	"time"
@@ -140,8 +139,6 @@ func TestCreateSecureClusterWithInvalidVersion(t *testing.T) {
 
 	testLog := zapr.NewLogger(zaptest.NewLogger(t))
 
-	actor.Log = testLog
-
 	testcases := []struct {
 		imageVersion     string
 		cockroachVersion string
@@ -204,8 +201,6 @@ func TestCreateSecureClusterWithNonCRDBImage(t *testing.T) {
 	}
 
 	testLog := zapr.NewLogger(zaptest.NewLogger(t))
-
-	actor.Log = testLog
 
 	testcases := []struct {
 		imageVersion     string
