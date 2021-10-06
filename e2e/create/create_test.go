@@ -18,6 +18,8 @@ package e2e
 
 import (
 	"flag"
+	"github.com/cockroachdb/cockroach-operator/bazel-cockroach-operator/pkg/actor"
+	"os"
 	"testing"
 	"time"
 
@@ -34,6 +36,12 @@ import (
 // We may have a threadsafe problem where one test starts messing with another test
 var parallel = *flag.Bool("parallel", false, "run tests in parallel")
 
+var validImage = "cockroachdb/cockroach:v21.1.7"
+var nonExistentImage = "cockroachdb/cockroach:v21.1.777"
+var invalidImage = "nginx:latest"
+var crdbVersion = "v21.1.7"
+
+// TestCreateInsecureCluster tests the creation of insecure cluster, and it should be successful.
 func TestCreateInsecureCluster(t *testing.T) {
 	// Test Creating an insecure cluster
 	// No actions on the cluster just create it and
@@ -75,6 +83,7 @@ func TestCreateInsecureCluster(t *testing.T) {
 	steps.Run(t)
 }
 
+// TestCreatesSecureCluster tests the creation of secure cluster, and it should be successful.
 func TestCreatesSecureCluster(t *testing.T) {
 
 	// Test Creating a secure cluster
@@ -114,4 +123,133 @@ func TestCreatesSecureCluster(t *testing.T) {
 		},
 	}
 	steps.Run(t)
+}
+
+// TestCreateSecureClusterWithInvalidVersion tests cluster creation with invalid version and the cluster should fail.
+func TestCreateSecureClusterWithInvalidVersion(t *testing.T) {
+	// Test create a cluster with invalid version
+	// Check it went into ErrImagePull state and then marked CR into failed state
+	// tear it down
+
+	if parallel {
+		t.Parallel()
+	}
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+
+	testLog := zapr.NewLogger(zaptest.NewLogger(t))
+
+	actor.Log = testLog
+
+	testcases := []struct {
+		imageVersion     string
+		cockroachVersion string
+	}{
+		{
+			nonExistentImage,
+			"",
+		},
+		{
+			validImage,
+			crdbVersion,
+		},
+	}
+
+	for _, testcase := range testcases {
+		steps := testutil.Steps{
+			{
+				Name: "creates 3-node secure cluster with invalid image",
+				Test: func(subT *testing.T) {
+					e := testenv.CreateActiveEnvForTest()
+					env := e.Start()
+
+					sb := testenv.NewDiffingSandbox(subT, env)
+					sb.StartManager(subT, controller.InitClusterReconcilerWithLogger(testLog))
+
+					builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
+						WithImage(testcase.imageVersion).
+						WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
+					if testcase.cockroachVersion != "" {
+						os.Setenv("RELATED_IMAGE_COCKROACH_v21_1_7", nonExistentImage)
+						builder = builder.WithCockroachDBVersion(testcase.cockroachVersion)
+					}
+
+					require.NoError(subT, sb.Create(builder.Cr()))
+					testutil.RequireClusterInImagePullBackoff(subT, sb, builder)
+					testutil.RequireClusterInFailedState(subT, sb, builder)
+					subT.Log("Done with basic invalid cluster")
+					require.NoError(subT, sb.Delete(builder.Cr()))
+					e.Stop()
+				},
+			},
+		}
+		steps.Run(t)
+
+	}
+}
+
+// TestCreateSecureClusterWithNonCRDBImage tests creating a cluster with non-valid image.
+// Creation should fail and CR should be in failed state.
+func TestCreateSecureClusterWithNonCRDBImage(t *testing.T) {
+	// Test create a cluster with non valid CRDB image
+	// Check it went into failed state in initialized state
+	// tear it down
+
+	if parallel {
+		t.Parallel()
+	}
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+
+	testLog := zapr.NewLogger(zaptest.NewLogger(t))
+
+	actor.Log = testLog
+
+	testcases := []struct {
+		imageVersion     string
+		cockroachVersion string
+	}{
+		{
+			invalidImage,
+			"",
+		},
+		{
+			validImage,
+			crdbVersion,
+		},
+	}
+
+	for _, testcase := range testcases {
+		steps := testutil.Steps{
+			{
+				Name: "creates 3-node secure cluster with invalid image",
+				Test: func(subT *testing.T) {
+					e := testenv.CreateActiveEnvForTest()
+					env := e.Start()
+
+					sb := testenv.NewDiffingSandbox(subT, env)
+					sb.StartManager(subT, controller.InitClusterReconcilerWithLogger(testLog))
+
+					builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
+						WithImage(testcase.imageVersion).
+						WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
+
+					if testcase.cockroachVersion != "" {
+						os.Setenv("RELATED_IMAGE_COCKROACH_v21_1_7", invalidImage)
+						builder = builder.WithCockroachDBVersion(testcase.cockroachVersion)
+					}
+
+					require.NoError(subT, sb.Create(builder.Cr()))
+					testutil.RequireClusterInFailedState(subT, sb, builder)
+					subT.Log("Done with basic invalid cluster with image other than crdb")
+					require.NoError(subT, sb.Delete(builder.Cr()))
+
+					e.Stop()
+				},
+			},
+		}
+		steps.Run(t)
+	}
 }
