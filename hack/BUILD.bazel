@@ -104,25 +104,6 @@ sh_test(
     data = ["@//:all-srcs"],
 )
 
-# update-csv generates bundle format for DEV only
-sh_binary(
-    name = "update-csv",
-    srcs = ["update-csv.sh"],
-    args = [
-        "$(location %s)" % OPERATORSDK,
-        "$(location %s)" % KUSTOMIZE,
-        "$(location %s)" % OPM,
-        "$(location %s)" % FAQ,
-    ],
-    data = [
-        OPERATORSDK,
-        KUSTOMIZE,
-        OPM,
-        FAQ,
-        "@//:all-srcs",
-    ],
-)
-
 # update-pkg-manifest script generates manifests and metadata for OpenShift certification release
 # in the package manifests format
 sh_binary(
