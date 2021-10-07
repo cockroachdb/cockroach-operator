@@ -38,8 +38,8 @@ var parallel = *flag.Bool("parallel", false, "run tests in parallel")
 var MinorVersion1 string = "cockroachdb/cockroach:v20.2.8"
 var MinorVersion2 string = "cockroachdb/cockroach:v20.2.9"
 var MajorVersion string = "cockroachdb/cockroach:v21.1.0"
-var NonExistentVersion string = "cockroachdb/cockroach:v20.2.999"
-var SkipFeatureVersion string = "cockroachdb/cockroach:v19.2.8"
+var NonExistentVersion string = "cockroachdb/cockroach-non-existent:v21.1.999"
+var SkipFeatureVersion string = "cockroachdb/cockroach:v20.1.0"
 
 // TestUpgradesMinorVersion tests a minor version bump
 func TestUpgradesMinorVersion(t *testing.T) {
@@ -420,7 +420,7 @@ func TestUpgradeWithMajorVersionExcludingMajorFeature(t *testing.T) {
 				current := builder.Cr()
 				require.NoError(t, sb.Get(current))
 
-				current.Spec.Image.Name = MinorVersion1
+				current.Spec.Image.Name = MajorVersion
 				require.NoError(t, sb.Update(current))
 
 				testutil.RequireClusterInFailedState(t, sb, builder)
