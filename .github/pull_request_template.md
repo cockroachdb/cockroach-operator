@@ -2,4 +2,4 @@ _Add a description of the problem this PR addresses and an overview of how this 
 
 **Checklist**
 
-* [ ] I have added these changes to the changlog (or it's not applicable).
+* [ ] I have added these changes to the changelog (or it's not applicable).

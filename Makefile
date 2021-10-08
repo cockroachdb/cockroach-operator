@@ -64,6 +64,11 @@ test/verify:
 test/lint:
 	bazel run //hack:verify-gofmt
 
+# NODE_VERSION refers the to version of the kindest/node image. E.g. 1.22.1
+.PHONY: test/smoketest
+test/smoketest:
+	@bazel run //hack/smoketest -- -dir $(PWD) -version $(NODE_VERSION)
+
 # Run only e2e stort tests
 # We can use this to only run one specific test
 .PHONY: test/e2e-short
@@ -405,8 +410,3 @@ ifneq ($(origin DEFAULT_CHANNEL), undefined)
 BUNDLE_DEFAULT_CHANNEL := --default-channel=$(DEFAULT_CHANNEL)
 endif
 BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
-
-# Build the bundle image.
-.PHONY: gen-csv
-gen-csv: dev/generate
-	bazel run  //hack:update-csv  -- $(RH_BUNDLE_VERSION) $(RH_OPERATOR_IMAGE) $(BUNDLE_METADATA_OPTS) $(RH_COCKROACH_DATABASE_IMAGE)
