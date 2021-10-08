@@ -73,6 +73,7 @@ func RequireClusterToBeReadyEventuallyTimeout(t *testing.T, sb testenv.DiffingSa
 		return true, nil
 	})
 	require.NoError(t, err)
+	t.Log("Cluster is ready")
 }
 
 func RequireAtMostOneVersionCheckerJob(t *testing.T, sb testenv.DiffingSandbox, timeout time.Duration) {
@@ -288,6 +289,7 @@ func RequireDecommissionNode(t *testing.T, sb testenv.DiffingSandbox, b ClusterB
 		return true, nil
 	})
 	require.NoError(t, err)
+	t.Log("Done decommissioning node")
 }
 
 func makeDrainStatusChecker(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder, numNodes uint64) error {
@@ -313,6 +315,7 @@ func makeDrainStatusChecker(t *testing.T, sb testenv.DiffingSandbox, b ClusterBu
 	for {
 		record, err := r.Read()
 		if err == io.EOF {
+			t.Log("Done reading node statuses")
 			break
 		}
 
@@ -372,6 +375,7 @@ func RequireDatabaseToFunction(t *testing.T, sb testenv.DiffingSandbox, b Cluste
 }
 
 func requireDatabaseToFunction(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder, useSSL bool) {
+	t.Log("Testing database function")
 	sb.Mgr.GetConfig()
 	podName := fmt.Sprintf("%s-0.%s", b.Cluster().Name(), b.Cluster().Name())
 
@@ -399,6 +403,8 @@ func requireDatabaseToFunction(t *testing.T, sb testenv.DiffingSandbox, b Cluste
 	db, err := database.NewDbConnection(conn)
 	require.NoError(t, err)
 	defer db.Close()
+
+	t.Log("DB connection initialized; running commands")
 
 	if _, err := db.Exec("CREATE DATABASE test_db"); err != nil {
 		t.Fatal(err)

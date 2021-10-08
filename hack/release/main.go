@@ -18,6 +18,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 
@@ -39,6 +40,7 @@ func main() {
 		EnsureUniqueVersion(func(cmd *exec.Cmd) error { return cmd.Run() }),
 		CreateReleaseBranch(process.ExecJUnit),
 		UpdateVersion(),
+		UpdateChangelog(ioutil.ReadFile),
 		GenerateFiles(process.ExecJUnit),
 	}
 
