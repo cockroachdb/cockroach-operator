@@ -64,6 +64,11 @@ test/verify:
 test/lint:
 	bazel run //hack:verify-gofmt
 
+# NODE_VERSION refers the to version of the kindest/node image. E.g. 1.22.1
+.PHONY: test/smoketest
+test/smoketest:
+	@bazel run //hack/smoketest -- -dir $(PWD) -version $(NODE_VERSION)
+
 # Run only e2e stort tests
 # We can use this to only run one specific test
 .PHONY: test/e2e-short
