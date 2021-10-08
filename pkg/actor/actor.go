@@ -23,6 +23,8 @@ import (
 	"github.com/go-logr/logr"
 	"go.uber.org/zap/zapcore"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -72,15 +74,19 @@ type Actor interface {
 	GetActionType() api.ActionType
 }
 
-func newAction(atype string, scheme *runtime.Scheme, cl client.Client) action {
+func newAction(scheme *runtime.Scheme, cl client.Client, config *rest.Config, clientset kubernetes.Interface) action {
 	return action{
-		client: cl,
-		scheme: scheme,
+		client:    cl,
+		clientset: clientset,
+		scheme:    scheme,
+		config:    config,
 	}
 }
 
 // action is the base set of common parameters required by other actions
 type action struct {
-	client client.Client
-	scheme *runtime.Scheme
+	client    client.Client
+	clientset kubernetes.Interface
+	scheme    *runtime.Scheme
+	config    *rest.Config
 }

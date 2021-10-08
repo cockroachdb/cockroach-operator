@@ -12,6 +12,7 @@ package actor
 
 import (
 	"context"
+	"fmt"
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/condition"
 	"github.com/cockroachdb/cockroach-operator/pkg/features"
@@ -22,6 +23,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	kubetypes "k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -33,26 +35,28 @@ type Director interface {
 type clusterDirector struct {
 	actors     map[api.ActionType]Actor
 	client     client.Client
+	clientset  kubernetes.Interface
 	scheme     *runtime.Scheme
 	kubeDistro kube.KubernetesDistribution
 	config     *rest.Config
 }
 
-func NewDirector(scheme *runtime.Scheme, cl client.Client, config *rest.Config) Director {
+func NewDirector(scheme *runtime.Scheme, cl client.Client, config *rest.Config, clientset kubernetes.Interface) Director {
 	kd := kube.NewKubernetesDistribution()
 	actors := map[api.ActionType]Actor{
-		api.DecommissionAction:      newDecommission(scheme, cl, config),
-		api.VersionCheckerAction:    newVersionChecker(scheme, cl, config),
-		api.GenerateCertAction:      newGenerateCert(scheme, cl, config),
-		api.PartitionedUpdateAction: newPartitionedUpdate(scheme, cl, config),
-		api.ResizePVCAction:         newResizePVC(scheme, cl, config),
-		api.DeployAction:            newDeploy(scheme, cl, config, kd),
-		api.InitializeAction:        newInitialize(scheme, cl, config),
-		api.ClusterRestartAction:    newClusterRestart(scheme, cl, config),
+		api.DecommissionAction:      newDecommission(scheme, cl, config, clientset),
+		api.VersionCheckerAction:    newVersionChecker(scheme, cl, config, clientset),
+		api.GenerateCertAction:      newGenerateCert(scheme, cl, config, clientset),
+		api.PartitionedUpdateAction: newPartitionedUpdate(scheme, cl, config, clientset),
+		api.ResizePVCAction:         newResizePVC(scheme, cl, config, clientset),
+		api.DeployAction:            newDeploy(scheme, cl, config, kd, clientset),
+		api.InitializeAction:        newInitialize(scheme, cl, config, clientset),
+		api.ClusterRestartAction:    newClusterRestart(scheme, cl, config, clientset),
 	}
 	return &clusterDirector{
 		actors:     actors,
 		client:     cl,
+		clientset:  clientset,
 		scheme:     scheme,
 		kubeDistro: kd,
 		config:     config,
@@ -271,7 +275,7 @@ func (cd *clusterDirector) needsDeploy(ctx context.Context, cluster *resource.Cl
 
 	r := resource.NewManagedKubeResource(ctx, cd.client, cluster, kube.AnnotatingPersister)
 
-	kubernetesDistro, err := cd.kubeDistro.Get(ctx, cd.config, log)
+	kubernetesDistro, err := cd.kubeDistro.Get(ctx, cd.clientset, log)
 	if err != nil {
 		return false, err
 	}
@@ -286,6 +290,7 @@ func (cd *clusterDirector) needsDeploy(ctx context.Context, cluster *resource.Cl
 	}
 
 	for _, b := range builders {
+		fmt.Println(b.ResourceName())
 		hasChanged, err := resource.Reconciler{
 			ManagedResource: r,
 			Builder:         b,

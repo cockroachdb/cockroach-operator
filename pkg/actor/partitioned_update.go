@@ -40,18 +40,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func newPartitionedUpdate(scheme *runtime.Scheme, cl client.Client, config *rest.Config) Actor {
+func newPartitionedUpdate(scheme *runtime.Scheme, cl client.Client, config *rest.Config, clientset kubernetes.Interface) Actor {
 	return &partitionedUpdate{
-		action: newAction("partitionedUpdate", scheme, cl),
-		config: config,
+		action: newAction(scheme, cl, config, clientset),
 	}
 }
 
 // upgrade handles minor and major version upgrades without finalization
 type partitionedUpdate struct {
 	action
-
-	config *rest.Config
 }
 
 // GetActionType returns api.PartitionedUpdateAction action used to set the cluster status errors
@@ -130,11 +127,6 @@ func (up *partitionedUpdate) Act(ctx context.Context, cluster *resource.Cluster,
 	podUpdateTimeout := 10 * time.Minute
 	podMaxPollingInterval := 30 * time.Minute
 
-	clientset, err := kubernetes.NewForConfig(up.config)
-	if err != nil {
-		return errors.Wrapf(err, "failed to create kubernetes clientset")
-	}
-
 	// test to see if we are running inside of Kubernetes
 	// If we are running inside of k8s we will not find this file.
 	runningInsideK8s := inK8s("/var/run/secrets/kubernetes.io/serviceaccount/token")
@@ -185,7 +177,7 @@ func (up *partitionedUpdate) Act(ctx context.Context, cluster *resource.Cluster,
 
 	// TODO test downgrades
 	// see https://github.com/cockroachdb/cockroach-operator/issues/208
-	healthChecker := healthchecker.NewHealthChecker(cluster, clientset, up.scheme, up.config)
+	healthChecker := healthchecker.NewHealthChecker(cluster, up.clientset, up.scheme, up.config)
 	log.V(int(zapcore.InfoLevel)).Info("update starting with partitioned update", "old version", currentVersionCalFmtStr, "new version", versionWantedCalFmtStr, "image", containerWanted)
 
 	updateRoach := &update.UpdateRoach{
@@ -198,7 +190,7 @@ func (up *partitionedUpdate) Act(ctx context.Context, cluster *resource.Cluster,
 	}
 
 	k8sCluster := &update.UpdateCluster{
-		Clientset:             clientset,
+		Clientset:             up.clientset,
 		PodUpdateTimeout:      podUpdateTimeout,
 		PodMaxPollingInterval: podMaxPollingInterval,
 		HealthChecker:         healthChecker,

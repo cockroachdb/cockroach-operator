@@ -18,6 +18,7 @@ package resource
 
 import (
 	"context"
+	"fmt"
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
 	"github.com/cockroachdb/cockroach-operator/pkg/labels"
 	"github.com/cockroachdb/errors"
@@ -119,6 +120,7 @@ func (r Reconciler) HasChanged() (bool, error) {
 
 	if err != nil {
 		if kube.IsNotFound(err) {
+			fmt.Println("not found 111")
 			return true, nil
 		}
 		return false, err
@@ -133,7 +135,7 @@ func (r Reconciler) HasChanged() (bool, error) {
 	if err != nil {
 		return false, err
 	}
-
+	fmt.Printf("changed %v 222\n", changed)
 	return changed, nil
 }
 
@@ -204,11 +206,13 @@ type KubeFetcher struct {
 }
 
 func (f KubeFetcher) Fetch(o client.Object) error {
+	fmt.Printf("%T\n", o)
 	accessor, err := meta.Accessor(o)
 	if err != nil {
 		return err
 	}
 
+	fmt.Println(f.makeKey(accessor.GetName()))
 	err = f.Reader.Get(f.ctx, f.makeKey(accessor.GetName()), o)
 
 	return err

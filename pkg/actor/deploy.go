@@ -24,14 +24,14 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func newDeploy(scheme *runtime.Scheme, cl client.Client, config *rest.Config, kd kube.KubernetesDistribution) Actor {
+func newDeploy(scheme *runtime.Scheme, cl client.Client, config *rest.Config, kd kube.KubernetesDistribution, clientset kubernetes.Interface) Actor {
 	return &deploy{
-		action: newAction("deploy", scheme, cl),
-		config: config,
+		action: newAction(scheme, cl, config, clientset),
 		kd:     kd,
 	}
 }
@@ -40,8 +40,6 @@ func newDeploy(scheme *runtime.Scheme, cl client.Client, config *rest.Config, kd
 // services, a statefulset and a pod disruption budget
 type deploy struct {
 	action
-	config *rest.Config
-
 	kd kube.KubernetesDistribution
 }
 
@@ -56,7 +54,7 @@ func (d deploy) Act(ctx context.Context, cluster *resource.Cluster, log logr.Log
 	owner := cluster.Unwrap()
 	r := resource.NewManagedKubeResource(ctx, d.client, cluster, kube.AnnotatingPersister)
 
-	kubernetesDistro, err := d.kd.Get(ctx, d.config, log)
+	kubernetesDistro, err := d.kd.Get(ctx, d.clientset, log)
 	if err != nil {
 		return errors.Wrap(err, "failed to get Kubernetes distribution")
 	}

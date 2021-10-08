@@ -203,6 +203,7 @@ func ObjectChanged(current, updated runtime.Object) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+	fmt.Println(patchResult.String())
 	return !patchResult.IsEmpty(), nil
 }
 

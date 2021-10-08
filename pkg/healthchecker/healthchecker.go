@@ -51,14 +51,14 @@ type HealthChecker interface { // for testing
 
 //HealthCheckerImpl struct
 type HealthCheckerImpl struct {
-	clientset *kubernetes.Clientset
+	clientset kubernetes.Interface
 	scheme    *runtime.Scheme
 	cluster   *resource.Cluster
 	config    *rest.Config
 }
 
 //NewHealthChecker ctor
-func NewHealthChecker(cluster *resource.Cluster, clientset *kubernetes.Clientset, scheme *runtime.Scheme, config *rest.Config) *HealthCheckerImpl {
+func NewHealthChecker(cluster *resource.Cluster, clientset kubernetes.Interface, scheme *runtime.Scheme, config *rest.Config) *HealthCheckerImpl {
 	return &HealthCheckerImpl{
 		clientset: clientset,
 		scheme:    scheme,

@@ -19,6 +19,7 @@ package controller
 import (
 	"context"
 	"fmt"
+	"k8s.io/client-go/kubernetes"
 	"time"
 
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
@@ -222,11 +223,15 @@ func InitClusterReconciler() func(ctrl.Manager) error {
 // InitClusterReconcilerWithLogger returns a registrator for new controller instance with provided logger
 func InitClusterReconcilerWithLogger(l logr.Logger) func(ctrl.Manager) error {
 	return func(mgr ctrl.Manager) error {
+		clientset, err := kubernetes.NewForConfig(mgr.GetConfig())
+		if err != nil {
+			return err
+		}
 		return (&ClusterReconciler{
 			Client:   mgr.GetClient(),
 			Log:      l,
 			Scheme:   mgr.GetScheme(),
-			Director: actor.NewDirector(mgr.GetScheme(), mgr.GetClient(), mgr.GetConfig()),
+			Director: actor.NewDirector(mgr.GetScheme(), mgr.GetClient(), mgr.GetConfig(), clientset),
 		}).SetupWithManager(mgr)
 	}
 }
