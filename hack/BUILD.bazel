@@ -178,6 +178,7 @@ filegroup(
         "//hack/gke:all-srcs",
         "//hack/k8s:all-srcs",
         "//hack/release:all-srcs",
+        "//hack/smoketest:all-srcs",
     ],
     tags = ["automanaged"],
     visibility = ["//visibility:public"],
