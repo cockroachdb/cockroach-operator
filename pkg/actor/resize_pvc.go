@@ -49,18 +49,15 @@ func defaultBackoffFactory(maxTime time.Duration) backoff.BackOff {
 }
 
 // newResizePVC creates and returns a new resizePVC struct
-func newResizePVC(scheme *runtime.Scheme, cl client.Client, config *rest.Config) Actor {
+func newResizePVC(scheme *runtime.Scheme, cl client.Client, config *rest.Config, clientset kubernetes.Interface) Actor {
 	return &resizePVC{
-		action: newAction("resize_pvc", scheme, cl),
-		config: config,
+		action: newAction(scheme, cl, config, clientset),
 	}
 }
 
 // resizePVC resizes a PVC
 type resizePVC struct {
 	action
-
-	config *rest.Config
 }
 
 //GetActionType returns api.RequestCertAction action used to set the cluster status errors
@@ -104,11 +101,6 @@ func (rp *resizePVC) Act(ctx context.Context, cluster *resource.Cluster, log log
 		return nil
 	}
 
-	clientset, err := kubernetes.NewForConfig(rp.config)
-	if err != nil {
-		return errors.Wrapf(err, "failed to create kubernetes clientset")
-	}
-
 	stsStorageSizeDeployed := statefulSet.Spec.VolumeClaimTemplates[0].Spec.Resources.Requests.Storage()
 	stsStorageSizeSet := cluster.Spec().DataStore.VolumeClaim.PersistentVolumeClaimSpec.Resources.Requests.Storage()
 
@@ -121,7 +113,7 @@ func (rp *resizePVC) Act(ctx context.Context, cluster *resource.Cluster, log log
 	log.Info("Starting PVC resize")
 
 	// Find all of the PVCs and resize them
-	if err := rp.findAndResizePVC(ctx, statefulSet, cluster, clientset, log); err != nil {
+	if err := rp.findAndResizePVC(ctx, statefulSet, cluster, rp.clientset, log); err != nil {
 		return errors.Wrapf(err, "updating PVCs for statefulset %s.%s", cluster.Namespace(), cluster.StatefulSetName())
 	}
 
@@ -196,7 +188,7 @@ func (rp *resizePVC) recreateSTS(ctx context.Context, cluster *resource.Cluster,
 // findAndResizePVC finds all active PVCs and resizes them to the new size contained in the cluster
 // definition.
 func (rp *resizePVC) findAndResizePVC(ctx context.Context, sts *appsv1.StatefulSet, cluster *resource.Cluster,
-	clientset *kubernetes.Clientset, log logr.Logger) error {
+	clientset kubernetes.Interface, log logr.Logger) error {
 	// K8s doesn't provide a way to tell if a PVC or PV is currently in use by
 	// a pod. However, it is safe to assume that any PVCs with an ordinal great
 	// than or equal to the sts' Replicas is not in use. As only pods with with

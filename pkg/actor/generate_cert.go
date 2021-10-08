@@ -22,6 +22,7 @@ import (
 	"encoding/pem"
 	"fmt"
 	"io/ioutil"
+	"k8s.io/client-go/kubernetes"
 	"path/filepath"
 	"time"
 
@@ -45,11 +46,9 @@ var allowCAKeyReuse bool
 var overwriteFiles bool
 var generatePKCS8Key bool
 
-func newGenerateCert(scheme *runtime.Scheme, cl client.Client, config *rest.Config) Actor {
-
+func newGenerateCert(scheme *runtime.Scheme, cl client.Client, config *rest.Config, clientset kubernetes.Interface) Actor {
 	return &generateCert{
-		action: newAction("generate_cert", scheme, cl),
-		config: config,
+		action: newAction(scheme, cl, config, clientset),
 	}
 }
 
@@ -57,7 +56,6 @@ func newGenerateCert(scheme *runtime.Scheme, cl client.Client, config *rest.Conf
 type generateCert struct {
 	action
 
-	config   *rest.Config
 	CertsDir string
 	CAKey    string
 }

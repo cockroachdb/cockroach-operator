@@ -25,11 +25,10 @@ import (
 	"go.uber.org/zap/zapcore"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 )
 
 type KubernetesDistribution interface {
-	Get(ctx context.Context, config *rest.Config, log logr.Logger) (string, error)
+	Get(ctx context.Context, clientset kubernetes.Interface, log logr.Logger) (string, error)
 }
 
 type kubernetesDistribution struct{}
@@ -39,15 +38,7 @@ func NewKubernetesDistribution() KubernetesDistribution {
 }
 
 // Get the Kubernetes Distribution Type
-func (kd kubernetesDistribution) Get(ctx context.Context, config *rest.Config, log logr.Logger) (string, error) {
-
-	clientset, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		msg := "cannot create k8s client"
-		log.Error(err, msg)
-		return "", errors.Wrap(err, msg)
-	}
-
+func (kd kubernetesDistribution) Get(ctx context.Context, clientset kubernetes.Interface, log logr.Logger) (string, error) {
 	nodes, err := clientset.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 	if err != nil {
 		msg := "cannot get nodes"
@@ -97,6 +88,6 @@ func MockKubernetesDistribution() KubernetesDistribution {
 }
 
 // Get the Kubernetes Distribution Type
-func (mock mockKubernetesDistribution) Get(ctx context.Context, config *rest.Config, log logr.Logger) (string, error) {
+func (mock mockKubernetesDistribution) Get(_ context.Context, _ kubernetes.Interface, _ logr.Logger) (string, error) {
 	return "GKE", nil
 }

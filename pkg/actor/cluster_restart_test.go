@@ -59,7 +59,7 @@ func TestFullClusterRestart(t *testing.T) {
 
 	client := builder.Build()
 
-	cr := newClusterRestart(nil, client, nil).(*clusterRestart)
+	cr := newClusterRestart(nil, client, nil, nil).(*clusterRestart)
 	require.NotNil(t, cr)
 	var stsReplicas int32
 	stsReplicas = 3
@@ -112,7 +112,7 @@ func TestRollingClusterRestart(t *testing.T) {
 
 	client := builder.Build()
 
-	cr := newClusterRestart(nil, client, nil).(*clusterRestart)
+	cr := newClusterRestart(nil, client, nil, nil).(*clusterRestart)
 	require.NotNil(t, cr)
 	var stsReplicas int32
 	stsReplicas = 3

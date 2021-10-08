@@ -37,18 +37,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func newDecommission(scheme *runtime.Scheme, cl client.Client, config *rest.Config) Actor {
+func newDecommission(scheme *runtime.Scheme, cl client.Client, config *rest.Config, clientset kubernetes.Interface) Actor {
 	return &decommission{
-		action: newAction("decommission", scheme, cl),
-		config: config,
+		action: newAction(scheme, cl, config, clientset),
 	}
 }
 
 // decommission performs the initialization of the new cluster
 type decommission struct {
 	action
-
-	config *rest.Config
 }
 
 //GetActionType returns  api.DecommissionAction used to set the cluster status errors
@@ -86,10 +83,6 @@ func (d decommission) Act(ctx context.Context, cluster *resource.Cluster, log lo
 	log.Info("replicas decommissioning", "status.CurrentReplicas", status.CurrentReplicas, "expected", cluster.Spec().Nodes)
 	if status.CurrentReplicas <= cluster.Spec().Nodes {
 		return nil
-	}
-	clientset, err := kubernetes.NewForConfig(d.config)
-	if err != nil {
-		return errors.Wrapf(err, "decommission failed to create kubernetes clientset")
 	}
 	// test to see if we are running inside of Kubernetes
 	// If we are running inside of k8s we will not find this file.
@@ -134,18 +127,18 @@ func (d decommission) Act(ctx context.Context, cluster *resource.Cluster, log lo
 		return errors.Wrap(err, "failed to get range move duration")
 	}
 
-	drainer := scale.NewCockroachNodeDrainer(log, cluster.Namespace(), ss.Name, d.config, clientset, cluster.Spec().TLSEnabled, 3*timeout)
+	drainer := scale.NewCockroachNodeDrainer(log, cluster.Namespace(), ss.Name, d.config, d.clientset, cluster.Spec().TLSEnabled, 3*timeout)
 	pvcPruner := scale.PersistentVolumePruner{
 		Namespace:   cluster.Namespace(),
 		StatefulSet: ss.Name,
-		ClientSet:   clientset,
+		ClientSet:   d.clientset,
 		Logger:      log,
 	}
 	//we should start scale down
 	scaler := scale.Scaler{
 		Logger: log,
 		CRDB: &scale.CockroachStatefulSet{
-			ClientSet: clientset,
+			ClientSet: d.clientset,
 			Namespace: cluster.Namespace(),
 			Name:      ss.Name,
 		},

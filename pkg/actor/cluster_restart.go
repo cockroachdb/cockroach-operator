@@ -42,10 +42,9 @@ import (
 
 const sleepDuration = 1 * time.Minute
 
-func newClusterRestart(scheme *runtime.Scheme, cl client.Client, config *rest.Config) Actor {
+func newClusterRestart(scheme *runtime.Scheme, cl client.Client, config *rest.Config, clientset kubernetes.Interface) Actor {
 	return &clusterRestart{
-		action: newAction("Crdb Cluster Restart", scheme, cl),
-		config: config,
+		action: newAction(scheme, cl, config, clientset),
 	}
 }
 
@@ -53,8 +52,6 @@ func newClusterRestart(scheme *runtime.Scheme, cl client.Client, config *rest.Co
 // Full Restart in case of CA renew
 type clusterRestart struct {
 	action
-
-	config *rest.Config
 }
 
 //GetActionType returns api.ClusterRestartAction action used to set the cluster status errors
@@ -74,10 +71,6 @@ func (r *clusterRestart) Act(ctx context.Context, cluster *resource.Cluster, log
 		Namespace: cluster.Namespace(),
 		Name:      cluster.StatefulSetName(),
 	}
-	clientset, err := kubernetes.NewForConfig(r.config)
-	if err != nil {
-		return errors.Wrapf(err, "failed to create kubernetes clientset")
-	}
 
 	statefulSet := &appsv1.StatefulSet{}
 	if err := r.client.Get(ctx, key, statefulSet); err != nil {
@@ -89,20 +82,20 @@ func (r *clusterRestart) Act(ctx context.Context, cluster *resource.Cluster, log
 		return NotReadyErr{Err: errors.New("restart statefulset is updating, waiting for the update to finish")}
 	}
 
-	err = statefulSetReplicasAvailable(&statefulSet.Status)
+	err := statefulSetReplicasAvailable(&statefulSet.Status)
 	if err != nil {
 		log.Info("restart statefulset does not have all replicas up")
 		return err
 	}
-	healthChecker := healthchecker.NewHealthChecker(cluster, clientset, r.scheme, r.config)
+	healthChecker := healthchecker.NewHealthChecker(cluster, r.clientset, r.scheme, r.config)
 	if strings.EqualFold(restartType, api.ClusterRestartType(api.RollingRestart).String()) {
 		log.V(DEBUGLEVEL).Info("initiating rolling restart action")
-		if err := r.rollingSts(ctx, statefulSet.DeepCopy(), clientset, log, healthChecker); err != nil {
+		if err := r.rollingSts(ctx, statefulSet.DeepCopy(), r.clientset, log, healthChecker); err != nil {
 			return errors.Wrapf(err, "error restarting statefulset %s.%s", cluster.Namespace(), cluster.StatefulSetName())
 		}
 		log.V(DEBUGLEVEL).Info("completed rolling cluster restart")
 	} else if strings.EqualFold(restartType, api.ClusterRestartType(api.FullCluster).String()) {
-		if err := r.fullClusterRestart(ctx, statefulSet, log, clientset); err != nil {
+		if err := r.fullClusterRestart(ctx, statefulSet, log, r.clientset); err != nil {
 			return errors.Wrapf(err, "error reseting statefulset %s.%s to 0 replicas", cluster.Namespace(), cluster.StatefulSetName())
 		}
 		//sleep 1 minute to make sure the crdb is up and running
