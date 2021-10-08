@@ -269,14 +269,16 @@ k8s/apply:
 	K8S_CLUSTER=gke_$(GCP_PROJECT)_$(GCP_ZONE)_$(CLUSTER_NAME) \
 	DEV_REGISTRY=$(DEV_REGISTRY) \
 	bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
-		//manifests:install_operator.apply
+		//config/default:install.apply \
+		--define APP_VERSION=$(APP_VERSION)
 
 .PHONY: k8s/delete
 k8s/delete:
 	K8S_CLUSTER=gke_$(GCP_PROJECT)_$(GCP_ZONE)_$(CLUSTER_NAME) \
 	DEV_REGISTRY=$(DEV_REGISTRY) \
 	bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
-		//manifests:install_operator.delete
+		//config/default:install.delete \
+		--define APP_VERSION=$(APP_VERSION)
 
 #
 # Release targets
