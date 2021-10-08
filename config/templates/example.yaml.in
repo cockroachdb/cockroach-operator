@@ -65,3 +65,7 @@ spec:
   #              values:
   #              - cockroachdb
   #          topologyKey: kubernetes.io/hostname
+
+  # nodeSelectors used to match against
+  # nodeSelector:
+  #   worker-pool-name: crdb-workers
