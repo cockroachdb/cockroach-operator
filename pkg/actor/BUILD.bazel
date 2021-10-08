@@ -4,6 +4,7 @@ go_library(
     name = "go_default_library",
     srcs = [
         "actor.go",
+        "director.go",
         "cluster_restart.go",
         "context.go",
         "decommission.go",
@@ -54,7 +55,7 @@ go_library(
 go_test(
     name = "go_default_test",
     srcs = [
-        "actor_test.go",
+        "director_test.go",
         "cluster_restart_test.go",
         "deploy_test.go",
         "export_test.go",
