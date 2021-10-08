@@ -7,6 +7,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 # [Unreleased](https://github.com/cockroachdb/cockroach-operator/compare/2.2.0...master)
 
+## Deleted
+
+* References to certificates/v1beta1 preventing the operator from working on K8s 1.22
+
 # [2.2.0](https://github.com/cockroachdb/cockroach-operator/compare/v2.2.0-beta.2...2.2.0)
 
 ## Added

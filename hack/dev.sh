@@ -19,6 +19,7 @@ PATH="bazel-bin/hack/bin:${PATH}"
 
 APP_VERSION="${APP_VERSION:-v$(cat version.txt)}"
 CLUSTER_NAME="dev"
+NODE_IMAGE="kindest/node:v1.22.1"
 REGISTRY_NAME="kind-registry"
 REGISTRY_PORT=5000
 
@@ -34,6 +35,9 @@ create_kind_cluster() {
   cat <<EOF | kind create cluster --name "${CLUSTER_NAME}" --config=-
 apiVersion: kind.x-k8s.io/v1alpha4
 kind: Cluster
+nodes:
+- role: control-plane
+  image: ${NODE_IMAGE}
 containerdConfigPatches:
 - |-
   [plugins."io.containerd.grpc.v1.cri".registry.mirrors."localhost:${REGISTRY_PORT}"]
