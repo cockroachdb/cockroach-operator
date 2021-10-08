@@ -245,8 +245,6 @@ func RequireDownGradeOptionSet(t *testing.T, sb testenv.DiffingSandbox, b Cluste
 	if value == "" {
 		t.Errorf("downgrade_option is empty and should be set to %s", version)
 	}
-
-	// TODO: Is this check required to compare with some specific value or is it redundant ?
 }
 
 // TODO I do not think this is correct.  Keith mentioned we need to check something else.

@@ -233,6 +233,7 @@ func extractMetric(l logr.Logger, output, underepmetric string, partition int32)
 	metric := strings.TrimSuffix(out[1], "\n")
 	//the value of the metric should be 0 to return nil
 	// TODO: bitsize must be either 32 or 64
+	// nolint
 	if i, err := strconv.ParseFloat(metric, 1); err != nil {
 		l.V(int(zapcore.DebugLevel)).Info(err.Error())
 		return -1, err

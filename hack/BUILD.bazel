@@ -109,6 +109,7 @@ sh_test(
     srcs = ["//hack/bin:golangci-lint"],
     args = [
         "run",
+        "--timeout 5m"
     ],
     env = {
         "GOLANGCI_LINT_CACHE": "/tmp",
