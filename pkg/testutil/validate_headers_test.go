@@ -121,7 +121,7 @@ func TestValidate(t *testing.T) {
 	}
 
 	for _, filename := range *non {
-		t.Logf("nonvalid file: %s", filename)
+		t.Logf("invalid file: %s", filename)
 	}
 
 	n := *non

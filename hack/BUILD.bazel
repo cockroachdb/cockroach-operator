@@ -109,14 +109,14 @@ sh_test(
     srcs = ["//hack/bin:golangci-lint"],
     args = [
         "run",
-        "--timeout 5m"
+        "--timeout 5m",
     ],
+    data = ["@//:all-srcs"],
     env = {
         "GOLANGCI_LINT_CACHE": "/tmp",
         "XDG_CACHE_HOME": "/tmp",
         "GOPATH": "/tmp",
     },
-    data = ["@//:all-srcs"],
 )
 
 # update-pkg-manifest script generates manifests and metadata for OpenShift certification release

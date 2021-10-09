@@ -65,7 +65,9 @@ func RequireClusterToBeReadyEventuallyTimeout(t *testing.T, sb testenv.DiffingSa
 
 		if !statefulSetIsReady(ss) {
 			t.Logf("stateful set is not ready")
-			_ = logPods(context.TODO(), ss, cluster, sb, t)
+			if err = logPods(context.TODO(), ss, cluster, sb, t); err != nil {
+				t.Log(err.Error())
+			}
 			return false, nil
 		}
 
