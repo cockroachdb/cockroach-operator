@@ -17,7 +17,6 @@ limitations under the License.
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -29,7 +28,7 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver/v3"
-	"gopkg.in/yaml.v3"
+	"gopkg.in/yaml.v2"
 )
 
 const crdbVersionsInvertedRegexp = "^v19|^v21.1.8$|latest|ubi$"
@@ -118,38 +117,41 @@ func sortVersions(versions []string) []string {
 // annotation tries to open bolerplate file and combine the text from it with
 // file description
 func annotation() []byte {
-	contents, err := ioutil.ReadFile("hack/boilerplate/boilerplate.yaml.txt")
+	contents, err := ioutil.ReadFile("boilerplate/boilerplate.yaml.txt")
 	if err != nil {
 		log.Fatalf("Cannot read boilerplate file: %s", err)
 	}
 	return append([]byte(contents), []byte(crdbVersionsFileDescription)...)
 }
 
-func main() {
-	f, err := os.Create(crdbVersionsFileName)
+func generateCrdbVersionsFile(versions []string, path string) error {
+	f, err := os.Create(path)
 	if err != nil {
-		log.Fatalf("Cannot create %s file: %s", crdbVersionsFileName, err)
+		log.Fatalf("Cannot create %s file: %s", path, err)
 	}
 	defer f.Close()
 
+	versionsMap := map[string][]string{"CrdbVersions": versions}
+	yamlVersions, err := yaml.Marshal(&versionsMap)
+	if err != nil {
+		log.Fatalf("error while converting to yaml: %v", err)
+	}
+
+	result := append(annotation(), yamlVersions...)
+	return ioutil.WriteFile(path, result, 0)
+}
+
+func main() {
 	responseData := crdbVersionsResponse{}
-	err = getData(&responseData)
+	err := getData(&responseData)
 	if err != nil {
 		log.Fatalf("Cannot parse response: %s", err)
 	}
 
-	// Get filtered and sorted versions in yaml representation
-	versions := getVersions(responseData)
-	sortedVersions := sortVersions(versions)
-	yamlVersions := map[string][]string{"CrdbVersions": sortedVersions}
+	rawVersions := getVersions(responseData)
+	sortedVersions := sortVersions(rawVersions)
 
-	var b bytes.Buffer
-	yamlEncoder := yaml.NewEncoder(&b)
-	yamlEncoder.SetIndent(2)
-	yamlEncoder.Encode(&yamlVersions)
-
-	result := append(annotation(), b.Bytes()...)
-	err = ioutil.WriteFile(crdbVersionsFileName, result, 0)
+	err = generateCrdbVersionsFile(sortedVersions, crdbVersionsFileName)
 	if err != nil {
 		log.Fatalf("Cannot write %s file: %s", crdbVersionsFileName, err)
 	}

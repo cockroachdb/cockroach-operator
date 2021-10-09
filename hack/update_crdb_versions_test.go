@@ -18,6 +18,10 @@ package main
 
 import (
 	"reflect"
+	"encoding/json"
+	"io/ioutil"
+	"path"
+	"bytes"
 	"testing"
 
 	//"github.com/Masterminds/semver/v3"
@@ -48,7 +52,48 @@ func TestSortVersions(t *testing.T) {
 	versions := []string{"v1.2.3", "v2.10.5", "v2.2.3", "v2.1.1", "v1.11.0"}
 	expected := []string{"v1.2.3", "v1.11.0", "v2.1.1", "v2.2.3", "v2.10.5"}
 	got := sortVersions(versions)
+
 	if !reflect.DeepEqual(got, expected) {
+		t.Errorf("Expected `%s`, got `%s`", expected, got)
+	}
+}
+
+func TestGetVersions(t *testing.T) {
+	expected := []string{"v1.2.3", "v1.2.3+test.01"}
+
+	data := `{"data":[{"repositories": [{"tags": [{"name": "v1.2.3"}, {"name": "v1.2.3+test.01"}]}]}]}`
+	resp := crdbVersionsResponse{}
+	json.Unmarshal([]byte(data), &resp)
+	got := getVersions(resp)
+
+	if !reflect.DeepEqual(got, expected) {
+		t.Errorf("Expected `%s`, got `%s`", expected, got)
+	}
+}
+
+
+func TestCrdbVersionsFile(t *testing.T) {
+	versions := []string{"v1.2.3", "v1.2.3+test.01"}
+
+	output := `CrdbVersions:
+- v1.2.3
+- v1.2.3+test.01
+`
+	expected := append(annotation(), []byte(output)...)
+
+	tmpdir := t.TempDir()
+	filePath := path.Join(tmpdir, crdbVersionsFileName)
+	err := generateCrdbVersionsFile(versions, filePath)
+	if err != nil {
+		t.Fatalf("error generating file: %s", err)
+	}
+
+	got, err := ioutil.ReadFile(filePath)
+    if err != nil {
+		t.Fatalf("error reading generated file: %s", err)
+    }
+
+	if bytes.Compare(got, expected) != 0 {
 		t.Errorf("Expected `%s`, got `%s`", expected, got)
 	}
 }
