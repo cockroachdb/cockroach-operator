@@ -59,7 +59,6 @@ bazel-cockroach*
 bazel-out
 bazel-testlogs
 .secrets
-opm
 faq
 
 _artifacts
