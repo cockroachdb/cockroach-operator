@@ -20,21 +20,25 @@ import (
 	"context"
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/actor"
+	"github.com/cockroachdb/cockroach-operator/pkg/kube"
 	"github.com/cockroachdb/cockroach-operator/pkg/labels"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	"github.com/cockroachdb/cockroach-operator/pkg/testutil"
 	"github.com/go-logr/zapr"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zaptest"
+	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/api/policy/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/rest"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"testing"
 )
 
-func createTestDirectorAndCluster(t *testing.T) (*resource.Cluster, actor.Director) {
+func createTestDirectorAndStableCluster(t *testing.T) (*resource.Cluster, actor.Director) {
 	cluster := testutil.NewBuilder("cockroachdb").
 		Namespaced("default").
 		WithUID("cockroachdb-uid").
@@ -42,33 +46,67 @@ func createTestDirectorAndCluster(t *testing.T) (*resource.Cluster, actor.Direct
 		WithNodeCount(4).Cluster()
 	scheme := testutil.InitScheme(t)
 
+	// Mock node for our mock cluster
 	node := &v1.Node{}
+	objs := []runtime.Object{
+		node,
+	}
 
-	l := labels.Common(cluster.Unwrap())
+	//
 	discoveryService := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "cockroachdb",
 			Namespace: "default",
 		},
 	}
-	resource.Reconciler{
-		ManagedResource: resource.ManagedResource{
-			Labels: l,
+	publicService := &v1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "cockroachdb-public",
+			Namespace: "default",
 		},
-		Builder: resource.DiscoveryServiceBuilder{
-			Cluster:  cluster,
-			Selector: l.Selector(nil),
+	}
+	statefulSet := &appsv1.StatefulSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "cockroachdb",
+			Namespace: "default",
 		},
-		Owner:  cluster.Unwrap(),
-		Scheme: scheme,
-	}.CompleteBuild(discoveryService.DeepCopy(), discoveryService)
+	}
+	podDisruptionBudget := &v1beta1.PodDisruptionBudget{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "cockroachdb",
+			Namespace: "default",
+		},
+	}
+	components := []client.Object{
+		discoveryService,
+		publicService,
+		statefulSet,
+		podDisruptionBudget,
+	}
+
+	l := labels.Common(cluster.Unwrap())
+	kd, _ := kube.NewKubernetesDistribution().Get(context.Background(), fake.NewSimpleClientset(objs...), zapr.NewLogger(zaptest.NewLogger(t)))
+	kd = "kubernetes-operator-" + kd
+	builders := []resource.Builder{
+		resource.DiscoveryServiceBuilder{Cluster: cluster, Selector: l.Selector(nil)},
+		resource.PublicServiceBuilder{Cluster: cluster, Selector: l.Selector(nil)},
+		resource.StatefulSetBuilder{Cluster: cluster, Selector: l.Selector(nil), Telemetry: kd},
+		resource.PdbBuilder{Cluster: cluster, Selector: l.Selector(nil)},
+	}
+	for i := range builders {
+		resource.Reconciler{
+			ManagedResource: resource.ManagedResource{
+				Labels: l,
+			},
+			Builder: builders[i],
+
+			Owner:  cluster.Unwrap(),
+			Scheme: scheme,
+		}.CompleteBuild(components[i].DeepCopyObject(), components[i])
+		objs = append(objs, components[i])
+	}
 
 	// TODO: need to also construct other three things: public service, stateful set, pod disruption budget
-
-	objs := []runtime.Object{
-		node,
-		discoveryService,
-	}
 
 	client := testutil.NewFakeClient(scheme, objs...)
 	clientset := fake.NewSimpleClientset(objs...)
@@ -79,11 +117,11 @@ func createTestDirectorAndCluster(t *testing.T) (*resource.Cluster, actor.Direct
 }
 
 func TestNoActionRequired(t *testing.T) {
-	cluster, director := createTestDirectorAndCluster(t)
+	cluster, director := createTestDirectorAndStableCluster(t)
 	cluster.SetTrue(api.CrdbVersionChecked)
+	cluster.SetTrue(api.CrdbInitializedCondition)
 
-	actor, err :=
-		director.GetActorToExecute(context.Background(), cluster, zapr.NewLogger(zaptest.NewLogger(t)))
+	actor, err := director.GetActorToExecute(context.Background(), cluster, zapr.NewLogger(zaptest.NewLogger(t)))
 	require.Nil(t, err)
 	require.Equal(t, nil, actor)
 }
