@@ -52,7 +52,7 @@ test/apis:
 
 .PHONY: test/pkg
 test/pkg:
-	bazel test //pkg/actor:go_default_test --test_arg=-test.v
+	bazel test //pkg/... --test_arg=-test.v
 
 # This runs the all of the verify scripts and
 # takes a bit of time.

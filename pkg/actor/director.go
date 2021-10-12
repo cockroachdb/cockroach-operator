@@ -18,7 +18,6 @@ package actor
 
 import (
 	"context"
-	"fmt"
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/condition"
 	"github.com/cockroachdb/cockroach-operator/pkg/features"
@@ -153,9 +152,6 @@ func (cd *clusterDirector) needsDecommission(cluster *resource.Cluster, ss *apps
 	conditions := cluster.Status().Conditions
 	featureDecommissionEnabled := utilfeature.DefaultMutableFeatureGate.Enabled(features.Decommission)
 	conditionInitializedTrue := condition.True(api.CrdbInitializedCondition, conditions)
-
-	fmt.Println(featureDecommissionEnabled, conditionInitializedTrue, "QWER")
-	fmt.Println(ss.Status.CurrentReplicas, ss.Status.Replicas, cluster.Spec().Nodes)
 
 	// In order to decommission,
 	// - the decommission feature must be enabled
@@ -299,7 +295,6 @@ func (cd *clusterDirector) needsDeploy(ctx context.Context, cluster *resource.Cl
 	}
 
 	for _, b := range builders {
-		fmt.Println(b.ResourceName())
 		hasChanged, err := resource.Reconciler{
 			ManagedResource: r,
 			Builder:         b,
