@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: e2e-kind-decomission
+name: e2e-kind-decommission
 
 on:
   # Triggers the workflow on push or pull request events but only for the master branch
@@ -31,12 +31,12 @@ on:
   workflow_dispatch:
 
 jobs:
-  e2e-kind-decomission:
+  e2e-kind-decommission:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        bazel: ["4.0.0"]
+        bazel: [ "4.0.0" ]
     steps:
       - uses: actions/checkout@v2
 
@@ -46,4 +46,4 @@ jobs:
           version: ${{ matrix.bazel }}
 
       - name: End-to-end (kind)
-        run: make test/e2e/kind-decomission
+        run: make test/e2e/kind-decommission

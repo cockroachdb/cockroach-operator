@@ -3,7 +3,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_test")
 go_test(
     name = "go_default_test",
     size = "enormous",
-    srcs = ["decomission_test.go"],
+    srcs = ["decommission_test.go"],
     deps = [
         "//pkg/controller:go_default_library",
         "//pkg/testutil:go_default_library",
