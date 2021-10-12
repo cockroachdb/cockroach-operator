@@ -28,6 +28,8 @@ const (
 	DecommissionCondition ClusterConditionType = "Decommission"
 	//CrdbInitializedCondition string
 	CrdbInitializedCondition ClusterConditionType = "Initialized"
+	// CrdbIngressExposedCondition string
+	CrdbIngressExposedCondition ClusterConditionType = "IngressExposed"
 	//ClusterRestartCondition string
 	ClusterRestartCondition ClusterConditionType = "RestartedCluster"
 )

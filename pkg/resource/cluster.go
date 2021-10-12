@@ -169,6 +169,11 @@ func (cluster Cluster) JobName() string {
 	slug.MaxLength = 63
 	return slug.Make(fmt.Sprintf("%s-%s-%d", cluster.Name(), VersionCheckJobName, getTimeHashInMinutes(time.Now())))
 }
+
+func (cluster Cluster) IngressName() string {
+	return cluster.Name()
+}
+
 func getTimeHashInMinutes(scheduledTime time.Time) int64 {
 	return scheduledTime.Unix() / 60
 }
@@ -315,4 +320,9 @@ func getSupportedCrdbVersions() []string {
 		}
 	}
 	return supportedVersions
+}
+
+// IsIngressNeeded returns true if ingress config is given in spec
+func (cluster Cluster) IsIngressNeeded() bool {
+	return cluster.Spec().Ingress != nil
 }

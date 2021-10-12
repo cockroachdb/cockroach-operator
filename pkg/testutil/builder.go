@@ -132,6 +132,11 @@ func (b ClusterBuilder) WithAffinity(affinity *corev1.Affinity) ClusterBuilder {
 	return b
 }
 
+func (b ClusterBuilder) WithIngress(ingress *api.IngressConfig) ClusterBuilder {
+	b.cluster.Spec.Ingress = ingress
+	return b
+}
+
 func (b ClusterBuilder) WithResources(resources corev1.ResourceRequirements) ClusterBuilder {
 	b.cluster.Spec.Resources = resources
 	return b

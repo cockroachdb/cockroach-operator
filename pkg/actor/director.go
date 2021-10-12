@@ -61,6 +61,7 @@ func NewDirector(scheme *runtime.Scheme, cl client.Client, config *rest.Config, 
 		api.ResizePVCAction:         newResizePVC(scheme, cl, clientset),
 		api.DeployAction:            newDeploy(scheme, cl, kd, clientset),
 		api.InitializeAction:        newInitialize(scheme, cl, config, clientset),
+		api.ExposeIngressAction:     newExposeIngress(scheme, cl, config, clientset),
 	}
 	return &clusterDirector{
 		actors:     actors,
@@ -315,6 +316,12 @@ func (cd *clusterDirector) needsDeploy(ctx context.Context, cluster *resource.Cl
 		resource.PublicServiceBuilder{Cluster: cluster, Selector: labelSelector},
 		resource.StatefulSetBuilder{Cluster: cluster, Selector: labelSelector, Telemetry: kubernetesDistro},
 		resource.PdbBuilder{Cluster: cluster, Selector: labelSelector},
+	}
+
+	if featureVersionValidatorEnabled && conditionVersionCheckedTrue && conditionInitializedTrue {
+		actorsToExecute = append(actorsToExecute, cd.actors[api.ExposeIngressAction])
+	} else if !featureVersionValidatorEnabled && conditionInitializedTrue {
+		actorsToExecute = append(actorsToExecute, cd.actors[api.InitializeAction])
 	}
 
 	for _, b := range builders {

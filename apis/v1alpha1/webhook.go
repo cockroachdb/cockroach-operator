@@ -17,8 +17,11 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"fmt"
+	
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -82,6 +85,16 @@ func (r *CrdbCluster) Default() {
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
 func (r *CrdbCluster) ValidateCreate() error {
 	webhookLog.Info("validate create", "name", r.Name)
+	var errors []error
+	if r.Spec.Ingress != nil {
+		if err := r.ValidateIngress(); err != nil {
+			errors = append(errors, err...)
+		}
+	}
+
+	if len(errors) != 0 {
+		return kerrors.NewAggregate(errors)
+	}
 
 	return nil
 }
@@ -89,6 +102,17 @@ func (r *CrdbCluster) ValidateCreate() error {
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
 func (r *CrdbCluster) ValidateUpdate(old runtime.Object) error {
 	webhookLog.Info("validate update", "name", r.Name)
+	var errors []error
+
+	if r.Spec.Ingress != nil {
+		if err := r.ValidateIngress(); err != nil {
+			errors = append(errors, err...)
+		}
+	}
+
+	if len(errors) != 0 {
+		return kerrors.NewAggregate(errors)
+	}
 
 	return nil
 }
@@ -99,4 +123,29 @@ func (r *CrdbCluster) ValidateDelete() error {
 
 	// we're not validating anything on delete. This is just a placeholder for now to satisfy the Validator interface
 	return nil
+}
+
+// ValidateIngress validates the ingress configuration used to create ingress resource
+func (r *CrdbCluster) ValidateIngress() []error {
+	webhookLog.Info("validate ingress", "name", r.Name)
+
+	if r.Spec.Ingress.HTTP == nil && r.Spec.Ingress.SQL == nil && r.Spec.Ingress.GRPC == nil {
+			return []error{fmt.Errorf("atleast one of http, grpc and sql should be enabled when ingress is set")}
+	}
+
+	var errors []error
+
+	if r.Spec.Ingress.HTTP != nil && r.Spec.Ingress.HTTP.Enabled && r.Spec.Ingress.HTTP.Host == "" {
+		errors = append(errors, fmt.Errorf("host required for http"))
+	}
+
+	if r.Spec.Ingress.GRPC != nil && r.Spec.Ingress.GRPC.Enabled && r.Spec.Ingress.GRPC.Host == "" {
+		errors = append(errors, fmt.Errorf("host required for grpc"))
+	}
+
+	if r.Spec.Ingress.SQL != nil && r.Spec.Ingress.SQL.Enabled && r.Spec.Ingress.SQL.Host == "" {
+		errors = append(errors, fmt.Errorf("host required for sql"))
+	}
+
+	return errors
 }

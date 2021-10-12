@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1_test
 
 import (
+	"fmt"
 	"testing"
 
 	. "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
@@ -39,4 +40,58 @@ func TestCrdbClusterDefault(t *testing.T) {
 
 	cluster.Default()
 	require.Equal(t, expected, cluster.Spec)
+}
+
+func TestValidateIngress(t *testing.T) {
+
+	tests := []struct {
+		name     string
+		cluster  *CrdbCluster
+		expected []error
+	}{
+		{
+			name: "ingress config with http host missing",
+			cluster: &CrdbCluster{
+				Spec: CrdbClusterSpec{
+					Ingress: &IngressConfig{HTTP: &IngressService{Enabled: true}},
+				},
+			},
+			expected: []error{fmt.Errorf("host required for http")},
+		},
+		{
+			name: "ingress config with grpc host missing",
+			cluster: &CrdbCluster{
+				Spec: CrdbClusterSpec{
+					Ingress: &IngressConfig{GRPC: &IngressService{Enabled: true}},
+				},
+			},
+			expected: []error{fmt.Errorf("host required for grpc")},
+		},
+		{
+			name: "ingress config with http host missing",
+			cluster: &CrdbCluster{
+				Spec: CrdbClusterSpec{
+					Ingress: &IngressConfig{SQL: &IngressService{Enabled: true}},
+				},
+			},
+			expected: []error{fmt.Errorf("host required for sql")},
+		},
+		{
+			name: "ingress config with nil http, grpc and sql",
+			cluster: &CrdbCluster{
+				Spec: CrdbClusterSpec{
+					Ingress: &IngressConfig{},
+				},
+			},
+			expected: []error{fmt.Errorf("atleast one of http, grpc and sql should be enabled when ingress is set")},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			require.Equal(t, tt.expected, tt.cluster.ValidateIngress())
+		})
+
+	}
 }
