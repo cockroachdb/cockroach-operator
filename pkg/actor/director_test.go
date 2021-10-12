@@ -39,6 +39,7 @@ import (
 	"testing"
 )
 
+// This constructs a mock cluster that behaves as if it were a real cluster in a steady state.
 func createTestDirectorAndStableCluster(t *testing.T) (*resource.Cluster, actor.Director) {
 	var numNodes int32 = 4
 	version := "fake.version"
@@ -78,7 +79,6 @@ func createTestDirectorAndStableCluster(t *testing.T) (*resource.Cluster, actor.
 			Namespace: "default",
 		},
 	}
-
 	quantity, _ := apiresource.ParseQuantity(storage)
 	statefulSet := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
@@ -132,13 +132,10 @@ func createTestDirectorAndStableCluster(t *testing.T) (*resource.Cluster, actor.
 	}
 	for i := range builders {
 		resource.Reconciler{
-			ManagedResource: resource.ManagedResource{
-				Labels: l,
-			},
-			Builder: builders[i],
-
-			Owner:  cluster.Unwrap(),
-			Scheme: scheme,
+			ManagedResource: resource.ManagedResource{Labels: l},
+			Builder:         builders[i],
+			Owner:           cluster.Unwrap(),
+			Scheme:          scheme,
 		}.CompleteBuild(components[i].DeepCopyObject(), components[i])
 		objs = append(objs, components[i])
 	}
@@ -155,6 +152,7 @@ func createTestDirectorAndStableCluster(t *testing.T) (*resource.Cluster, actor.
 func TestNoActionRequired(t *testing.T) {
 	cluster, director := createTestDirectorAndStableCluster(t)
 
+	// We made no changes to the steady-state mock cluster. No actor should trigger.
 	actor, err := director.GetActorToExecute(context.Background(), cluster, zapr.NewLogger(zaptest.NewLogger(t)))
 	require.Nil(t, err)
 	require.Equal(t, nil, actor)
@@ -255,7 +253,7 @@ func TestNeedsDeploy(t *testing.T) {
 func TestNeedsInitialization(t *testing.T) {
 	cluster, director := createTestDirectorAndStableCluster(t)
 
-	// Trigger version check by setting condition to false
+	// Trigger initialization by setting the condition to false
 	cluster.SetFalse(api.CrdbInitializedCondition)
 
 	actor, err := director.GetActorToExecute(context.Background(), cluster, zapr.NewLogger(zaptest.NewLogger(t)))
