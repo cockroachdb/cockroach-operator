@@ -155,7 +155,7 @@ func TestNoActionRequired(t *testing.T) {
 	// We made no changes to the steady-state mock cluster. No actor should trigger.
 	actor, err := director.GetActorToExecute(context.Background(), cluster, zapr.NewLogger(zaptest.NewLogger(t)))
 	require.Nil(t, err)
-	require.Equal(t, nil, actor)
+	require.Nil(t, actor)
 }
 
 func TestNeedsRestart(t *testing.T) {
@@ -170,6 +170,12 @@ func TestNeedsRestart(t *testing.T) {
 	actor, err := director.GetActorToExecute(context.Background(), &newCluster, zapr.NewLogger(zaptest.NewLogger(t)))
 	require.Nil(t, err)
 	require.Equal(t, api.ClusterRestartAction, actor.GetActionType())
+
+	// Make a change that disables this actor, and check that it's no longer triggered
+	newCluster.SetFalse(api.CrdbVersionChecked)
+	actor, err = director.GetActorToExecute(context.Background(), &newCluster, zapr.NewLogger(zaptest.NewLogger(t)))
+	require.Nil(t, err)
+	require.Equal(t, api.VersionCheckerAction, actor.GetActionType())
 }
 
 func TestNeedsDecommission(t *testing.T) {
@@ -183,6 +189,12 @@ func TestNeedsDecommission(t *testing.T) {
 	actor, err := director.GetActorToExecute(context.Background(), &newCluster, zapr.NewLogger(zaptest.NewLogger(t)))
 	require.Nil(t, err)
 	require.Equal(t, api.DecommissionAction, actor.GetActionType())
+
+	// Make a change that disables this actor, and check that it's no longer triggered
+	newCluster.SetFalse(api.CrdbInitializedCondition)
+	actor, err = director.GetActorToExecute(context.Background(), &newCluster, zapr.NewLogger(zaptest.NewLogger(t)))
+	require.Nil(t, err)
+	require.Equal(t, api.DeployAction, actor.GetActionType())
 }
 
 func TestNeedsVersionCheck(t *testing.T) {
@@ -194,6 +206,12 @@ func TestNeedsVersionCheck(t *testing.T) {
 	actor, err := director.GetActorToExecute(context.Background(), cluster, zapr.NewLogger(zaptest.NewLogger(t)))
 	require.Nil(t, err)
 	require.Equal(t, api.VersionCheckerAction, actor.GetActionType())
+
+	// Make a change that disables this actor, and check that it's no longer triggered
+	cluster.SetTrue(api.CrdbVersionChecked)
+	actor, err = director.GetActorToExecute(context.Background(), cluster, zapr.NewLogger(zaptest.NewLogger(t)))
+	require.Nil(t, err)
+	require.Nil(t, actor)
 }
 
 func TestNeedsCertificate(t *testing.T) {
@@ -207,6 +225,13 @@ func TestNeedsCertificate(t *testing.T) {
 	actor, err := director.GetActorToExecute(context.Background(), &newCluster, zapr.NewLogger(zaptest.NewLogger(t)))
 	require.Nil(t, err)
 	require.Equal(t, api.GenerateCertAction, actor.GetActionType())
+
+	// Make a change that disables this actor, and check that it's no longer triggered
+	updated.Spec.NodeTLSSecret = "soylent.green.is.people"
+	newCluster = resource.NewCluster(updated)
+	actor, err = director.GetActorToExecute(context.Background(), &newCluster, zapr.NewLogger(zaptest.NewLogger(t)))
+	require.Nil(t, err)
+	require.Equal(t, api.DeployAction, actor.GetActionType())
 }
 
 func TestNeedsUpdate(t *testing.T) {
@@ -221,6 +246,12 @@ func TestNeedsUpdate(t *testing.T) {
 	actor, err := director.GetActorToExecute(context.Background(), &newCluster, zapr.NewLogger(zaptest.NewLogger(t)))
 	require.Nil(t, err)
 	require.Equal(t, api.PartitionedUpdateAction, actor.GetActionType())
+
+	// Make a change that disables this actor, and check that it's no longer triggered
+	newCluster.SetFalse(api.CrdbInitializedCondition)
+	actor, err = director.GetActorToExecute(context.Background(), &newCluster, zapr.NewLogger(zaptest.NewLogger(t)))
+	require.Nil(t, err)
+	require.Equal(t, api.DeployAction, actor.GetActionType())
 }
 
 func TestNeedsPVCResize(t *testing.T) {
@@ -235,19 +266,31 @@ func TestNeedsPVCResize(t *testing.T) {
 	actor, err := director.GetActorToExecute(context.Background(), &newCluster, zapr.NewLogger(zaptest.NewLogger(t)))
 	require.Nil(t, err)
 	require.Equal(t, api.ResizePVCAction, actor.GetActionType())
+
+	// Make a change that disables this actor, and check that it's no longer triggered
+	newCluster.SetFalse(api.CrdbInitializedCondition)
+	actor, err = director.GetActorToExecute(context.Background(), &newCluster, zapr.NewLogger(zaptest.NewLogger(t)))
+	require.Nil(t, err)
+	require.Equal(t, api.DeployAction, actor.GetActionType())
 }
 
 func TestNeedsDeploy(t *testing.T) {
 	cluster, director := createTestDirectorAndStableCluster(t)
 	updated := cluster.Unwrap()
 
-	// Trigger decommission by increasing nodes
+	// Trigger deploy by increasing nodes
 	updated.Spec.Nodes = 5
 
 	newCluster := resource.NewCluster(updated)
 	actor, err := director.GetActorToExecute(context.Background(), &newCluster, zapr.NewLogger(zaptest.NewLogger(t)))
 	require.Nil(t, err)
 	require.Equal(t, api.DeployAction, actor.GetActionType())
+
+	// Make a change that disables this actor, and check that it's no longer triggered
+	newCluster.SetFalse(api.CrdbVersionChecked)
+	actor, err = director.GetActorToExecute(context.Background(), &newCluster, zapr.NewLogger(zaptest.NewLogger(t)))
+	require.Nil(t, err)
+	require.Equal(t, api.VersionCheckerAction, actor.GetActionType())
 }
 
 func TestNeedsInitialization(t *testing.T) {
@@ -259,37 +302,85 @@ func TestNeedsInitialization(t *testing.T) {
 	actor, err := director.GetActorToExecute(context.Background(), cluster, zapr.NewLogger(zaptest.NewLogger(t)))
 	require.Nil(t, err)
 	require.Equal(t, api.InitializeAction, actor.GetActionType())
+
+	// Make a change that disables this actor, and check that it's no longer triggered
+	cluster.SetFalse(api.CrdbVersionChecked)
+	actor, err = director.GetActorToExecute(context.Background(), cluster, zapr.NewLogger(zaptest.NewLogger(t)))
+	require.Nil(t, err)
+	require.Equal(t, api.VersionCheckerAction, actor.GetActionType())
 }
 
-//// Make successive changes to the cluster
-//func TestOrderOfActors(t *testing.T) {
-//	cluster, director := createTestDirectorAndStableCluster(t)
-//
-//	// We made no changes to the steady-state mock cluster. No actor should trigger.
-//	actor, err := director.GetActorToExecute(context.Background(), cluster, zapr.NewLogger(zaptest.NewLogger(t)))
-//	require.Nil(t, err)
-//	require.Equal(t, nil, actor)
-//
-//	// Trigger initialization by setting the condition to false
-//	cluster.SetFalse(api.CrdbInitializedCondition)
-//	actor, err = director.GetActorToExecute(context.Background(), cluster, zapr.NewLogger(zaptest.NewLogger(t)))
-//	require.Nil(t, err)
-//	require.Equal(t, api.InitializeAction, actor.GetActionType())
-//
-//	// Trigger decommission by increasing nodes
-//	updated := cluster.Unwrap()
-//	updated.Spec.Nodes = 5
-//	newCluster := resource.NewCluster(updated)
-//	actor, err = director.GetActorToExecute(context.Background(), &newCluster, zapr.NewLogger(zaptest.NewLogger(t)))
-//	require.Nil(t, err)
-//	require.Equal(t, api.DeployAction, actor.GetActionType())
-//
-//	// Trigger PVC resize by increasing requested amount
-//	updated = cluster.Unwrap()
-//	quantity, _ := apiresource.ParseQuantity("2Gi")
-//	updated.Spec.DataStore.VolumeClaim.PersistentVolumeClaimSpec.Resources.Requests[v1.ResourceStorage] = quantity
-//	newCluster = resource.NewCluster(updated)
-//	actor, err = director.GetActorToExecute(context.Background(), &newCluster, zapr.NewLogger(zaptest.NewLogger(t)))
-//	require.Nil(t, err)
-//	require.Equal(t, api.ResizePVCAction, actor.GetActionType())
-//}
+// Make successive changes to the cluster and check that each change triggers an actor earlier in the order
+func TestOrderOfActors(t *testing.T) {
+	cluster, director := createTestDirectorAndStableCluster(t)
+
+	// We made no changes to the steady-state mock cluster. No actor should trigger.
+	actor, err := director.GetActorToExecute(context.Background(), cluster, zapr.NewLogger(zaptest.NewLogger(t)))
+	require.Nil(t, err)
+	require.Equal(t, nil, actor)
+
+	// Trigger initialization by setting the condition to false
+	cluster.SetFalse(api.CrdbInitializedCondition)
+	actor, err = director.GetActorToExecute(context.Background(), cluster, zapr.NewLogger(zaptest.NewLogger(t)))
+	require.Nil(t, err)
+	require.Equal(t, api.InitializeAction, actor.GetActionType())
+
+	// Trigger deploy by increasing nodes
+	updated := cluster.Unwrap()
+	updated.Spec.Nodes = 5
+	newCluster := resource.NewCluster(updated)
+	actor, err = director.GetActorToExecute(context.Background(), &newCluster, zapr.NewLogger(zaptest.NewLogger(t)))
+	require.Nil(t, err)
+	require.Equal(t, api.DeployAction, actor.GetActionType())
+
+	// Trigger PVC resize by increasing requested amount
+	newCluster.SetTrue(api.CrdbInitializedCondition)
+	updated = newCluster.Unwrap()
+	quantity, _ := apiresource.ParseQuantity("2Gi")
+	updated.Spec.DataStore.VolumeClaim.PersistentVolumeClaimSpec.Resources.Requests[v1.ResourceStorage] = quantity
+	newCluster = resource.NewCluster(updated)
+	actor, err = director.GetActorToExecute(context.Background(), &newCluster, zapr.NewLogger(zaptest.NewLogger(t)))
+	require.Nil(t, err)
+	require.Equal(t, api.ResizePVCAction, actor.GetActionType())
+
+	// Trigger update by changing requested version
+	updated = newCluster.Unwrap()
+	updated.Annotations = make(map[string]string)
+	updated.Annotations[resource.CrdbVersionAnnotation] = "fake.version.2"
+	newCluster = resource.NewCluster(updated)
+	actor, err = director.GetActorToExecute(context.Background(), &newCluster, zapr.NewLogger(zaptest.NewLogger(t)))
+	require.Nil(t, err)
+	require.Equal(t, api.PartitionedUpdateAction, actor.GetActionType())
+
+	// Trigger certificate generation by enabling TLS
+	updated = newCluster.Unwrap()
+	updated.Spec.TLSEnabled = true
+	newCluster = resource.NewCluster(updated)
+	actor, err = director.GetActorToExecute(context.Background(), &newCluster, zapr.NewLogger(zaptest.NewLogger(t)))
+	require.Nil(t, err)
+	require.Equal(t, api.GenerateCertAction, actor.GetActionType())
+
+	// Trigger version check by setting condition to false
+	newCluster.SetFalse(api.CrdbVersionChecked)
+	actor, err = director.GetActorToExecute(context.Background(), &newCluster, zapr.NewLogger(zaptest.NewLogger(t)))
+	require.Nil(t, err)
+	require.Equal(t, api.VersionCheckerAction, actor.GetActionType())
+
+	// Trigger decommission by decreasing nodes
+	updated = newCluster.Unwrap()
+	updated.Spec.Nodes = 3
+	newCluster = resource.NewCluster(updated)
+	actor, err = director.GetActorToExecute(context.Background(), &newCluster, zapr.NewLogger(zaptest.NewLogger(t)))
+	require.Nil(t, err)
+	require.Equal(t, api.DecommissionAction, actor.GetActionType())
+
+	// Trigger restart by adding restart annotation
+	newCluster.SetTrue(api.CrdbVersionChecked)
+	updated = newCluster.Unwrap()
+	updated.Annotations = make(map[string]string)
+	updated.Annotations[resource.CrdbRestartTypeAnnotation] = "Rolling"
+	newCluster = resource.NewCluster(updated)
+	actor, err = director.GetActorToExecute(context.Background(), &newCluster, zapr.NewLogger(zaptest.NewLogger(t)))
+	require.Nil(t, err)
+	require.Equal(t, api.ClusterRestartAction, actor.GetActionType())
+}
