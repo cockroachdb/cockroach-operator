@@ -40,8 +40,8 @@ var parallel = *flag.Bool("parallel", false, "run tests in parallel")
 // TODO once prune pvc feature gate is set to "true" by default, we can
 // remove this test.
 
-// TestDecomissionFunctionalityWithPrune creates a cluster of 4 nodes and then decomissions on of the CRDB nodes.
-// It then checks that the cluster is stable and that decomissioning is successful.
+// TestDecommissionFunctionalityWithPrune creates a cluster of 4 nodes and then decommissions on of the CRDB nodes.
+// It then checks that the cluster is stable and that decommissioning is successful.
 func TestDecommissionFunctionalityWithPrune(t *testing.T) {
 
 	// Testing removing and decommissioning a node.  We start at 4 node and then
@@ -98,11 +98,11 @@ func TestDecommissionFunctionalityWithPrune(t *testing.T) {
 	steps.Run(t)
 }
 
-// TestDecomissionFunctionality creates a cluster of 4 nodes and then decommissions on of the CRDB nodes.
+// TestDecommissionFunctionality creates a cluster of 4 nodes and then decommissions on of the CRDB nodes.
 // It then checks that the cluster is stable and that decommissioning is successful.
 func TestDecommissionFunctionality(t *testing.T) {
 
-	// Testing removing and decommisioning a node.  We start at 4 node and then
+	// Testing removing and decommissioning a node.  We start at 4 node and then
 	// remove the 4th node
 
 	// making sure the feature gate is off for prunePVC
