@@ -44,6 +44,7 @@ type clusterDirector struct {
 func NewDirector(scheme *runtime.Scheme, cl client.Client, config *rest.Config, clientset kubernetes.Interface) Director {
 	kd := kube.NewKubernetesDistribution()
 	actors := map[api.ActionType]Actor{
+		api.ClusterRestartAction:    newClusterRestart(scheme, cl, config, clientset),
 		api.DecommissionAction:      newDecommission(scheme, cl, config, clientset),
 		api.VersionCheckerAction:    newVersionChecker(scheme, cl, config, clientset),
 		api.GenerateCertAction:      newGenerateCert(scheme, cl, config, clientset),
@@ -51,7 +52,6 @@ func NewDirector(scheme *runtime.Scheme, cl client.Client, config *rest.Config, 
 		api.ResizePVCAction:         newResizePVC(scheme, cl, config, clientset),
 		api.DeployAction:            newDeploy(scheme, cl, config, kd, clientset),
 		api.InitializeAction:        newInitialize(scheme, cl, config, clientset),
-		api.ClusterRestartAction:    newClusterRestart(scheme, cl, config, clientset),
 	}
 	return &clusterDirector{
 		actors:     actors,
@@ -147,6 +147,9 @@ func (cd *clusterDirector) needsDecommission(cluster *resource.Cluster, ss *apps
 	conditions := cluster.Status().Conditions
 	featureDecommissionEnabled := utilfeature.DefaultMutableFeatureGate.Enabled(features.Decommission)
 	conditionInitializedTrue := condition.True(api.CrdbInitializedCondition, conditions)
+
+	fmt.Println(featureDecommissionEnabled, conditionInitializedTrue, "QWER")
+	fmt.Println(ss.Status.CurrentReplicas, ss.Status.Replicas, cluster.Spec().Nodes)
 
 	// In order to decommission,
 	// - the decommission feature must be enabled
