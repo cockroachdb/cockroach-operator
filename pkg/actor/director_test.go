@@ -1,5 +1,5 @@
 /*
-Copyright 2021 The Kubernetes Authors.
+Copyright 2021 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -260,3 +260,36 @@ func TestNeedsInitialization(t *testing.T) {
 	require.Nil(t, err)
 	require.Equal(t, api.InitializeAction, actor.GetActionType())
 }
+
+//// Make successive changes to the cluster
+//func TestOrderOfActors(t *testing.T) {
+//	cluster, director := createTestDirectorAndStableCluster(t)
+//
+//	// We made no changes to the steady-state mock cluster. No actor should trigger.
+//	actor, err := director.GetActorToExecute(context.Background(), cluster, zapr.NewLogger(zaptest.NewLogger(t)))
+//	require.Nil(t, err)
+//	require.Equal(t, nil, actor)
+//
+//	// Trigger initialization by setting the condition to false
+//	cluster.SetFalse(api.CrdbInitializedCondition)
+//	actor, err = director.GetActorToExecute(context.Background(), cluster, zapr.NewLogger(zaptest.NewLogger(t)))
+//	require.Nil(t, err)
+//	require.Equal(t, api.InitializeAction, actor.GetActionType())
+//
+//	// Trigger decommission by increasing nodes
+//	updated := cluster.Unwrap()
+//	updated.Spec.Nodes = 5
+//	newCluster := resource.NewCluster(updated)
+//	actor, err = director.GetActorToExecute(context.Background(), &newCluster, zapr.NewLogger(zaptest.NewLogger(t)))
+//	require.Nil(t, err)
+//	require.Equal(t, api.DeployAction, actor.GetActionType())
+//
+//	// Trigger PVC resize by increasing requested amount
+//	updated = cluster.Unwrap()
+//	quantity, _ := apiresource.ParseQuantity("2Gi")
+//	updated.Spec.DataStore.VolumeClaim.PersistentVolumeClaimSpec.Resources.Requests[v1.ResourceStorage] = quantity
+//	newCluster = resource.NewCluster(updated)
+//	actor, err = director.GetActorToExecute(context.Background(), &newCluster, zapr.NewLogger(zaptest.NewLogger(t)))
+//	require.Nil(t, err)
+//	require.Equal(t, api.ResizePVCAction, actor.GetActionType())
+//}
