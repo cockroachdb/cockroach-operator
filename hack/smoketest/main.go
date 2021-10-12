@@ -23,7 +23,6 @@ import (
 	"path/filepath"
 	"time"
 
-	log "github.com/sirupsen/logrus"
 	"sigs.k8s.io/kubetest2/pkg/process"
 )
 
@@ -76,7 +75,7 @@ func main() {
 
 	defer func(cluster Step, fn ExecFn) {
 		if err := cluster.Apply(fn); err != nil {
-			log.Error(err)
+			fmt.Print(err.Error())
 
 		}
 	}(StopKindCluster(clusterName), process.ExecJUnit)
@@ -91,7 +90,7 @@ func main() {
 func bail(err error) {
 	fmt.Fprintf(os.Stderr, "OOPS! An error occurred: %s\n", err)
 	if err = StopKindCluster(clusterName).Apply(process.ExecJUnit); err != nil {
-		log.Error(err)
+		fmt.Print(err.Error())
 	}
 	os.Exit(1)
 }
