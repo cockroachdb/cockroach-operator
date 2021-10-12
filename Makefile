@@ -64,6 +64,11 @@ test/verify:
 test/lint:
 	bazel run //hack:verify-gofmt
 
+# NODE_VERSION refers the to version of the kindest/node image. E.g. 1.22.1
+.PHONY: test/smoketest
+test/smoketest:
+	@bazel run //hack/smoketest -- -dir $(PWD) -version $(NODE_VERSION)
+
 # Run only e2e stort tests
 # We can use this to only run one specific test
 .PHONY: test/e2e-short
@@ -264,14 +269,16 @@ k8s/apply:
 	K8S_CLUSTER=gke_$(GCP_PROJECT)_$(GCP_ZONE)_$(CLUSTER_NAME) \
 	DEV_REGISTRY=$(DEV_REGISTRY) \
 	bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
-		//manifests:install_operator.apply
+		//config/default:install.apply \
+		--define APP_VERSION=$(APP_VERSION)
 
 .PHONY: k8s/delete
 k8s/delete:
 	K8S_CLUSTER=gke_$(GCP_PROJECT)_$(GCP_ZONE)_$(CLUSTER_NAME) \
 	DEV_REGISTRY=$(DEV_REGISTRY) \
 	bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
-		//manifests:install_operator.delete
+		//config/default:install.delete \
+		--define APP_VERSION=$(APP_VERSION)
 
 #
 # Release targets
@@ -405,8 +412,3 @@ ifneq ($(origin DEFAULT_CHANNEL), undefined)
 BUNDLE_DEFAULT_CHANNEL := --default-channel=$(DEFAULT_CHANNEL)
 endif
 BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
-
-# Build the bundle image.
-.PHONY: gen-csv
-gen-csv: dev/generate
-	bazel run  //hack:update-csv  -- $(RH_BUNDLE_VERSION) $(RH_OPERATOR_IMAGE) $(BUNDLE_METADATA_OPTS) $(RH_COCKROACH_DATABASE_IMAGE)

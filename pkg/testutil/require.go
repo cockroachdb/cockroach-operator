@@ -22,14 +22,11 @@ import (
 	"encoding/csv"
 	"fmt"
 	"io"
-	v1 "k8s.io/api/batch/v1"
 	"os"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
-
-	"k8s.io/client-go/kubernetes"
 
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/database"
@@ -40,20 +37,21 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
+	v1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apiresource "k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/kubernetes"
 )
 
 // RequireClusterToBeReadyEventuallyTimeout tests to see if a statefulset has started correctly and
-// all of the pods are running.
+// all of the pods are ready.
 func RequireClusterToBeReadyEventuallyTimeout(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder, timeout time.Duration) {
 	cluster := b.Cluster()
 
-	err := wait.Poll(10*time.Second, timeout, func() (bool, error) {
-
+	require.NoError(t, wait.Poll(10*time.Second, timeout, func() (bool, error) {
 		ss, err := fetchStatefulSet(sb, cluster.StatefulSetName())
 		if err != nil {
 			t.Logf("error fetching stateful set")
@@ -70,9 +68,10 @@ func RequireClusterToBeReadyEventuallyTimeout(t *testing.T, sb testenv.DiffingSa
 			logPods(context.TODO(), ss, cluster, sb, t)
 			return false, nil
 		}
+
 		return true, nil
-	})
-	require.NoError(t, err)
+	}))
+
 	t.Log("Cluster is ready")
 }
 
@@ -208,7 +207,7 @@ func testPodsWithPredicate(pods []corev1.Pod, pred func(*corev1.Pod) bool) bool 
 }
 
 func statefulSetIsReady(ss *appsv1.StatefulSet) bool {
-	return ss.Status.ReadyReplicas == ss.Status.Replicas
+	return ss.Status.ReadyReplicas == *ss.Spec.Replicas
 }
 
 // TODO we are not using this

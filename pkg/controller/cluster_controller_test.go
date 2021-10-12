@@ -80,7 +80,7 @@ func TestReconcile(t *testing.T) {
 		cluster,
 	}
 
-	cl := fake.NewFakeClientWithScheme(scheme, objs...)
+	cl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(objs...).Build()
 	log := zapr.NewLogger(zaptest.NewLogger(t)).WithName("cluster-controller-test")
 	req := ctrl.Request{NamespacedName: types.NamespacedName{Namespace: cluster.Namespace, Name: cluster.Name}}
 

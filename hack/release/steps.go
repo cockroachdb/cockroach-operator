@@ -132,7 +132,7 @@ func GenerateFiles(fn ExecFn) Step {
 // added appropriately.
 func UpdateChangelog(fn FileFn) Step {
 	const fileName = "CHANGELOG.md"
-	const urlFmt = "https://github.com/cockroachdb/cockroach-operator/compare/%s...%s"
+	const urlFmt = "https://github.com/cockroachdb/cockroach-operator/compare/v%s...%s"
 
 	return StepFn(func(version string) error {
 		data, err := fn(fileName)
@@ -147,8 +147,8 @@ func UpdateChangelog(fn FileFn) Step {
 		newUnreleased := []byte(fmt.Sprintf("[Unreleased](%s)", fmt.Sprintf(urlFmt, version, "master")))
 
 		// fix up the previous unreleased line to reference the new version
-		latestRelease := bytes.Replace(prevUnreleased, []byte("...master"), []byte("..."+version), 1)
-		latestRelease = bytes.Replace(latestRelease, []byte("[Unreleased]"), []byte(fmt.Sprintf("[%s]", version)), 1)
+		latestRelease := bytes.Replace(prevUnreleased, []byte("...master"), []byte("...v"+version), 1)
+		latestRelease = bytes.Replace(latestRelease, []byte("[Unreleased]"), []byte(fmt.Sprintf("# [v%s]", version)), 1)
 
 		// update to include the new and previous versions
 		newUnreleased = append(newUnreleased, append([]byte("\n\n"), latestRelease...)...)
