@@ -254,7 +254,7 @@ func RequireDownGradeOptionSet(t *testing.T, sb testenv.DiffingSandbox, b Cluste
 
 // TODO I do not think this is correct.  Keith mentioned we need to check something else.
 
-// RequireDecommisionNode requires that proper nodes are decommisioned
+// RequireDecommissionNode requires that proper nodes are decommissioned
 func RequireDecommissionNode(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder, numNodes int32) {
 	cluster := b.Cluster()
 

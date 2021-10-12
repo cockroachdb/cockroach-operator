@@ -119,7 +119,7 @@ test/e2e/testrunner-eks:
 	KUBECONFIG=$(TMPDIR)/$(CLUSTER_NAME)-eks.kubeconfig.yaml bazel-bin/hack/bin/kubectl create -f hack/eks-storageclass.yaml
 	bazel test --stamp //e2e/upgrades/...  --action_env=KUBECONFIG=$(TMPDIR)/$(CLUSTER_NAME)-eks.kubeconfig.yaml
 	bazel test --stamp //e2e/create/...  --action_env=KUBECONFIG=$(TMPDIR)/$(CLUSTER_NAME)-eks.kubeconfig.yaml
-	bazel test --stamp //e2e/decomission/...  --action_env=KUBECONFIG=$(TMPDIR)/$(CLUSTER_NAME)-eks.kubeconfig.yaml
+	bazel test --stamp //e2e/decommission/...  --action_env=KUBECONFIG=$(TMPDIR)/$(CLUSTER_NAME)-eks.kubeconfig.yaml
 
 # Use this target to run e2e tests with a eks cluster.
 # This target uses kind to start a eks k8s cluster  and runs the e2e tests
@@ -149,7 +149,7 @@ test/e2e/testrunner-gke:
 	bazel test --stamp //e2e/upgrades/...
 	bazel test --stamp //e2e/create/...
 	bazel test --stamp --test_arg=--pvc=true //e2e/pvcresize/...
-	bazel test --stamp //e2e/decomission/...
+	bazel test --stamp //e2e/decommission/...
 
 # Use this target to run e2e tests with a gke cluster.
 # This target uses kind to start a gke k8s cluster  and runs the e2e tests
@@ -176,7 +176,7 @@ test/e2e/gke:
 test/e2e/testrunner-openshift:
 	bazel test --stamp //e2e/upgrades/...  --action_env=KUBECONFIG=$(HOME)/openshift-$(CLUSTER_NAME)/auth/kubeconfig
 	bazel test --stamp //e2e/create/...  --action_env=KUBECONFIG=$(HOME)/openshift-$(CLUSTER_NAME)/auth/kubeconfig
-	bazel test --stamp //e2e/decomission/...  --action_env=KUBECONFIG=$(HOME)/openshift-$(CLUSTER_NAME)/auth/kubeconfig
+	bazel test --stamp //e2e/decommission/...  --action_env=KUBECONFIG=$(HOME)/openshift-$(CLUSTER_NAME)/auth/kubeconfig
 
 # Use this target to run e2e tests with a openshift cluster.
 # This target uses kind to start a openshift cluster and runs the e2e tests
