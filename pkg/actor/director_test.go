@@ -44,7 +44,9 @@ func createTestDirectorAndStableCluster(t *testing.T) (*resource.Cluster, actor.
 		WithUID("cockroachdb-uid").
 		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */).
 		WithNodeCount(4).Cluster()
-	scheme := testutil.InitScheme(t)
+	// A stable cluster has a checked version and is initialized
+	cluster.SetTrue(api.CrdbVersionChecked)
+	cluster.SetTrue(api.CrdbInitializedCondition)
 
 	// Mock node for our mock cluster
 	node := &v1.Node{}
@@ -52,7 +54,7 @@ func createTestDirectorAndStableCluster(t *testing.T) (*resource.Cluster, actor.
 		node,
 	}
 
-	//
+	// Mock components of our mock cluster
 	discoveryService := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "cockroachdb",
@@ -84,9 +86,11 @@ func createTestDirectorAndStableCluster(t *testing.T) (*resource.Cluster, actor.
 		podDisruptionBudget,
 	}
 
+	// Build up all the required pieces of our cluster components
 	l := labels.Common(cluster.Unwrap())
 	kd, _ := kube.NewKubernetesDistribution().Get(context.Background(), fake.NewSimpleClientset(objs...), zapr.NewLogger(zaptest.NewLogger(t)))
 	kd = "kubernetes-operator-" + kd
+	scheme := testutil.InitScheme(t)
 	builders := []resource.Builder{
 		resource.DiscoveryServiceBuilder{Cluster: cluster, Selector: l.Selector(nil)},
 		resource.PublicServiceBuilder{Cluster: cluster, Selector: l.Selector(nil)},
@@ -106,8 +110,7 @@ func createTestDirectorAndStableCluster(t *testing.T) (*resource.Cluster, actor.
 		objs = append(objs, components[i])
 	}
 
-	// TODO: need to also construct other three things: public service, stateful set, pod disruption budget
-
+	// Construct mock cluster access
 	client := testutil.NewFakeClient(scheme, objs...)
 	clientset := fake.NewSimpleClientset(objs...)
 	config := &rest.Config{}
@@ -118,8 +121,6 @@ func createTestDirectorAndStableCluster(t *testing.T) (*resource.Cluster, actor.
 
 func TestNoActionRequired(t *testing.T) {
 	cluster, director := createTestDirectorAndStableCluster(t)
-	cluster.SetTrue(api.CrdbVersionChecked)
-	cluster.SetTrue(api.CrdbInitializedCondition)
 
 	actor, err := director.GetActorToExecute(context.Background(), cluster, zapr.NewLogger(zaptest.NewLogger(t)))
 	require.Nil(t, err)
