@@ -39,6 +39,7 @@ import (
 	"testing"
 )
 
+// This constructs a mock cluster that behaves as if it were a real cluster in a steady state.
 func createTestDirectorAndStableCluster(t *testing.T) (*resource.Cluster, actor.Director) {
 	var numNodes int32 = 4
 	version := "fake.version"
@@ -78,7 +79,6 @@ func createTestDirectorAndStableCluster(t *testing.T) (*resource.Cluster, actor.
 			Namespace: "default",
 		},
 	}
-
 	quantity, _ := apiresource.ParseQuantity(storage)
 	statefulSet := &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
@@ -132,13 +132,10 @@ func createTestDirectorAndStableCluster(t *testing.T) (*resource.Cluster, actor.
 	}
 	for i := range builders {
 		resource.Reconciler{
-			ManagedResource: resource.ManagedResource{
-				Labels: l,
-			},
-			Builder: builders[i],
-
-			Owner:  cluster.Unwrap(),
-			Scheme: scheme,
+			ManagedResource: resource.ManagedResource{Labels: l},
+			Builder:         builders[i],
+			Owner:           cluster.Unwrap(),
+			Scheme:          scheme,
 		}.CompleteBuild(components[i].DeepCopyObject(), components[i])
 		objs = append(objs, components[i])
 	}
@@ -155,6 +152,7 @@ func createTestDirectorAndStableCluster(t *testing.T) (*resource.Cluster, actor.
 func TestNoActionRequired(t *testing.T) {
 	cluster, director := createTestDirectorAndStableCluster(t)
 
+	// We made no changes to the steady-state mock cluster. No actor should trigger.
 	actor, err := director.GetActorToExecute(context.Background(), cluster, zapr.NewLogger(zaptest.NewLogger(t)))
 	require.Nil(t, err)
 	require.Equal(t, nil, actor)
@@ -255,130 +253,10 @@ func TestNeedsDeploy(t *testing.T) {
 func TestNeedsInitialization(t *testing.T) {
 	cluster, director := createTestDirectorAndStableCluster(t)
 
-	// Trigger version check by setting condition to false
+	// Trigger initialization by setting the condition to false
 	cluster.SetFalse(api.CrdbInitializedCondition)
 
 	actor, err := director.GetActorToExecute(context.Background(), cluster, zapr.NewLogger(zaptest.NewLogger(t)))
 	require.Nil(t, err)
 	require.Equal(t, api.InitializeAction, actor.GetActionType())
 }
-
-//func TestDecommissionFeatureGate(t *testing.T) {
-//	cluster, director := createTestDirectorAndCluster(t)
-//
-//	cluster.SetTrue(api.CrdbInitializedCondition)
-//
-//	utilfeature.DefaultMutableFeatureGate.Set("UseDecommission=true")
-//	actors := director.GetActorsToExecute(cluster)
-//	require.True(t, containsAction(actors, api.DecommissionAction))
-//
-//	utilfeature.DefaultMutableFeatureGate.Set("UseDecommission=false")
-//	actors = director.GetActorsToExecute(cluster)
-//	require.False(t, containsAction(actors, api.DecommissionAction))
-//}
-//
-//func TestVersionValidatorFeatureGate(t *testing.T) {
-//	cluster, director := createTestDirectorAndCluster(t)
-//
-//	cluster.SetTrue(api.CrdbInitializedCondition)
-//
-//	utilfeature.DefaultMutableFeatureGate.Set("CrdbVersionValidator=true")
-//	actors := director.GetActorsToExecute(cluster)
-//	require.True(t, containsAction(actors, api.VersionCheckerAction))
-//
-//	utilfeature.DefaultMutableFeatureGate.Set("CrdbVersionValidator=false")
-//	actors = director.GetActorsToExecute(cluster)
-//	require.False(t, containsAction(actors, api.VersionCheckerAction))
-//}
-//
-//func TestResizePVCFeatureGate(t *testing.T) {
-//	cluster, director := createTestDirectorAndCluster(t)
-//
-//	cluster.SetTrue(api.CrdbInitializedCondition)
-//
-//	utilfeature.DefaultMutableFeatureGate.Set("ResizePVC=true")
-//	actors := director.GetActorsToExecute(cluster)
-//	require.True(t, containsAction(actors, api.ResizePVCAction))
-//
-//	utilfeature.DefaultMutableFeatureGate.Set("ResizePVC=false")
-//	actors = director.GetActorsToExecute(cluster)
-//	require.False(t, containsAction(actors, api.ResizePVCAction))
-//}
-//
-//func TestClusterRestartFeatureGate(t *testing.T) {
-//	cluster, director := createTestDirectorAndCluster(t)
-//
-//	cluster.SetTrue(api.CrdbInitializedCondition)
-//	cluster.SetTrue(api.CrdbVersionChecked)
-//
-//	utilfeature.DefaultMutableFeatureGate.Set("ClusterRestart=true")
-//	actors := director.GetActorsToExecute(cluster)
-//	require.True(t, containsAction(actors, api.ClusterRestartAction))
-//
-//	utilfeature.DefaultMutableFeatureGate.Set("ClusterRestart=false")
-//	actors = director.GetActorsToExecute(cluster)
-//	require.False(t, containsAction(actors, api.ClusterRestartAction))
-//}
-//
-//func actorTypes(actors []actor.Actor) []api.ActionType {
-//	types := make([]api.ActionType, 0, len(actors))
-//	for _, a := range actors {
-//		types = append(types, a.GetActionType())
-//	}
-//	return types
-//}
-//
-//func TestAllConditionCombinations(t *testing.T) {
-//	cluster, director := createTestDirectorAndCluster(t)
-//	utilfeature.DefaultMutableFeatureGate.Set("UseDecommission=true,CrdbVersionValidator=true,ResizePVC=true,ClusterRestart=true")
-//
-//	tests := []struct {
-//		trueConditions []api.ClusterConditionType
-//		expectedActors []api.ActionType
-//	}{
-//		{
-//			trueConditions: []api.ClusterConditionType{},
-//			expectedActors: []api.ActionType{api.VersionCheckerAction, api.RequestCertAction},
-//		},
-//		{
-//			trueConditions: []api.ClusterConditionType{api.CrdbInitializedCondition},
-//			expectedActors: []api.ActionType{api.DecommissionAction, api.VersionCheckerAction, api.RequestCertAction, api.ResizePVCAction},
-//		},
-//		{
-//			trueConditions: []api.ClusterConditionType{api.CertificateGenerated},
-//			expectedActors: []api.ActionType{api.VersionCheckerAction},
-//		},
-//		{
-//			trueConditions: []api.ClusterConditionType{api.CrdbVersionChecked},
-//			expectedActors: []api.ActionType{api.RequestCertAction, api.DeployAction, api.InitializeAction, api.ClusterRestartAction},
-//		},
-//		{
-//			trueConditions: []api.ClusterConditionType{api.CrdbInitializedCondition, api.CertificateGenerated},
-//			expectedActors: []api.ActionType{api.DecommissionAction, api.VersionCheckerAction, api.ResizePVCAction},
-//		},
-//		{
-//			trueConditions: []api.ClusterConditionType{api.CrdbInitializedCondition, api.CrdbVersionChecked},
-//			expectedActors: []api.ActionType{api.DecommissionAction, api.RequestCertAction, api.PartitionedUpdateAction, api.ResizePVCAction, api.DeployAction, api.ClusterRestartAction},
-//		},
-//		{
-//			trueConditions: []api.ClusterConditionType{api.CertificateGenerated, api.CrdbVersionChecked},
-//			expectedActors: []api.ActionType{api.DeployAction, api.InitializeAction, api.ClusterRestartAction},
-//		},
-//		{
-//			trueConditions: []api.ClusterConditionType{api.CrdbInitializedCondition, api.CertificateGenerated, api.CrdbVersionChecked},
-//			expectedActors: []api.ActionType{api.DecommissionAction, api.PartitionedUpdateAction, api.ResizePVCAction, api.DeployAction, api.ClusterRestartAction},
-//		},
-//	}
-//
-//	for _, test := range tests {
-//		cluster.SetFalse(api.CrdbInitializedCondition)
-//		cluster.SetFalse(api.CertificateGenerated)
-//		cluster.SetFalse(api.CrdbVersionChecked)
-//		for _, c := range test.trueConditions {
-//			cluster.SetTrue(c)
-//		}
-//
-//		actors := director.GetActorsToExecute(cluster)
-//		require.Equal(t, test.expectedActors, actorTypes(actors), fmt.Sprintf("true conditions: %v", test.trueConditions))
-//	}
-//}
