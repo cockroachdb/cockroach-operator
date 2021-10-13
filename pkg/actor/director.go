@@ -45,14 +45,14 @@ type clusterDirector struct {
 func NewDirector(scheme *runtime.Scheme, cl client.Client, config *rest.Config, clientset kubernetes.Interface) Director {
 	kd := kube.NewKubernetesDistribution()
 	actors := map[api.ActionType]Actor{
-		api.DecommissionAction:      newDecommission(scheme, cl, config, clientset),
-		api.VersionCheckerAction:    newVersionChecker(scheme, cl, config, clientset),
-		api.GenerateCertAction:      newGenerateCert(scheme, cl, config, clientset),
-		api.PartitionedUpdateAction: newPartitionedUpdate(scheme, cl, config, clientset),
-		api.ResizePVCAction:         newResizePVC(scheme, cl, config, clientset),
-		api.DeployAction:            newDeploy(scheme, cl, config, kd, clientset),
+		api.DecommissionAction:      newDecommission(cl, config, clientset),
+		api.VersionCheckerAction:    newVersionChecker(scheme, cl, clientset),
+		api.GenerateCertAction:      newGenerateCert(cl),
+		api.PartitionedUpdateAction: newPartitionedUpdate(cl, config, clientset),
+		api.ResizePVCAction:         newResizePVC(scheme, cl, clientset),
+		api.DeployAction:            newDeploy(scheme, cl, kd, clientset),
 		api.InitializeAction:        newInitialize(scheme, cl, config, clientset),
-		api.ClusterRestartAction:    newClusterRestart(scheme, cl, config, clientset),
+		api.ClusterRestartAction:    newClusterRestart(cl, config, clientset),
 	}
 	return &clusterDirector{
 		actors:     actors,

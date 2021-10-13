@@ -33,7 +33,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	kubetypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -49,9 +48,9 @@ func defaultBackoffFactory(maxTime time.Duration) backoff.BackOff {
 }
 
 // newResizePVC creates and returns a new resizePVC struct
-func newResizePVC(scheme *runtime.Scheme, cl client.Client, config *rest.Config, clientset kubernetes.Interface) Actor {
+func newResizePVC(scheme *runtime.Scheme, cl client.Client, clientset kubernetes.Interface) Actor {
 	return &resizePVC{
-		action: newAction(scheme, cl, config, clientset),
+		action: newAction(scheme, cl, nil, clientset),
 	}
 }
 

@@ -33,16 +33,15 @@ import (
 	"github.com/cockroachdb/errors"
 	"go.uber.org/zap/zapcore"
 	appsv1 "k8s.io/api/apps/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	kubetypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func newPartitionedUpdate(scheme *runtime.Scheme, cl client.Client, config *rest.Config, clientset kubernetes.Interface) Actor {
+func newPartitionedUpdate(cl client.Client, config *rest.Config, clientset kubernetes.Interface) Actor {
 	return &partitionedUpdate{
-		action: newAction(scheme, cl, config, clientset),
+		action: newAction(nil, cl, config, clientset),
 	}
 }
 
@@ -183,7 +182,7 @@ func (up *partitionedUpdate) Act(ctx context.Context, cluster *resource.Cluster,
 
 	// TODO test downgrades
 	// see https://github.com/cockroachdb/cockroach-operator/issues/208
-	healthChecker := healthchecker.NewHealthChecker(cluster, up.clientset, up.scheme, up.config)
+	healthChecker := healthchecker.NewHealthChecker(cluster, up.clientset, up.config)
 	log.V(int(zapcore.InfoLevel)).Info("update starting with partitioned update", "old version", currentVersionCalFmtStr, "new version", versionWantedCalFmtStr, "image", containerWanted)
 
 	updateRoach := &update.UpdateRoach{

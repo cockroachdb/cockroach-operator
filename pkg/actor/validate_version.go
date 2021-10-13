@@ -39,13 +39,12 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	kubetypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func newVersionChecker(scheme *runtime.Scheme, cl client.Client, config *rest.Config, clientset kubernetes.Interface) Actor {
+func newVersionChecker(scheme *runtime.Scheme, cl client.Client, clientset kubernetes.Interface) Actor {
 	return &versionChecker{
-		action: newAction(scheme, cl, config, clientset),
+		action: newAction(scheme, cl, nil, clientset),
 	}
 }
 

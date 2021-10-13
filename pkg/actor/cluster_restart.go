@@ -33,7 +33,6 @@ import (
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/runtime"
 	kubetypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -42,9 +41,9 @@ import (
 
 const sleepDuration = 1 * time.Minute
 
-func newClusterRestart(scheme *runtime.Scheme, cl client.Client, config *rest.Config, clientset kubernetes.Interface) Actor {
+func newClusterRestart(cl client.Client, config *rest.Config, clientset kubernetes.Interface) Actor {
 	return &clusterRestart{
-		action: newAction(scheme, cl, config, clientset),
+		action: newAction(nil, cl, config, clientset),
 	}
 }
 
@@ -87,10 +86,10 @@ func (r *clusterRestart) Act(ctx context.Context, cluster *resource.Cluster, log
 		log.Info("restart statefulset does not have all replicas up")
 		return err
 	}
-	healthChecker := healthchecker.NewHealthChecker(cluster, r.clientset, r.scheme, r.config)
+	healthChecker := healthchecker.NewHealthChecker(cluster, r.clientset, r.config)
 	if strings.EqualFold(restartType, api.ClusterRestartType(api.RollingRestart).String()) {
 		log.V(DEBUGLEVEL).Info("initiating rolling restart action")
-		if err := r.rollingSts(ctx, statefulSet.DeepCopy(), r.clientset, log, healthChecker); err != nil {
+		if err := r.rollingSts(ctx, statefulSet.DeepCopy(), log, healthChecker); err != nil {
 			return errors.Wrapf(err, "error restarting statefulset %s.%s", cluster.Namespace(), cluster.StatefulSetName())
 		}
 		log.V(DEBUGLEVEL).Info("completed rolling cluster restart")
@@ -138,7 +137,6 @@ func statefulSetReplicasAvailable(status *v1.StatefulSetStatus) error {
 
 // rollingSts performs a rolling update on the cluster.
 func (r *clusterRestart) rollingSts(ctx context.Context, sts *appsv1.StatefulSet,
-	clientset kubernetes.Interface,
 	l logr.Logger,
 	healthChecker healthchecker.HealthChecker) error {
 	timeNow := metav1.Now()
@@ -150,7 +148,7 @@ func (r *clusterRestart) rollingSts(ctx context.Context, sts *appsv1.StatefulSet
 		stsNamespace := sts.Namespace
 		replicas := sts.Spec.Replicas
 
-		refreshedSts, err := clientset.AppsV1().StatefulSets(stsNamespace).Get(ctx, stsName, metav1.GetOptions{})
+		refreshedSts, err := r.clientset.AppsV1().StatefulSets(stsNamespace).Get(ctx, stsName, metav1.GetOptions{})
 		if err != nil {
 			return handleStsError(err, l, stsName, stsNamespace)
 		}
@@ -164,7 +162,7 @@ func (r *clusterRestart) rollingSts(ctx context.Context, sts *appsv1.StatefulSet
 		sts.Spec.UpdateStrategy.RollingUpdate = &v1.RollingUpdateStatefulSetStrategy{
 			Partition: &partition,
 		}
-		_, err = clientset.AppsV1().StatefulSets(stsNamespace).Update(ctx, sts, metav1.UpdateOptions{})
+		_, err = r.clientset.AppsV1().StatefulSets(stsNamespace).Update(ctx, sts, metav1.UpdateOptions{})
 		if err != nil {
 			return handleStsError(err, l, stsName, stsNamespace)
 		}
@@ -173,7 +171,7 @@ func (r *clusterRestart) rollingSts(ctx context.Context, sts *appsv1.StatefulSet
 		// the status of.
 		l.V(DEBUGLEVEL).Info("waiting until partition done restarting", "partition number:", partition)
 
-		if err := scale.WaitUntilStatefulSetIsReadyToServe(ctx, clientset, stsNamespace, stsName, *replicas); err != nil {
+		if err := scale.WaitUntilStatefulSetIsReadyToServe(ctx, r.clientset, stsNamespace, stsName, *replicas); err != nil {
 			return errors.Wrapf(err, "error rolling update stategy on pod %d", int(partition))
 		}
 

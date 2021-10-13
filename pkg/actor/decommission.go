@@ -30,16 +30,15 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	kubetypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func newDecommission(scheme *runtime.Scheme, cl client.Client, config *rest.Config, clientset kubernetes.Interface) Actor {
+func newDecommission(cl client.Client, config *rest.Config, clientset kubernetes.Interface) Actor {
 	return &decommission{
-		action: newAction(scheme, cl, config, clientset),
+		action: newAction(nil, cl, config, clientset),
 	}
 }
 
