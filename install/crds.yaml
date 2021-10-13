@@ -889,6 +889,11 @@ spec:
                   and defaults to 1.
                 format: int32
                 type: integer
+              nodeSelector:
+                additionalProperties:
+                  type: string
+                description: (Optional) If specified, the pod's nodeSelector
+                type: object
               nodeTLSSecret:
                 description: '(Optional) The secret with certificates and a private
                   key for the TLS endpoint on the database port. The standard naming

@@ -226,6 +226,10 @@ func (b StatefulSetBuilder) makePodTemplate() corev1.PodTemplateSpec {
 		pod.Spec.Tolerations = b.Spec().Tolerations
 	}
 
+	if b.Spec().NodeSelector != nil && len(b.Spec().NodeSelector) > 0 {
+		pod.Spec.NodeSelector = b.Spec().NodeSelector
+	}
+
 	secret := b.Spec().Image.PullSecret
 	if secret != nil {
 		local := corev1.LocalObjectReference{
