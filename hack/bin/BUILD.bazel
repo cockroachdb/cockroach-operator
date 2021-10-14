@@ -81,6 +81,17 @@ genrule(
 )
 
 genrule(
+    name = "fetch_golangci_lint",
+    srcs = select({
+        ":darwin": ["@golangci_lint_darwin//:file"],
+        ":k8": ["@golangci_lint_linux//:file"],
+    }),
+    outs = ["golangci-lint"],
+    cmd = "cp $(SRCS) $@",
+    visibility = ["//visibility:public"],
+)
+
+genrule(
     name = "fetch_kazel",
     srcs = ["@io_k8s_repo_infra//cmd/kazel"],
     outs = ["kazel"],

@@ -72,10 +72,10 @@ func EnsureUniqueVersion(fn CmdFn) Step {
 		cmd.Stdout = stdout
 		cmd.Stderr = stderr
 		if err := fn(cmd); err != nil {
-			return fmt.Errorf("failed to get tags: %s - %s", string(stderr.Bytes()), err)
+			return fmt.Errorf("failed to get tags: %s - %s", stderr.String(), err)
 		}
 
-		for _, v := range strings.Split(string(stdout.Bytes()), "\n") {
+		for _, v := range strings.Split(stdout.String(), "\n") {
 			if v == "" {
 				continue
 			}

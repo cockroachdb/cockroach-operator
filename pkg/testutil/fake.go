@@ -31,7 +31,7 @@ import (
 
 func NewFakeClient(scheme *runtime.Scheme, objs ...runtime.Object) *FakeClient {
 	return &FakeClient{
-		client: fake.NewFakeClientWithScheme(scheme, objs...),
+		client: fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(objs...).Build(),
 		scheme: scheme,
 	}
 }
@@ -113,11 +113,8 @@ func (r simpleReactor) Handles(action Action) bool {
 	}
 
 	resourceCovers := r.Resource == "*" || r.Resource == action.GVR().Resource
-	if !resourceCovers {
-		return false
-	}
 
-	return true
+	return resourceCovers
 }
 
 func (r simpleReactor) React(action Action) (handled bool, err error) {

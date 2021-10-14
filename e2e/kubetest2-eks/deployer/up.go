@@ -27,8 +27,6 @@ import (
 	"sigs.k8s.io/kubetest2/pkg/process"
 )
 
-var home = os.Getenv("HOME")
-
 // all of the tests that we disable that aws-k8s-tester will run
 var disable = []string{
 	"AWS_K8S_TESTER_EKS_ADD_ON_KUBERNETES_DASHBOARD_ENABLE",
