@@ -34,9 +34,6 @@ import (
 // We may have a threadsafe problem where one test starts messing with another test
 var parallel = *flag.Bool("parallel", false, "run tests in parallel")
 
-// run the pvc test
-var pvc = flag.Bool("pvc", false, "run pvc test")
-
 func TestCreateInsecureCluster(t *testing.T) {
 	// Test Creating an insecure cluster
 	// No actions on the cluster just create it and

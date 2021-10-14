@@ -48,7 +48,7 @@ func TestDecommissionFunctionalityWithPrune(t *testing.T) {
 	// remove the 4th node
 
 	// turn on featuregate since Decommission is disabled by default currently
-	utilfeature.DefaultMutableFeatureGate.Set("AutoPrunePVC=true")
+	require.NoError(t, utilfeature.DefaultMutableFeatureGate.Set("AutoPrunePVC=true"))
 
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
@@ -106,7 +106,7 @@ func TestDecommissionFunctionality(t *testing.T) {
 	// remove the 4th node
 
 	// making sure the feature gate is off for prunePVC
-	utilfeature.DefaultMutableFeatureGate.Set("AutoPrunePVC=false")
+	require.NoError(t, utilfeature.DefaultMutableFeatureGate.Set("AutoPrunePVC=false"))
 
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")

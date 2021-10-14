@@ -18,6 +18,7 @@ go_test(
     deps = [
         "@com_github_spf13_pflag//:go_default_library",
         "@com_github_stretchr_testify//assert:go_default_library",
+        "@com_github_stretchr_testify//require:go_default_library",
     ],
 )
 

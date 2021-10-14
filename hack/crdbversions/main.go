@@ -62,6 +62,8 @@ type templateData struct {
 // readCrdbVersions reads CRDB versions from a YAML file and sorts them
 // according to the semantic version sorting rules
 func readCrdbVersions(r io.Reader) ([]*semver.Version, error) {
+	// nolint
+	// io.ReadAll is available from 1.16 onwards. Earlier it was available in io/ioutil package
 	contents, err := io.ReadAll(r)
 	if err != nil {
 		return nil, fmt.Errorf("cannot open CRDB version file: %w", err)

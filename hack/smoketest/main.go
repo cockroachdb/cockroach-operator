@@ -73,7 +73,12 @@ func main() {
 		RunBankWorkload(10 * time.Second),
 	}
 
-	defer StopKindCluster(clusterName).Apply(process.ExecJUnit)
+	defer func(cluster Step, fn ExecFn) {
+		if err := cluster.Apply(fn); err != nil {
+			fmt.Print(err.Error())
+
+		}
+	}(StopKindCluster(clusterName), process.ExecJUnit)
 
 	for _, step := range steps {
 		if err := step.Apply(process.ExecJUnit); err != nil {
@@ -84,6 +89,8 @@ func main() {
 
 func bail(err error) {
 	fmt.Fprintf(os.Stderr, "OOPS! An error occurred: %s\n", err)
-	StopKindCluster(clusterName).Apply(process.ExecJUnit)
+	if err = StopKindCluster(clusterName).Apply(process.ExecJUnit); err != nil {
+		fmt.Print(err.Error())
+	}
 	os.Exit(1)
 }

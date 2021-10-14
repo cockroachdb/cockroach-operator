@@ -50,15 +50,14 @@ func AssertDiff(t *testing.T, expected interface{}, actual interface{}) {
 			// TODO test if the string is actually an api definition???
 			// otherwise the decode is going to throw an error
 
-			obj := decode([]byte(str))
+			runtimeObj := decode([]byte(str))
 
 			// we are only removing annotations out of pods
-			switch obj.(type) {
+			switch obj := runtimeObj.(type) {
 			case *v1.Pod:
-				pod := obj.(*v1.Pod)
-				delete(pod.ObjectMeta.Annotations, "cni.projectcalico.org/podIP")
+				delete(obj.ObjectMeta.Annotations, "cni.projectcalico.org/podIP")
 				var b bytes.Buffer
-				err := encode(pod, &b)
+				err := encode(obj, &b)
 				require.NoError(t, err)
 				newSlice = append(newSlice, "\n"+b.String()+"\n")
 
