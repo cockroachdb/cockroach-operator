@@ -37,7 +37,6 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
 	"go.uber.org/zap/zapcore"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
@@ -51,17 +50,15 @@ type HealthChecker interface { // for testing
 
 //HealthCheckerImpl struct
 type HealthCheckerImpl struct {
-	clientset *kubernetes.Clientset
-	scheme    *runtime.Scheme
+	clientset kubernetes.Interface
 	cluster   *resource.Cluster
 	config    *rest.Config
 }
 
 //NewHealthChecker ctor
-func NewHealthChecker(cluster *resource.Cluster, clientset *kubernetes.Clientset, scheme *runtime.Scheme, config *rest.Config) *HealthCheckerImpl {
+func NewHealthChecker(cluster *resource.Cluster, clientset kubernetes.Interface, config *rest.Config) *HealthCheckerImpl {
 	return &HealthCheckerImpl{
 		clientset: clientset,
-		scheme:    scheme,
 		cluster:   cluster,
 		config:    config,
 	}

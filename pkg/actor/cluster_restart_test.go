@@ -59,7 +59,7 @@ func TestFullClusterRestart(t *testing.T) {
 
 	client := builder.Build()
 
-	cr := newClusterRestart(nil, client, nil).(*clusterRestart)
+	cr := newClusterRestart(client, nil, nil).(*clusterRestart)
 	require.NotNil(t, cr)
 	var stsReplicas int32
 	stsReplicas = 3
@@ -107,13 +107,6 @@ func TestFullClusterRestart(t *testing.T) {
 }
 
 func TestRollingClusterRestart(t *testing.T) {
-	// Setup fake client
-	builder := fake.NewClientBuilder()
-
-	client := builder.Build()
-
-	cr := newClusterRestart(nil, client, nil).(*clusterRestart)
-	require.NotNil(t, cr)
 	var stsReplicas int32
 	stsReplicas = 3
 	cltSet := fakeclient.NewSimpleClientset()
@@ -157,7 +150,14 @@ func TestRollingClusterRestart(t *testing.T) {
 	}, &sts, sts.Namespace)
 	hcTest := HealthCheckerTest{}
 	testLog := zapr.NewLogger(zaptest.NewLogger(t))
-	require.NoError(t, cr.rollingSts(context.TODO(), &sts, cltSet, testLog, &hcTest))
+
+	// Setup fake client
+	builder := fake.NewClientBuilder()
+	client := builder.Build()
+	cr := newClusterRestart(client, nil, cltSet).(*clusterRestart)
+	require.NotNil(t, cr)
+
+	require.NoError(t, cr.rollingSts(context.TODO(), &sts, testLog, &hcTest))
 }
 
 func createStatefulSet(stsReplicas int32) appsv1.StatefulSet {
