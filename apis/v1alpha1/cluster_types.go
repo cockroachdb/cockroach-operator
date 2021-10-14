@@ -118,6 +118,10 @@ type CrdbClusterSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Cockroach Database Tolerations"
 	// +optional
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
+	// (Optional) If specified, the pod's nodeSelector
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Map of nodeSelectors to match when scheduling pods on nodes"
+	// +optional
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 }
 
 // +k8s:openapi-gen=true

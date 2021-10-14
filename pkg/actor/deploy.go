@@ -25,13 +25,12 @@ import (
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func newDeploy(scheme *runtime.Scheme, cl client.Client, config *rest.Config, kd kube.KubernetesDistribution, clientset kubernetes.Interface) Actor {
+func newDeploy(scheme *runtime.Scheme, cl client.Client, kd kube.KubernetesDistribution, clientset kubernetes.Interface) Actor {
 	return &deploy{
-		action: newAction(scheme, cl, config, clientset),
+		action: newAction(scheme, cl, nil, clientset),
 		kd:     kd,
 	}
 }

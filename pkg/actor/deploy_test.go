@@ -73,7 +73,7 @@ func TestDeploysNotInitalizedClusterAfterVersionChecker(t *testing.T) {
 	cluster.SetTrue(api.CrdbVersionChecked)
 
 	mock := kube.MockKubernetesDistribution()
-	deploy := actor.NewDeploy(scheme, client, nil, mock, nil)
+	deploy := actor.NewDeploy(scheme, client, mock, nil)
 	t.Log(cluster.Status().Conditions)
 
 	testLog := zapr.NewLogger(zaptest.NewLogger(t))

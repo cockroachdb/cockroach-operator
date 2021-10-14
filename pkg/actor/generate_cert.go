@@ -22,7 +22,6 @@ import (
 	"encoding/pem"
 	"fmt"
 	"io/ioutil"
-	"k8s.io/client-go/kubernetes"
 	"path/filepath"
 	"time"
 
@@ -33,8 +32,6 @@ import (
 	"github.com/cockroachdb/cockroach-operator/pkg/util"
 	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/rest"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -46,9 +43,9 @@ var allowCAKeyReuse bool
 var overwriteFiles bool
 var generatePKCS8Key bool
 
-func newGenerateCert(scheme *runtime.Scheme, cl client.Client, config *rest.Config, clientset kubernetes.Interface) Actor {
+func newGenerateCert(cl client.Client) Actor {
 	return &generateCert{
-		action: newAction(scheme, cl, config, clientset),
+		action: newAction(nil, cl, nil, nil),
 	}
 }
 
@@ -62,7 +59,7 @@ type generateCert struct {
 
 //GetActionType returns api.RequestCertAction action used to set the cluster status errors
 func (rc *generateCert) GetActionType() api.ActionType {
-	return api.GenerateCertAction
+	return api.RequestCertAction
 }
 
 // Act func generates the various certificates required and then stores

@@ -7,6 +7,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 # [Unreleased](https://github.com/cockroachdb/cockroach-operator/compare/v2.2.1...master)
 
+## Added
+
+* Support for nodeSelectors
+
 ## Changed
 
 * Cleanup of initialization and structure of Actor and Director
