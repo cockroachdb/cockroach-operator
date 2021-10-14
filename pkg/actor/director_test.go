@@ -24,6 +24,7 @@ import (
 	"github.com/cockroachdb/cockroach-operator/pkg/testutil"
 	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
 	"github.com/stretchr/testify/require"
+	"k8s.io/client-go/kubernetes/fake"
 	"testing"
 )
 
@@ -45,7 +46,8 @@ func createTestDirectorAndCluster(t *testing.T) (*resource.Cluster, actor.Direct
 
 	scheme := testutil.InitScheme(t)
 	client := testutil.NewFakeClient(scheme)
-	director := actor.NewDirector(scheme, client, nil)
+	clientset := fake.NewSimpleClientset()
+	director := actor.NewDirector(scheme, client, nil, clientset)
 
 	return cluster, director
 }
