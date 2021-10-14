@@ -54,12 +54,7 @@ func (d decommission) GetActionType() api.ActionType {
 
 func (d decommission) Act(ctx context.Context, cluster *resource.Cluster, log logr.Logger) error {
 	log.V(DEBUGLEVEL).Info("check decommission opportunities")
-	//we are not running decommission logic if a restart must be done
-	restartType := cluster.GetAnnotationRestartType()
-	if restartType != "" {
-		log.V(DEBUGLEVEL).Info("Not running decommission cluster action")
-		return nil
-	}
+
 	stsName := cluster.StatefulSetName()
 
 	key := kubetypes.NamespacedName{
