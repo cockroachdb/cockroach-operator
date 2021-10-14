@@ -32,7 +32,7 @@ import (
 )
 
 const crdbVersionsInvertedRegexp = "^v19|^v21.1.8$|latest|ubi$"
-const crdbVersionsFileName = "crdb-versions.yaml"
+const CrdbVersionsFileName = "crdb-versions.yaml"
 
 // TODO(rail): we may need to add pagination handling in case we pass 500 versions
 // Use anonymous API to get the list of published images from the RedHat Catalog.
@@ -53,7 +53,7 @@ const crdbVersionsFileDescription = `#
 
 `
 
-type crdbVersionsResponse struct {
+type CrdbVersionsResponse struct {
 	Data []struct {
 		Repositories []struct {
 			Tags []struct {
@@ -63,7 +63,7 @@ type crdbVersionsResponse struct {
 	} `json:"data"`
 }
 
-func getData(data *crdbVersionsResponse) error {
+func GetData(data *CrdbVersionsResponse) error {
 	client := http.Client{Timeout: crdbVersionsDefaultTimeout * time.Second}
 	r, err := client.Get(crdbVersionsUrl)
 	if err != nil {
@@ -74,12 +74,12 @@ func getData(data *crdbVersionsResponse) error {
 	return json.NewDecoder(r.Body).Decode(data)
 }
 
-func getVersions(data crdbVersionsResponse) []string {
+func GetVersions(data CrdbVersionsResponse) []string {
 	var versions []string
 	for _, data := range data.Data {
 		for _, repo := range data.Repositories {
 			for _, tag := range repo.Tags {
-				if isValid(tag.Name) {
+				if IsValid(tag.Name) {
 					versions = append(versions, tag.Name)
 				}
 			}
@@ -88,14 +88,14 @@ func getVersions(data crdbVersionsResponse) []string {
 	return versions
 }
 
-func isValid(version string) bool {
+func IsValid(version string) bool {
 	match, _ := regexp.MatchString(crdbVersionsInvertedRegexp, version)
 	return !match
 }
 
 // sortVersions converts the slice with versions to slice with semver.Version
 // sorts them and converts back to slice with version strings
-func sortVersions(versions []string) []string {
+func SortVersions(versions []string) []string {
 	vs := make([]*semver.Version, len(versions))
 	for i, r := range versions {
 		v, err := semver.NewVersion(r)
@@ -116,15 +116,15 @@ func sortVersions(versions []string) []string {
 
 // annotation tries to open bolerplate file and combine the text from it with
 // file description
-func annotation() []byte {
-	contents, err := ioutil.ReadFile("boilerplate/boilerplate.yaml.txt")
+func Annotation() []byte {
+	contents, err := ioutil.ReadFile("../boilerplate/boilerplate.yaml.txt")
 	if err != nil {
 		log.Fatalf("Cannot read boilerplate file: %s", err)
 	}
 	return append([]byte(contents), []byte(crdbVersionsFileDescription)...)
 }
 
-func generateCrdbVersionsFile(versions []string, path string) error {
+func GenerateCrdbVersionsFile(versions []string, path string) error {
 	f, err := os.Create(path)
 	if err != nil {
 		log.Fatalf("Cannot create %s file: %s", path, err)
@@ -137,22 +137,22 @@ func generateCrdbVersionsFile(versions []string, path string) error {
 		log.Fatalf("error while converting to yaml: %v", err)
 	}
 
-	result := append(annotation(), yamlVersions...)
+	result := append(Annotation(), yamlVersions...)
 	return ioutil.WriteFile(path, result, 0)
 }
 
 func main() {
-	responseData := crdbVersionsResponse{}
-	err := getData(&responseData)
+	responseData := CrdbVersionsResponse{}
+	err := GetData(&responseData)
 	if err != nil {
 		log.Fatalf("Cannot parse response: %s", err)
 	}
 
-	rawVersions := getVersions(responseData)
-	sortedVersions := sortVersions(rawVersions)
+	rawVersions := GetVersions(responseData)
+	sortedVersions := SortVersions(rawVersions)
 
-	err = generateCrdbVersionsFile(sortedVersions, crdbVersionsFileName)
+	err = GenerateCrdbVersionsFile(sortedVersions, CrdbVersionsFileName)
 	if err != nil {
-		log.Fatalf("Cannot write %s file: %s", crdbVersionsFileName, err)
+		log.Fatalf("Cannot write %s file: %s", CrdbVersionsFileName, err)
 	}
 }

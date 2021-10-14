@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package main_test
 
 import (
 	"reflect"
@@ -24,7 +24,7 @@ import (
 	"bytes"
 	"testing"
 
-	//"github.com/Masterminds/semver/v3"
+	. "github.com/cockroachdb/cockroach-operator/hack/update_crdb_versions"
 )
 
 func TestIsValid(t *testing.T) {
@@ -42,7 +42,7 @@ func TestIsValid(t *testing.T) {
 	}
 
 	for _, tc := range tests {
-		if isValid(tc.version) != tc.valid {
+		if IsValid(tc.version) != tc.valid {
 			t.Errorf("expected %t for valid(`%s`) ", tc.valid, tc.version)
 		}
 	}
@@ -51,7 +51,7 @@ func TestIsValid(t *testing.T) {
 func TestSortVersions(t *testing.T) {
 	versions := []string{"v1.2.3", "v2.10.5", "v2.2.3", "v2.1.1", "v1.11.0"}
 	expected := []string{"v1.2.3", "v1.11.0", "v2.1.1", "v2.2.3", "v2.10.5"}
-	got := sortVersions(versions)
+	got := SortVersions(versions)
 
 	if !reflect.DeepEqual(got, expected) {
 		t.Errorf("Expected `%s`, got `%s`", expected, got)
@@ -62,9 +62,9 @@ func TestGetVersions(t *testing.T) {
 	expected := []string{"v1.2.3", "v1.2.3+test.01"}
 
 	data := `{"data":[{"repositories": [{"tags": [{"name": "v1.2.3"}, {"name": "v1.2.3+test.01"}]}]}]}`
-	resp := crdbVersionsResponse{}
+	resp := CrdbVersionsResponse{}
 	json.Unmarshal([]byte(data), &resp)
-	got := getVersions(resp)
+	got := GetVersions(resp)
 
 	if !reflect.DeepEqual(got, expected) {
 		t.Errorf("Expected `%s`, got `%s`", expected, got)
@@ -79,11 +79,11 @@ func TestCrdbVersionsFile(t *testing.T) {
 - v1.2.3
 - v1.2.3+test.01
 `
-	expected := append(annotation(), []byte(output)...)
+	expected := append(Annotation(), []byte(output)...)
 
 	tmpdir := t.TempDir()
-	filePath := path.Join(tmpdir, crdbVersionsFileName)
-	err := generateCrdbVersionsFile(versions, filePath)
+	filePath := path.Join(tmpdir, CrdbVersionsFileName)
+	err := GenerateCrdbVersionsFile(versions, filePath)
 	if err != nil {
 		t.Fatalf("error generating file: %s", err)
 	}
