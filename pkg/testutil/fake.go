@@ -113,11 +113,8 @@ func (r simpleReactor) Handles(action Action) bool {
 	}
 
 	resourceCovers := r.Resource == "*" || r.Resource == action.GVR().Resource
-	if !resourceCovers {
-		return false
-	}
 
-	return true
+	return resourceCovers
 }
 
 func (r simpleReactor) React(action Action) (handled bool, err error) {

@@ -32,8 +32,7 @@ import (
 )
 
 func TestStatefulSetIsRunning(t *testing.T) {
-	var stsReplicas int32
-	stsReplicas = 3
+	stsReplicas := int32(3)
 	cltSet := fakeclient.NewSimpleClientset()
 
 	// Test error if no statefulset exists
@@ -83,16 +82,15 @@ func TestStatefulSetIsRunning(t *testing.T) {
 
 	// Set Status Replicas Ready to be number of replicas defined in the spec
 	sts.Status.Replicas = stsReplicas
-	cltSet.Tracker().Update(sts.GroupVersionKind().GroupVersion().WithResource("statefulsets"), &sts, "crdb")
+	require.NoError(t, cltSet.Tracker().Update(sts.GroupVersionKind().GroupVersion().WithResource("statefulsets"), &sts, "crdb"))
 
-	addPodsToStatefulSet(stsReplicas, sts, cltSet)
+	require.NoError(t, addPodsToStatefulSet(stsReplicas, sts, cltSet))
 
 	require.NoError(t, StatefulSetIsRunning(context.TODO(), cltSet, "crdb", "crdb-sts"))
 }
 
 func TestIsStatefulSetReadyToServe(t *testing.T) {
-	var stsReplicas int32
-	stsReplicas = 3
+	stsReplicas := int32(3)
 
 	sts := statefulSet(stsReplicas)
 
@@ -126,12 +124,12 @@ func TestIsStatefulSetReadyToServe(t *testing.T) {
 	// Set Status Replicas Ready to be number of replicas defined in the spec
 	sts.Status.Replicas = stsReplicas
 	sts.Status.ReadyReplicas = stsReplicas
-	cltSet.Tracker().Update(sts.GroupVersionKind().GroupVersion().WithResource("statefulsets"), &sts, "crdb")
+	require.NoError(t, cltSet.Tracker().Update(sts.GroupVersionKind().GroupVersion().WithResource("statefulsets"), &sts, "crdb"))
 	require.NoError(t, IsStatefulSetReadyToServe(context.TODO(), cltSet, "crdb", "crdb-sts", stsReplicas))
 
 	// Err if there are more replicas than in the spec
 	sts.Status.Replicas = stsReplicas * 2
-	cltSet.Tracker().Update(sts.GroupVersionKind().GroupVersion().WithResource("statefulsets"), &sts, "crdb")
+	require.NoError(t, cltSet.Tracker().Update(sts.GroupVersionKind().GroupVersion().WithResource("statefulsets"), &sts, "crdb"))
 	require.Error(t, IsStatefulSetReadyToServe(context.TODO(), cltSet, "crdb", "crdb-sts", stsReplicas))
 
 }
@@ -161,7 +159,7 @@ func statefulSet(stsReplicas int32) appsv1.StatefulSet {
 	}
 }
 
-func addPodsToStatefulSet(stsReplicas int32, sts appsv1.StatefulSet, cltSet *fakeclient.Clientset) {
+func addPodsToStatefulSet(stsReplicas int32, sts appsv1.StatefulSet, cltSet *fakeclient.Clientset) error {
 	// Create some pods to look up
 	var i int32
 	for i = 0; i < stsReplicas; i++ {
@@ -180,6 +178,9 @@ func addPodsToStatefulSet(stsReplicas int32, sts appsv1.StatefulSet, cltSet *fak
 			},
 		}
 
-		cltSet.Tracker().Add(&pod)
+		if err := cltSet.Tracker().Add(&pod); err != nil {
+			return err
+		}
 	}
+	return nil
 }

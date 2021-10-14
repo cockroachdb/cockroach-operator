@@ -226,10 +226,7 @@ func (up *partitionedUpdate) Act(ctx context.Context, cluster *resource.Cluster,
 // inK8s checks to see if the a file exists
 func inK8s(file string) bool {
 	_, err := os.Stat(file)
-	if os.IsNotExist(err) {
-		return false
-	}
-	return true
+	return !os.IsNotExist(err)
 }
 
 func getImageNameNoVersion(image string) string {
