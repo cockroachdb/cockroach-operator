@@ -179,8 +179,6 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req reconcile.Request
 		return noRequeue()
 	}
 
-	// TODO: think about everything after this. do we even need it
-
 	// Check if the resource has been updated while the controller worked on it
 	fresh, err := cluster.IsFresh(fetcher)
 	if err != nil {

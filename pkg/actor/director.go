@@ -73,13 +73,12 @@ func (cd *clusterDirector) GetActorToExecute(ctx context.Context, cluster *resou
 		return cd.actors[api.ClusterRestartAction], nil
 	}
 
-	stsName := cluster.StatefulSetName()
-	key := kubetypes.NamespacedName{
+	stsKey := kubetypes.NamespacedName{
 		Namespace: cluster.Namespace(),
-		Name:      stsName,
+		Name:      cluster.StatefulSetName(),
 	}
 	ss := &appsv1.StatefulSet{}
-	err := kube.IgnoreNotFound(cd.client.Get(ctx, key, ss))
+	err := kube.IgnoreNotFound(cd.client.Get(ctx, stsKey, ss))
 	if err != nil {
 		return nil, err
 	}
