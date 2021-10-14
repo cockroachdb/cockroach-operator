@@ -130,12 +130,12 @@ func createTestDirectorAndStableCluster(t *testing.T) (*resource.Cluster, actor.
 		resource.PdbBuilder{Cluster: cluster, Selector: l.Selector(nil)},
 	}
 	for i := range builders {
-		resource.Reconciler{
+		require.NoError(t, resource.Reconciler{
 			ManagedResource: resource.ManagedResource{Labels: l},
 			Builder:         builders[i],
 			Owner:           cluster.Unwrap(),
 			Scheme:          scheme,
-		}.CompleteBuild(components[i].DeepCopyObject(), components[i])
+		}.CompleteBuild(components[i].DeepCopyObject(), components[i]))
 		objs = append(objs, components[i])
 	}
 
