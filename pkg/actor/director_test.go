@@ -122,7 +122,6 @@ func createTestDirectorAndStableCluster(t *testing.T) (*resource.Cluster, actor.
 	// Build up all the required pieces of our cluster components
 	l := labels.Common(cluster.Unwrap())
 	kd, _ := kube.NewKubernetesDistribution().Get(context.Background(), fake.NewSimpleClientset(objs...), zapr.NewLogger(zaptest.NewLogger(t)))
-	kd = "kubernetes-operator-" + kd
 	scheme := testutil.InitScheme(t)
 	builders := []resource.Builder{
 		resource.DiscoveryServiceBuilder{Cluster: cluster, Selector: l.Selector(nil)},

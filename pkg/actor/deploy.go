@@ -58,8 +58,6 @@ func (d deploy) Act(ctx context.Context, cluster *resource.Cluster, log logr.Log
 		return errors.Wrap(err, "failed to get Kubernetes distribution")
 	}
 
-	kubernetesDistro = "kubernetes-operator-" + kubernetesDistro
-
 	labelSelector := r.Labels.Selector(cluster.Spec().AdditionalLabels)
 	builders := []resource.Builder{
 		resource.DiscoveryServiceBuilder{Cluster: cluster, Selector: labelSelector},

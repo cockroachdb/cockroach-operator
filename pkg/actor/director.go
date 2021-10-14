@@ -283,7 +283,6 @@ func (cd *clusterDirector) needsDeploy(ctx context.Context, cluster *resource.Cl
 	if err != nil {
 		return false, err
 	}
-	kubernetesDistro = "kubernetes-operator-" + kubernetesDistro
 
 	labelSelector := r.Labels.Selector(cluster.Spec().AdditionalLabels)
 	builders := []resource.Builder{
