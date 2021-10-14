@@ -402,25 +402,30 @@ func requireDatabaseToFunction(t *testing.T, sb testenv.DiffingSandbox, b Cluste
 
 	t.Log("DB connection initialized; running commands")
 
+	t.Log("Creating test_db")
 	if _, err := db.Exec("CREATE DATABASE test_db"); err != nil {
 		t.Fatal(err)
 	}
 
+	t.Log("Using test_db")
 	if _, err := db.Exec("USE test_db"); err != nil {
 		t.Fatal(err)
 	}
 
 	// Create the "accounts" table.
+	t.Log("Creating accounts table")
 	if _, err := db.Exec("CREATE TABLE IF NOT EXISTS accounts (id INT PRIMARY KEY, balance INT)"); err != nil {
 		t.Fatal(err)
 	}
 
 	// Insert two rows into the "accounts" table.
+	t.Log("Inserting into accounts table")
 	if _, err := db.Exec(
 		"INSERT INTO accounts (id, balance) VALUES (1, 1000), (2, 250)"); err != nil {
 		t.Fatal(err)
 	}
 
+	t.Log("Selecting balances")
 	// Print out the balances.
 	rows, err := db.Query("SELECT id, balance FROM accounts")
 	if err != nil {
