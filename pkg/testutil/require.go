@@ -402,32 +402,35 @@ func requireDatabaseToFunction(t *testing.T, sb testenv.DiffingSandbox, b Cluste
 
 	t.Log("DB connection initialized; running commands")
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	defer cancel()
+
 	t.Log("Creating test_db")
-	if _, err := db.Exec("CREATE DATABASE test_db"); err != nil {
+	if _, err := db.ExecContext(ctx, "CREATE DATABASE test_db"); err != nil {
 		t.Fatal(err)
 	}
 
 	t.Log("Using test_db")
-	if _, err := db.Exec("USE test_db"); err != nil {
+	if _, err := db.ExecContext(ctx, "USE test_db"); err != nil {
 		t.Fatal(err)
 	}
 
 	// Create the "accounts" table.
 	t.Log("Creating accounts table")
-	if _, err := db.Exec("CREATE TABLE IF NOT EXISTS accounts (id INT PRIMARY KEY, balance INT)"); err != nil {
+	if _, err := db.ExecContext(ctx, "CREATE TABLE IF NOT EXISTS accounts (id INT PRIMARY KEY, balance INT)"); err != nil {
 		t.Fatal(err)
 	}
 
 	// Insert two rows into the "accounts" table.
 	t.Log("Inserting into accounts table")
-	if _, err := db.Exec(
+	if _, err := db.ExecContext(ctx,
 		"INSERT INTO accounts (id, balance) VALUES (1, 1000), (2, 250)"); err != nil {
 		t.Fatal(err)
 	}
 
 	t.Log("Selecting balances")
 	// Print out the balances.
-	rows, err := db.Query("SELECT id, balance FROM accounts")
+	rows, err := db.QueryContext(ctx, "SELECT id, balance FROM accounts")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -441,7 +444,7 @@ func requireDatabaseToFunction(t *testing.T, sb testenv.DiffingSandbox, b Cluste
 		t.Log("balances", id, balance)
 	}
 
-	countRows, err := db.Query("SELECT COUNT(*) as count FROM accounts")
+	countRows, err := db.QueryContext(ctx, "SELECT COUNT(*) as count FROM accounts")
 	if err != nil {
 		t.Fatal(err)
 	}
