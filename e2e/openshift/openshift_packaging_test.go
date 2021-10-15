@@ -89,12 +89,6 @@ type YAMLTemplate struct {
 	DockerRegistry string
 }
 
-// delete is a helper variable used to delete resources
-var delete = []string{
-	"delete",
-	"-n",
-}
-
 // TestPackage is used to install the operator in an OpenShift
 // cluster. It uses three different YAML files and uses the test
 // namespace. This program uses oc and also installs example.yaml
@@ -119,7 +113,7 @@ func TestPackaging(t *testing.T) {
 		"cockroachdb",
 	}
 
-	process.ExecJUnit("oc", args, os.Environ())
+	require.NoError(t, process.ExecJUnit("oc", args, os.Environ()))
 
 	// TODO I should wait for the cockroach database
 	// to stop here, we might have orphaned disks
@@ -133,7 +127,7 @@ func TestPackaging(t *testing.T) {
 		"app.kubernetes.io/name=cockroachdb",
 	}
 
-	process.ExecJUnit("oc", args, os.Environ())
+	require.NoError(t, process.ExecJUnit("oc", args, os.Environ()))
 
 	// remove test namespace
 	args = []string{
@@ -142,7 +136,7 @@ func TestPackaging(t *testing.T) {
 		"test",
 	}
 
-	process.ExecJUnit("oc", args, os.Environ())
+	require.NoError(t, process.ExecJUnit("oc", args, os.Environ()))
 
 	// remove crds
 	args = []string{
@@ -151,7 +145,7 @@ func TestPackaging(t *testing.T) {
 		"crdbclusters.crdb.cockroachlabs.com",
 	}
 
-	process.ExecJUnit("oc", args, os.Environ())
+	require.NoError(t, process.ExecJUnit("oc", args, os.Environ()))
 
 	// create a new project/namespace for testing
 	args = []string{
@@ -161,7 +155,7 @@ func TestPackaging(t *testing.T) {
 
 	// we cannot do a require.NoError on process, because oc tries to modify
 	// the kubeconfig file, and with bazel you cannot do this
-	process.ExecJUnit("oc", args, os.Environ())
+	require.NoError(t, process.ExecJUnit("oc", args, os.Environ()))
 
 	// create a YAMLTemplate for the go templating
 	yaml := &YAMLTemplate{
@@ -187,7 +181,7 @@ func TestPackaging(t *testing.T) {
 	for _, f := range files {
 		fmt.Println(f)
 		args := []string{"delete", "-f", f}
-		process.ExecJUnit("oc", args, os.Environ())
+		require.NoError(t, process.ExecJUnit("oc", args, os.Environ()))
 		args = []string{"create", "-f", f}
 		require.NoError(t, process.ExecJUnit("oc", args, os.Environ()), "failed creating openshift operator files")
 	}

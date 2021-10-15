@@ -32,8 +32,6 @@ import (
 	"github.com/cockroachdb/cockroach-operator/pkg/util"
 	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/rest"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -45,11 +43,9 @@ var allowCAKeyReuse bool
 var overwriteFiles bool
 var generatePKCS8Key bool
 
-func newGenerateCert(scheme *runtime.Scheme, cl client.Client, config *rest.Config) Actor {
-
+func newGenerateCert(cl client.Client) Actor {
 	return &generateCert{
-		action: newAction("generate_cert", scheme, cl),
-		config: config,
+		action: newAction(nil, cl, nil, nil),
 	}
 }
 
@@ -57,7 +53,6 @@ func newGenerateCert(scheme *runtime.Scheme, cl client.Client, config *rest.Conf
 type generateCert struct {
 	action
 
-	config   *rest.Config
 	CertsDir string
 	CAKey    string
 }

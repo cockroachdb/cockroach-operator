@@ -59,16 +59,15 @@ func TestFullClusterRestart(t *testing.T) {
 
 	client := builder.Build()
 
-	cr := newClusterRestart(nil, client, nil).(*clusterRestart)
+	cr := newClusterRestart(client, nil, nil).(*clusterRestart)
 	require.NotNil(t, cr)
-	var stsReplicas int32
-	stsReplicas = 3
+	stsReplicas := int32(3)
 	cltSet := fakeclient.NewSimpleClientset()
 
 	sts := createStatefulSet(stsReplicas)
-	cltSet.Tracker().Add(&sts)
+	require.NoError(t, cltSet.Tracker().Add(&sts))
 
-	addPodsToStatefulSet(stsReplicas, sts, cltSet)
+	require.NoError(t, addPodsToStatefulSet(stsReplicas, sts, cltSet))
 
 	cltSet.PrependReactor("*", "*", func(action clienttesting.Action) (handled bool, ret runtime.Object, err error) {
 		tracker := cltSet.Tracker()
@@ -80,7 +79,9 @@ func TestFullClusterRestart(t *testing.T) {
 		case "update":
 			updateAction := action.(clienttesting.UpdateAction)
 			obj := updateAction.GetObject().(*appsv1.StatefulSet)
-			tracker.Update(gvr, obj, ns)
+			if err := tracker.Update(gvr, obj, ns); err != nil {
+				return false, nil, err
+			}
 			return true, obj, nil
 		case "get":
 			getAction := action.(clienttesting.GetAction)
@@ -97,31 +98,24 @@ func TestFullClusterRestart(t *testing.T) {
 	sts.Status.Replicas = stsReplicas
 	sts.Status.ReadyReplicas = stsReplicas
 
-	cltSet.Tracker().Update(schema.GroupVersionResource{
+	err := cltSet.Tracker().Update(schema.GroupVersionResource{
 		Group:    "apps",
 		Version:  "v1",
-		Resource: "statefulset",
+		Resource: "statefulsets",
 	}, &sts, sts.Namespace)
+	require.NoError(t, err)
 	testLog := zapr.NewLogger(zaptest.NewLogger(t))
 	require.NoError(t, cr.fullClusterRestart(context.TODO(), &sts, testLog, cltSet))
 }
 
 func TestRollingClusterRestart(t *testing.T) {
-	// Setup fake client
-	builder := fake.NewClientBuilder()
-
-	client := builder.Build()
-
-	cr := newClusterRestart(nil, client, nil).(*clusterRestart)
-	require.NotNil(t, cr)
-	var stsReplicas int32
-	stsReplicas = 3
+	stsReplicas := int32(3)
 	cltSet := fakeclient.NewSimpleClientset()
 
 	sts := createStatefulSet(stsReplicas)
-	cltSet.Tracker().Add(&sts)
+	require.NoError(t, cltSet.Tracker().Add(&sts))
 
-	addPodsToStatefulSet(stsReplicas, sts, cltSet)
+	require.NoError(t, addPodsToStatefulSet(stsReplicas, sts, cltSet))
 
 	cltSet.PrependReactor("*", "*", func(action clienttesting.Action) (handled bool, ret runtime.Object, err error) {
 		tracker := cltSet.Tracker()
@@ -133,7 +127,10 @@ func TestRollingClusterRestart(t *testing.T) {
 		case "update":
 			updateAction := action.(clienttesting.UpdateAction)
 			obj := updateAction.GetObject().(*appsv1.StatefulSet)
-			tracker.Update(gvr, obj, ns)
+			if err := tracker.Update(gvr, obj, ns); err != nil {
+				return false, nil, err
+
+			}
 			return true, obj, nil
 		case "get":
 			getAction := action.(clienttesting.GetAction)
@@ -150,14 +147,23 @@ func TestRollingClusterRestart(t *testing.T) {
 	sts.Status.Replicas = stsReplicas
 	sts.Status.ReadyReplicas = stsReplicas
 
-	cltSet.Tracker().Update(schema.GroupVersionResource{
+	err := cltSet.Tracker().Update(schema.GroupVersionResource{
 		Group:    "apps",
 		Version:  "v1",
 		Resource: "statefulsets",
 	}, &sts, sts.Namespace)
+	require.NoError(t, err)
+
 	hcTest := HealthCheckerTest{}
 	testLog := zapr.NewLogger(zaptest.NewLogger(t))
-	require.NoError(t, cr.rollingSts(context.TODO(), &sts, cltSet, testLog, &hcTest))
+
+	// Setup fake client
+	builder := fake.NewClientBuilder()
+	client := builder.Build()
+	cr := newClusterRestart(client, nil, cltSet).(*clusterRestart)
+	require.NotNil(t, cr)
+
+	require.NoError(t, cr.rollingSts(context.TODO(), &sts, testLog, &hcTest))
 }
 
 func createStatefulSet(stsReplicas int32) appsv1.StatefulSet {
@@ -185,7 +191,7 @@ func createStatefulSet(stsReplicas int32) appsv1.StatefulSet {
 	}
 }
 
-func addPodsToStatefulSet(stsReplicas int32, sts appsv1.StatefulSet, cltSet *fakeclient.Clientset) {
+func addPodsToStatefulSet(stsReplicas int32, sts appsv1.StatefulSet, cltSet *fakeclient.Clientset) error {
 	// Create some pods to look up
 	var i int32
 	for i = 0; i < stsReplicas; i++ {
@@ -204,6 +210,9 @@ func addPodsToStatefulSet(stsReplicas int32, sts appsv1.StatefulSet, cltSet *fak
 			},
 		}
 
-		cltSet.Tracker().Add(&pod)
+		if err := cltSet.Tracker().Add(&pod); err != nil {
+			return err
+		}
 	}
+	return nil
 }

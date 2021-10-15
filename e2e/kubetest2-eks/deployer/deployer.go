@@ -20,7 +20,6 @@ import (
 	"flag"
 	"os"
 	"path/filepath"
-	"sync"
 
 	"github.com/octago/sflags/gen/gpflag"
 	"github.com/spf13/pflag"
@@ -37,8 +36,6 @@ const Name = "eks"
 type deployer struct {
 	// generic parts
 	commonOptions types.Options
-	// doInit helps to make sure the initialization is performed only once
-	doInit sync.Once
 
 	// Todo I am not certian we need KubeconfigPath
 

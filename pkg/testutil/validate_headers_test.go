@@ -116,12 +116,12 @@ func TestValidate(t *testing.T) {
 		t.Fatal("error running Validate", err)
 	}
 
-	for _, filename := range *non {
-		t.Logf("nonvalid file: %s", filename)
-	}
-
 	if non == nil {
 		t.Fatal("test did not find any bad files")
+	}
+
+	for _, filename := range *non {
+		t.Logf("invalid file: %s", filename)
 	}
 
 	n := *non

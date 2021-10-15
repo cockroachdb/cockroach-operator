@@ -18,17 +18,14 @@ package actor
 
 import (
 	"context"
-	"github.com/go-logr/logr"
-
-	"github.com/cockroachdb/cockroach-operator/pkg/condition"
-	"github.com/cockroachdb/cockroach-operator/pkg/features"
-	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
 
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
-	"github.com/cockroachdb/cockroach-operator/pkg/kube"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
+
+	"github.com/go-logr/logr"
 	"go.uber.org/zap/zapcore"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -79,95 +76,19 @@ type Actor interface {
 	GetActionType() api.ActionType
 }
 
-type Director interface {
-	GetActorsToExecute(*resource.Cluster) []Actor
-}
-
-type clusterDirector struct {
-	actors map[api.ActionType]Actor
-}
-
-func NewDirector(scheme *runtime.Scheme, cl client.Client, config *rest.Config) Director {
-	actors := map[api.ActionType]Actor{
-		api.DecommissionAction:      newDecommission(scheme, cl, config),
-		api.VersionCheckerAction:    newVersionChecker(scheme, cl, config),
-		api.GenerateCertAction:      newGenerateCert(scheme, cl, config),
-		api.PartitionedUpdateAction: newPartitionedUpdate(scheme, cl, config),
-		api.ResizePVCAction:         newResizePVC(scheme, cl, config),
-		api.DeployAction:            newDeploy(scheme, cl, config, kube.NewKubernetesDistribution()),
-		api.InitializeAction:        newInitialize(scheme, cl, config),
-		api.ClusterRestartAction:    newClusterRestart(scheme, cl, config),
-	}
-	return &clusterDirector{
-		actors: actors,
-	}
-}
-
-func (cd *clusterDirector) GetActorsToExecute(cluster *resource.Cluster) []Actor {
-	conditions := cluster.Status().Conditions
-	featureVersionValidatorEnabled := utilfeature.DefaultMutableFeatureGate.Enabled(features.CrdbVersionValidator)
-	featureDecommissionEnabled := utilfeature.DefaultMutableFeatureGate.Enabled(features.Decommission)
-	featureResizePVCEnabled := utilfeature.DefaultMutableFeatureGate.Enabled(features.ResizePVC)
-	featureClusterRestartEnabled := utilfeature.DefaultMutableFeatureGate.Enabled(features.ClusterRestart)
-	conditionInitializedTrue := condition.True(api.CrdbInitializedCondition, conditions)
-	conditionInitializedFalse := condition.False(api.CrdbInitializedCondition, conditions)
-	conditionVersionCheckedTrue := condition.True(api.CrdbVersionChecked, conditions)
-	conditionVersionCheckedFalse := condition.False(api.CrdbVersionChecked, conditions)
-	conditionCertificateGeneratedTrue := condition.True(api.CertificateGenerated, conditions)
-
-	var actorsToExecute []Actor
-
-	if featureDecommissionEnabled && conditionInitializedTrue {
-		actorsToExecute = append(actorsToExecute, cd.actors[api.DecommissionAction])
-	}
-
-	if featureVersionValidatorEnabled && conditionVersionCheckedFalse && (conditionInitializedTrue || conditionInitializedFalse) {
-		actorsToExecute = append(actorsToExecute, cd.actors[api.VersionCheckerAction])
-	}
-
-	if !conditionCertificateGeneratedTrue {
-		actorsToExecute = append(actorsToExecute, cd.actors[api.GenerateCertAction])
-	}
-
-	if featureVersionValidatorEnabled && conditionVersionCheckedTrue && conditionInitializedTrue {
-		actorsToExecute = append(actorsToExecute, cd.actors[api.PartitionedUpdateAction])
-	} else if !featureVersionValidatorEnabled && conditionInitializedTrue {
-		actorsToExecute = append(actorsToExecute, cd.actors[api.PartitionedUpdateAction])
-	}
-
-	if featureResizePVCEnabled && conditionInitializedTrue {
-		actorsToExecute = append(actorsToExecute, cd.actors[api.ResizePVCAction])
-	}
-
-	if featureVersionValidatorEnabled && conditionVersionCheckedTrue && (conditionInitializedTrue || conditionInitializedFalse) {
-		actorsToExecute = append(actorsToExecute, cd.actors[api.DeployAction])
-	} else if !featureVersionValidatorEnabled && (conditionInitializedTrue || conditionInitializedFalse) {
-		actorsToExecute = append(actorsToExecute, cd.actors[api.DeployAction])
-	}
-
-	if featureVersionValidatorEnabled && conditionVersionCheckedTrue && conditionInitializedFalse {
-		actorsToExecute = append(actorsToExecute, cd.actors[api.InitializeAction])
-	} else if !featureVersionValidatorEnabled && conditionInitializedFalse {
-		actorsToExecute = append(actorsToExecute, cd.actors[api.InitializeAction])
-	}
-
-	// TODO: conditionVersionCheckedTrue should probably be contingent on featureVersionValidatorEnabled, like with other actions
-	if featureClusterRestartEnabled && conditionVersionCheckedTrue && (conditionInitializedTrue || conditionInitializedFalse) {
-		actorsToExecute = append(actorsToExecute, cd.actors[api.ClusterRestartAction])
-	}
-
-	return actorsToExecute
-}
-
-func newAction(atype string, scheme *runtime.Scheme, cl client.Client) action {
+func newAction(scheme *runtime.Scheme, cl client.Client, config *rest.Config, clientset kubernetes.Interface) action {
 	return action{
-		client: cl,
-		scheme: scheme,
+		client:    cl,
+		clientset: clientset,
+		scheme:    scheme,
+		config:    config,
 	}
 }
 
 // action is the base set of common parameters required by other actions
 type action struct {
-	client client.Client
-	scheme *runtime.Scheme
+	client    client.Client
+	clientset kubernetes.Interface
+	scheme    *runtime.Scheme
+	config    *rest.Config
 }

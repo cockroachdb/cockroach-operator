@@ -81,7 +81,7 @@ func TestEnsureUniqueVersion(t *testing.T) {
 
 	t.Run("when executing command fails", func(t *testing.T) {
 		cmdFn := func(cmd *exec.Cmd) error {
-			io.WriteString(cmd.Stderr, "command error")
+			_, _ = io.WriteString(cmd.Stderr, "command error")
 			return fmt.Errorf("boom")
 		}
 

@@ -23,8 +23,8 @@ import (
 	"path/filepath"
 
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
+	"github.com/cockroachdb/cockroach-operator/pkg/security"
 	"github.com/cockroachdb/errors"
-	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
@@ -46,54 +46,50 @@ func SetupWebhookTLS(ctx context.Context, ns, dir string) error {
 		return errors.Wrap(err, "failed to create client set")
 	}
 
-	// ensure the TLS secret exists
-	secret, err := findOrCreateSecret(ctx, cs, ns)
+	webhookAPI := cs.AdmissionregistrationV1()
+	secretsAPI := cs.CoreV1().Secrets(ns)
+
+	// we create a new cert on each startup
+	cert, err := resource.CreateWebhookCertificate(ctx, secretsAPI, ns)
 	if err != nil {
-		return errors.Wrap(err, "failed to find or create webhook TLS secret")
+		return errors.Wrap(err, "failed find or create webhook certificate")
 	}
 
-	// write crt and key to certs dir
-	if err := writeWebhookSecrets(secret, dir); err != nil {
-		return err
+	// write them out
+	if err := writeWebhookSecrets(cert, dir); err != nil {
+		return errors.Wrap(err, "failed to write webhook certificate to disk")
 	}
 
-	// patch the hook config's CABundle
-	return errors.Wrap(
-		secret.ApplyWebhookConfig(ctx, cs.AdmissionregistrationV1()),
-		"failed to patch the CABundle for the webhooks",
-	)
+	ca, err := resource.FindOrCreateWebhookCA(ctx, secretsAPI)
+	if err != nil {
+		return errors.Wrap(err, "failed to find webhook CA certificate")
+	}
+
+	if err := resource.PatchMutatingWebhookConfig(ctx, webhookAPI.MutatingWebhookConfigurations(), ca); err != nil {
+		return errors.Wrap(err, "failed to patch mutating webhook")
+	}
+
+	if err := resource.PatchValidatingWebhookConfig(ctx, webhookAPI.ValidatingWebhookConfigurations(), ca); err != nil {
+		return errors.Wrap(err, "failed to patch validating webhook")
+	}
+
+	return nil
 }
 
-func findOrCreateSecret(ctx context.Context, api kubernetes.Interface, ns string) (*resource.WebhookSecret, error) {
-	secrets := api.CoreV1().Secrets(ns)
-	secret, err := resource.LoadWebhookSecret(ctx, secrets)
-	if err == nil {
-		// secret already exists, use it.
-		return secret, nil
-	}
-
-	if apiErrors.IsNotFound(err) {
-		// secret needs to be created
-		return resource.CreateWebhookSecret(ctx, secrets, ns)
-	}
-
-	// an unrecoverable error occured
-	return nil, err
-}
-
-func writeWebhookSecrets(s *resource.WebhookSecret, dir string) error {
+func writeWebhookSecrets(cert security.Certificate, dir string) error {
 	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
 		return errors.Wrap(err, "failed to create certs directory")
 	}
 
+	// r/w for current user only
 	mode := os.FileMode(0600)
 
-	if err := ioutil.WriteFile(filepath.Join(dir, "tls.crt"), s.Certificate(), mode); err != nil {
+	if err := ioutil.WriteFile(filepath.Join(dir, "tls.crt"), cert.Certificate(), mode); err != nil {
 		return errors.Wrap(err, "failed to write TLS certificate")
 	}
 
 	return errors.Wrap(
-		ioutil.WriteFile(filepath.Join(dir, "tls.key"), s.PrivateKey(), mode),
+		ioutil.WriteFile(filepath.Join(dir, "tls.key"), cert.PrivateKey(), mode),
 		"failed to write TLS private key",
 	)
 }
