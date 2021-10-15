@@ -156,3 +156,117 @@ func TestDecommissionFunctionality(t *testing.T) {
 	}
 	steps.Run(t)
 }
+
+func TestDecommissionFunctionality2(t *testing.T) {
+
+	// Testing removing and decommissioning a node.  We start at 4 node and then
+	// remove the 4th node
+
+	// making sure the feature gate is off for prunePVC
+	require.NoError(t, utilfeature.DefaultMutableFeatureGate.Set("AutoPrunePVC=false"))
+
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+	// Does not seem to like running in parallel
+	if parallel {
+		t.Parallel()
+	}
+	testLog := zapr.NewLogger(zaptest.NewLogger(t))
+
+	e := testenv.CreateActiveEnvForTest()
+	env := e.Start()
+	defer e.Stop()
+
+	sb := testenv.NewDiffingSandbox(t, env)
+	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
+	builder := testutil.NewBuilder("crdb").Namespaced(sb.Namespace).WithNodeCount(4).WithTLS().
+		WithImage("cockroachdb/cockroach:v20.2.5").
+		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
+	steps := testutil.Steps{
+		{
+			Name: "creates a 4-node secure cluster and tests db",
+			Test: func(t *testing.T) {
+				require.NoError(t, sb.Create(builder.Cr()))
+				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
+				testutil.RequireNumberOfPVCs(t, context.TODO(), sb, builder, 4)
+			},
+		},
+		{
+			Name: "decommission a node",
+			Test: func(t *testing.T) {
+				current := builder.Cr()
+				require.NoError(t, sb.Get(current))
+
+				updated := current.DeepCopy()
+				updated.Spec.Nodes = 3
+				require.NoError(t, sb.Patch(updated, client.MergeFrom(current)))
+
+				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
+				testutil.RequireDecommissionNode(t, sb, builder, 3)
+				testutil.RequireDatabaseToFunction(t, sb, builder)
+				t.Log("Done with decommission")
+
+				testutil.RequireNumberOfPVCs(t, context.TODO(), sb, builder, 4)
+			},
+		},
+	}
+	steps.Run(t)
+}
+
+func TestDecommissionFunctionality3(t *testing.T) {
+
+	// Testing removing and decommissioning a node.  We start at 4 node and then
+	// remove the 4th node
+
+	// making sure the feature gate is off for prunePVC
+	require.NoError(t, utilfeature.DefaultMutableFeatureGate.Set("AutoPrunePVC=false"))
+
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+	// Does not seem to like running in parallel
+	if parallel {
+		t.Parallel()
+	}
+	testLog := zapr.NewLogger(zaptest.NewLogger(t))
+
+	e := testenv.CreateActiveEnvForTest()
+	env := e.Start()
+	defer e.Stop()
+
+	sb := testenv.NewDiffingSandbox(t, env)
+	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
+	builder := testutil.NewBuilder("crdb").Namespaced(sb.Namespace).WithNodeCount(4).WithTLS().
+		WithImage("cockroachdb/cockroach:v20.2.5").
+		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
+	steps := testutil.Steps{
+		{
+			Name: "creates a 4-node secure cluster and tests db",
+			Test: func(t *testing.T) {
+				require.NoError(t, sb.Create(builder.Cr()))
+				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
+				testutil.RequireNumberOfPVCs(t, context.TODO(), sb, builder, 4)
+			},
+		},
+		{
+			Name: "decommission a node",
+			Test: func(t *testing.T) {
+				current := builder.Cr()
+				require.NoError(t, sb.Get(current))
+
+				updated := current.DeepCopy()
+				updated.Spec.Nodes = 3
+				require.NoError(t, sb.Patch(updated, client.MergeFrom(current)))
+
+				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
+				testutil.RequireDecommissionNode(t, sb, builder, 3)
+				testutil.RequireDatabaseToFunction(t, sb, builder)
+				t.Log("Done with decommission")
+
+				testutil.RequireNumberOfPVCs(t, context.TODO(), sb, builder, 4)
+			},
+		},
+	}
+	steps.Run(t)
+}
