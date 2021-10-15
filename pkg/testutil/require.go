@@ -405,19 +405,26 @@ func requireDatabaseToFunction(t *testing.T, sb testenv.DiffingSandbox, b Cluste
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 
+	fmt.Printf("%#v\n", db.Stats())
+
 	t.Log("Creating test_db")
 	if _, err := db.ExecContext(ctx, "CREATE DATABASE test_db"); err != nil {
+		fmt.Printf("%#v\n", db.Stats())
 		t.Fatal(err)
 	}
+	fmt.Printf("%#v\n", db.Stats())
 
 	t.Log("Using test_db")
 	if _, err := db.ExecContext(ctx, "USE test_db"); err != nil {
+		fmt.Printf("%#v\n", db.Stats())
 		t.Fatal(err)
 	}
+	fmt.Printf("%#v\n", db.Stats())
 
 	// Create the "accounts" table.
 	t.Log("Creating accounts table")
 	if _, err := db.ExecContext(ctx, "CREATE TABLE IF NOT EXISTS accounts (id INT PRIMARY KEY, balance INT)"); err != nil {
+		fmt.Printf("%#v\n", db.Stats())
 		t.Fatal(err)
 	}
 
