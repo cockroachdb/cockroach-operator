@@ -113,6 +113,14 @@ rules:
 - apiGroups:
   - batch
   resources:
+  - jobs/finalizers
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - batch
+  resources:
   - jobs/status
   verbs:
   - get
@@ -230,6 +238,12 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - crdb.cockroachlabs.com
+  resources:
+  - crdbclusters/finalizers
+  verbs:
+  - update
 - apiGroups:
   - crdb.cockroachlabs.com
   resources:

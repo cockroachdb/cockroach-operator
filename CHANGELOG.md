@@ -15,6 +15,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 * Cleanup of initialization and structure of Actor and Director
 
+## Fixed
+
+* Error on startup in OpenShift related to webhook configuration
+* Finalizer permissions to address `cannot set blockOwnerDeletion if an ownerReference refers to a resource you can’t set finalizers on` issue
+
 # [v2.2.1](https://github.com/cockroachdb/cockroach-operator/compare/v2.2.0...v2.2.1)
 
 ## Changed

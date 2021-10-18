@@ -24,12 +24,12 @@ spec:
       containers:
         - name: cockroach-operator
           args:
-            - feature-gates
-            - Upgrade=false,ResizePVC=true
+            - -skip-webhook-config
+            # - -feature-gates
+            # - TolerationRules=true,AffinityRules=true
             # the below log level accepts "info" "debug" "warn" or "error"
             - -zap-log-level
             - info
-            # - debug
           env:
 {{- range .CrdbVersions}}{{if stable . }}
             {{- /*
