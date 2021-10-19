@@ -5,7 +5,7 @@ go 1.14
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.0
 	github.com/Masterminds/semver/v3 v3.1.0
-	github.com/banzaicloud/k8s-objectmatcher v1.3.2
+	github.com/banzaicloud/k8s-objectmatcher v1.6.0
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/cockroachdb/errors v1.8.0
 	github.com/dnaeon/go-vcr v1.0.1

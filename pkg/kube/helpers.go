@@ -40,6 +40,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlutil "sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	json "github.com/json-iterator/go"
 )
 
 const LastAppliedAnnotation = "crdb.io/last-applied"
@@ -176,7 +178,7 @@ func CreateOrUpdateAnnotated(ctx context.Context, c client.Client, obj client.Ob
 
 	switch obj.(type) {
 	case *appsv1.StatefulSet:
-		opts = append(opts, patch.IgnoreVolumeClaimTemplateTypeMetaAndStatus())
+		opts = append(opts, IgnoreVolumeClaimTemplatesAndMode(), patch.IgnoreVolumeClaimTemplateTypeMetaAndStatus())
 	}
 
 	patchResult, err := patchMaker.Calculate(existing, obj, opts...)
@@ -195,8 +197,54 @@ func CreateOrUpdateAnnotated(ctx context.Context, c client.Client, obj client.Ob
 	if err := c.Update(ctx, obj); err != nil {
 		return false, err
 	}
-
 	return true, nil
+}
+
+func IgnoreVolumeClaimTemplatesAndMode() patch.CalculateOption {
+	return func(current, modified []byte) ([]byte, []byte, error) {
+		current, err := pruneVolumeInformation(current)
+		if err != nil {
+			return []byte{}, []byte{}, errors.Wrap(err, "could not delete volumeMode field from current byte sequence")
+		}
+
+		modified, err = pruneVolumeInformation(modified)
+		if err != nil {
+			return []byte{}, []byte{}, errors.Wrap(err, "could not delete volumeMode field from modified byte sequence")
+		}
+
+		return current, modified, nil
+	}
+}
+
+func pruneVolumeInformation(obj []byte) ([]byte, error) {
+	resource := map[string]interface{}{}
+	err := json.Unmarshal(obj, &resource)
+	if err != nil {
+		return []byte{}, errors.Wrap(err, "could not unmarshal byte sequence")
+	}
+
+	if spec, ok := resource["spec"]; ok {
+		if spec, ok := spec.(map[string]interface{}); ok {
+			if vctl, ok := spec["volumeClaimTemplates"]; ok {
+				if vcto, ok := vctl.([]interface{}); ok {
+					for _, vct := range vcto {
+						if vct, ok := vct.(map[string]interface{}); ok {
+							if vcts, ok := vct["spec"].(map[string]interface{}); ok {
+								vcts["volumeMode"] = "Filesystem"
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	obj, err = json.ConfigCompatibleWithStandardLibrary.Marshal(resource)
+	if err != nil {
+		return []byte{}, errors.Wrap(err, "could not marshal byte sequence")
+	}
+
+	return obj, nil
 }
 
 func mutate(f MutateFn, key client.ObjectKey, obj client.Object) error {

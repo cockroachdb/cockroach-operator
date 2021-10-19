@@ -371,8 +371,8 @@ def _go_dependencies():
         build_file_generation = "on",
         build_file_proto_mode = "disable",
         importpath = "github.com/banzaicloud/k8s-objectmatcher",
-        sum = "h1:HhXkOWg4xmAW203p3G4Av9ylUfkUJF1+8MK90XQAaJw=",
-        version = "v1.3.2",
+        sum = "h1:/69gd/b7pRcV4uWmbdMQSIPGpYpY1X0GnRVHuB11iTE=",
+        version = "v1.6.0",
     )
     go_repository(
         name = "com_github_bazelbuild_rules_go",
@@ -2263,12 +2263,12 @@ def _go_dependencies():
         version = "v0.0.38",
     )
     go_repository(
-        name = "com_github_goph_emperror",
+        name = "emperror_dev_errors",
         build_file_generation = "on",
         build_file_proto_mode = "disable",
-        importpath = "github.com/goph/emperror",
-        sum = "h1:yLapQcmEsO0ipe9p5TaN22djm3OFV/TfM/fcYP0/J18=",
-        version = "v0.17.2",
+        importpath = "emperror.dev/errors",
+        sum = "h1:4lycVEx0sdJkwDUfQ9pdu6SR0x7rgympt5f4+ok8jDk=",
+        version = "v0.8.0",
     )
     go_repository(
         name = "com_github_gophercloud_gophercloud",

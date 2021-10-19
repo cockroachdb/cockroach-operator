@@ -7,6 +7,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 # [Unreleased](https://github.com/cockroachdb/cockroach-operator/compare/v2.3.0...master)
 
+## Fixed
+* Operator infinitely reconciles & stops working when a volumeMode isn't specified on any crdbcluster.
+
 # [v2.3.0](https://github.com/cockroachdb/cockroach-operator/compare/v2.2.1...v2.3.0)
 
 ## Added

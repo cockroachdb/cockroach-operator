@@ -70,6 +70,7 @@ contrib.go.opencensus.io/resource v0.1.1 h1:4r2CANuYhKGmYWP02+5E94rLRcS/YeD+KlxS
 contrib.go.opencensus.io/resource v0.1.1/go.mod h1:F361eGI91LCmW1I/Saf+rX0+OFcigGlFvXwEGEnkRLA=
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9 h1:VpgP7xuJadIUuKccphEpTJnWhS2jkQyMt6Y7pJCD7fY=
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
+emperror.dev/errors v0.8.0/go.mod h1:YcRvLPh626Ubn2xqtoprejnA5nFha+TJ+2vew48kWuE=
 git.apache.org/thrift.git v0.12.0 h1:CMxsZlAmxKs+VAZMlDDL0wXciMblJcutQbEe3A9CYUM=
 git.apache.org/thrift.git v0.12.0/go.mod h1:fPE2ZNJGynbRyZ4dJvy6G277gSllfV2HJqblrnkyeyg=
 github.com/14rcole/gopopulate v0.0.0-20180821133914-b175b219e774 h1:SCbEWT58NSt7d2mcFdvxC9uyrdcTfvBbPLThhkDmXzg=
@@ -264,8 +265,8 @@ github.com/aws/aws-sdk-go v1.31.12 h1:SxRRGyhlCagI0DYkhOg+FgdXGXzRTE3vEX/gsgFaiK
 github.com/aws/aws-sdk-go v1.31.12/go.mod h1:5zCpMtNQVjRREroY7sYe8lOMRSxkhG6MZveU8YkpAk0=
 github.com/aymerick/raymond v2.0.3-0.20180322193309-b565731e1464+incompatible h1:Ppm0npCCsmuR9oQaBtRuZcmILVE74aXE+AmrJj8L2ns=
 github.com/aymerick/raymond v2.0.3-0.20180322193309-b565731e1464+incompatible/go.mod h1:osfaiScAUVup+UC9Nfq76eWqDhXlp+4UYaA8uhTBO6g=
-github.com/banzaicloud/k8s-objectmatcher v1.3.2 h1:HhXkOWg4xmAW203p3G4Av9ylUfkUJF1+8MK90XQAaJw=
-github.com/banzaicloud/k8s-objectmatcher v1.3.2/go.mod h1:j+N22VwgVfa0ajVtNxOz2G72aSOL21lpB7qV2GDrr/I=
+github.com/banzaicloud/k8s-objectmatcher v1.6.0 h1:/69gd/b7pRcV4uWmbdMQSIPGpYpY1X0GnRVHuB11iTE=
+github.com/banzaicloud/k8s-objectmatcher v1.6.0/go.mod h1:gygKEl9wM3mB8fkkw7J/x8Myfaef69oeYMaUEm2jSX4=
 github.com/bazelbuild/buildtools v0.0.0-20190917191645-69366ca98f89 h1:3B/ZE1a6eEJ/4Jf/M6RM2KBouN8yKCUcMmXzSyWqa3g=
 github.com/bazelbuild/buildtools v0.0.0-20190917191645-69366ca98f89/go.mod h1:5JP0TXzWDHXv8qvxRC4InIazwdyDseBDbzESUMKk1yU=
 github.com/bazelbuild/rules_go v0.22.1 h1:GRtyhztX3PNl4lhPhhn+eORpNfrFvygcVCQKgMv8lG8=
