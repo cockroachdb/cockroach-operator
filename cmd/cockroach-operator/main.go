@@ -33,7 +33,7 @@ import (
 )
 
 const (
-	certDir              = "/tmp/webhook-certs"
+	certDir              = "/tmp/k8s-webhook-server/serving-certs"
 	watchNamespaceEnvVar = "WATCH_NAMESPACE"
 )
 
@@ -49,7 +49,7 @@ func init() {
 
 func main() {
 	var metricsAddr, featureGatesString string
-	var enableLeaderElection bool
+	var enableLeaderElection, skipWebhookConfig bool
 
 	// use zap logging cli options
 	opts := zap.Options{}
@@ -59,6 +59,8 @@ func main() {
 	flag.StringVar(&featureGatesString, "feature-gates", "", "Feature gate to enable, format is a command separated list enabling features, for instance RunAsNonRoot=false")
 	flag.BoolVar(&enableLeaderElection, "enable-leader-election", false,
 		"Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
+	flag.BoolVar(&skipWebhookConfig, "skip-webhook-config", false,
+		"When set, don't setup webhook TLS certificates. Useful in OpenShift where this step is handled already.")
 	flag.Parse()
 
 	// create logger using zap cli options
@@ -107,10 +109,12 @@ func main() {
 	// add a logger to the main context
 	ctx := logr.NewContext(ctrl.SetupSignalHandler(), logger)
 
-	// ensure TLS is all set up for webhooks
-	if err := SetupWebhookTLS(ctx, namespace, certDir); err != nil {
-		setupLog.Error(err, "failed to setup TLS")
-		os.Exit(1)
+	if !skipWebhookConfig {
+		// ensure TLS is all set up for webhooks
+		if err := SetupWebhookTLS(ctx, namespace, certDir); err != nil {
+			setupLog.Error(err, "failed to setup TLS")
+			os.Exit(1)
+		}
 	}
 
 	setupLog.Info("starting manager")

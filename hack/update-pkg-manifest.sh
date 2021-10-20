@@ -98,7 +98,7 @@ combine_files() {
   sed '/replaces: .*/d' "${csv}" > tmp-csv && mv tmp-csv "${csv}"
 
   # delete all except the csv and crd files
-  rm -v !("cockroach-operator.v${2}.clusterserviceversion.yaml"|"crdb.cockroachlabs.com_crdbclusters.yaml")
+  rm -v !("${csv}"|"crdb.cockroachlabs.com_crdbclusters.yaml")
   popd >/dev/null
 }
 

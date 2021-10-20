@@ -5,7 +5,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-# [Unreleased](https://github.com/cockroachdb/cockroach-operator/compare/v2.2.1...master)
+# [Unreleased](https://github.com/cockroachdb/cockroach-operator/compare/v2.3.0...master)
+
+# [v2.3.0](https://github.com/cockroachdb/cockroach-operator/compare/v2.2.1...v2.3.0)
 
 ## Added
 
@@ -14,6 +16,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## Changed
 
 * Cleanup of initialization and structure of Actor and Director
+
+## Fixed
+
+* Error on startup in OpenShift related to webhook configuration
+* Finalizer permissions to address `cannot set blockOwnerDeletion if an ownerReference refers to a resource you can’t set finalizers on` issue
 
 # [v2.2.1](https://github.com/cockroachdb/cockroach-operator/compare/v2.2.0...v2.2.1)
 
