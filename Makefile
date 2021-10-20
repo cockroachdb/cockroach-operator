@@ -337,9 +337,10 @@ RH_DEPLOY_FULL_PATH="$(RH_DEPLOY_PATH)/cockroach-operator/"
 RH_COCKROACH_DATABASE_IMAGE=registry.connect.redhat.com/cockroachdb/cockroach:$(COCKROACH_DATABASE_VERSION)
 RH_OPERATOR_IMAGE?=registry.connect.redhat.com/cockroachdb/cockroachdb-operator:$(APP_VERSION)
 
-# Generate package manifests.
-# Options for "packagemanifests".
-CHANNEL?=beta
+# Generate package bundles.
+# Options for "bundle".
+CHANNEL?=beta,stable
+DEFAULT_CHANNEL?=stable
 FROM_BUNDLE_VERSION?=1.0.1
 IS_CHANNEL_DEFAULT?=0
 
@@ -350,9 +351,9 @@ ifneq ($(origin CHANNEL), undefined)
 PKG_CHANNELS := --channels=$(CHANNEL)
 endif
 ifeq ($(IS_CHANNEL_DEFAULT), 1)
-PKG_IS_DEFAULT_CHANNEL := --default-channel=$(CHANNEL)
+PKG_DEFAULT_CHANNEL := --default-channel=$(DEFAULT_CHANNEL)
 endif
-PKG_MAN_OPTS ?= "$(PKG_CHANNELS) $(PKG_IS_DEFAULT_CHANNEL)"
+PKG_MAN_OPTS ?= "$(PKG_CHANNELS) $(PKG_DEFAULT_CHANNEL)"
 
 # Build the packagemanifests
 .PHONY: release/update-pkg-manifest

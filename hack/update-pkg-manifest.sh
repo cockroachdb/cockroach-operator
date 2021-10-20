@@ -42,8 +42,8 @@ main() {
   cd "${BUILD_WORKSPACE_DIRECTORY}"
   ensure_unique_deployment "${deploy_path}/${rh_bundle_version}"
   generate_package_bundle "${rh_bundle_version}" "${rh_package_options}" "${deploy_path}"
-#  generate_csv "${deploy_path}/${rh_bundle_version}" "${rh_operator_image}"
-#  combine_files "${deploy_path}/${rh_bundle_version}" "${rh_bundle_version}"
+  generate_csv "${deploy_path}/${rh_bundle_version}" "${rh_operator_image}"
+  combine_files "${deploy_path}/${rh_bundle_version}" "${rh_bundle_version}"
 }
 
 ensure_unique_deployment() {
@@ -98,7 +98,7 @@ combine_files() {
   sed '/replaces: .*/d' "${csv}" > tmp-csv && mv tmp-csv "${csv}"
 
   # delete all except the csv and crd files
-  rm -v !("${csv}"|"crdb.cockroachlabs.com_crdbclusters.yaml")
+#  rm -v !("${csv}"|"crdb.cockroachlabs.com_crdbclusters.yaml")
   popd >/dev/null
 }
 
