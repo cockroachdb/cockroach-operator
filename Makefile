@@ -310,7 +310,7 @@ release/gen-templates:
 # Generate various manifest files for OpenShift. We run this target after the
 # operator version is changed. The results are committed to Git.
 .PHONY: release/gen-files
-release/gen-files: | release/gen-templates release/opm-build-bundle
+release/gen-files: | release/gen-templates release/update-pkg-manifest
 	git add . && git commit -m "Bump version to $(VERSION)"
 
 .PHONY: release/image
