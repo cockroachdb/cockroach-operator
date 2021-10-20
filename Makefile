@@ -339,18 +339,13 @@ RH_OPERATOR_IMAGE?=registry.connect.redhat.com/cockroachdb/cockroachdb-operator:
 
 # Generate package bundles.
 # Options for "bundle".
-CHANNEL?=beta,stable
+CHANNEL?="beta,stable"
 DEFAULT_CHANNEL?=stable
-FROM_BUNDLE_VERSION?=1.0.1
-IS_CHANNEL_DEFAULT?=0
 
-ifneq ($(origin FROM_BUNDLE_VERSION), undefined)
-PKG_FROM_VERSION := --from-version=$(FROM_BUNDLE_VERSION)
-endif
 ifneq ($(origin CHANNEL), undefined)
 PKG_CHANNELS := --channels=$(CHANNEL)
 endif
-ifeq ($(IS_CHANNEL_DEFAULT), 1)
+ifneq ($(origin DEFAULT_CHANNEL), undefined)
 PKG_DEFAULT_CHANNEL := --default-channel=$(DEFAULT_CHANNEL)
 endif
 PKG_MAN_OPTS ?= "$(PKG_CHANNELS) $(PKG_DEFAULT_CHANNEL)"
@@ -407,14 +402,3 @@ test/push-openshift-images:
 	DOCKER_REGISTRY=$(DOCKER_REGISTRY) \
 	bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
 		//hack:push-openshift-images
-
-CHANNELS?=beta,stable
-DEFAULT_CHANNEL?=stable
-# Options for 'bundle-build'
-ifneq ($(origin CHANNELS), undefined)
-BUNDLE_CHANNELS := --channels=$(CHANNELS)
-endif
-ifneq ($(origin DEFAULT_CHANNEL), undefined)
-BUNDLE_DEFAULT_CHANNEL := --default-channel=$(DEFAULT_CHANNEL)
-endif
-BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
