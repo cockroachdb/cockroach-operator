@@ -66,12 +66,12 @@ generate_package_bundle() {
   cp ${3}/bundle.Dockerfile ${3}/bundle-${1}.Dockerfile
   rm bundle.Dockerfile
   rm -r ${3}/latest/*
-  cp -R ${3}/${1} ${3}/latest
+  cp -R ${3}/${1}/* ${3}/latest
 }
 
 generate_csv() {
   # replace RH_COCKROACH_OP_IMAGE_PLACEHOLDER with the proper image and CREATED_AT_PLACEHOLDER with the current time
-  cat ${1}/cockroach-operator.clusterserviceversion.yaml | sed \
+  cat ${1}/manifests/cockroach-operator.clusterserviceversion.yaml | sed \
     "s+RH_COCKROACH_OP_IMAGE_PLACEHOLDER+${2}+g; s+CREATED_AT_PLACEHOLDER+"$(date +"%FT%H:%M:%SZ")"+g" > ${1}/csv.yaml
 
   # for each RH_COCKROACH_DB_IMAGE_PLACEHOLDER_* set to the corresponding connect image
