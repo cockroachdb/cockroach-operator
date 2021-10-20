@@ -114,16 +114,6 @@ func SortVersions(versions []string) []string {
 	return sortedVersions
 }
 
-// annotation tries to open bolerplate file and combine the text from it with
-// file description
-func Annotation() []byte {
-	contents, err := ioutil.ReadFile("../boilerplate/boilerplate.yaml.txt")
-	if err != nil {
-		log.Fatalf("Cannot read boilerplate file: %s", err)
-	}
-	return append([]byte(contents), []byte(crdbVersionsFileDescription)...)
-}
-
 func GenerateCrdbVersionsFile(versions []string, path string) error {
 	f, err := os.Create(path)
 	if err != nil {
@@ -137,7 +127,7 @@ func GenerateCrdbVersionsFile(versions []string, path string) error {
 		log.Fatalf("error while converting to yaml: %v", err)
 	}
 
-	result := append(Annotation(), yamlVersions...)
+	result := append([]byte(crdbVersionsFileDescription), yamlVersions...)
 	return ioutil.WriteFile(path, result, 0)
 }
 

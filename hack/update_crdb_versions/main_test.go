@@ -17,11 +17,11 @@ limitations under the License.
 package main_test
 
 import (
-	"reflect"
+	"bytes"
 	"encoding/json"
 	"io/ioutil"
 	"path"
-	"bytes"
+	"reflect"
 	"testing"
 
 	. "github.com/cockroachdb/cockroach-operator/hack/update_crdb_versions"
@@ -71,7 +71,6 @@ func TestGetVersions(t *testing.T) {
 	}
 }
 
-
 func TestCrdbVersionsFile(t *testing.T) {
 	versions := []string{"v1.2.3", "v1.2.3+test.01"}
 
@@ -89,9 +88,9 @@ func TestCrdbVersionsFile(t *testing.T) {
 	}
 
 	got, err := ioutil.ReadFile(filePath)
-    if err != nil {
+	if err != nil {
 		t.Fatalf("error reading generated file: %s", err)
-    }
+	}
 
 	if bytes.Compare(got, expected) != 0 {
 		t.Errorf("Expected `%s`, got `%s`", expected, got)
