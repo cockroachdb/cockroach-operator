@@ -80,25 +80,26 @@ generate_csv() {
     version=${v//./_}
     env="RH_COCKROACH_DB_IMAGE_PLACEHOLDER_${version}"
     img="registry.connect.redhat.com/cockroachdb/cockroach:${v}"
-    sed -i '' -e "s+${env}+${img}+g" "${1}/csv.yaml"
+    sed -i '' -e "s+${env}+${img}+g" "${1}/manifests/csv.yaml"
   done
 }
 
 combine_files() {
-  pushd "${1}" >/dev/null
+  pushd "${1}/manifests" >/dev/null
 
   local csv="cockroach-operator.v${2}.clusterserviceversion.yaml"
 
+  # sticks all the necessary cluster permissions into the operator's CSV yaml
   faq -f yaml -o yaml \
     --slurp '.[0].spec.install.spec.clusterPermissions+= [{serviceAccountName: .[3].metadata.name, rules: .[1].rules }] | .[0]' \
-    csv.yaml manifests/cockroach-*.yaml manifests/webhook-service*.yaml \
+    csv.yaml cockroach-*.yaml webhook-service*.yaml \
     > "${csv}"
 
   # remove the "replaces" attribute. This is a new bundle
   sed '/replaces: .*/d' "${csv}" > tmp-csv && mv tmp-csv "${csv}"
 
-  # delete all except the csv and crd files
-#  rm -v !("${csv}"|"crdb.cockroachlabs.com_crdbclusters.yaml")
+  # delete all except the new csv and crd files
+  rm -v !("${csv}"|"crdb.cockroachlabs.com_crdbclusters.yaml")
   popd >/dev/null
 }
 
