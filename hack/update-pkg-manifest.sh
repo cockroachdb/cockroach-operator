@@ -91,7 +91,7 @@ combine_files() {
 
   faq -f yaml -o yaml \
     --slurp '.[0].spec.install.spec.clusterPermissions+= [{serviceAccountName: .[3].metadata.name, rules: .[1].rules }] | .[0]' \
-    csv.yaml cockroach-*.yaml webhook-service*.yaml \
+    csv.yaml manifests/cockroach-*.yaml manifests/webhook-service*.yaml \
     > "${csv}"
 
   # remove the "replaces" attribute. This is a new bundle
