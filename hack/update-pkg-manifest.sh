@@ -41,7 +41,7 @@ main() {
 
   cd "${BUILD_WORKSPACE_DIRECTORY}"
   ensure_unique_deployment "${deploy_path}/${rh_bundle_version}"
-  generate_package_manifest "${rh_bundle_version}" "${rh_package_options}" "${deploy_path}"
+  generate_package_bundle "${rh_bundle_version}" "${rh_package_options}" "${deploy_path}"
   generate_csv "${deploy_path}/${rh_bundle_version}" "${rh_operator_image}"
   combine_files "${deploy_path}/${rh_bundle_version}" "${rh_bundle_version}"
 }
@@ -53,18 +53,20 @@ ensure_unique_deployment() {
   fi
 }
 
-generate_package_manifest() {
+generate_package_bundle() {
   # Generate CSV in config/manifests and add boilerplate back (lost when regenerating)
   operator-sdk generate kustomize manifests -q --apis-dir apis
   hack/boilerplaterize hack/boilerplate/boilerplate.yaml.txt config/manifests/**/*.yaml
-
-  # TODO: packagemanifests is deprecated and scheduled to be remove in 2.0.0
-  kustomize build config/manifests | operator-sdk generate packagemanifests -q \
+  kustomize build config/manifests | operator-sdk generate bundle -q \
     --version "${1}" \
     ${2} \
-    --output-dir "${3}" \
-    --input-dir="${3}" \
-    --verbose
+    --output-dir "${3}/${1}"
+  sed "s#${3}/##g" bundle.Dockerfile > ${3}/bundle.Dockerfile
+
+  cp ${3}/bundle.Dockerfile ${3}/bundle-${1}.Dockerfile
+  rm bundle.Dockerfile
+  rm -r ${3}/latest/*
+  cp -R ${3}/${1} ${3}/latest
 }
 
 generate_csv() {
