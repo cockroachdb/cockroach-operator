@@ -30,6 +30,7 @@ main() {
   local rh_crdb_image="${4}"
   local cert_path="deploy/certified-metadata-bundle"
   local deploy_path="${cert_path}/cockroach-operator"
+  local package_name="cockroachdb-certified"
 
   echo "+++ Running update package manifest for certification"
   echo "RH_BUNDLE_VERSION=${rh_bundle_version}"
@@ -41,7 +42,7 @@ main() {
 
   cd "${BUILD_WORKSPACE_DIRECTORY}"
   ensure_unique_deployment "${deploy_path}/${rh_bundle_version}"
-  generate_package_bundle "${rh_bundle_version}" "${rh_package_options}" "${deploy_path}"
+  generate_package_bundle "${rh_bundle_version}" "${rh_package_options}" "${deploy_path}" "${package_name}"
   generate_csv "${deploy_path}/${rh_bundle_version}/manifests" "${rh_operator_image}"
   combine_files "${deploy_path}/${rh_bundle_version}" "${rh_bundle_version}"
 }
@@ -60,7 +61,8 @@ generate_package_bundle() {
   kustomize build config/manifests | operator-sdk generate bundle -q \
     --version "${1}" \
     ${2} \
-    --output-dir "${3}/${1}"
+    --output-dir "${3}/${1}" \
+    --package "${4}"
   sed "s#${3}/##g" bundle.Dockerfile > ${3}/bundle.Dockerfile
 
   cp ${3}/bundle.Dockerfile ${3}/bundle-${1}.Dockerfile
