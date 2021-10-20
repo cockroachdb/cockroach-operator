@@ -42,7 +42,7 @@ main() {
   cd "${BUILD_WORKSPACE_DIRECTORY}"
   ensure_unique_deployment "${deploy_path}/${rh_bundle_version}"
   generate_package_bundle "${rh_bundle_version}" "${rh_package_options}" "${deploy_path}"
-  generate_csv "${deploy_path}/${rh_bundle_version}" "${rh_operator_image}"
+  generate_csv "${deploy_path}/${rh_bundle_version}/manifests" "${rh_operator_image}"
   combine_files "${deploy_path}/${rh_bundle_version}" "${rh_bundle_version}"
 }
 
@@ -71,7 +71,7 @@ generate_package_bundle() {
 
 generate_csv() {
   # replace RH_COCKROACH_OP_IMAGE_PLACEHOLDER with the proper image and CREATED_AT_PLACEHOLDER with the current time
-  cat ${1}/manifests/cockroach-operator.clusterserviceversion.yaml | sed \
+  cat ${1}/cockroach-operator.clusterserviceversion.yaml | sed \
     "s+RH_COCKROACH_OP_IMAGE_PLACEHOLDER+${2}+g; s+CREATED_AT_PLACEHOLDER+"$(date +"%FT%H:%M:%SZ")"+g" > ${1}/csv.yaml
 
   # for each RH_COCKROACH_DB_IMAGE_PLACEHOLDER_* set to the corresponding connect image
@@ -80,7 +80,7 @@ generate_csv() {
     version=${v//./_}
     env="RH_COCKROACH_DB_IMAGE_PLACEHOLDER_${version}"
     img="registry.connect.redhat.com/cockroachdb/cockroach:${v}"
-    sed -i '' -e "s+${env}+${img}+g" "${1}/manifests/csv.yaml"
+    sed -i '' -e "s+${env}+${img}+g" "${1}/csv.yaml"
   done
 }
 
