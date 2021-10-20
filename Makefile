@@ -347,12 +347,12 @@ ifneq ($(origin FROM_BUNDLE_VERSION), undefined)
 PKG_FROM_VERSION := --from-version=$(FROM_BUNDLE_VERSION)
 endif
 ifneq ($(origin CHANNEL), undefined)
-PKG_CHANNELS := --channel=$(CHANNEL)
+PKG_CHANNELS := --channels=$(CHANNEL)
 endif
 ifeq ($(IS_CHANNEL_DEFAULT), 1)
-PKG_IS_DEFAULT_CHANNEL := --default-channel
+PKG_IS_DEFAULT_CHANNEL := --default-channel=$(CHANNEL)
 endif
-PKG_MAN_OPTS ?= "$(PKG_FROM_VERSION) $(PKG_CHANNELS) $(PKG_IS_DEFAULT_CHANNEL)"
+PKG_MAN_OPTS ?= "$(PKG_CHANNELS) $(PKG_IS_DEFAULT_CHANNEL)"
 
 # Build the packagemanifests
 .PHONY: release/update-pkg-manifest
