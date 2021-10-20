@@ -113,16 +113,16 @@ func CreateReleaseBranch(fn ExecFn) Step {
 func GenerateFiles(fn ExecFn) Step {
 	return StepFn(func(version string) error {
 		ch := "stable"
-		isDefault := "1"
+		defaultCh := "stable"
 
 		if strings.Contains(version, "-beta") {
 			ch = "beta"
-			isDefault = "0"
+			defaultCh = "beta"
 		}
 
 		return fn(
 			"make",
-			[]string{"release/gen-files", "CHANNEL=" + ch, "IS_DEFAULT_CHANNEL=" + isDefault},
+			[]string{"release/gen-files", "CHANNELS=" + ch, "DEFAULT_CHANNEL=" + defaultCh},
 			os.Environ(),
 		)
 	})
