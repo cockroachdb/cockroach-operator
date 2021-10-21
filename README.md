@@ -42,7 +42,9 @@ kubectl apply -f https://raw.githubusercontent.com/cockroachdb/cockroach-operato
 ```
 
 > **Note:** The Operator can only install CockroachDB into its own namespace. 
+> 
 > Enable feature gate: MultipleNamespaces=true to install CockroachDB into different namespaces. 
+> 
 > Notice that the feature is still in Alpha version.
 
 Validate that the Operator is running:
