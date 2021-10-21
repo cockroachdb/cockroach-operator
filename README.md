@@ -107,7 +107,7 @@ kubectl create -f https://raw.githubusercontent.com/cockroachdb/cockroach-operat
 Get a shell into the client pod:
 
 ```
-kubectl exec -it cockroachdb-client-secur
+kubectl exec -it cockroachdb-client-secure -- ./cockroach sql --certs-dir=/cockroach/cockroach-certs --host=cockroachdb-public
 ```
 
 If you want to [access the DB Console](#access-the-db-console), create a SQL user with a password while you're here:
