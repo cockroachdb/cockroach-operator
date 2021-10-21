@@ -7,6 +7,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 # [Unreleased](https://github.com/cockroachdb/cockroach-operator/compare/v2.3.0...master)
 
+## Changed
+
+* Deprecated legacy OpenShift packaging format in favor of new bundle format
+
 # [v2.3.0](https://github.com/cockroachdb/cockroach-operator/compare/v2.2.1...v2.3.0)
 
 ## Added
