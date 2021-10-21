@@ -5,14 +5,11 @@ go_test(
     size = "enormous",
     srcs = ["create_test.go"],
     deps = [
-        "//apis/v1alpha1:go_default_library",
-        "//pkg/actor:go_default_library",
         "//pkg/controller:go_default_library",
         "//pkg/testutil:go_default_library",
         "//pkg/testutil/env:go_default_library",
         "@com_github_go_logr_zapr//:go_default_library",
         "@com_github_stretchr_testify//require:go_default_library",
-        "@io_k8s_api//core/v1:go_default_library",
         "@org_uber_go_zap//zaptest:go_default_library",
     ],
 )

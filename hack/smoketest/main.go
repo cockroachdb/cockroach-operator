@@ -41,7 +41,7 @@ var (
 // It will:
 // * Start a kind cluster
 // * Install the CRDs and the operator from the install dir
-// * Apply the example cluster
+// * Apply the smoketest cluster
 // * Add the client-secure-operator
 // * Run the bank workload
 func main() {
@@ -64,8 +64,9 @@ func main() {
 		ApplyManifest(filepath.Join("install", "crds.yaml")),
 		ApplyManifest(filepath.Join("install", "operator.yaml")),
 		WaitForDeploymentAvailable("cockroach-operator"),
-		WaitForSecret("cockroach-operator-webhook-tls"),
-		ApplyManifest(filepath.Join("examples", "example.yaml")),
+		WaitForSecret("cockroach-operator-webhook-ca"),
+		sleep(10 * time.Second), // just give the manager time to write the TLS certs to disk
+		ApplyManifest(filepath.Join("examples", "smoketest.yaml")),
 		WaitForStatefulSetRollout("cockroachdb"),
 		ApplyManifest(filepath.Join("examples", "client-secure-operator.yaml")),
 		WaitForPodReady("cockroachdb-client-secure"),
@@ -93,4 +94,11 @@ func bail(err error) {
 		fmt.Print(err.Error())
 	}
 	os.Exit(1)
+}
+
+func sleep(d time.Duration) Step {
+	return StepFn(func(_ ExecFn) error {
+		time.Sleep(d)
+		return nil
+	})
 }

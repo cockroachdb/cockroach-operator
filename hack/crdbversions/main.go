@@ -39,11 +39,12 @@ import (
 
 // List of templates and destinations
 var targets = []struct{ template, output string }{
+	{"config/templates/client-secure-operator.yaml.in", "examples/client-secure-operator.yaml"},
+	{"config/templates/crdb-tls-example.yaml.in", "config/samples/crdb-tls-example.yaml"},
 	{"config/templates/deployment_image.yaml.in", "config/manager/patches/image.yaml"},
 	{"config/templates/deployment_patch.yaml.in", "config/manifests/patches/deployment_patch.yaml"},
-	{"config/templates/crdb-tls-example.yaml.in", "config/samples/crdb-tls-example.yaml"},
 	{"config/templates/example.yaml.in", "examples/example.yaml"},
-	{"config/templates/client-secure-operator.yaml.in", "examples/client-secure-operator.yaml"},
+	{"config/templates/smoketest.yaml.in", "examples/smoketest.yaml"},
 }
 
 // crdb-versions.yaml structure
