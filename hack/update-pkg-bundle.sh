@@ -61,8 +61,7 @@ generate_package_bundle() {
   kustomize build config/manifests | operator-sdk generate bundle -q \
     --version "${1}" \
     ${2} \
-    --output-dir "${3}/${1}" \
-    --package "${4}"
+    --output-dir "${3}/${1}"
   sed "s#${3}/##g" bundle.Dockerfile > ${3}/bundle.Dockerfile
 
   cp ${3}/bundle.Dockerfile ${3}/bundle-${1}.Dockerfile
