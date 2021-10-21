@@ -310,7 +310,7 @@ release/gen-templates:
 # Generate various manifest files for OpenShift. We run this target after the
 # operator version is changed. The results are committed to Git.
 .PHONY: release/gen-files
-release/gen-files: | release/gen-templates release/update-pkg-bundle
+release/gen-files: | release/gen-templates release/opm-build-bundle
 	git add . && git commit -m "Bump version to $(VERSION)"
 
 .PHONY: release/image
@@ -337,27 +337,31 @@ RH_DEPLOY_FULL_PATH="$(RH_DEPLOY_PATH)/cockroach-operator/"
 RH_COCKROACH_DATABASE_IMAGE=registry.connect.redhat.com/cockroachdb/cockroach:$(COCKROACH_DATABASE_VERSION)
 RH_OPERATOR_IMAGE?=registry.connect.redhat.com/cockroachdb/cockroachdb-operator:$(APP_VERSION)
 
-# Generate package bundles.
-# Options for "bundle".
-CHANNELS?=beta
-DEFAULT_CHANNEL?=beta
+# Generate package manifests.
+# Options for "packagemanifests".
+CHANNEL?=beta
+FROM_BUNDLE_VERSION?=1.0.1
+IS_CHANNEL_DEFAULT?=0
 
-ifneq ($(origin CHANNELS), undefined)
-PKG_CHANNELS := --channels=$(CHANNELS)
+ifneq ($(origin FROM_BUNDLE_VERSION), undefined)
+PKG_FROM_VERSION := --from-version=$(FROM_BUNDLE_VERSION)
 endif
-ifneq ($(origin DEFAULT_CHANNEL), undefined)
-PKG_DEFAULT_CHANNEL := --default-channel=$(DEFAULT_CHANNEL)
+ifneq ($(origin CHANNEL), undefined)
+PKG_CHANNELS := --channel=$(CHANNEL)
 endif
-PKG_MAN_OPTS ?= "$(PKG_CHANNELS) $(PKG_DEFAULT_CHANNEL)"
+ifeq ($(IS_CHANNEL_DEFAULT), 1)
+PKG_IS_DEFAULT_CHANNEL := --default-channel
+endif
+PKG_MAN_OPTS ?= "$(PKG_FROM_VERSION) $(PKG_CHANNELS) $(PKG_IS_DEFAULT_CHANNEL)"
 
 # Build the packagemanifests
-.PHONY: release/update-pkg-bundle
-release/update-pkg-bundle: dev/generate
-	bazel run //hack:update-pkg-bundle -- $(RH_BUNDLE_VERSION) $(RH_OPERATOR_IMAGE) $(PKG_MAN_OPTS) $(RH_COCKROACH_DATABASE_IMAGE)
+.PHONY: release/update-pkg-manifest
+release/update-pkg-manifest: dev/generate
+	bazel run //hack:update-pkg-manifest -- $(RH_BUNDLE_VERSION) $(RH_OPERATOR_IMAGE) $(PKG_MAN_OPTS) $(RH_COCKROACH_DATABASE_IMAGE)
 
 #  Build the OPM bundle
 .PHONY: release/opm-build-bundle
-release/opm-build-bundle: release/update-pkg-bundle
+release/opm-build-bundle: release/update-pkg-manifest
 	bazel run //hack:opm-build-bundle -- $(RH_BUNDLE_VERSION) $(RH_OPERATOR_IMAGE) $(PKG_MAN_OPTS)
 
 #
@@ -402,3 +406,14 @@ test/push-openshift-images:
 	DOCKER_REGISTRY=$(DOCKER_REGISTRY) \
 	bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
 		//hack:push-openshift-images
+
+CHANNELS?=beta,stable
+DEFAULT_CHANNEL?=stable
+# Options for 'bundle-build'
+ifneq ($(origin CHANNELS), undefined)
+BUNDLE_CHANNELS := --channels=$(CHANNELS)
+endif
+ifneq ($(origin DEFAULT_CHANNEL), undefined)
+BUNDLE_DEFAULT_CHANNEL := --default-channel=$(DEFAULT_CHANNEL)
+endif
+BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
