@@ -107,6 +107,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 * `AdditionalLabels` which are added to all managed resources
 * Examples for new features (addition labels, affinity rules, etc)
 * e2e tests for EKS, OpenShift, and downgrading
+* Add feature gate: MultipleNamespaces to install CockroachDB into different namespaces (#561)
 
 ## Changed
 
