@@ -90,6 +90,11 @@ const (
 	// alpha: v1.0
 	// TolerationRules allows setting toleration rules for scheduling sts pods onto some dedicated nodes
 	TolerationRules featuregate.Feature = "TolerationRules"
+
+	// owner: @abhishekdwivedi3060
+	// alpha: v2.3.0
+	// MultipleNamespaces allows install CockroachDB into its different namespace from operator's
+	MultipleNamespaces featuregate.Feature = "MultipleNamespaces"
 )
 
 func init() {
@@ -116,4 +121,5 @@ var defaultOperatorFeatureGates = map[featuregate.Feature]featuregate.FeatureSpe
 	// New features
 	AffinityRules:   {Default: false, PreRelease: featuregate.Alpha},
 	TolerationRules: {Default: false, PreRelease: featuregate.Alpha},
+	MultipleNamespaces: {Default: false, PreRelease: featuregate.Alpha},
 }

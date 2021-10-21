@@ -20,7 +20,7 @@ kind: Pod
 metadata:
   name: cockroachdb-client-secure
 spec:
-  serviceAccountName: cockroach-operator-sa
+  serviceAccountName: cockroach-database-sa
   containers:
   - name: cockroachdb-client-secure
     image: cockroachdb/cockroach:v21.1.10

@@ -19,7 +19,9 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/cockroachdb/cockroach-operator/pkg/features"
 	"os"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 
 	crdbv1alpha1 "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/controller"
@@ -76,20 +78,34 @@ func main() {
 		}
 	}
 
-	namespace, err := getWatchNamespace()
+	namespace, err := getOperatorNamespace()
 	if err != nil {
 		setupLog.Error(err, "unable to get watch namespace")
 		os.Exit(1)
 	}
 
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:             scheme,
-		Namespace:          namespace,
-		MetricsBindAddress: metricsAddr,
-		LeaderElection:     enableLeaderElection,
-		Port:               9443,
-		CertDir:            certDir,
-	})
+	var options manager.Options
+	if utilfeature.DefaultMutableFeatureGate.Enabled(features.MultipleNamespaces) {
+		logger.Info("Watch and control all CrdbClusters in all namespace.")
+		options = ctrl.Options{
+			Scheme:             scheme,
+			MetricsBindAddress: metricsAddr,
+			LeaderElection:     enableLeaderElection,
+			Port:               9443,
+			CertDir:            certDir,
+		}
+	} else {
+		logger.Info("Watch and control all CrdbClusters in single namespace. ", "namespace", namespace)
+		options = ctrl.Options{
+			Scheme:             scheme,
+			Namespace:          namespace,
+			MetricsBindAddress: metricsAddr,
+			LeaderElection:     enableLeaderElection,
+			Port:               9443,
+			CertDir:            certDir,
+		}
+	}
+	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), options)
 	if err != nil {
 		setupLog.Error(err, "unable to create manager")
 		os.Exit(1)
@@ -124,8 +140,8 @@ func main() {
 	}
 }
 
-// getWatchNamespace returns the namespace the operation should be watching for changes
-func getWatchNamespace() (string, error) {
+// getOperatorNamespace returns the namespace the operation should be watching for changes
+func getOperatorNamespace() (string, error) {
 	ns, found := os.LookupEnv(watchNamespaceEnvVar)
 	if !found {
 		return "", fmt.Errorf("%s must be set", watchNamespaceEnvVar)

@@ -18,6 +18,7 @@ go_library(
         "//pkg/resource:go_default_library",
         "//pkg/security:go_default_library",
         "//pkg/utilfeature:go_default_library",
+        "//pkg/features:go_default_library",
         "@com_github_cockroachdb_errors//:go_default_library",
         "@com_github_go_logr_logr//:go_default_library",
         "@io_k8s_apimachinery//pkg/runtime:go_default_library",
@@ -25,6 +26,7 @@ go_library(
         "@io_k8s_client_go//kubernetes/scheme:go_default_library",
         "@io_k8s_client_go//plugin/pkg/client/auth/gcp:go_default_library",
         "@io_k8s_sigs_controller_runtime//:go_default_library",
+        "@io_k8s_sigs_controller_runtime//pkg/manager:go_default_library",
         "@io_k8s_sigs_controller_runtime//pkg/log/zap:go_default_library",
     ],
 )

@@ -42,6 +42,8 @@ kubectl apply -f https://raw.githubusercontent.com/cockroachdb/cockroach-operato
 ```
 
 > **Note:** The Operator can only install CockroachDB into its own namespace. 
+> Enable feature gate: MultipleNamespaces=true to install CockroachDB into different namespaces. 
+> Notice that the feature is still in Alpha version.
 
 Validate that the Operator is running:
 
@@ -105,7 +107,7 @@ kubectl create -f https://raw.githubusercontent.com/cockroachdb/cockroach-operat
 Get a shell into the client pod:
 
 ```
-kubectl exec -it cockroachdb-client-secure -- ./cockroach sql --certs-dir=/cockroach/cockroach-certs --host=cockroachdb-public
+kubectl exec -it cockroachdb-client-secur
 ```
 
 If you want to [access the DB Console](#access-the-db-console), create a SQL user with a password while you're here:

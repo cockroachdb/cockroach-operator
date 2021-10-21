@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"net"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
@@ -73,7 +74,7 @@ func NewDbConnection(dbConn *DBConnection) (*sql.DB, error) {
 
 	c := &dbConfig{
 		User: RootSQLUser,
-		Host: dbConn.ServiceName,
+		Host: makeServiceEndpoint(dbConn),
 		// ConnectTimeout was picked arbitrarily.
 		// TODO have a way to set this
 		ConnectTimeout: 15 * time.Second,
@@ -112,6 +113,15 @@ func NewDbConnection(dbConn *DBConnection) (*sql.DB, error) {
 		return nil, fmt.Errorf("opening a DB connection failed %s", err)
 	}
 	return db, nil
+}
+
+func makeServiceEndpoint(dbConn *DBConnection) string {
+	serviceName := dbConn.ServiceName
+	namespace := dbConn.Namespace
+	if len(namespace) > 0 {
+		return strings.Join([]string{serviceName, namespace}, ".")
+	}
+	return serviceName
 }
 
 type dbConfig struct {
