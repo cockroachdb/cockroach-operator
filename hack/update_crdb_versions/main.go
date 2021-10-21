@@ -41,7 +41,7 @@ const crdbVersionsUrl = "https://catalog.redhat.com/api/containers/v1/repositori
 	"exclude=data.repositories.comparison.advisory_rpm_mapping,data.brew," +
 	"data.cpe_ids,data.top_layer_id&page_size=500&page=0"
 const crdbVersionsDefaultTimeout = 30
-const crdbVersionsFileDescription = `#
+const CrdbVersionsFileDescription = `#
 # Supported CockroachDB versions.
 #
 # This file contains a list of CockroachDB versions that are supported by the
@@ -127,7 +127,7 @@ func GenerateCrdbVersionsFile(versions []string, path string) error {
 		log.Fatalf("error while converting to yaml: %v", err)
 	}
 
-	result := append([]byte(crdbVersionsFileDescription), yamlVersions...)
+	result := append([]byte(CrdbVersionsFileDescription), yamlVersions...)
 	return ioutil.WriteFile(path, result, 0)
 }
 

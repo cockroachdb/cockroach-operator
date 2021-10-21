@@ -78,7 +78,7 @@ func TestCrdbVersionsFile(t *testing.T) {
 - v1.2.3
 - v1.2.3+test.01
 `
-	expected := append(Annotation(), []byte(output)...)
+	expected := append([]byte(CrdbVersionsFileDescription), []byte(output)...)
 
 	tmpdir := t.TempDir()
 	filePath := path.Join(tmpdir, CrdbVersionsFileName)
