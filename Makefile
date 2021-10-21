@@ -310,7 +310,7 @@ release/gen-templates:
 # Generate various manifest files for OpenShift. We run this target after the
 # operator version is changed. The results are committed to Git.
 .PHONY: release/gen-files
-release/gen-files: | release/gen-templates release/update-pkg-manifest
+release/gen-files: | release/gen-templates release/update-pkg-bundle
 	git add . && git commit -m "Bump version to $(VERSION)"
 
 .PHONY: release/image
@@ -351,13 +351,13 @@ endif
 PKG_MAN_OPTS ?= "$(PKG_CHANNELS) $(PKG_DEFAULT_CHANNEL)"
 
 # Build the packagemanifests
-.PHONY: release/update-pkg-manifest
-release/update-pkg-manifest: dev/generate
-	bazel run //hack:update-pkg-manifest -- $(RH_BUNDLE_VERSION) $(RH_OPERATOR_IMAGE) $(PKG_MAN_OPTS) $(RH_COCKROACH_DATABASE_IMAGE)
+.PHONY: release/update-pkg-bundle
+release/update-pkg-bundle: dev/generate
+	bazel run //hack:update-pkg-bundle -- $(RH_BUNDLE_VERSION) $(RH_OPERATOR_IMAGE) $(PKG_MAN_OPTS) $(RH_COCKROACH_DATABASE_IMAGE)
 
 #  Build the OPM bundle
 .PHONY: release/opm-build-bundle
-release/opm-build-bundle: release/update-pkg-manifest
+release/opm-build-bundle: release/update-pkg-bundle
 	bazel run //hack:opm-build-bundle -- $(RH_BUNDLE_VERSION) $(RH_OPERATOR_IMAGE) $(PKG_MAN_OPTS)
 
 #

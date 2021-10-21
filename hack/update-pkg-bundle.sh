@@ -17,7 +17,7 @@ set -euo pipefail
 shopt -s extglob
 
 if [[ -z "${BUILD_WORKSPACE_DIRECTORY:-}" ]]; then
-  echo 'Must be run via "make release/update-pkg-manifest"' >&2
+  echo 'Must be run via "make release/update-pkg-bundle"' >&2
   exit 1
 fi
 
