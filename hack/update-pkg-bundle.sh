@@ -43,7 +43,7 @@ main() {
   ensure_unique_deployment "${deploy_path}/${rh_bundle_version}"
   generate_package_bundle "${rh_bundle_version}" "${rh_package_options}" "${deploy_path}"
   generate_csv "${deploy_path}/${rh_bundle_version}/manifests" "${rh_operator_image}"
-  combine_files "${deploy_path}/${rh_bundle_version}" "${rh_bundle_version}"
+  combine_files "${deploy_path}/${rh_bundle_version}" "${rh_bundle_version}" "${deploy_path}"
 }
 
 ensure_unique_deployment() {
@@ -102,7 +102,7 @@ combine_files() {
   popd >/dev/null
 
   rm -r ${3}/latest/*
-  cp -R ${3}/${1}/* ${3}/latest
+  cp -R ${1}/* ${3}/latest
 }
 
 main "$@"
