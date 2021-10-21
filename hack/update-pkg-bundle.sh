@@ -57,12 +57,15 @@ generate_package_bundle() {
   # Generate CSV in config/manifests and add boilerplate back (lost when regenerating)
   operator-sdk generate kustomize manifests -q --apis-dir apis
   hack/boilerplaterize hack/boilerplate/boilerplate.yaml.txt config/manifests/**/*.yaml
+
+  # Generate the new package bundle
   kustomize build config/manifests | operator-sdk generate bundle -q \
     --version "${1}" \
     ${2} \
     --output-dir "${3}/${1}"
-  sed "s#${3}/##g" bundle.Dockerfile > ${3}/bundle.Dockerfile
 
+  # There's no way to specify where bundle.Dockerfile ends up, so we do some post-processing on it here.
+  sed "s#${3}/##g" bundle.Dockerfile > ${3}/bundle.Dockerfile
   cp ${3}/bundle.Dockerfile ${3}/bundle-${1}.Dockerfile
   rm bundle.Dockerfile
 }
@@ -101,6 +104,7 @@ combine_files() {
 
   popd >/dev/null
 
+  # update the latest directory with all the new stuff
   rm -r ${3}/latest/*
   cp -R ${1}/* ${3}/latest
 }
