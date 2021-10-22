@@ -303,6 +303,8 @@ release/new:
 # pre-built kustomize bases used in our docs.
 .PHONY: release/gen-templates
 release/gen-templates:
+	bazel run //hack/update_crdb_versions
+	@hack/boilerplaterize hack/boilerplate/boilerplate.yaml.txt $(PWD)/crdb-versions.yaml
 	bazel run //hack/crdbversions:crdbversions -- -operator-version $(APP_VERSION) -crdb-versions $(PWD)/crdb-versions.yaml -repo-root $(PWD)
 	bazel run //config/crd:manifest.preview > install/crds.yaml
 	bazel run //config/operator:manifest.preview > install/operator.yaml
