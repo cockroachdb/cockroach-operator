@@ -341,7 +341,7 @@ RH_OPERATOR_IMAGE?=registry.connect.redhat.com/cockroachdb/cockroachdb-operator:
 
 # Generate package bundles.
 # Options for "bundle".
-CHANNELS?=beta
+CHANNELS?=beta,stable
 DEFAULT_CHANNEL?=beta
 
 ifneq ($(origin CHANNELS), undefined)

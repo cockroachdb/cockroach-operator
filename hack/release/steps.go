@@ -112,11 +112,9 @@ func CreateReleaseBranch(fn ExecFn) Step {
 // GenerateFiles runs make release/gen-files passing the appropriate channel options based on the version.
 func GenerateFiles(fn ExecFn) Step {
 	return StepFn(func(version string) error {
-		ch := "stable"
+		ch := "beta,stable"
 		defaultCh := "stable"
-
 		if strings.Contains(version, "-beta") {
-			ch = "beta"
 			defaultCh = "beta"
 		}
 

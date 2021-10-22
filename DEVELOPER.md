@@ -4,9 +4,9 @@ This project requires bazel. Version 4.0.0 has been tested.
 
 See: https://docs.bazel.build/versions/master/install.html
 
-Take a look at the [](Makefile) for various targets you can run. The e2e testing requires a container engine like docker
-running as it starts a K8s cluster with Kind. The Makefile is simply a wrapper for bazel commands and does not have any
-build functionality in it.
+Take a look at the [Makefile](https://github.com/cockroachdb/cockroach-operator/blob/master/Makefile) for various
+targets you can run. The e2e testing requires a container engine like docker running as it starts a K8s cluster with
+Kind. The Makefile is simply a wrapper for bazel commands and does not have any build functionality in it.
 
 You will also need kubectl and a running Kubernetes cluster to run the k8s targets like `make k8s/apply`.
 
@@ -22,12 +22,8 @@ rules and k8s rules. The Makefile notes below talk about the different target gr
 Just a quick recap of above. Please install the following.
 
 1. Bazel
-1. Python - TODO version
 1. Container Engine
 1. kubectl
-
-If you are not running the e2e tests or the Kubernetes targets you not need the last two. But you probably have them
-anyways.
 
 ## Makefile Notes
 
