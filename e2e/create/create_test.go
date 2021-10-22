@@ -39,6 +39,7 @@ var validImage = "cockroachdb/cockroach:v21.1.7"
 var nonExistentImage = "cockroachdb/cockroach-non-existent:v21.1.999"
 var invalidImage = "nginx:latest"
 var crdbVersion = "v21.1.7"
+var relatedImageEnvName = "RELATED_IMAGE_COCKROACH_v21_1_7"
 
 // TestCreateInsecureCluster tests the creation of insecure cluster, and it should be successful.
 func TestCreateInsecureCluster(t *testing.T) {
@@ -168,7 +169,7 @@ func TestCreateSecureClusterWithInvalidVersion(t *testing.T) {
 						WithImage(testcase.imageVersion).
 						WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
 					if testcase.cockroachVersion != "" {
-						os.Setenv("RELATED_IMAGE_COCKROACH_v21_1_7", nonExistentImage)
+						os.Setenv(relatedImageEnvName, nonExistentImage)
 						builder = builder.WithCockroachDBVersion(testcase.cockroachVersion)
 					}
 
@@ -232,7 +233,7 @@ func TestCreateSecureClusterWithNonCRDBImage(t *testing.T) {
 						WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
 
 					if testcase.cockroachVersion != "" {
-						os.Setenv("RELATED_IMAGE_COCKROACH_v21_1_7", invalidImage)
+						os.Setenv(relatedImageEnvName, invalidImage)
 						builder = builder.WithCockroachDBVersion(testcase.cockroachVersion)
 					}
 

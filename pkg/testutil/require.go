@@ -628,7 +628,7 @@ func RequireClusterInImagePullBackoff(t *testing.T, sb testenv.DiffingSandbox, b
 	}
 
 	if podList.Items[0].Status.Phase == corev1.PodPending && len(podList.Items[0].Status.ContainerStatuses) != 0 {
-		require.Equal(t, true, re.MatchString(podList.Items[0].Status.ContainerStatuses[0].State.Waiting.Reason))
+		require.True(t, re.MatchString(podList.Items[0].Status.ContainerStatuses[0].State.Waiting.Reason))
 	}
 }
 
