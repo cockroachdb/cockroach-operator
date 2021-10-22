@@ -119,11 +119,11 @@ sh_test(
     },
 )
 
-# update-pkg-bundle script generates manifests and metadata for OpenShift certification release
+# update-pkg-manifest script generates manifests and metadata for OpenShift certification release
 # in the package manifests format
 sh_binary(
-    name = "update-pkg-bundle",
-    srcs = ["update-pkg-bundle.sh"],
+    name = "update-pkg-manifest",
+    srcs = ["update-pkg-manifest.sh"],
     data = [
         OPERATORSDK,
         KUSTOMIZE,
