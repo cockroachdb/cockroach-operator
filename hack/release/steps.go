@@ -115,7 +115,7 @@ func GenerateFiles(fn ExecFn) Step {
 		ch := "beta,stable"
 		defaultCh := "stable"
 		if strings.Contains(version, "-beta") {
-			defaultCh = "beta"
+			ch = "beta"
 		}
 
 		return fn(

@@ -341,9 +341,9 @@ RH_COCKROACH_DATABASE_IMAGE=registry.connect.redhat.com/cockroachdb/cockroach:$(
 RH_OPERATOR_IMAGE?=registry.connect.redhat.com/cockroachdb/cockroachdb-operator:$(APP_VERSION)
 
 # Generate package bundles.
-# Options for "bundle".
-CHANNELS?=beta,stable
-DEFAULT_CHANNEL?=beta
+# Default options for channels if not pre-specified.
+CHANNELS?=beta
+DEFAULT_CHANNEL?=stable
 
 ifneq ($(origin CHANNELS), undefined)
 PKG_CHANNELS := --channels=$(CHANNELS)
