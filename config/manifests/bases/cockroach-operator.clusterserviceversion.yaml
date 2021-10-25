@@ -89,6 +89,9 @@ spec:
       - description: Container image information
         displayName: Cockroach Database Image
         path: image
+      - description: (Optional) If specified, the pod's nodeSelector
+        displayName: Map of nodeSelectors to match when scheduling pods on nodes
+        path: nodeSelector
       - description: Number of nodes (pods) in the cluster
         displayName: Number of nodes
         path: nodes
