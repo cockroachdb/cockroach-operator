@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"testing"
@@ -37,7 +38,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
-	v1 "k8s.io/api/batch/v1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apiresource "k8s.io/apimachinery/pkg/api/resource"
@@ -105,8 +106,8 @@ func RequireAtMostOneVersionCheckerJob(t *testing.T, sb testenv.DiffingSandbox, 
 	require.ErrorIs(t, err, wait.ErrWaitTimeout)
 }
 
-func fetchJobs(sb testenv.DiffingSandbox) ([]v1.Job, error) {
-	var jobs v1.JobList
+func fetchJobs(sb testenv.DiffingSandbox) ([]batchv1.Job, error) {
+	var jobs batchv1.JobList
 	if err := sb.List(&jobs, nil); err != nil {
 		return nil, err
 	}
@@ -591,4 +592,66 @@ func fetchPVCs(ctx context.Context, sb testenv.DiffingSandbox, b ClusterBuilder)
 		return nil, err
 	}
 	return pvcList, nil
+}
+
+// RequireClusterInImagePullBackoff checks that the CRDB cluster should be either in ImagePullBackOff/ErrImagePull state
+func RequireClusterInImagePullBackoff(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder) {
+	clusterName := b.Cluster().Name()
+	var jobList = &batchv1.JobList{}
+	var podList = &corev1.PodList{}
+	var re = regexp.MustCompile(`ErrImagePull|ImagePullBackOff`)
+	jobLabel := map[string]string{
+		"app.kubernetes.io/instance": clusterName,
+	}
+
+	wErr := wait.Poll(10*time.Second, 500*time.Second, func() (bool, error) {
+		if err := sb.List(jobList, jobLabel); err != nil {
+			return false, err
+		}
+
+		if len(jobList.Items) == 0 {
+			t.Logf("No validation job found for the CRDB cluster")
+			return false, nil
+		}
+
+		return true, nil
+	})
+
+	require.NoError(t, wErr)
+
+	podLabel := map[string]string{
+		"job-name": jobList.Items[0].Name,
+	}
+
+	if err := sb.List(podList, podLabel); err != nil {
+		require.NoError(t, err)
+	}
+
+	if podList.Items[0].Status.Phase == corev1.PodPending && len(podList.Items[0].Status.ContainerStatuses) != 0 {
+		require.True(t, re.MatchString(podList.Items[0].Status.ContainerStatuses[0].State.Waiting.Reason))
+	}
+}
+
+// RequireClusterInFailedState check that the crdbclusters CR is marked as Failed state.
+func RequireClusterInFailedState(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder) {
+	var crdbCluster = api.CrdbCluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      b.Cluster().Name(),
+			Namespace: b.Cluster().Namespace(),
+		},
+	}
+
+	wErr := wait.Poll(10*time.Second, 500*time.Second, func() (bool, error) {
+		if err := sb.Get(&crdbCluster); err != nil {
+			return false, err
+		}
+
+		if crdbCluster.Status.ClusterStatus == "Failed" {
+			return true, nil
+		}
+
+		return false, nil
+	})
+
+	require.NoError(t, wErr)
 }
