@@ -17,7 +17,7 @@ set -euo pipefail
 shopt -s extglob
 
 if [[ -z "${BUILD_WORKSPACE_DIRECTORY:-}" ]]; then
-  echo 'Must be run via "make release/update-pkg-bundle"' >&2
+  echo 'Must be run via "make release/update-pkg-manifest"' >&2
   exit 1
 fi
 
@@ -41,9 +41,9 @@ main() {
 
   cd "${BUILD_WORKSPACE_DIRECTORY}"
   ensure_unique_deployment "${deploy_path}/${rh_bundle_version}"
-  generate_package_bundle "${rh_bundle_version}" "${rh_package_options}" "${deploy_path}"
-  generate_csv "${deploy_path}/${rh_bundle_version}/manifests" "${rh_operator_image}"
-  combine_files "${deploy_path}/${rh_bundle_version}" "${rh_bundle_version}" "${deploy_path}"
+  generate_package_manifest "${rh_bundle_version}" "${rh_package_options}" "${deploy_path}"
+  generate_csv "${deploy_path}/${rh_bundle_version}" "${rh_operator_image}"
+  combine_files "${deploy_path}/${rh_bundle_version}" "${rh_bundle_version}"
 }
 
 ensure_unique_deployment() {
@@ -53,26 +53,18 @@ ensure_unique_deployment() {
   fi
 }
 
-generate_package_bundle() {
+generate_package_manifest() {
   # Generate CSV in config/manifests and add boilerplate back (lost when regenerating)
   operator-sdk generate kustomize manifests -q --apis-dir apis
   hack/boilerplaterize hack/boilerplate/boilerplate.yaml.txt config/manifests/**/*.yaml
 
-  # Generate the new package bundle
-  kustomize build config/manifests | operator-sdk generate bundle -q \
+  # TODO: packagemanifests is deprecated and scheduled to be remove in 2.0.0
+  kustomize build config/manifests | operator-sdk generate packagemanifests -q \
     --version "${1}" \
     ${2} \
-    --output-dir "${3}/${1}"
-
-  # For some reason, the package name specified in the annotations is "cockroachdb-certified". We need to manually
-  # replace that in here to maintain compatibility with previous versions.
-  sed -i '' "s/package.v1=cockroach-operator/package.v1=cockroachdb-certified/g" bundle.Dockerfile
-  sed -i '' "s/package.v1: cockroach-operator/package.v1: cockroachdb-certified/g" ${3}/${1}/metadata/annotations.yaml
-
-  # There's no way to specify where bundle.Dockerfile ends up, so we do some post-processing on it here.
-  sed "s#${3}/##g" bundle.Dockerfile > ${3}/bundle.Dockerfile
-  cp ${3}/bundle.Dockerfile ${3}/bundle-${1}.Dockerfile
-  rm bundle.Dockerfile
+    --output-dir "${3}" \
+    --input-dir="${3}" \
+    --verbose
 }
 
 generate_csv() {
@@ -91,11 +83,10 @@ generate_csv() {
 }
 
 combine_files() {
-  pushd "${1}/manifests" >/dev/null
+  pushd "${1}" >/dev/null
 
   local csv="cockroach-operator.v${2}.clusterserviceversion.yaml"
 
-  # sticks all the necessary cluster permissions into the operator's CSV yaml
   faq -f yaml -o yaml \
     --slurp '.[0].spec.install.spec.clusterPermissions+= [{serviceAccountName: .[3].metadata.name, rules: .[1].rules }] | .[0]' \
     csv.yaml cockroach-*.yaml webhook-service*.yaml \
@@ -104,14 +95,9 @@ combine_files() {
   # remove the "replaces" attribute. This is a new bundle
   sed '/replaces: .*/d' "${csv}" > tmp-csv && mv tmp-csv "${csv}"
 
-  # delete all except the new csv and crd files
+  # delete all except the csv and crd files
   rm -v !("${csv}"|"crdb.cockroachlabs.com_crdbclusters.yaml")
-
   popd >/dev/null
-
-  # update the latest directory with all the new stuff
-  rm -r ${3}/latest/*
-  cp -R ${1}/* ${3}/latest
 }
 
 main "$@"
