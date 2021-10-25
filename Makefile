@@ -251,6 +251,7 @@ dev/syncbazel:
 
 .PHONY: dev/syncdeps
 dev/syncdeps:
+	@go mod tidy
 	@bazel run //:gazelle -- update-repos \
 		-from_file=go.mod \
 		-to_macro=hack/build/repos.bzl%_go_dependencies \
