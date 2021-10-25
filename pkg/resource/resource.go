@@ -129,11 +129,7 @@ func (r Reconciler) HasChanged() (bool, error) {
 		return false, err
 	}
 
-	changed, err := kube.ObjectChanged(current, new)
-	if err != nil {
-		return false, err
-	}
-	return changed, nil
+	return kube.ObjectChanged(current, new)
 }
 
 func (r Reconciler) reconcileLabels(current, desired runtime.Object) error {
