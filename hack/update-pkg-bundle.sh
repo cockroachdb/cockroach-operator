@@ -64,6 +64,11 @@ generate_package_bundle() {
     ${2} \
     --output-dir "${3}/${1}"
 
+  # For some reason, the package name specified in the annotations is "cockroachdb-certified". We need to manually
+  # replace that in here to maintain compatibility with previous versions.
+  sed -i '' "s/cockroach-operator/cockroachdb-certified/g" bundle.Dockerfile
+  sed -i '' "s/cockroach-operator/cockroachdb-certified/g" ${3}/${1}/metadata/annotations.yaml
+
   # There's no way to specify where bundle.Dockerfile ends up, so we do some post-processing on it here.
   sed "s#${3}/##g" bundle.Dockerfile > ${3}/bundle.Dockerfile
   cp ${3}/bundle.Dockerfile ${3}/bundle-${1}.Dockerfile
