@@ -63,7 +63,10 @@ func TestGetVersions(t *testing.T) {
 
 	data := `{"data":[{"repositories": [{"tags": [{"name": "v1.2.3"}, {"name": "v1.2.3+test.01"}]}]}]}`
 	resp := CrdbVersionsResponse{}
-	json.Unmarshal([]byte(data), &resp)
+	if err := json.Unmarshal([]byte(data), &resp); err != nil {
+		t.Errorf("Error unmarshalling JSON: %v", err)
+	}
+
 	got := GetVersions(resp)
 
 	if !reflect.DeepEqual(got, expected) {
@@ -92,7 +95,7 @@ func TestCrdbVersionsFile(t *testing.T) {
 		t.Fatalf("error reading generated file: %s", err)
 	}
 
-	if bytes.Compare(got, expected) != 0 {
+	if !bytes.Equal(got, expected) {
 		t.Errorf("Expected `%s`, got `%s`", expected, got)
 	}
 }
