@@ -18,6 +18,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 * Boilerplate test after updating to Go 1.17
 * Permissions for sts/scale subresource
 
+## Added
+
+* Resource Requirements for vcheck container
+
 ## Deleted
 
 * Versioned Dockerfiles for OpenShift
