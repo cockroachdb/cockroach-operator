@@ -109,8 +109,10 @@ combine_files() {
   popd >/dev/null
 
   # update the latest directory with all the new stuff
-  rm -r ${3}/latest/*
-  cp -R ${1}/* ${3}/latest
+  rm ${3}/latest/**/*.yaml
+  cp -R ${1}/manifests/** ./latest/manifests
+  cp -R ${1}/metadata/** ./latest/metadata
+  cp -R ${1}/tests/** ./latest/tests
 }
 
 main "$@"

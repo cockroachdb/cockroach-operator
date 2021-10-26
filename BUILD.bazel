@@ -63,6 +63,7 @@ filegroup(
         "//config:all-srcs",
         "//deploy/certified-metadata-bundle/cockroach-operator/latest/manifests:all-srcs",
         "//deploy/certified-metadata-bundle/cockroach-operator/latest/metadata:all-srcs",
+        "//deploy/certified-metadata-bundle/cockroach-operator/latest/tests:all-srcs",
         "//e2e/create:all-srcs",
         "//e2e/decommission:all-srcs",
         "//e2e/kubetest2-eks:all-srcs",
