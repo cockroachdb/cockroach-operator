@@ -33,10 +33,10 @@ spec:
     requests:
       # This is intentionally low to make it work on local kind clusters.
       cpu: 500m
-      memory: 1Gi
+      memory: 500Mi
     limits:
       cpu: 500m
-      memory: 1Gi
+      memory: 500Mi
   tlsEnabled: true
   image:
     name: cockroachdb/cockroach:{{ .LatestStableCrdbVersion }}
