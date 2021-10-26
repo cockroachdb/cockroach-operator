@@ -32,11 +32,11 @@ spec:
   resources:
     requests:
       # This is intentionally low to make it work on local kind clusters.
-      cpu: 500m
-      memory: 500Mi
+      cpu: 300m
+      memory: 300Mi
     limits:
-      cpu: 500m
-      memory: 500Mi
+      cpu: 300m
+      memory: 300Mi
   tlsEnabled: true
   image:
     name: cockroachdb/cockroach:{{ .LatestStableCrdbVersion }}
