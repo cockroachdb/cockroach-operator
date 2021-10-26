@@ -110,9 +110,10 @@ combine_files() {
 
   # update the latest directory with all the new stuff
   rm ${3}/latest/**/*.yaml
-  cp -R ${1}/manifests/** ./latest/manifests
-  cp -R ${1}/metadata/** ./latest/metadata
-  cp -R ${1}/tests/** ./latest/tests
+  cp -R ${1}/manifests/** ${3}/latest/manifests
+  cp -R ${1}/metadata/** ${3}/latest/metadata
+  cp -R ${1}/tests/** ${3}/latest/tests
 }
 
 main "$@"
+
