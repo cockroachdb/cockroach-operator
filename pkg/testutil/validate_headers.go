@@ -153,7 +153,10 @@ func (v ValidateHeaders) readGlob(glob string, regex *regexp.Regexp) (filesPtr *
 	s := make(map[string][]string)
 	for _, f := range files {
 		key := path.Base(f)
-		key = strings.Split(key, ".")[1]
+		fmt.Println(key)
+		components := strings.Split(key, ".")
+		key = strings.Join(components[1:len(components)-1], ".")
+		fmt.Println(key)
 		content, err := readLines(f, regex)
 		if err != nil {
 			return nil, err
@@ -172,7 +175,7 @@ func (v ValidateHeaders) hasValidHeader(filename string) (bool, error) {
 
 	data := string(content)
 	basename := path.Base(filename)
-	extension := removeDot(path.Ext(filename))
+	extension := fullFileExt(filename)
 
 	if v.forceExtension != "" {
 		extension = v.forceExtension
@@ -238,7 +241,7 @@ func (v ValidateHeaders) getFiles() (filesPtr *[]string, err error) {
 
 		if info.IsDir() {
 			return nil
-		} else if fileExtensions[removeDot(path.Ext(p))] || fileExtensions[path.Base(p)] {
+		} else if fileExtensions[fullFileExt(p)] || fileExtensions[path.Base(p)] {
 			files = append(files, p)
 		}
 
@@ -285,4 +288,9 @@ func readLines(path string, reg *regexp.Regexp) ([]string, error) {
 		lines = append(lines, text)
 	}
 	return lines, scanner.Err()
+}
+
+// everything after the first dot
+func fullFileExt(f string) string {
+	return strings.Join(strings.Split(f, ".")[1:], ".")
 }
