@@ -138,16 +138,21 @@ func TestParseCertificate(t *testing.T) {
 
 	tests := []struct {
 		cert []byte
-		err  error
+		err  string
 	}{
 		{cert: ca.Certificate()},
-		{cert: []byte("-- nerp"), err: ErrInvalidPEMBlock},
-		{cert: pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: []byte("nope")}), err: asn1.StructuralError{}},
+		{cert: []byte("-- nerp"), err: "failed to decode certificate"},
+		{cert: pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: []byte("nope")}), err: "failed to parse certificate"},
 	}
 
 	for _, tt := range tests {
 		_, err := ParseCertificate(tt.cert)
-		require.IsType(t, tt.err, errors.Cause(err))
+		if tt.err != "" {
+			require.Contains(t, err.Error(), tt.err)
+			continue
+		}
+
+		require.NoError(t, err)
 	}
 }
 

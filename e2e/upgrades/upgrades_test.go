@@ -38,6 +38,9 @@ var parallel = *flag.Bool("parallel", false, "run tests in parallel")
 var MinorVersion1 string = "cockroachdb/cockroach:v20.2.8"
 var MinorVersion2 string = "cockroachdb/cockroach:v20.2.9"
 var MajorVersion string = "cockroachdb/cockroach:v21.1.0"
+var NonExistentVersion string = "cockroachdb/cockroach-non-existent:v21.1.999"
+var SkipFeatureVersion string = "cockroachdb/cockroach:v20.1.0"
+var invalidImage string = "nginx:latest"
 
 // TestUpgradesMinorVersion tests a minor version bump
 func TestUpgradesMinorVersion(t *testing.T) {
@@ -266,6 +269,163 @@ func TestUpgradesMinorVersionThenRollback(t *testing.T) {
 				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
 				testutil.RequireDbContainersToUseImage(t, sb, updated)
 				t.Log("Done with downgrade")
+			},
+		},
+	}
+
+	steps.Run(t)
+}
+
+// TestUpgradeWithInvalidVersion tests the upgrade to non-existent version which will result in Failure.
+func TestUpgradeWithInvalidVersion(t *testing.T) {
+	// We are testing an upgrade with invalid version
+	// Upgrade is going to fail.
+
+	if parallel {
+		t.Parallel()
+	}
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+
+	testLog := zapr.NewLogger(zaptest.NewLogger(t))
+
+	e := testenv.CreateActiveEnvForTest()
+	env := e.Start()
+	defer e.Stop()
+
+	sb := testenv.NewDiffingSandbox(t, env)
+	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
+
+	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
+		WithImage(MinorVersion1).
+		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
+
+	steps := testutil.Steps{
+		{
+			Name: "creates a 3-node secure cluster",
+			Test: func(t *testing.T) {
+				require.NoError(t, sb.Create(builder.Cr()))
+				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
+			},
+		},
+		{
+			Name: "upgrades the cluster to the next patch version",
+			Test: func(t *testing.T) {
+				current := builder.Cr()
+				require.NoError(t, sb.Get(current))
+
+				current.Spec.Image.Name = NonExistentVersion
+				require.NoError(t, sb.Update(current))
+
+				testutil.RequireClusterInImagePullBackoff(t, sb, builder)
+				testutil.RequireClusterInFailedState(t, sb, builder)
+				t.Log("Upgrade failed with invalid image")
+			},
+		},
+	}
+
+	steps.Run(t)
+}
+
+// TestUpgradeWithInvalidImage tests the upgrade to the image which exists but not a valid image.
+// Upgrade should fail in this case.
+func TestUpgradeWithInvalidImage(t *testing.T) {
+	// We are testing an upgrade with invalid image
+	// Upgrade is going to fail.
+
+	if parallel {
+		t.Parallel()
+	}
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+
+	testLog := zapr.NewLogger(zaptest.NewLogger(t))
+
+	e := testenv.CreateActiveEnvForTest()
+	env := e.Start()
+	defer e.Stop()
+
+	sb := testenv.NewDiffingSandbox(t, env)
+	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
+
+	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
+		WithImage(MinorVersion1).
+		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
+
+	steps := testutil.Steps{
+		{
+			Name: "creates a 3-node secure cluster",
+			Test: func(t *testing.T) {
+				require.NoError(t, sb.Create(builder.Cr()))
+				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
+			},
+		},
+		{
+			Name: "upgrades the cluster to the next patch version",
+			Test: func(t *testing.T) {
+				current := builder.Cr()
+				require.NoError(t, sb.Get(current))
+
+				current.Spec.Image.Name = invalidImage
+				require.NoError(t, sb.Update(current))
+
+				testutil.RequireClusterInImagePullBackoff(t, sb, builder)
+				testutil.RequireClusterInFailedState(t, sb, builder)
+				t.Log("Upgrade failed with invalid image")
+			},
+		},
+	}
+
+	steps.Run(t)
+}
+
+// TestUpgradeWithMajorVersionExcludingMajorFeature test major version upgrade with skipping a major release.
+// Upgrade should fail in this case as well
+func TestUpgradeWithMajorVersionExcludingMajorFeature(t *testing.T) {
+	// We are testing a major version Upgrade with skipping feature
+	// Upgrade is going to fail due to non-support of skipping major versions.
+
+	if parallel {
+		t.Parallel()
+	}
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+
+	testLog := zapr.NewLogger(zaptest.NewLogger(t))
+
+	e := testenv.CreateActiveEnvForTest()
+	env := e.Start()
+	defer e.Stop()
+
+	sb := testenv.NewDiffingSandbox(t, env)
+	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
+
+	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
+		WithImage(SkipFeatureVersion).
+		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
+
+	steps := testutil.Steps{
+		{
+			Name: "creates a 1-node secure cluster",
+			Test: func(t *testing.T) {
+				require.NoError(t, sb.Create(builder.Cr()))
+				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
+			},
+		},
+		{
+			Name: "upgrades the cluster to the next minor version",
+			Test: func(t *testing.T) {
+				current := builder.Cr()
+				require.NoError(t, sb.Get(current))
+
+				current.Spec.Image.Name = MajorVersion
+				require.NoError(t, sb.Update(current))
+
+				testutil.RequireClusterInFailedState(t, sb, builder)
+				t.Log("Done with major upgrade with skipping feature")
 			},
 		},
 	}

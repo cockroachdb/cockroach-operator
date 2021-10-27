@@ -43,7 +43,8 @@ and `openshift-install` can be installed with `bazel build //hack/bin/...`.
 ### Ensuring GCP is configured correctly
 
 In order to create the OpenShift in GCP, you'll need to have a DNS configured. You can verify that it's setup correctly
-by running `gcloud dns managed-zones list`
+by running `gcloud dns managed-zones list`. If you have an existing domain name sitting somewhere that you'd like to
+migrate over, check out [this guide](https://cloud.google.com/dns/docs/migrating).
 
 You should see a publicly visible DNS NAME entry for a root domain like `example.com.`. Take note of this value. We'll
 need it in the next step (referred to as `<DNS_ZONE>` hereafter).
@@ -92,7 +93,7 @@ hack/openshift-gcp-create.sh \
   -p "${GCP_PROJECT}" \
   -s <pull secret file> \
   -z "${DNS_ZONE}" \
-  -n "${CLUSER_NAME}" \
+  -n "${CLUSTER_NAME}" \
   -r "${GCP_REGION}"
 ```
 

@@ -337,6 +337,7 @@ func createRoleOf(env *ActiveEnv) error {
 
 	return nil
 }
+
 // TODO: Needs refactoring -> the goroutine calls T.Fatal, which must be called in the same goroutine as the test
 // nolint
 func startCtrlMgr(t *testing.T, mgr manager.Manager) func() {

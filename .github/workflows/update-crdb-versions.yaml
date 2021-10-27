@@ -30,7 +30,6 @@ jobs:
         uses: technote-space/create-pr-action@v2
         with:
           EXECUTE_COMMANDS: |
-            ./hack/update-crdb-versions.sh
             make release/gen-templates
           COMMIT_MESSAGE: 'Update CRDB versions'
           COMMIT_NAME: 'GitHub Actions'
