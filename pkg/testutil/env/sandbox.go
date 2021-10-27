@@ -44,6 +44,7 @@ import (
 
 const (
 	DefaultNsName = "crdb-test-"
+	DefaultOperatorNsName = "crdb-test-operator-"
 )
 
 // Names of the various service account and RBAC components that are
@@ -79,6 +80,45 @@ func NewSandbox(t *testing.T, env *ActiveEnv) Sandbox {
 	t.Cleanup(s.Cleanup)
 
 	return s
+}
+func NewSandboxWithoutNamespace(t *testing.T, env *ActiveEnv) Sandbox {
+	ns := DefaultOperatorNsName + rand.String(6)
+
+	mgr, err := ctrl.NewManager(env.k8s.Cfg, ctrl.Options{
+		Scheme:             env.scheme,
+		MetricsBindAddress: "0", // disable metrics serving
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	s := Sandbox{
+		env:       env,
+		Namespace: ns,
+		Mgr:       mgr,
+	}
+
+	if err := createNamespace(s); err != nil {
+		t.Fatal(err)
+	}
+	if err := createServiceAccount(s); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(s.Cleanup)
+
+	return s
+}
+
+func CreateNamespace(t *testing.T, env *ActiveEnv, prefix string) string {
+	ns := prefix + rand.String(6)
+	if err := createNamespaceOf(ns, env); err != nil {
+		t.Fatal(err)
+	}
+	return ns
+}
+
+func CreateAndBindServiceAccountNamespaced(env *ActiveEnv, ns string) error {
+	return createServiceAccountOf(env, ns, ns + "-" + bindingName)
 }
 
 type Sandbox struct {
@@ -131,8 +171,13 @@ func (s Sandbox) Get(o client.Object) error {
 		return err
 	}
 
+	ns := accessor.GetNamespace()
+	if ns == "" {
+		ns = s.Namespace
+	}
+
 	key := types.NamespacedName{
-		Namespace: s.Namespace,
+		Namespace: ns,
 		Name:      accessor.GetName(),
 	}
 
@@ -170,14 +215,18 @@ func (s Sandbox) StartManager(t *testing.T, maker func(ctrl.Manager) error) {
 }
 
 func createNamespace(s Sandbox) error {
+	return createNamespaceOf(s.Namespace, s.env)
+}
+
+func createNamespaceOf(namespace string, env *ActiveEnv) error {
 	ns := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: s.Namespace,
+			Name: namespace,
 		},
 	}
 
-	if _, err := s.env.Clientset.CoreV1().Namespaces().Create(context.TODO(), ns, metav1.CreateOptions{}); err != nil {
-		return errors.Wrapf(err, "failed to create namespace: %s", s.Namespace)
+	if _, err := env.Clientset.CoreV1().Namespaces().Create(context.TODO(), ns, metav1.CreateOptions{}); err != nil {
+		return errors.Wrapf(err, "failed to create namespace: %s", namespace)
 	}
 
 	return nil
@@ -197,43 +246,49 @@ func defaultBackoffFactory(maxTime time.Duration) backoff.BackOff {
 var defaultTime time.Duration = 5 * time.Minute
 
 func createServiceAccount(s Sandbox) error {
+	if err := createServiceAccountOf(s.env, s.Namespace, bindingName); err != nil {
+		return err
+	}
+	// The role might be deleting so we need to do a
+	// backoff retry on the creation
+	err := backoff.Retry(func() error {
+		return createRoleOf(s.env)
+	}, backoffFactory(defaultTime))
+
+	if err != nil {
+		return errors.Wrap(err, "failed to create role")
+	}
+	return nil
+}
+
+func createServiceAccountOf(env *ActiveEnv, ns string, bindingName string) error {
 
 	sa := &corev1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
-			Namespace: s.Namespace,
+			Namespace: ns,
 			Name:      saName,
 		},
 	}
 
-	if _, err := s.env.Clientset.CoreV1().ServiceAccounts(s.Namespace).Create(context.TODO(), sa, metav1.CreateOptions{}); err != nil {
-		return errors.Wrapf(err, "failed to create service account cockroach-database-sa in namespace %s", s.Namespace)
+	if _, err := env.Clientset.CoreV1().ServiceAccounts(ns).Create(context.TODO(), sa, metav1.CreateOptions{}); err != nil {
+		return errors.Wrapf(err, "failed to create service account cockroach-database-sa in namespace %s", ns)
 	}
 
 	// The binding might be deleting so we need to do a
 	// backoff retry on the creation
 	err := backoff.Retry(func() error {
-		return createBinding(s)
+		return createBindingOf(env, ns, bindingName)
 	}, backoffFactory(defaultTime))
 
 	if err != nil {
 		return errors.Wrap(err, "failed to create role binding")
 	}
 
-	// The role might be deleting so we need to do a
-	// backoff retry on the creation
-	err = backoff.Retry(func() error {
-		return createRole(s)
-	}, backoffFactory(defaultTime))
-
-	if err != nil {
-		return errors.Wrap(err, "failed to create role")
-	}
-
 	return nil
 }
 
-func createBinding(s Sandbox) error {
-	if _, err := s.env.Clientset.RbacV1().ClusterRoleBindings().Create(
+func createBindingOf(env *ActiveEnv, ns string, bindingName string) error {
+	if _, err := env.Clientset.RbacV1().ClusterRoleBindings().Create(
 		context.TODO(),
 		&rbac.ClusterRoleBinding{
 			ObjectMeta: metav1.ObjectMeta{
@@ -248,7 +303,7 @@ func createBinding(s Sandbox) error {
 				{
 					Kind:      "ServiceAccount",
 					Name:      saName,
-					Namespace: s.Namespace,
+					Namespace: ns,
 				},
 			},
 		},
@@ -259,8 +314,8 @@ func createBinding(s Sandbox) error {
 	return nil
 }
 
-func createRole(s Sandbox) error {
-	if _, err := s.env.Clientset.RbacV1().ClusterRoles().Create(
+func createRoleOf(env *ActiveEnv) error {
+	if _, err := env.Clientset.RbacV1().ClusterRoles().Create(
 		context.TODO(),
 		&rbac.ClusterRole{
 			ObjectMeta: metav1.ObjectMeta{
@@ -298,6 +353,15 @@ func startCtrlMgr(t *testing.T, mgr manager.Manager) func() {
 
 func NewDiffingSandbox(t *testing.T, env *ActiveEnv) DiffingSandbox {
 	s := NewSandbox(t, env)
+
+	return DiffingSandbox{
+		Sandbox:      s,
+		originalObjs: listAllObjsOrDie(s),
+	}
+}
+
+func NewDiffingSandboxWithoutNamespace(t *testing.T, env *ActiveEnv) DiffingSandbox {
+	s := NewSandboxWithoutNamespace(t, env)
 
 	return DiffingSandbox{
 		Sandbox:      s,

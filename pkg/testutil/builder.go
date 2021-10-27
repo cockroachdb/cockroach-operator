@@ -142,3 +142,7 @@ func (b ClusterBuilder) Cluster() *resource.Cluster {
 	cluster := resource.NewCluster(b.Cr())
 	return &cluster
 }
+
+func (b ClusterBuilder) Namespace() string {
+	return b.cluster.Namespace
+}

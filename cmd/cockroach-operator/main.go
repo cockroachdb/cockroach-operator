@@ -86,7 +86,7 @@ func main() {
 
 	var options manager.Options
 	if utilfeature.DefaultMutableFeatureGate.Enabled(features.MultipleNamespaces) {
-		logger.Info("Watch and control all CrdbClusters in all namespace.")
+		logger.Info("Watch and control all CrdbClusters in all namespaces.")
 		options = ctrl.Options{
 			Scheme:             scheme,
 			MetricsBindAddress: metricsAddr,

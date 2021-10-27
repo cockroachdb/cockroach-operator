@@ -49,10 +49,14 @@ import (
 // RequireClusterToBeReadyEventuallyTimeout tests to see if a statefulset has started correctly and
 // all of the pods are ready.
 func RequireClusterToBeReadyEventuallyTimeout(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder, timeout time.Duration) {
+	RequireClusterToBeReadyEventuallyTimeoutWithNamespace(t, sb, b, "", timeout)
+}
+
+func RequireClusterToBeReadyEventuallyTimeoutWithNamespace(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder, ns string, timeout time.Duration) {
 	cluster := b.Cluster()
 
 	require.NoError(t, wait.Poll(10*time.Second, timeout, func() (bool, error) {
-		ss, err := fetchStatefulSet(sb, cluster.StatefulSetName())
+		ss, err := fetchStatefulSetWithNameSpace(sb, cluster.StatefulSetName(), ns)
 		if err != nil {
 			t.Logf("error fetching stateful set")
 			return false, err
@@ -171,10 +175,24 @@ func RequireDbContainersToUseImage(t *testing.T, sb testenv.DiffingSandbox, cr *
 }
 
 func fetchStatefulSet(sb testenv.DiffingSandbox, name string) (*appsv1.StatefulSet, error) {
-	ss := &appsv1.StatefulSet{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
-		},
+	return fetchStatefulSetWithNameSpace(sb, name, "")
+}
+
+func fetchStatefulSetWithNameSpace(sb testenv.DiffingSandbox, name string, ns string) (*appsv1.StatefulSet, error) {
+	var ss *appsv1.StatefulSet
+	if ns == "" {
+		ss = &appsv1.StatefulSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: name,
+			},
+		}
+	} else {
+		ss = &appsv1.StatefulSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: name,
+				Namespace: ns,
+			},
+		}
 	}
 
 	if err := sb.Get(ss); err != nil {
@@ -253,10 +271,14 @@ func RequireDownGradeOptionSet(t *testing.T, sb testenv.DiffingSandbox, b Cluste
 
 // RequireDecommissionNode requires that proper nodes are decommissioned
 func RequireDecommissionNode(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder, numNodes int32) {
+	RequireDecommissionNodeWithNamespace(t, sb, b, "", numNodes)
+}
+
+func RequireDecommissionNodeWithNamespace(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder, ns string, numNodes int32) {
 	cluster := b.Cluster()
 
 	err := wait.Poll(10*time.Second, 700*time.Second, func() (bool, error) {
-		sts, err := fetchStatefulSet(sb, cluster.StatefulSetName())
+		sts, err := fetchStatefulSetWithNameSpace(sb, cluster.StatefulSetName(), ns)
 		if err != nil {
 			t.Logf("statefulset is not found %v", err)
 			return false, err
@@ -277,7 +299,11 @@ func RequireDecommissionNode(t *testing.T, sb testenv.DiffingSandbox, b ClusterB
 			return false, nil
 		}
 		//
-		err = makeDrainStatusChecker(t, sb, b, uint64(numNodes))
+		if ns == "" {
+			err = makeDrainStatusChecker(t, sb, b, uint64(numNodes))
+		} else {
+			err = makeDrainStatusCheckerWithNamespace(t, sb, b, ns, uint64(numNodes))
+		}
 		if err != nil {
 			t.Logf("makeDrainStatusChecker failed due to error %v\n", err)
 			return false, nil
@@ -289,13 +315,17 @@ func RequireDecommissionNode(t *testing.T, sb testenv.DiffingSandbox, b ClusterB
 }
 
 func makeDrainStatusChecker(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder, numNodes uint64) error {
+	return makeDrainStatusCheckerWithNamespace(t, sb, b, sb.Namespace, numNodes)
+}
+
+func makeDrainStatusCheckerWithNamespace(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder, ns string, numNodes uint64) error {
 	cluster := b.Cluster()
 	cmd := []string{"/cockroach/cockroach", "node", "status", "--decommission", "--format=csv", cluster.SecureMode()}
 	podname := fmt.Sprintf("%s-0", cluster.StatefulSetName())
-	stdout, stderror, err := kube.ExecInPod(sb.Mgr.GetScheme(), sb.Mgr.GetConfig(), sb.Namespace,
+	stdout, stderror, err := kube.ExecInPod(sb.Mgr.GetScheme(), sb.Mgr.GetConfig(), ns,
 		podname, resource.DbContainerName, cmd)
 	if err != nil || stderror != "" {
-		t.Logf("exec cmd = %s on pod=%s exit with error %v and stdError %s and ns %s", cmd, podname, err, stderror, sb.Namespace)
+		t.Logf("exec cmd = %s on pod=%s exit with error %v and stdError %s and ns %s", cmd, podname, err, stderror, ns)
 		return err
 	}
 	r := csv.NewReader(strings.NewReader(stdout))
@@ -306,8 +336,7 @@ func makeDrainStatusChecker(t *testing.T, sb testenv.DiffingSandbox, b ClusterBu
 	// We are using the host to filter the decommissioned node.
 	// Currently the id does not match the pod index because of the
 	// pod parallel strategy
-	host := fmt.Sprintf("%s-%d.%s.%s", cluster.StatefulSetName(),
-		numNodes, cluster.StatefulSetName(), sb.Namespace)
+	host := fmt.Sprintf("%s-%d.%s.%s", cluster.StatefulSetName(), numNodes, cluster.StatefulSetName(), ns)
 	for {
 		record, err := r.Read()
 		if err == io.EOF {
@@ -361,16 +390,20 @@ func makeDrainStatusChecker(t *testing.T, sb testenv.DiffingSandbox, b ClusterBu
 // RequireDatabaseToFunctionInsecure tests that the database is functioning correctly on an
 // db that is insecure.
 func RequireDatabaseToFunctionInsecure(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder) {
-	requireDatabaseToFunction(t, sb, b, false)
+	requireDatabaseToFunction(t, sb, b, sb.Namespace, false)
 }
 
 // RequireDatabaseToFunction tests that the database is functioning correctly
 // for a db cluster that is using an SSL certificate.
 func RequireDatabaseToFunction(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder) {
-	requireDatabaseToFunction(t, sb, b, true)
+	requireDatabaseToFunction(t, sb, b, sb.Namespace, true)
 }
 
-func requireDatabaseToFunction(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder, useSSL bool) {
+func RequireDatabaseToFunctionWithNamespace(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder, ns string) {
+	requireDatabaseToFunction(t, sb, b, ns, true)
+}
+
+func requireDatabaseToFunction(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder, ns string, useSSL bool) {
 	t.Log("Testing database function")
 	sb.Mgr.GetConfig()
 	podName := fmt.Sprintf("%s-0.%s", b.Cluster().Name(), b.Cluster().Name())
@@ -383,7 +416,7 @@ func requireDatabaseToFunction(t *testing.T, sb testenv.DiffingSandbox, b Cluste
 
 		RestConfig:   sb.Mgr.GetConfig(),
 		ServiceName:  podName,
-		Namespace:    sb.Namespace,
+		Namespace:    ns,
 		DatabaseName: "system",
 
 		RunningInsideK8s: false,
@@ -551,7 +584,11 @@ func logPods(ctx context.Context, sts *appsv1.StatefulSet, cluster *resource.Clu
 
 // RequireNumberOfPVCs checks that the correct number of PVCs are claimed
 func RequireNumberOfPVCs(t *testing.T, ctx context.Context, sb testenv.DiffingSandbox, b ClusterBuilder, quantity int) {
-	pvcList, err := fetchPVCs(ctx, sb, b)
+	RequireNumberOfPVCsWithNamespace(t, ctx, sb, b, "", quantity)
+}
+
+func RequireNumberOfPVCsWithNamespace(t *testing.T, ctx context.Context, sb testenv.DiffingSandbox, b ClusterBuilder, ns string, quantity int) {
+	pvcList, err := fetchPVCsWithNameSpace(ctx, sb, b, ns)
 	require.Nil(t, err)
 
 	boundPVCCount := 0
@@ -564,6 +601,10 @@ func RequireNumberOfPVCs(t *testing.T, ctx context.Context, sb testenv.DiffingSa
 }
 
 func fetchPVCs(ctx context.Context, sb testenv.DiffingSandbox, b ClusterBuilder) (*corev1.PersistentVolumeClaimList, error) {
+	return fetchPVCsWithNameSpace(ctx, sb, b, "")
+}
+
+func fetchPVCsWithNameSpace(ctx context.Context, sb testenv.DiffingSandbox, b ClusterBuilder, ns string) (*corev1.PersistentVolumeClaimList, error) {
 	cluster := b.Cluster()
 	var pvcList *corev1.PersistentVolumeClaimList
 
@@ -573,7 +614,7 @@ func fetchPVCs(ctx context.Context, sb testenv.DiffingSandbox, b ClusterBuilder)
 			return false, err
 		}
 
-		sts, err := fetchStatefulSet(sb, cluster.StatefulSetName())
+		sts, err := fetchStatefulSetWithNameSpace(sb, cluster.StatefulSetName(), ns)
 		if err != nil {
 			return false, err
 		}
