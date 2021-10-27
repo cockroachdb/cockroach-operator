@@ -17,6 +17,7 @@ limitations under the License.
 package main_test
 
 import (
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -74,11 +75,13 @@ func TestStopKindCluster(t *testing.T) {
 }
 
 func TestApplyManifest(t *testing.T) {
+	path := filepath.Join("some", "path.yaml")
+
 	fn := new(mockExecFn)
-	require.NoError(t, ApplyManifest("some/path.yaml").Apply(fn.exec))
+	require.NoError(t, ApplyManifest(path).Apply(fn.exec))
 
 	require.Equal(t, "kubectl", fn.cmd)
-	require.Equal(t, []string{"apply", "-f", "some/path.yaml"}, fn.args)
+	require.Equal(t, []string{"apply", "-f", path}, fn.args)
 }
 
 func TestWaitForDeploymentAvailable(t *testing.T) {

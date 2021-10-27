@@ -26,7 +26,6 @@ import (
 )
 
 func TestBoilerPlates(t *testing.T) {
-
 	project := os.Getenv("TEST_WORKSPACE")
 	if project == "" {
 		t.Fatal("unable to read TEST_WORKSPACE environment variable")
@@ -53,5 +52,4 @@ func TestBoilerPlates(t *testing.T) {
 		}
 		t.Fatal("Please update files with correct header")
 	}
-
 }

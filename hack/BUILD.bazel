@@ -109,6 +109,7 @@ sh_test(
     srcs = ["//hack/bin:golangci-lint"],
     args = [
         "run",
+        "--config .golangci.yaml",
         "--timeout 5m",
     ],
     data = ["@//:all-srcs"],
@@ -175,6 +176,7 @@ filegroup(
         "//hack/k8s:all-srcs",
         "//hack/release:all-srcs",
         "//hack/smoketest:all-srcs",
+        "//hack/update_crdb_versions:all-srcs",
     ],
     tags = ["automanaged"],
     visibility = ["//visibility:public"],

@@ -29,7 +29,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"unicode/utf8"
 )
 
 // ValidateHeaders represents a project that that needs to be scanned.
@@ -80,7 +79,6 @@ func NewValidateHeaders(fileNames *[]string, rootDir string, boilerplateDir stri
 // do not have the proper headers. A slice of files are returned that containes
 // the filenames of files that do not have a header that matches the boilerplate.
 func (v ValidateHeaders) Validate() (nonconformingFilesPtr *[]string, err error) {
-
 	// This regular expression is used repace a boilerplate year with the
 	// current year.
 	// TODO we may want to put a placeholder in the boilerplate and
@@ -153,7 +151,8 @@ func (v ValidateHeaders) readGlob(glob string, regex *regexp.Regexp) (filesPtr *
 	s := make(map[string][]string)
 	for _, f := range files {
 		key := path.Base(f)
-		key = strings.Split(key, ".")[1]
+		components := strings.Split(key, ".")
+		key = strings.Join(components[1:len(components)-1], ".")
 		content, err := readLines(f, regex)
 		if err != nil {
 			return nil, err
@@ -172,7 +171,7 @@ func (v ValidateHeaders) hasValidHeader(filename string) (bool, error) {
 
 	data := string(content)
 	basename := path.Base(filename)
-	extension := removeDot(path.Ext(filename))
+	extension := fullFileExt(filename)
 
 	if v.forceExtension != "" {
 		extension = v.forceExtension
@@ -235,10 +234,9 @@ func (v ValidateHeaders) getFiles() (filesPtr *[]string, err error) {
 		if info.IsDir() && SkippedPaths[info.Name()] {
 			return filepath.SkipDir
 		}
-
 		if info.IsDir() {
 			return nil
-		} else if fileExtensions[removeDot(path.Ext(p))] || fileExtensions[path.Base(p)] {
+		} else if fileExtensions[fullFileExt(p)] || fileExtensions[path.Base(p)] {
 			files = append(files, p)
 		}
 
@@ -251,18 +249,6 @@ func (v ValidateHeaders) getFiles() (filesPtr *[]string, err error) {
 	}
 
 	return &files, nil
-}
-
-func removeDot(str string) string {
-	if len(str) == 0 {
-		return str
-	}
-	first := str[0:1]
-	if first == "." {
-		_, i := utf8.DecodeRuneInString(str)
-		return str[i:]
-	}
-	return str
 }
 
 // readLines reads a whole file into memory
@@ -285,4 +271,9 @@ func readLines(path string, reg *regexp.Regexp) ([]string, error) {
 		lines = append(lines, text)
 	}
 	return lines, scanner.Err()
+}
+
+// everything after the first dot
+func fullFileExt(f string) string {
+	return strings.Join(strings.Split(path.Base(f), ".")[1:], ".")
 }
