@@ -35,6 +35,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## Added
 
 * Support for nodeSelectors
+* Support for Ingress (UI only)
 
 ## Changed
 

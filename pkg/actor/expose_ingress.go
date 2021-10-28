@@ -18,10 +18,12 @@ package actor
 
 import (
 	"context"
+
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/condition"
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
+	"github.com/cockroachdb/cockroach-operator/pkg/util"
 	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -32,15 +34,17 @@ import (
 
 func newExposeIngress(scheme *runtime.Scheme, cl client.Client, config *rest.Config, clientset kubernetes.Interface) Actor {
 	return &exposeIngress{
-		action: newAction(scheme, cl, nil, clientset),
-		config: config,
+		action:    newAction(scheme, cl, nil, clientset),
+		config:    config,
+		v1Ingress: util.CheckIfAPIVersionKindAvailable(config, "networking.k8s.io/v1", "Ingress"),
 	}
 }
 
 // exposeIngress initializes and reconciles the ingress resource needed for exposing the CockroachDB cluster service
 type exposeIngress struct {
 	action
-	config *rest.Config
+	config    *rest.Config
+	v1Ingress bool
 }
 
 // GetActionType returns the  api.ExposeIngressAction value used to set the cluster status errors
@@ -55,28 +59,36 @@ func (ei exposeIngress) Act(ctx context.Context, cluster *resource.Cluster, log 
 	r := resource.NewManagedKubeResource(ctx, ei.client, cluster, kube.AnnotatingPersister)
 
 	labelSelector := r.Labels.Selector(cluster.Spec().AdditionalLabels)
-	builder := resource.IngressBuilder{Cluster: cluster, Labels: labelSelector}
+	var builders []resource.Builder
+
+	// TODO: Add other SQL and GRPC ingress builders here
+	builders = append(builders, resource.UIIngressBuilder{
+		Cluster:   cluster,
+		Labels:    labelSelector,
+		V1Ingress: ei.v1Ingress,
+	})
 
 	if cluster.IsIngressNeeded() {
-		_, err := resource.Reconciler{
-			ManagedResource: r,
-			Builder:         builder,
-			Owner:           owner,
-			Scheme:          ei.scheme,
-		}.Reconcile()
 
-		if err != nil {
-			return errors.Wrapf(err, "failed to reconcile %s", builder.ResourceName())
+		for _, b := range builders {
+			_, err := resource.Reconciler{
+				ManagedResource: r,
+				Builder:         b,
+				Owner:           owner,
+				Scheme:          ei.scheme,
+			}.Reconcile()
+			if err != nil {
+				return errors.Wrapf(err, "failed to reconcile %s", b.ResourceName())
+			}
 		}
 
 		cluster.SetTrue(api.CrdbIngressExposedCondition)
 
-		if err = ei.client.Status().Update(ctx, cluster.Unwrap()); err != nil {
+		if err := ei.client.Status().Update(ctx, cluster.Unwrap()); err != nil {
 			msg := "failed to update IngressExposed condition in status"
 			log.Error(err, msg)
 			return errors.Wrap(err, msg)
 		}
-		return nil
 	}
 
 	ingressConditionTrue := condition.True(api.CrdbIngressExposedCondition, cluster.Status().Conditions)
@@ -84,12 +96,14 @@ func (ei exposeIngress) Act(ctx context.Context, cluster *resource.Cluster, log 
 	// if ingress not needed but expose ingress condition is true, then its case of ingress update.
 	// delete the ingress resource
 	if !cluster.IsIngressNeeded() && ingressConditionTrue {
-		ing := builder.Placeholder()
-		ing.SetNamespace(cluster.Namespace())
-		if err := ei.client.Delete(ctx, ing); err != nil {
-			msg := "failed to delete the ingress resource"
-			log.Error(err, msg)
-			return errors.Wrap(err, msg)
+		for _, b := range builders {
+			ing := b.Placeholder()
+			ing.SetNamespace(cluster.Namespace())
+			if err := ei.client.Delete(ctx, ing); err != nil {
+				msg := "failed to delete the ingress resource"
+				log.Error(err, msg)
+				return errors.Wrap(err, msg)
+			}
 		}
 
 		cluster.SetFalse(api.CrdbIngressExposedCondition)

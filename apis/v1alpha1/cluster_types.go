@@ -18,7 +18,7 @@ package v1alpha1
 
 import (
 	corev1 "k8s.io/api/core/v1"
-	v1beta1 "k8s.io/api/networking/v1beta1"
+	v1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -251,34 +251,27 @@ type Volume struct {
 
 // IngressConfig defines the configuration required to create ingress resource
 type IngressConfig struct {
-	// (Optional) IngressClassName to be used by ingress resource
-	// +optional
-	IngressClassName string `json:"ingressClassName,omitempty"`
-	// (Optional) Annotations related to ingress resource
-	// +optional
-	Annotations map[string]string `json:"annotations,omitempty"`
-	// (Optional) Annotations resource related annotations
-	// +optional
-	TLS []v1beta1.IngressTLS `json:"tls,omitempty"`
 	// (Optional) HTTP port (UI) to be exposed via ingress
 	// +optional
-	HTTP *IngressService `json:"http,omitempty"`
-	// (Optional) GRPC port to be exposed via ingress
-	// +optional
-	GRPC *IngressService `json:"grpc,omitempty"`
-	// (Optional) SQL port to be exposed via ingress
-	// +optional
-	SQL *IngressService `json:"sql,omitempty"`
+	UI *Ingress `json:"ui,omitempty"`
+
+	// TODO: Add other ingress config for SQL and GRPC here when implemented
 }
 
 // +kubebuilder:object:generate=true
 // +k8s:openapi-gen=true
 // +k8s:deepcopy-gen=true
 
-// IngressService defines the service to be exposed via ingress
-type IngressService struct {
-	// +required
-	Enabled bool `json:"enabled"`
+type Ingress struct {
+	// (Optional) IngressClassName to be used by ingress resource
+	// +optional
+	IngressClassName string `json:"ingressClassName,omitempty"`
+	// (Optional) Annotations related to ingress resource
+	// +optional
+	Annotations map[string]string `json:"annotations,omitempty"`
+	// (Optional) TLS describes the TLS certificate info
+	// +optional
+	TLS []v1.IngressTLS `json:"tls,omitempty"`
 	// host is host to be used for exposing service
 	// +required
 	Host string `json:"host"`

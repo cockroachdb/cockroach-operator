@@ -50,40 +50,13 @@ func TestValidateIngress(t *testing.T) {
 		expected []error
 	}{
 		{
-			name: "ingress config with http host missing",
+			name: "ingress config with UI host missing",
 			cluster: &CrdbCluster{
 				Spec: CrdbClusterSpec{
-					Ingress: &IngressConfig{HTTP: &IngressService{Enabled: true}},
+					Ingress: &IngressConfig{UI: &Ingress{IngressClassName: "abc"}},
 				},
 			},
-			expected: []error{fmt.Errorf("host required for http")},
-		},
-		{
-			name: "ingress config with grpc host missing",
-			cluster: &CrdbCluster{
-				Spec: CrdbClusterSpec{
-					Ingress: &IngressConfig{GRPC: &IngressService{Enabled: true}},
-				},
-			},
-			expected: []error{fmt.Errorf("host required for grpc")},
-		},
-		{
-			name: "ingress config with http host missing",
-			cluster: &CrdbCluster{
-				Spec: CrdbClusterSpec{
-					Ingress: &IngressConfig{SQL: &IngressService{Enabled: true}},
-				},
-			},
-			expected: []error{fmt.Errorf("host required for sql")},
-		},
-		{
-			name: "ingress config with nil http, grpc and sql",
-			cluster: &CrdbCluster{
-				Spec: CrdbClusterSpec{
-					Ingress: &IngressConfig{},
-				},
-			},
-			expected: []error{fmt.Errorf("atleast one of http, grpc and sql should be enabled when ingress is set")},
+			expected: []error{fmt.Errorf("host required for UI")},
 		},
 	}
 

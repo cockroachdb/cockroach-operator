@@ -18,6 +18,7 @@ package actor_test
 
 import (
 	"context"
+
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/actor"
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
@@ -329,6 +330,31 @@ func TestNeedsInitialization(t *testing.T) {
 	require.Equal(t, api.VersionCheckerAction, actor.GetActionType())
 }
 
+func TestNeedsIngress(t *testing.T) {
+	cluster, director, _ := createTestDirectorAndStableCluster(t)
+	updated := cluster.Unwrap()
+
+	// Trigger expose ingress by adding ingressConfig
+	updated.Spec.Ingress = &api.IngressConfig{
+		UI: &api.Ingress{
+			IngressClassName: "test-class",
+			Annotations:      map[string]string{"key": "value"},
+			TLS:              nil,
+			Host:             "ui.test.com",
+		}}
+
+	newCluster := resource.NewCluster(updated)
+	actor, err := director.GetActorToExecute(context.Background(), &newCluster, zapr.NewLogger(zaptest.NewLogger(t)))
+	require.Nil(t, err)
+	require.Equal(t, api.ExposeIngressAction, actor.GetActionType())
+
+	// Make a change that disables this actor, and check that it's no longer triggered
+	newCluster.SetFalse(api.CrdbInitializedCondition)
+	actor, err = director.GetActorToExecute(context.Background(), &newCluster, zapr.NewLogger(zaptest.NewLogger(t)))
+	require.Nil(t, err)
+	require.Equal(t, api.InitializeAction, actor.GetActionType())
+}
+
 // Make successive changes to the cluster and check that each change triggers an actor earlier in the order
 func TestOrderOfActors(t *testing.T) {
 	cluster, director, clientset := createTestDirectorAndStableCluster(t)
@@ -338,6 +364,21 @@ func TestOrderOfActors(t *testing.T) {
 	require.Nil(t, err)
 	require.Equal(t, nil, actor)
 
+	// Trigger expose ingress by adding ingressConfig
+	updated := cluster.Unwrap()
+	updated.Spec.Ingress = &api.IngressConfig{
+		UI: &api.Ingress{
+			IngressClassName: "test-class",
+			Annotations:      map[string]string{"key": "value"},
+			TLS:              nil,
+			Host:             "ui.test.com",
+		}}
+
+	newCluster := resource.NewCluster(updated)
+	actor, err = director.GetActorToExecute(context.Background(), &newCluster, zapr.NewLogger(zaptest.NewLogger(t)))
+	require.Nil(t, err)
+	require.Equal(t, api.ExposeIngressAction, actor.GetActionType())
+
 	// Trigger initialization by setting the condition to false
 	cluster.SetFalse(api.CrdbInitializedCondition)
 	actor, err = director.GetActorToExecute(context.Background(), cluster, zapr.NewLogger(zaptest.NewLogger(t)))
@@ -345,9 +386,9 @@ func TestOrderOfActors(t *testing.T) {
 	require.Equal(t, api.InitializeAction, actor.GetActionType())
 
 	// Trigger deploy by increasing nodes
-	updated := cluster.Unwrap()
+	updated = cluster.Unwrap()
 	updated.Spec.Nodes = 5
-	newCluster := resource.NewCluster(updated)
+	newCluster = resource.NewCluster(updated)
 	actor, err = director.GetActorToExecute(context.Background(), &newCluster, zapr.NewLogger(zaptest.NewLogger(t)))
 	require.Nil(t, err)
 	require.Equal(t, api.DeployAction, actor.GetActionType())

@@ -130,6 +130,13 @@ func (cd *clusterDirector) GetActorToExecute(ctx context.Context, cluster *resou
 		return cd.actors[api.InitializeAction], nil
 	}
 
+	needsIngress, err := cd.needsIngress(ctx, cluster)
+	if err != nil {
+		return nil, err
+	} else if needsIngress {
+		return cd.actors[api.ExposeIngressAction], nil
+	}
+
 	return nil, nil
 }
 
@@ -318,12 +325,6 @@ func (cd *clusterDirector) needsDeploy(ctx context.Context, cluster *resource.Cl
 		resource.PdbBuilder{Cluster: cluster, Selector: labelSelector},
 	}
 
-	if featureVersionValidatorEnabled && conditionVersionCheckedTrue && conditionInitializedTrue {
-		actorsToExecute = append(actorsToExecute, cd.actors[api.ExposeIngressAction])
-	} else if !featureVersionValidatorEnabled && conditionInitializedTrue {
-		actorsToExecute = append(actorsToExecute, cd.actors[api.InitializeAction])
-	}
-
 	for _, b := range builders {
 		hasChanged, err := resource.Reconciler{
 			ManagedResource: r,
@@ -358,4 +359,51 @@ func (cd *clusterDirector) needsInitialization(cluster *resource.Cluster) bool {
 		return false
 	}
 	return true
+}
+
+func (cd *clusterDirector) needsIngress(ctx context.Context, cluster *resource.Cluster) (bool, error) {
+	conditions := cluster.Status().Conditions
+	conditionInitializedTrue := condition.True(api.CrdbInitializedCondition, conditions)
+	ingressConditionTrue := condition.True(api.CrdbIngressExposedCondition, conditions)
+
+	// In order to expose ingress,
+	// - the cluster initialized condition must be true
+	// - if there is a change in ingress resource
+
+	if !conditionInitializedTrue {
+		return false, nil
+	}
+
+	// this is the case of update when ingress is removed from CR
+	if !cluster.IsIngressNeeded() && ingressConditionTrue {
+		return true, nil
+	}
+
+	v1Ingress := cd.actors[api.ExposeIngressAction].(*exposeIngress).v1Ingress
+
+	r := resource.NewManagedKubeResource(ctx, cd.client, cluster, kube.AnnotatingPersister)
+
+	labelSelector := r.Labels.Selector(cluster.Spec().AdditionalLabels)
+	builders := []resource.Builder{
+		resource.UIIngressBuilder{Cluster: cluster, Labels: labelSelector, V1Ingress: v1Ingress},
+	}
+
+	if cluster.IsIngressNeeded() {
+		for _, b := range builders {
+			hasChanged, err := resource.Reconciler{
+				ManagedResource: r,
+				Builder:         b,
+				Owner:           cluster.Unwrap(),
+				Scheme:          cd.scheme,
+			}.HasChanged()
+
+			if err != nil {
+				return false, err
+			} else if hasChanged {
+				return true, nil
+			}
+		}
+	}
+
+	return false, nil
 }

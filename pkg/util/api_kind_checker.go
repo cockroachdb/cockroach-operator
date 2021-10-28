@@ -18,6 +18,7 @@ package util
 
 import (
 	"fmt"
+	
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/rest"
@@ -37,6 +38,7 @@ func CheckIfAPIVersionKindAvailable(config *rest.Config, groupVersion, kind stri
 			fmt.Printf("%s not found", groupVersion)
 			return
 		}
+		return found
 	}
 
 	// if kind is empty then return GroupVersion availability

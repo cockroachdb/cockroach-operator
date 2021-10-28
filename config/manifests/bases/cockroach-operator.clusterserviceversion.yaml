@@ -89,6 +89,10 @@ spec:
       - description: Container image information
         displayName: Cockroach Database Image
         path: image
+      - description: (Optional) Ingress defines the Ingress configuration used to
+          expose the services using Ingress
+        displayName: Cockroach Database Ingress
+        path: ingress
       - description: (Optional) If specified, the pod's nodeSelector
         displayName: Map of nodeSelectors to match when scheduling pods on nodes
         path: nodeSelector

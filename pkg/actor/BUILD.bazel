@@ -61,7 +61,6 @@ go_test(
         "deploy_test.go",
         "director_test.go",
         "export_test.go",
-        "expose_ingress_test.go",
         "partitioned_update_test.go",
         "setup_rbac_test.go",
     ],

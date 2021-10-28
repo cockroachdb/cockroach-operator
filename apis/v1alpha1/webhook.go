@@ -18,7 +18,6 @@ package v1alpha1
 
 import (
 	"fmt"
-	
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
@@ -126,26 +125,16 @@ func (r *CrdbCluster) ValidateDelete() error {
 }
 
 // ValidateIngress validates the ingress configuration used to create ingress resource
-func (r *CrdbCluster) ValidateIngress() []error {
+func (r *CrdbCluster) ValidateIngress() (errors []error) {
 	webhookLog.Info("validate ingress", "name", r.Name)
 
-	if r.Spec.Ingress.HTTP == nil && r.Spec.Ingress.SQL == nil && r.Spec.Ingress.GRPC == nil {
-			return []error{fmt.Errorf("atleast one of http, grpc and sql should be enabled when ingress is set")}
+	if r.Spec.Ingress.UI == nil {
+		errors = append(errors, fmt.Errorf("UI related ingress config missing"))
 	}
 
-	var errors []error
-
-	if r.Spec.Ingress.HTTP != nil && r.Spec.Ingress.HTTP.Enabled && r.Spec.Ingress.HTTP.Host == "" {
-		errors = append(errors, fmt.Errorf("host required for http"))
+	if r.Spec.Ingress.UI.Host == "" {
+		errors = append(errors, fmt.Errorf("host required for UI"))
 	}
 
-	if r.Spec.Ingress.GRPC != nil && r.Spec.Ingress.GRPC.Enabled && r.Spec.Ingress.GRPC.Host == "" {
-		errors = append(errors, fmt.Errorf("host required for grpc"))
-	}
-
-	if r.Spec.Ingress.SQL != nil && r.Spec.Ingress.SQL.Enabled && r.Spec.Ingress.SQL.Host == "" {
-		errors = append(errors, fmt.Errorf("host required for sql"))
-	}
-
-	return errors
+	return
 }

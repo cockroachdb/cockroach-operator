@@ -170,7 +170,7 @@ func (cluster Cluster) JobName() string {
 	return slug.Make(fmt.Sprintf("%s-%s-%d", cluster.Name(), VersionCheckJobName, getTimeHashInMinutes(time.Now())))
 }
 
-func (cluster Cluster) IngressName() string {
+func (cluster Cluster) IngressSuffix() string {
 	return cluster.Name()
 }
 
