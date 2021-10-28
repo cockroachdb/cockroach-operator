@@ -17,7 +17,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Deleted
 
-* Versioned Dockerfiles for OperShift
+* Versioned Dockerfiles for OpenShift
 
 # [v2.3.0](https://github.com/cockroachdb/cockroach-operator/compare/v2.2.1...v2.3.0)
 
