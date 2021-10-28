@@ -64,6 +64,9 @@ type ClusterReconciler struct {
 // +kubebuilder:rbac:groups=core,resources=pods/exec,verbs=create
 // +kubebuilder:rbac:groups=core,resources=pods/log,verbs=get
 // +kubebuilder:rbac:groups=core,resources=nodes,verbs=get;list
+// +kubebuilder:rbac:groups=core,resources=serviceaccounts,verbs=get;list;create;watch
+// +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles,verbs=get;list;create;watch
+// +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=get;list;create;watch
 // +kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apps,resources=statefulsets/scale,verbs=get;watch;update
 // +kubebuilder:rbac:groups=apps,resources=statefulsets/status,verbs=get;update;patch
@@ -76,6 +79,7 @@ type ClusterReconciler struct {
 // +kubebuilder:rbac:groups=batch,resources=jobs/finalizers,verbs=get;list;watch
 // +kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=mutatingwebhookconfigurations,verbs=get;update;patch;
 // +kubebuilder:rbac:groups=admissionregistration.k8s.io,resources=validatingwebhookconfigurations,verbs=get;update;patch;
+// +kubebuilder:rbac:groups=security.openshift.io,resources=securitycontextconstraints,verbs=use
 
 // Reconcile is the reconciliation loop entry point for cluster CRDs.  It fetches the current cluster resources
 // and uses its state to interact with the world via a set of actions implemented by `Actor`s

@@ -210,7 +210,7 @@ func (b StatefulSetBuilder) makePodTemplate() corev1.PodTemplateSpec {
 			TerminationGracePeriodSeconds: ptr.Int64(60),
 			Containers:                    b.MakeContainers(),
 			AutomountServiceAccountToken:  ptr.Bool(false),
-			ServiceAccountName:            "cockroach-database-sa",
+			ServiceAccountName:            b.ServiceAccountName(),
 		},
 	}
 

@@ -81,7 +81,7 @@ spec:
       securityContext:
         fsGroup: 1000581000
         runAsUser: 1000581000
-      serviceAccountName: cockroach-database-sa
+      serviceAccountName: test-cluster-sa
       terminationGracePeriodSeconds: 60
       volumes:
       - name: datadir

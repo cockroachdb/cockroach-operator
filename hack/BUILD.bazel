@@ -114,9 +114,10 @@ sh_test(
     ],
     data = ["@//:all-srcs"],
     env = {
-        "GOLANGCI_LINT_CACHE": "/tmp",
-        "XDG_CACHE_HOME": "/tmp",
-        "GOPATH": "/tmp",
+        "GOLANGCI_LINT_CACHE": "/tmp/ci_lint_cache",
+        "XDG_CACHE_HOME": "/tmp/xdgcache",
+        "GOPATH": "/tmp/gopath",
+        "GOCACHE": "/tmp/gocache",
     },
 )
 

@@ -18,9 +18,10 @@ package actor_test
 
 import (
 	"context"
+	"testing"
+
 	"github.com/go-logr/zapr"
 	"go.uber.org/zap/zaptest"
-	"testing"
 
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/actor"
