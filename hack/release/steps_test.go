@@ -121,8 +121,7 @@ func TestGenerateFiles(t *testing.T) {
 		version string
 		args    []string
 	}{
-		{version: "2.1.0", args: []string{"release/gen-files", "CHANNELS=beta,stable", "DEFAULT_CHANNEL=stable"}},
-		{version: "2.1.0-beta.1", args: []string{"release/gen-files", "CHANNELS=beta", "DEFAULT_CHANNEL=stable"}},
+		{version: "2.1.0", args: []string{"release/gen-files", "CHANNELS=stable", "DEFAULT_CHANNEL=stable"}},
 	}
 
 	for _, tt := range tests {

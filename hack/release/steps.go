@@ -26,7 +26,7 @@ import (
 )
 
 var (
-	versionRegxp = regexp.MustCompile(`^\d+\.\d+\.\d+(-beta\.\d+)?$`)
+	versionRegxp = regexp.MustCompile(`^\d+\.\d+\.\d+$`)
 )
 
 // Step defines an action to be taken during the release process
@@ -112,11 +112,8 @@ func CreateReleaseBranch(fn ExecFn) Step {
 // GenerateFiles runs make release/gen-files passing the appropriate channel options based on the version.
 func GenerateFiles(fn ExecFn) Step {
 	return StepFn(func(version string) error {
-		ch := "beta,stable"
+		ch := "stable"
 		defaultCh := "stable"
-		if strings.Contains(version, "-beta") {
-			ch = "beta"
-		}
 
 		return fn(
 			"make",
