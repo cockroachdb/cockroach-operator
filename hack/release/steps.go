@@ -55,7 +55,7 @@ type FileFn func(path string) ([]byte, error)
 func ValidateVersion() Step {
 	return StepFn(func(version string) error {
 		if !versionRegxp.MatchString(version) {
-			return fmt.Errorf("invalid version '%s'. Must be of the form N.N.N(-beta.N)", version)
+			return fmt.Errorf("invalid version '%s'. Must be of the form N.N.N", version)
 		}
 
 		return nil
@@ -103,7 +103,7 @@ func CreateReleaseBranch(fn ExecFn) Step {
 	return StepFn(func(version string) error {
 		return fn(
 			"git",
-			[]string{"checkout", "-b", fmt.Sprintf("release-%s", version), "origin/master"},
+			[]string{"checkout", "-b", fmt.Sprintf("release-%s", version)},
 			os.Environ(),
 		)
 	})
