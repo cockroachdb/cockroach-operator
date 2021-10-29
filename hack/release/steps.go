@@ -103,7 +103,7 @@ func CreateReleaseBranch(fn ExecFn) Step {
 	return StepFn(func(version string) error {
 		return fn(
 			"git",
-			[]string{"checkout", "-b", fmt.Sprintf("release-%s", version)},
+			[]string{"checkout", "-b", fmt.Sprintf("release-%s", version), "origin/master"},
 			os.Environ(),
 		)
 	})
