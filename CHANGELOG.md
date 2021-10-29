@@ -7,9 +7,17 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 # [Unreleased](https://github.com/cockroachdb/cockroach-operator/compare/v2.3.0...master)
 
+## Changed
+
+* Deprecated legacy OpenShift packaging format in favor of new bundle format
+
 ## Fixed
 
 * Boilerplate test after updating to Go 1.17
+
+## Deleted
+
+* Versioned Dockerfiles for OpenShift
 
 # [v2.3.0](https://github.com/cockroachdb/cockroach-operator/compare/v2.2.1...v2.3.0)
 
