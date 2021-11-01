@@ -174,7 +174,7 @@ Subsequent steps will need to be carried out in TeamCity and RedHat Connect.
 ## Creating a new release PR
 
 From a clean, up-to-date master (seriously...check), run the following where `<version>` is the desired new version
-(e.g. `2.2.0` or `2.2.1-beta.1`).
+(e.g. `2.2.0`).
 
 ```
 $ make release/new VERSION=<version>
