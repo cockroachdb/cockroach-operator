@@ -10,6 +10,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## Changed
 
 * Deprecated legacy OpenShift packaging format in favor of new bundle format
+* Removed unused beta channel
 
 ## Fixed
 

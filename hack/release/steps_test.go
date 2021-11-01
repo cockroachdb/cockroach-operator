@@ -47,7 +47,7 @@ func TestValidateVersion(t *testing.T) {
 		isErr   bool
 	}{
 		{version: "20.1.3"},
-		{version: "20.1.3-beta.1"},
+		{version: "20.1.3-beta.1", isErr: true},
 		{version: "v20.1.3", isErr: true},
 		{version: "20.1.3-beta", isErr: true},
 		{version: "2.3.2-beta.A", isErr: true},
@@ -107,10 +107,10 @@ func TestUpdateVersion(t *testing.T) {
 
 func TestCreateReleaseBranch(t *testing.T) {
 	fn := new(mockExecFn)
-	require.NoError(t, CreateReleaseBranch(fn.exec).Apply("1.2.3-beta.1"))
+	require.NoError(t, CreateReleaseBranch(fn.exec).Apply("1.2.3"))
 
 	require.Equal(t, "git", fn.cmd)
-	require.Equal(t, []string{"checkout", "-b", "release-1.2.3-beta.1", "origin/master"}, fn.args)
+	require.Equal(t, []string{"checkout", "-b", "release-1.2.3", "origin/master"}, fn.args)
 	require.Equal(t, os.Environ(), fn.env)
 }
 
@@ -121,8 +121,7 @@ func TestGenerateFiles(t *testing.T) {
 		version string
 		args    []string
 	}{
-		{version: "2.1.0", args: []string{"release/gen-files", "CHANNELS=beta,stable", "DEFAULT_CHANNEL=stable"}},
-		{version: "2.1.0-beta.1", args: []string{"release/gen-files", "CHANNELS=beta", "DEFAULT_CHANNEL=stable"}},
+		{version: "2.1.0", args: []string{"release/gen-files", "CHANNELS=stable", "DEFAULT_CHANNEL=stable"}},
 	}
 
 	for _, tt := range tests {
