@@ -58,6 +58,14 @@ rules:
 - apiGroups:
   - apps
   resources:
+  - statefulsets/scale
+  verbs:
+  - get
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
   - statefulsets/status
   verbs:
   - get
