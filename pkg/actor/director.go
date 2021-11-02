@@ -18,12 +18,14 @@ package actor
 
 import (
 	"context"
+
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/condition"
 	"github.com/cockroachdb/cockroach-operator/pkg/features"
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -50,6 +52,7 @@ func NewDirector(scheme *runtime.Scheme, cl client.Client, config *rest.Config, 
 	kd := kube.NewKubernetesDistribution()
 	actors := map[api.ActionType]Actor{
 		api.ClusterRestartAction:    newClusterRestart(cl, config, clientset),
+		api.SetupRBACAction:         newSetupRBACAction(scheme, cl),
 		api.DecommissionAction:      newDecommission(cl, config, clientset),
 		api.VersionCheckerAction:    newVersionChecker(scheme, cl, clientset),
 		api.GenerateCertAction:      newGenerateCert(cl),
@@ -71,6 +74,13 @@ func NewDirector(scheme *runtime.Scheme, cl client.Client, config *rest.Config, 
 func (cd *clusterDirector) GetActorToExecute(ctx context.Context, cluster *resource.Cluster, log logr.Logger) (Actor, error) {
 	if cd.needsRestart(cluster) {
 		return cd.actors[api.ClusterRestartAction], nil
+	}
+
+	needsRBACSetup, err := cd.needsRBACSetup(cluster)
+	if err != nil {
+		return nil, err
+	} else if needsRBACSetup {
+		return cd.actors[api.SetupRBACAction], nil
 	}
 
 	stsKey := kubetypes.NamespacedName{
@@ -145,6 +155,16 @@ func (cd *clusterDirector) needsRestart(cluster *resource.Cluster) bool {
 	}
 
 	return cluster.GetAnnotationRestartType() != ""
+}
+
+func (cd *clusterDirector) needsRBACSetup(cluster *resource.Cluster) (bool, error) {
+	serviceAccounts := cd.clientset.CoreV1().ServiceAccounts(cluster.Namespace())
+	if _, err := serviceAccounts.Get(context.Background(), cluster.ServiceAccountName(), metav1.GetOptions{}); kube.IsNotFound(err) {
+		return true, nil
+	} else if err != nil {
+		return false, err
+	}
+	return false, nil
 }
 
 func (cd *clusterDirector) needsDecommission(cluster *resource.Cluster, ss *appsv1.StatefulSet) bool {

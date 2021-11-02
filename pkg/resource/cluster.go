@@ -145,8 +145,20 @@ func (cluster Cluster) DiscoveryServiceName() string {
 	return cluster.Name()
 }
 
+func (cluster Cluster) RoleName() string {
+	return fmt.Sprintf("%s-role", cluster.Name())
+}
+
+func (cluster Cluster) RoleBindingName() string {
+	return cluster.RoleName() + "-binding"
+}
+
 func (cluster Cluster) PublicServiceName() string {
 	return fmt.Sprintf("%s-public", cluster.Name())
+}
+
+func (cluster Cluster) ServiceAccountName() string {
+	return fmt.Sprintf("%s-sa", cluster.Name())
 }
 
 func (cluster Cluster) StatefulSetName() string {

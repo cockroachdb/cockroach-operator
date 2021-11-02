@@ -14,5 +14,4 @@
 ---
 resources:
   - operator.yaml
-  - database.yaml
   - role.yaml

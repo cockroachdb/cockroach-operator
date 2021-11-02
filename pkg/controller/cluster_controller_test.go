@@ -19,10 +19,11 @@ package controller_test
 import (
 	"context"
 	"errors"
-	"github.com/go-logr/logr"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 	"testing"
 	"time"
+
+	"github.com/go-logr/logr"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/actor"
