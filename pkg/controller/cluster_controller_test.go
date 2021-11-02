@@ -61,6 +61,10 @@ type fakeDirector struct {
 	actorToExecute actor.Actor
 }
 
+func (fd *fakeDirector) GetActor(aType api.ActionType) actor.Actor {
+	return fd.actorToExecute
+}
+
 func (fd *fakeDirector) GetActorToExecute(_ context.Context, _ *resource.Cluster, _ logr.Logger) (actor.Actor, error) {
 	return fd.actorToExecute, nil
 }
