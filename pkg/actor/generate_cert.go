@@ -59,7 +59,7 @@ type generateCert struct {
 
 //GetActionType returns api.RequestCertAction action used to set the cluster status errors
 func (rc *generateCert) GetActionType() api.ActionType {
-	return api.RequestCertAction
+	return api.GenerateCertAction
 }
 
 // Act func generates the various certificates required and then stores

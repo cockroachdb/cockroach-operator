@@ -58,21 +58,15 @@ func (a *fakeActor) GetActionType() api.ActionType {
 }
 
 type fakeDirector struct {
-	actorsToExecute []actor.Actor
+	actorToExecute actor.Actor
 }
 
 func (fd *fakeDirector) GetActor(aType api.ActionType) actor.Actor {
-	for _, a := range fd.actorsToExecute {
-		if a.GetActionType() == aType {
-			return a
-		}
-	}
-
-	panic("Actor not found")
+	return fd.actorToExecute
 }
 
-func (fd *fakeDirector) GetActorsToExecute(cluster *resource.Cluster) []actor.Actor {
-	return fd.actorsToExecute
+func (fd *fakeDirector) GetActorToExecute(_ context.Context, _ *resource.Cluster, _ logr.Logger) (actor.Actor, error) {
+	return fd.actorToExecute, nil
 }
 
 func TestReconcile(t *testing.T) {
@@ -145,7 +139,7 @@ func TestReconcile(t *testing.T) {
 				Log:    log,
 				Scheme: scheme,
 				Director: &fakeDirector{
-					actorsToExecute: []actor.Actor{&tt.action},
+					actorToExecute: &tt.action,
 				},
 			}
 

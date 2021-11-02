@@ -64,21 +64,21 @@ func (kd kubernetesDistribution) Get(ctx context.Context, clientset kubernetes.I
 	kubeletVersion := node.Status.NodeInfo.KubeletVersion
 
 	if strings.Contains(kubeletVersion, "gke") {
-		return "gke", nil
+		return "kubernetes-operator-gke", nil
 	} else if strings.Contains(kubeletVersion, "aks") {
-		return "aks", nil
+		return "kubernetes-operator-aks", nil
 	} else if strings.Contains(kubeletVersion, "eks") {
-		return "eks", nil
+		return "kubernetes-operator-eks", nil
 	} else {
 		for key := range node.Annotations {
 			if strings.Contains("openshift", key) {
-				return "openshift", nil
+				return "kubernetes-operator-openshift", nil
 			}
 		}
 	}
 
 	log.V(int(zapcore.WarnLevel)).Info("found unknown kubernetes distribution")
-	return "unknown", nil
+	return "kubernetes-operator-unknown", nil
 }
 
 type mockKubernetesDistribution struct{}
