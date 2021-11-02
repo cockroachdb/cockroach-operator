@@ -69,8 +69,8 @@ func (fd *fakeDirector) GetActorToExecute(_ context.Context, _ *resource.Cluster
 	return fd.actorToExecute, nil
 }
 
-func (fd *fakeDirector) ActAtomically(ctx context.Context, cluster *resource.Cluster, a actor.Actor) error {
-	return a.Act(ctx, cluster)
+func (fd *fakeDirector) ActAtomically(ctx context.Context, cluster *resource.Cluster, a actor.Actor, _ logr.Logger) error {
+	return a.Act(ctx, cluster, log.NullLogger{})
 }
 
 func TestReconcile(t *testing.T) {

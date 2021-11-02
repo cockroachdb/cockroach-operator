@@ -153,7 +153,7 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req reconcile.Request
 	ctx = actor.ContextWithCancelFn(ctx, cancel)
 
 	log.Info(fmt.Sprintf("Running action with name: %s", actorToExecute.GetActionType()))
-	if err := actorToExecute.Act(ctx, &cluster, log); err != nil {
+	if err := r.Director.ActAtomically(ctx, &cluster, actorToExecute, log); err != nil {
 		// Save the error on the Status for each action
 		log.Info("Error on action", "Action", actorToExecute.GetActionType(), "err", err.Error())
 		cluster.SetActionFailed(actorToExecute.GetActionType(), err.Error())
