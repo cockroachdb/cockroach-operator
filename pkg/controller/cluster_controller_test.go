@@ -19,10 +19,11 @@ package controller_test
 import (
 	"context"
 	"errors"
-	"github.com/go-logr/logr"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 	"testing"
 	"time"
+
+	"github.com/go-logr/logr"
+	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/actor"
@@ -58,6 +59,16 @@ func (a *fakeActor) GetActionType() api.ActionType {
 
 type fakeDirector struct {
 	actorsToExecute []actor.Actor
+}
+
+func (fd *fakeDirector) GetActor(aType api.ActionType) actor.Actor {
+	for _, a := range fd.actorsToExecute {
+		if a.GetActionType() == aType {
+			return a
+		}
+	}
+
+	panic("Actor not found")
 }
 
 func (fd *fakeDirector) GetActorsToExecute(cluster *resource.Cluster) []actor.Actor {

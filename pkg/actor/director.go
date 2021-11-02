@@ -17,12 +17,15 @@ limitations under the License.
 package actor
 
 import (
+	"context"
+
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/condition"
 	"github.com/cockroachdb/cockroach-operator/pkg/features"
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -30,6 +33,7 @@ import (
 )
 
 type Director interface {
+	GetActor(api.ActionType) Actor
 	GetActorsToExecute(*resource.Cluster) []Actor
 }
 
@@ -47,6 +51,7 @@ func NewDirector(scheme *runtime.Scheme, cl client.Client, config *rest.Config, 
 	actors := map[api.ActionType]Actor{
 		api.DecommissionAction:      newDecommission(cl, config, clientset),
 		api.VersionCheckerAction:    newVersionChecker(scheme, cl, clientset),
+		api.SetupRBACAction:         newSetupRBACAction(scheme, cl),
 		api.GenerateCertAction:      newGenerateCert(cl),
 		api.PartitionedUpdateAction: newPartitionedUpdate(cl, config, clientset),
 		api.ResizePVCAction:         newResizePVC(scheme, cl, clientset),
@@ -64,6 +69,10 @@ func NewDirector(scheme *runtime.Scheme, cl client.Client, config *rest.Config, 
 	}
 }
 
+func (cd *clusterDirector) GetActor(aType api.ActionType) Actor {
+	return cd.actors[aType]
+}
+
 func (cd *clusterDirector) GetActorsToExecute(cluster *resource.Cluster) []Actor {
 	conditions := cluster.Status().Conditions
 	featureVersionValidatorEnabled := utilfeature.DefaultMutableFeatureGate.Enabled(features.CrdbVersionValidator)
@@ -77,6 +86,13 @@ func (cd *clusterDirector) GetActorsToExecute(cluster *resource.Cluster) []Actor
 	conditionCertificateGeneratedTrue := condition.True(api.CertificateGenerated, conditions)
 
 	var actorsToExecute []Actor
+
+	// we need to ensure the SA exists early on since the version checker job uses it which happens before the deploy.
+	ctx := context.Background()
+	serviceAccounts := cd.clientset.CoreV1().ServiceAccounts(cluster.Namespace())
+	if _, err := serviceAccounts.Get(ctx, cluster.ServiceAccountName(), metav1.GetOptions{}); kube.IsNotFound(err) {
+		actorsToExecute = append(actorsToExecute, cd.GetActor(api.SetupRBACAction))
+	}
 
 	if featureDecommissionEnabled && conditionInitializedTrue {
 		actorsToExecute = append(actorsToExecute, cd.actors[api.DecommissionAction])

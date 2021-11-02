@@ -170,6 +170,7 @@ func TestAllConditionCombinations(t *testing.T) {
 		}
 
 		actors := director.GetActorsToExecute(cluster)
-		require.Equal(t, test.expectedActors, actorTypes(actors), fmt.Sprintf("true conditions: %v", test.trueConditions))
+		expActors := append([]api.ActionType{api.SetupRBACAction}, test.expectedActors...)
+		require.Equal(t, expActors, actorTypes(actors), fmt.Sprintf("true conditions: %v", test.trueConditions))
 	}
 }
