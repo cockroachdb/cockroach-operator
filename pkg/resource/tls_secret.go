@@ -27,7 +27,7 @@ const (
 	caKey    = "ca.key"
 )
 
-// CreateTLSSecrete returns a TLSSecreat struct that is
+// CreateTLSSecret returns a TLSSecreat struct that is
 // used to store the certs via secrets.
 func CreateTLSSecret(name string, r Resource) *TLSSecret {
 

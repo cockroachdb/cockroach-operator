@@ -19,6 +19,7 @@ package actor
 import (
 	"context"
 	"fmt"
+	"github.com/go-logr/logr"
 	"k8s.io/client-go/util/retry"
 	"strconv"
 	"strings"
@@ -38,18 +39,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func newInitialize(scheme *runtime.Scheme, cl client.Client, config *rest.Config) Actor {
+func newInitialize(scheme *runtime.Scheme, cl client.Client, config *rest.Config, clientset kubernetes.Interface) Actor {
 	return &initialize{
-		action: newAction("initialize", scheme, cl),
-		config: config,
+		action: newAction(scheme, cl, config, clientset),
 	}
 }
 
 // initialize performs the initialization of the new cluster
 type initialize struct {
 	action
-
-	config *rest.Config
 }
 
 // GetActionType returns the  api.InitializeAction value used to set the cluster status errors
@@ -57,8 +55,7 @@ func (init initialize) GetActionType() api.ActionType {
 	return api.InitializeAction
 }
 
-func (init initialize) Act(ctx context.Context, cluster *resource.Cluster) error {
-	log := init.log.WithValues("CrdbCluster", cluster.ObjectKey())
+func (init initialize) Act(ctx context.Context, cluster *resource.Cluster, log logr.Logger) error {
 	log.V(DEBUGLEVEL).Info("initializing CockroachDB")
 
 	stsName := cluster.StatefulSetName()
@@ -73,14 +70,7 @@ func (init initialize) Act(ctx context.Context, cluster *resource.Cluster) error
 		return kube.IgnoreNotFound(err)
 	}
 
-	clientset, err := kubernetes.NewForConfig(init.config)
-	if err != nil {
-		msg := "cannot create k8s client"
-		log.Error(err, msg)
-		return errors.Wrap(err, msg)
-	}
-
-	pods, err := clientset.CoreV1().Pods(ss.Namespace).List(ctx, metav1.ListOptions{
+	pods, err := init.clientset.CoreV1().Pods(ss.Namespace).List(ctx, metav1.ListOptions{
 		LabelSelector: labels.Set(ss.Spec.Selector.MatchLabels).AsSelector().String(),
 	})
 

@@ -170,21 +170,11 @@ func CreateOrUpdateAnnotated(ctx context.Context, c client.Client, obj client.Ob
 		return false, err
 	}
 
-	opts := []patch.CalculateOption{
-		patch.IgnoreStatusFields(),
-	}
-
-	switch obj.(type) {
-	case *appsv1.StatefulSet:
-		opts = append(opts, patch.IgnoreVolumeClaimTemplateTypeMetaAndStatus())
-	}
-
-	patchResult, err := patchMaker.Calculate(existing, obj, opts...)
+	changed, err := ObjectChanged(existing, obj)
 	if err != nil {
 		return false, err
 	}
-
-	if patchResult.IsEmpty() {
+	if !changed {
 		return false, nil
 	}
 
@@ -197,6 +187,23 @@ func CreateOrUpdateAnnotated(ctx context.Context, c client.Client, obj client.Ob
 	}
 
 	return true, nil
+}
+
+func ObjectChanged(current, updated runtime.Object) (bool, error) {
+	opts := []patch.CalculateOption{
+		patch.IgnoreStatusFields(),
+	}
+
+	switch updated.(type) {
+	case *appsv1.StatefulSet:
+		opts = append(opts, patch.IgnoreVolumeClaimTemplateTypeMetaAndStatus())
+	}
+
+	patchResult, err := patchMaker.Calculate(current, updated, opts...)
+	if err != nil {
+		return false, err
+	}
+	return !patchResult.IsEmpty(), nil
 }
 
 func mutate(f MutateFn, key client.ObjectKey, obj client.Object) error {

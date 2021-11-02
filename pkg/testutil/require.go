@@ -22,14 +22,12 @@ import (
 	"encoding/csv"
 	"fmt"
 	"io"
-	v1 "k8s.io/api/batch/v1"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
-
-	"k8s.io/client-go/kubernetes"
 
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/database"
@@ -40,20 +38,21 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apiresource "k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/kubernetes"
 )
 
 // RequireClusterToBeReadyEventuallyTimeout tests to see if a statefulset has started correctly and
-// all of the pods are running.
+// all of the pods are ready.
 func RequireClusterToBeReadyEventuallyTimeout(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder, timeout time.Duration) {
 	cluster := b.Cluster()
 
-	err := wait.Poll(10*time.Second, timeout, func() (bool, error) {
-
+	require.NoError(t, wait.Poll(10*time.Second, timeout, func() (bool, error) {
 		ss, err := fetchStatefulSet(sb, cluster.StatefulSetName())
 		if err != nil {
 			t.Logf("error fetching stateful set")
@@ -67,12 +66,16 @@ func RequireClusterToBeReadyEventuallyTimeout(t *testing.T, sb testenv.DiffingSa
 
 		if !statefulSetIsReady(ss) {
 			t.Logf("stateful set is not ready")
-			logPods(context.TODO(), ss, cluster, sb, t)
+			if err = logPods(context.TODO(), ss, cluster, sb, t); err != nil {
+				t.Log(err.Error())
+			}
 			return false, nil
 		}
+
 		return true, nil
-	})
-	require.NoError(t, err)
+	}))
+
+	t.Log("Cluster is ready")
 }
 
 func RequireAtMostOneVersionCheckerJob(t *testing.T, sb testenv.DiffingSandbox, timeout time.Duration) {
@@ -103,8 +106,8 @@ func RequireAtMostOneVersionCheckerJob(t *testing.T, sb testenv.DiffingSandbox, 
 	require.ErrorIs(t, err, wait.ErrWaitTimeout)
 }
 
-func fetchJobs(sb testenv.DiffingSandbox) ([]v1.Job, error) {
-	var jobs v1.JobList
+func fetchJobs(sb testenv.DiffingSandbox) ([]batchv1.Job, error) {
+	var jobs batchv1.JobList
 	if err := sb.List(&jobs, nil); err != nil {
 		return nil, err
 	}
@@ -207,7 +210,7 @@ func testPodsWithPredicate(pods []corev1.Pod, pred func(*corev1.Pod) bool) bool 
 }
 
 func statefulSetIsReady(ss *appsv1.StatefulSet) bool {
-	return ss.Status.ReadyReplicas == ss.Status.Replicas
+	return ss.Status.ReadyReplicas == *ss.Spec.Replicas
 }
 
 // TODO we are not using this
@@ -245,16 +248,11 @@ func RequireDownGradeOptionSet(t *testing.T, sb testenv.DiffingSandbox, b Cluste
 	if value == "" {
 		t.Errorf("downgrade_option is empty and should be set to %s", version)
 	}
-
-	if value != value {
-		t.Errorf("downgrade_option is not set to %s, but is set to %s", version, value)
-	}
-
 }
 
 // TODO I do not think this is correct.  Keith mentioned we need to check something else.
 
-// RequireDecommisionNode requires that proper nodes are decommisioned
+// RequireDecommissionNode requires that proper nodes are decommissioned
 func RequireDecommissionNode(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder, numNodes int32) {
 	cluster := b.Cluster()
 
@@ -288,6 +286,7 @@ func RequireDecommissionNode(t *testing.T, sb testenv.DiffingSandbox, b ClusterB
 		return true, nil
 	})
 	require.NoError(t, err)
+	t.Log("Done decommissioning node")
 }
 
 func makeDrainStatusChecker(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder, numNodes uint64) error {
@@ -313,6 +312,7 @@ func makeDrainStatusChecker(t *testing.T, sb testenv.DiffingSandbox, b ClusterBu
 	for {
 		record, err := r.Read()
 		if err == io.EOF {
+			t.Log("Done reading node statuses")
 			break
 		}
 
@@ -372,6 +372,7 @@ func RequireDatabaseToFunction(t *testing.T, sb testenv.DiffingSandbox, b Cluste
 }
 
 func requireDatabaseToFunction(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder, useSSL bool) {
+	t.Log("Testing database function")
 	sb.Mgr.GetConfig()
 	podName := fmt.Sprintf("%s-0.%s", b.Cluster().Name(), b.Cluster().Name())
 
@@ -399,6 +400,8 @@ func requireDatabaseToFunction(t *testing.T, sb testenv.DiffingSandbox, b Cluste
 	db, err := database.NewDbConnection(conn)
 	require.NoError(t, err)
 	defer db.Close()
+
+	t.Log("DB connection initialized; running commands")
 
 	if _, err := db.Exec("CREATE DATABASE test_db"); err != nil {
 		t.Fatal(err)
@@ -572,6 +575,9 @@ func fetchPVCs(ctx context.Context, sb testenv.DiffingSandbox, b ClusterBuilder)
 		}
 
 		sts, err := fetchStatefulSet(sb, cluster.StatefulSetName())
+		if err != nil {
+			return false, err
+		}
 
 		pvcList, err = clientset.CoreV1().PersistentVolumeClaims(cluster.Namespace()).List(ctx, metav1.ListOptions{
 			LabelSelector: metav1.FormatLabelSelector(sts.Spec.Selector),
@@ -586,4 +592,66 @@ func fetchPVCs(ctx context.Context, sb testenv.DiffingSandbox, b ClusterBuilder)
 		return nil, err
 	}
 	return pvcList, nil
+}
+
+// RequireClusterInImagePullBackoff checks that the CRDB cluster should be either in ImagePullBackOff/ErrImagePull state
+func RequireClusterInImagePullBackoff(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder) {
+	clusterName := b.Cluster().Name()
+	var jobList = &batchv1.JobList{}
+	var podList = &corev1.PodList{}
+	var re = regexp.MustCompile(`ErrImagePull|ImagePullBackOff`)
+	jobLabel := map[string]string{
+		"app.kubernetes.io/instance": clusterName,
+	}
+
+	wErr := wait.Poll(10*time.Second, 500*time.Second, func() (bool, error) {
+		if err := sb.List(jobList, jobLabel); err != nil {
+			return false, err
+		}
+
+		if len(jobList.Items) == 0 {
+			t.Logf("No validation job found for the CRDB cluster")
+			return false, nil
+		}
+
+		return true, nil
+	})
+
+	require.NoError(t, wErr)
+
+	podLabel := map[string]string{
+		"job-name": jobList.Items[0].Name,
+	}
+
+	if err := sb.List(podList, podLabel); err != nil {
+		require.NoError(t, err)
+	}
+
+	if podList.Items[0].Status.Phase == corev1.PodPending && len(podList.Items[0].Status.ContainerStatuses) != 0 {
+		require.True(t, re.MatchString(podList.Items[0].Status.ContainerStatuses[0].State.Waiting.Reason))
+	}
+}
+
+// RequireClusterInFailedState check that the crdbclusters CR is marked as Failed state.
+func RequireClusterInFailedState(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder) {
+	var crdbCluster = api.CrdbCluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      b.Cluster().Name(),
+			Namespace: b.Cluster().Namespace(),
+		},
+	}
+
+	wErr := wait.Poll(10*time.Second, 500*time.Second, func() (bool, error) {
+		if err := sb.Get(&crdbCluster); err != nil {
+			return false, err
+		}
+
+		if crdbCluster.Status.ClusterStatus == "Failed" {
+			return true, nil
+		}
+
+		return false, nil
+	})
+
+	require.NoError(t, wErr)
 }

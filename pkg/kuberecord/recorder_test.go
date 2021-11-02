@@ -34,7 +34,11 @@ func TestRecorder(t *testing.T) {
 
 	cfg, err := env.Start()
 	require.NoError(t, err)
-	defer env.Stop()
+	defer func(env *envtest.Environment) {
+		if err := env.Stop(); err != nil {
+			t.Log(err.Error())
+		}
+	}(env)
 
 	cfg = Recorder(
 		t,

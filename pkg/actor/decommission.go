@@ -19,7 +19,6 @@ package actor
 import (
 	"context"
 	"fmt"
-
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/clustersql"
 	"github.com/cockroachdb/cockroach-operator/pkg/database"
@@ -29,26 +28,23 @@ import (
 	"github.com/cockroachdb/cockroach-operator/pkg/scale"
 	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
 	"github.com/cockroachdb/errors"
+	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	kubetypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func newDecommission(scheme *runtime.Scheme, cl client.Client, config *rest.Config) Actor {
+func newDecommission(cl client.Client, config *rest.Config, clientset kubernetes.Interface) Actor {
 	return &decommission{
-		action: newAction("decommission", scheme, cl),
-		config: config,
+		action: newAction(nil, cl, config, clientset),
 	}
 }
 
 // decommission performs the initialization of the new cluster
 type decommission struct {
 	action
-
-	config *rest.Config
 }
 
 //GetActionType returns  api.DecommissionAction used to set the cluster status errors
@@ -56,16 +52,9 @@ func (d decommission) GetActionType() api.ActionType {
 	return api.DecommissionAction
 }
 
-func (d decommission) Act(ctx context.Context, cluster *resource.Cluster) error {
-
-	log := d.log.WithValues("CrdbCluster", cluster.ObjectKey())
+func (d decommission) Act(ctx context.Context, cluster *resource.Cluster, log logr.Logger) error {
 	log.V(DEBUGLEVEL).Info("check decommission opportunities")
-	//we are not running decommission logic if a restart must be done
-	restartType := cluster.GetAnnotationRestartType()
-	if restartType != "" {
-		log.V(DEBUGLEVEL).Info("Not running decommission cluster action")
-		return nil
-	}
+
 	stsName := cluster.StatefulSetName()
 
 	key := kubetypes.NamespacedName{
@@ -88,10 +77,6 @@ func (d decommission) Act(ctx context.Context, cluster *resource.Cluster) error 
 	log.Info("replicas decommissioning", "status.CurrentReplicas", status.CurrentReplicas, "expected", cluster.Spec().Nodes)
 	if status.CurrentReplicas <= cluster.Spec().Nodes {
 		return nil
-	}
-	clientset, err := kubernetes.NewForConfig(d.config)
-	if err != nil {
-		return errors.Wrapf(err, "decommission failed to create kubernetes clientset")
 	}
 	// test to see if we are running inside of Kubernetes
 	// If we are running inside of k8s we will not find this file.
@@ -136,18 +121,18 @@ func (d decommission) Act(ctx context.Context, cluster *resource.Cluster) error 
 		return errors.Wrap(err, "failed to get range move duration")
 	}
 
-	drainer := scale.NewCockroachNodeDrainer(d.log, cluster.Namespace(), ss.Name, d.config, clientset, cluster.Spec().TLSEnabled, 3*timeout)
+	drainer := scale.NewCockroachNodeDrainer(log, cluster.Namespace(), ss.Name, d.config, d.clientset, cluster.Spec().TLSEnabled, 3*timeout)
 	pvcPruner := scale.PersistentVolumePruner{
 		Namespace:   cluster.Namespace(),
 		StatefulSet: ss.Name,
-		ClientSet:   clientset,
-		Logger:      d.log,
+		ClientSet:   d.clientset,
+		Logger:      log,
 	}
 	//we should start scale down
 	scaler := scale.Scaler{
-		Logger: d.log,
+		Logger: log,
 		CRDB: &scale.CockroachStatefulSet{
-			ClientSet: clientset,
+			ClientSet: d.clientset,
 			Namespace: cluster.Namespace(),
 			Name:      ss.Name,
 		},
@@ -158,12 +143,12 @@ func (d decommission) Act(ctx context.Context, cluster *resource.Cluster) error 
 		/// now check if the decommissionStaleErr and update status
 		log.Error(err, "decommission failed")
 		cluster.SetFalse(api.DecommissionCondition)
-		CancelLoop(ctx)
+		CancelLoop(ctx, log)
 		return err
 	}
 	// TO DO @alina we will need to save the status foreach action
 	cluster.SetTrue(api.DecommissionCondition)
 	log.V(DEBUGLEVEL).Info("decommission completed", "cond", ss.Status.Conditions)
-	CancelLoop(ctx)
+	CancelLoop(ctx, log)
 	return nil
 }

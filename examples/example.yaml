@@ -40,9 +40,9 @@ spec:
       memory: 8Gi
   tlsEnabled: true
 # You can set either a version of the db or a specific image name
-# cockroachDBVersion: v21.1.7
+# cockroachDBVersion: v21.1.11
   image:
-    name: cockroachdb/cockroach:v21.1.7
+    name: cockroachdb/cockroach:v21.1.11
   # nodes refers to the number of crdb pods that are created
   # via the statefulset
   nodes: 3
@@ -64,3 +64,7 @@ spec:
   #              values:
   #              - cockroachdb
   #          topologyKey: kubernetes.io/hostname
+
+  # nodeSelectors used to match against
+  # nodeSelector:
+  #   worker-pool-name: crdb-workers

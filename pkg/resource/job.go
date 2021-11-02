@@ -20,9 +20,12 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/cockroachdb/cockroach-operator/pkg/features"
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
 	"github.com/cockroachdb/cockroach-operator/pkg/labels"
 	"github.com/cockroachdb/cockroach-operator/pkg/ptr"
+	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
+
 	kbatch "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -91,9 +94,17 @@ func (b JobBuilder) buildPodTemplate() corev1.PodTemplateSpec {
 			TerminationGracePeriodSeconds: ptr.Int64(60),
 			Containers:                    b.MakeContainers(),
 			AutomountServiceAccountToken:  ptr.Bool(false),
-			ServiceAccountName:            "cockroach-database-sa",
+			ServiceAccountName:            b.ServiceAccountName(),
 			RestartPolicy:                 corev1.RestartPolicyNever,
 		},
+	}
+
+	if utilfeature.DefaultMutableFeatureGate.Enabled(features.AffinityRules) {
+		pod.Spec.Affinity = b.Spec().Affinity
+	}
+
+	if utilfeature.DefaultMutableFeatureGate.Enabled(features.TolerationRules) {
+		pod.Spec.Tolerations = b.Spec().Tolerations
 	}
 
 	secret := b.Spec().Image.PullSecret

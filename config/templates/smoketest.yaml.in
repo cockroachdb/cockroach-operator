@@ -1,0 +1,43 @@
+# Copyright {{ .Year }} The Cockroach Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# {{ .GeneratedWarning }}
+#
+
+apiVersion: crdb.cockroachlabs.com/v1alpha1
+kind: CrdbCluster
+metadata:
+  name: cockroachdb
+spec:
+  dataStore:
+    pvc:
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: "20Gi"
+        volumeMode: Filesystem
+  resources:
+    requests:
+      # This is intentionally low to make it work on local kind clusters.
+      cpu: 300m
+      memory: 300Mi
+    limits:
+      cpu: 300m
+      memory: 300Mi
+  tlsEnabled: true
+  image:
+    name: cockroachdb/cockroach:{{ .LatestStableCrdbVersion }}
+  nodes: 3

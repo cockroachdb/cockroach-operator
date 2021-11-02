@@ -64,6 +64,11 @@ test/verify:
 test/lint:
 	bazel run //hack:verify-gofmt
 
+# NODE_VERSION refers the to version of the kindest/node image. E.g. 1.22.1
+.PHONY: test/smoketest
+test/smoketest:
+	@bazel run //hack/smoketest -- -dir $(PWD) -version $(NODE_VERSION)
+
 # Run only e2e stort tests
 # We can use this to only run one specific test
 .PHONY: test/e2e-short
@@ -107,14 +112,14 @@ test/e2e/kind-%:
 	bazel build //hack/bin/...
 	PATH=${PATH}:bazel-bin/hack/bin kubetest2 kind --cluster-name=$(CLUSTER_NAME) \
 		--up --down -v 10 --test=exec -- make test/e2e/testrunner-kind-$(PACKAGE)
-	
+
 # This target is used by kubetest2-eks to run e2e tests.
 .PHONY: test/e2e/testrunner-eks
 test/e2e/testrunner-eks:
 	KUBECONFIG=$(TMPDIR)/$(CLUSTER_NAME)-eks.kubeconfig.yaml bazel-bin/hack/bin/kubectl create -f hack/eks-storageclass.yaml
 	bazel test --stamp //e2e/upgrades/...  --action_env=KUBECONFIG=$(TMPDIR)/$(CLUSTER_NAME)-eks.kubeconfig.yaml
 	bazel test --stamp //e2e/create/...  --action_env=KUBECONFIG=$(TMPDIR)/$(CLUSTER_NAME)-eks.kubeconfig.yaml
-	bazel test --stamp //e2e/decomission/...  --action_env=KUBECONFIG=$(TMPDIR)/$(CLUSTER_NAME)-eks.kubeconfig.yaml
+	bazel test --stamp //e2e/decommission/...  --action_env=KUBECONFIG=$(TMPDIR)/$(CLUSTER_NAME)-eks.kubeconfig.yaml
 
 # Use this target to run e2e tests with a eks cluster.
 # This target uses kind to start a eks k8s cluster  and runs the e2e tests
@@ -144,7 +149,7 @@ test/e2e/testrunner-gke:
 	bazel test --stamp //e2e/upgrades/...
 	bazel test --stamp //e2e/create/...
 	bazel test --stamp --test_arg=--pvc=true //e2e/pvcresize/...
-	bazel test --stamp //e2e/decomission/...
+	bazel test --stamp //e2e/decommission/...
 
 # Use this target to run e2e tests with a gke cluster.
 # This target uses kind to start a gke k8s cluster  and runs the e2e tests
@@ -171,7 +176,7 @@ test/e2e/gke:
 test/e2e/testrunner-openshift:
 	bazel test --stamp //e2e/upgrades/...  --action_env=KUBECONFIG=$(HOME)/openshift-$(CLUSTER_NAME)/auth/kubeconfig
 	bazel test --stamp //e2e/create/...  --action_env=KUBECONFIG=$(HOME)/openshift-$(CLUSTER_NAME)/auth/kubeconfig
-	bazel test --stamp //e2e/decomission/...  --action_env=KUBECONFIG=$(HOME)/openshift-$(CLUSTER_NAME)/auth/kubeconfig
+	bazel test --stamp //e2e/decommission/...  --action_env=KUBECONFIG=$(HOME)/openshift-$(CLUSTER_NAME)/auth/kubeconfig
 
 # Use this target to run e2e tests with a openshift cluster.
 # This target uses kind to start a openshift cluster and runs the e2e tests
@@ -216,6 +221,11 @@ dev/fmt:
 	@echo +++ Running gofmt
 	@bazel run //hack/bin:gofmt -- -s -w $(shell pwd)
 
+.PHONY: dev/golangci-lint
+dev/golangci-lint:
+	@echo +++ Running golangci-lint
+	@bazel run //hack/bin:golangci-lint run
+
 .PHONY: dev/generate
 dev/generate: | dev/update-codegen dev/update-crds
 
@@ -241,6 +251,7 @@ dev/syncbazel:
 
 .PHONY: dev/syncdeps
 dev/syncdeps:
+	@go mod tidy
 	@bazel run //:gazelle -- update-repos \
 		-from_file=go.mod \
 		-to_macro=hack/build/repos.bzl%_go_dependencies \
@@ -264,43 +275,46 @@ k8s/apply:
 	K8S_CLUSTER=gke_$(GCP_PROJECT)_$(GCP_ZONE)_$(CLUSTER_NAME) \
 	DEV_REGISTRY=$(DEV_REGISTRY) \
 	bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
-		//manifests:install_operator.apply
+		//config/default:install.apply \
+		--define APP_VERSION=$(APP_VERSION)
 
 .PHONY: k8s/delete
 k8s/delete:
 	K8S_CLUSTER=gke_$(GCP_PROJECT)_$(GCP_ZONE)_$(CLUSTER_NAME) \
 	DEV_REGISTRY=$(DEV_REGISTRY) \
 	bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
-		//manifests:install_operator.delete
+		//config/default:install.delete \
+		--define APP_VERSION=$(APP_VERSION)
 
 #
 # Release targets
 #
 
-# This target reads the current version from version.txt, increments the patch
-# part of the version, saves the result in the same file, and calls make with
-# the next release-specific target in a separate shell in order to reread the
-# new version.
-.PHONY: release/versionbump
-release/versionbump:
-	bazel run //hack/versionbump:versionbump -- patch $(VERSION) > $(PWD)/version.txt
-	$(MAKE) release/gen-files
+# This target sets the version in version.txt, creates a new branch for the
+# release, and generates all of the files required to cut a new release.
+.PHONY: release/new
+release/new:
+	# TODO: verify clean, up to date master branch...
+	@bazel run //hack/release -- -dir $(PWD) -version $(VERSION)
 
 # Generate various config files, which usually contain the current operator
 # version, latest CRDB version, a list of supported CRDB versions, etc.
+#
+# This also generates install/crds.yaml and install/operator.yaml which are
+# pre-built kustomize bases used in our docs.
 .PHONY: release/gen-templates
 release/gen-templates:
+	bazel run //hack/update_crdb_versions
+	@hack/boilerplaterize hack/boilerplate/boilerplate.yaml.txt $(PWD)/crdb-versions.yaml
 	bazel run //hack/crdbversions:crdbversions -- -operator-version $(APP_VERSION) -crdb-versions $(PWD)/crdb-versions.yaml -repo-root $(PWD)
+	bazel run //config/crd:manifest.preview > install/crds.yaml
+	bazel run //config/operator:manifest.preview > install/operator.yaml
 
 # Generate various manifest files for OpenShift. We run this target after the
 # operator version is changed. The results are committed to Git.
 .PHONY: release/gen-files
-release/gen-files: release/gen-templates
-	$(MAKE) release/update-pkg-manifest && \
-	$(MAKE) release/opm-build-bundle && \
-	git add . && \
-	git commit -m "Bump version to $(VERSION)"
-
+release/gen-files: | release/gen-templates release/update-pkg-bundle
+	git add . && git commit -m "Bump version to $(VERSION)"
 
 .PHONY: release/image
 release/image:
@@ -326,32 +340,28 @@ RH_DEPLOY_FULL_PATH="$(RH_DEPLOY_PATH)/cockroach-operator/"
 RH_COCKROACH_DATABASE_IMAGE=registry.connect.redhat.com/cockroachdb/cockroach:$(COCKROACH_DATABASE_VERSION)
 RH_OPERATOR_IMAGE?=registry.connect.redhat.com/cockroachdb/cockroachdb-operator:$(APP_VERSION)
 
-# Generate package manifests.
-# Options for "packagemanifests".
-CHANNEL?=beta
-FROM_BUNDLE_VERSION?=1.0.1
-IS_CHANNEL_DEFAULT?=0
+# Generate package bundles.
+# Default options for channels if not pre-specified.
+CHANNELS?=stable
+DEFAULT_CHANNEL?=stable
 
-ifneq ($(origin FROM_BUNDLE_VERSION), undefined)
-PKG_FROM_VERSION := --from-version=$(FROM_BUNDLE_VERSION)
+ifneq ($(origin CHANNELS), undefined)
+PKG_CHANNELS := --channels=$(CHANNELS)
 endif
-ifneq ($(origin CHANNEL), undefined)
-PKG_CHANNELS := --channel=$(CHANNEL)
+ifneq ($(origin DEFAULT_CHANNEL), undefined)
+PKG_DEFAULT_CHANNEL := --default-channel=$(DEFAULT_CHANNEL)
 endif
-ifeq ($(IS_CHANNEL_DEFAULT), 1)
-PKG_IS_DEFAULT_CHANNEL := --default-channel
-endif
-PKG_MAN_OPTS ?= "$(PKG_FROM_VERSION) $(PKG_CHANNELS) $(PKG_IS_DEFAULT_CHANNEL)"
+PKG_MAN_OPTS ?= "$(PKG_CHANNELS) $(PKG_DEFAULT_CHANNEL)"
 
 # Build the packagemanifests
-.PHONY: release/update-pkg-manifest
-release/update-pkg-manifest:dev/generate
-	bazel run  //hack:update-pkg-manifest  -- $(RH_BUNDLE_VERSION) $(RH_OPERATOR_IMAGE) $(PKG_MAN_OPTS) $(RH_COCKROACH_DATABASE_IMAGE)
+.PHONY: release/update-pkg-bundle
+release/update-pkg-bundle: dev/generate
+	bazel run //hack:update-pkg-bundle -- $(RH_BUNDLE_VERSION) $(RH_OPERATOR_IMAGE) $(PKG_MAN_OPTS) $(RH_COCKROACH_DATABASE_IMAGE)
 
-#  Build the packagemanifests
+#  Build the OPM bundle
 .PHONY: release/opm-build-bundle
-release/opm-build-bundle:
-	bazel run  //hack:opm-build-bundle  -- $(RH_BUNDLE_VERSION) $(RH_OPERATOR_IMAGE) $(PKG_MAN_OPTS)
+release/opm-build-bundle: release/update-pkg-bundle
+	bazel run //hack:opm-build-bundle -- $(RH_BUNDLE_VERSION) $(RH_OPERATOR_IMAGE) $(PKG_MAN_OPTS)
 
 #
 # Release bundle image
@@ -384,7 +394,7 @@ release/bundle-image:
 #
 # See hack/openshift-test-packaging.sh for more information on running this target.
 .PHONY: test/openshift-package
-test/openshift-package: release/update-pkg-manifest release/image release/opm-build-bundle test/push-openshift-images
+test/openshift-package: release/opm-build-bundle release/image test/push-openshift-images
 	VERSION=$(VERSION) \
 	hack/cleanup-packaging.sh
 
@@ -395,19 +405,3 @@ test/push-openshift-images:
 	DOCKER_REGISTRY=$(DOCKER_REGISTRY) \
 	bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
 		//hack:push-openshift-images
-
-CHANNELS?=beta,stable
-DEFAULT_CHANNEL?=stable
-# Options for 'bundle-build'
-ifneq ($(origin CHANNELS), undefined)
-BUNDLE_CHANNELS := --channels=$(CHANNELS)
-endif
-ifneq ($(origin DEFAULT_CHANNEL), undefined)
-BUNDLE_DEFAULT_CHANNEL := --default-channel=$(DEFAULT_CHANNEL)
-endif
-BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
-
-# Build the bundle image.
-.PHONY: gen-csv
-gen-csv: dev/generate
-	bazel run  //hack:update-csv  -- $(RH_BUNDLE_VERSION) $(RH_OPERATOR_IMAGE) $(BUNDLE_METADATA_OPTS) $(RH_COCKROACH_DATABASE_IMAGE)

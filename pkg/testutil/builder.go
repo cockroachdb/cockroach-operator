@@ -117,6 +117,11 @@ func (b ClusterBuilder) WithLabels(labels map[string]string) ClusterBuilder {
 	return b
 }
 
+func (b ClusterBuilder) WithClusterAnnotations(annotations map[string]string) ClusterBuilder {
+	b.cluster.Annotations = annotations
+	return b
+}
+
 func (b ClusterBuilder) WithAnnotations(annotations map[string]string) ClusterBuilder {
 	b.cluster.Spec.AdditionalAnnotations = annotations
 	return b
@@ -129,6 +134,11 @@ func (b ClusterBuilder) WithAffinity(affinity *corev1.Affinity) ClusterBuilder {
 
 func (b ClusterBuilder) WithResources(resources corev1.ResourceRequirements) ClusterBuilder {
 	b.cluster.Spec.Resources = resources
+	return b
+}
+
+func (b ClusterBuilder) WithStatus(status api.CrdbClusterStatus) ClusterBuilder {
+	b.cluster.Status = status
 	return b
 }
 

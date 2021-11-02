@@ -31,6 +31,8 @@ func SetClusterStatusOnFirstReconcile(status *api.CrdbClusterStatus) {
 	status.ClusterStatus = api.ActionStatus(api.Starting).String()
 }
 
+// TODO: Do we need to check for all OperatorActions or for just the 0th element in SetClusterStatus func
+// nolint
 func SetClusterStatus(status *api.CrdbClusterStatus) {
 	InitOperatorActionsIfNeeded(status, metav1.Now())
 	for _, a := range status.OperatorActions {

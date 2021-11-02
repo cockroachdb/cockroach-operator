@@ -16,7 +16,10 @@
 set -euo pipefail
 
 PATH="bazel-bin/hack/bin:${PATH}"
-CLUSTER_NAME="test"
+
+APP_VERSION="${APP_VERSION:-v$(cat version.txt)}"
+CLUSTER_NAME="dev"
+NODE_IMAGE="kindest/node:v1.22.1"
 REGISTRY_NAME="kind-registry"
 REGISTRY_PORT=5000
 
@@ -32,6 +35,9 @@ create_kind_cluster() {
   cat <<EOF | kind create cluster --name "${CLUSTER_NAME}" --config=-
 apiVersion: kind.x-k8s.io/v1alpha4
 kind: Cluster
+nodes:
+- role: control-plane
+  image: ${NODE_IMAGE}
 containerdConfigPatches:
 - |-
   [plugins."io.containerd.grpc.v1.cri".registry.mirrors."localhost:${REGISTRY_PORT}"]
@@ -56,9 +62,16 @@ EOF
 }
 
 install_operator() {
+  # Can't seem to figure out how to leverage the stamp variables here. So for
+  # now I've added a defined make variable which can be used for substitution
+  # in //config/default/BUILD.bazel.
   K8S_CLUSTER="kind-${CLUSTER_NAME}" \
     DEV_REGISTRY="localhost:${REGISTRY_PORT}" \
-    bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 //manifests:install_operator.apply
+    bazel run \
+    --stamp \
+    --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
+    --define APP_VERSION=${APP_VERSION} \
+    //config/default:install.apply
 }
 
 wait_for_ready() {
@@ -69,11 +82,11 @@ wait_for_ready() {
 main() {
   case "${1:-}" in
     up)
-      run_local_registry
-      create_kind_cluster
-      setup_k8s_registry_hosting
-      install_operator
-      wait_for_ready;;
+    run_local_registry
+    create_kind_cluster
+    setup_k8s_registry_hosting
+    install_operator
+    wait_for_ready;;
     down)
       kind delete cluster --name "${CLUSTER_NAME}"
       docker rm -f "${REGISTRY_NAME}" 2>/dev/null || true;;

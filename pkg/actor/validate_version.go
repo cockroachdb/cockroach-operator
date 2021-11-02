@@ -39,22 +39,18 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	kubetypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func newVersionChecker(scheme *runtime.Scheme, cl client.Client, config *rest.Config) Actor {
+func newVersionChecker(scheme *runtime.Scheme, cl client.Client, clientset kubernetes.Interface) Actor {
 	return &versionChecker{
-		action: newAction("Crdb Version Validator", scheme, cl),
-		config: config,
+		action: newAction(scheme, cl, nil, clientset),
 	}
 }
 
 // versionChecker performs the validation of the crdb image for the new cluster
 type versionChecker struct {
 	action
-
-	config *rest.Config
 }
 
 //GetActionType returns api.VersionCheckerAction action used to set the cluster status errors
@@ -62,8 +58,7 @@ func (v *versionChecker) GetActionType() api.ActionType {
 	return api.VersionCheckerAction
 }
 
-func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) error {
-	log := v.log.WithValues("CrdbCluster", cluster.ObjectKey())
+func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster, log logr.Logger) error {
 	log.V(DEBUGLEVEL).Info("starting to check the crdb version of the container provided")
 
 	r := resource.NewManagedKubeResource(ctx, v.client, cluster, kube.AnnotatingPersister)
@@ -119,7 +114,7 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 
 	if changed {
 		log.V(int(zapcore.DebugLevel)).Info("created/updated job, stopping request processing")
-		CancelLoop(ctx)
+		CancelLoop(ctx, log)
 		return nil
 	}
 
@@ -130,16 +125,11 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 	}
 	job := &kbatch.Job{}
 
-	clientset, err := kubernetes.NewForConfig(v.config)
-	if err != nil {
-		log.Error(err, "cannot create k8s client")
-		return errors.Wrapf(err, "check version failed to create kubernetes clientset")
-	}
 	if err := v.client.Get(ctx, key, job); err != nil {
-		err := WaitUntilJobPodIsRunning(ctx, clientset, job, log)
+		err := WaitUntilJobPodIsRunning(ctx, v.clientset, job, log)
 		if err != nil {
 			log.Error(err, "job pod is not running; deleting job")
-			if dErr := deleteJob(ctx, cluster, clientset, job); dErr != nil {
+			if dErr := deleteJob(ctx, cluster, v.clientset, job); dErr != nil {
 				// Log the job deletion error, but return the underlying error that prompted deletion.
 				log.Error(dErr, "failed to delete the job")
 			}
@@ -156,7 +146,7 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 		// The job is nil or the selector is nil, we are doing a list, which
 		// should reconcile the API and we we do another get the job should have
 		// the selector.
-		jobs, err := clientset.BatchV1().Jobs(job.Namespace).List(ctx, metav1.ListOptions{})
+		jobs, err := v.clientset.BatchV1().Jobs(job.Namespace).List(ctx, metav1.ListOptions{})
 		if err != nil {
 			log.Error(err, "unable to list jobs")
 			return err
@@ -182,14 +172,14 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 
 	// check if the job is completed or failed before EXEC
 	if finished, _ := isJobCompletedOrFailed(job); !finished {
-		if err := WaitUntilJobPodIsRunning(ctx, clientset, job, v.log); err != nil {
+		if err := WaitUntilJobPodIsRunning(ctx, v.clientset, job, log); err != nil {
 			// if after 2 minutes the job pod is not ready and container status is ImagePullBackoff
 			// We need to stop requeueing until further changes on the CR
 			image := cluster.GetCockroachDBImageName()
-			if errBackoff := IsContainerStatusImagePullBackoff(ctx, clientset, job, log, image); errBackoff != nil {
+			if errBackoff := IsContainerStatusImagePullBackoff(ctx, v.clientset, job, log, image); errBackoff != nil {
 				err := InvalidContainerVersionError{Err: errBackoff}
 				return LogError("job image incorrect", err, log)
-			} else if dErr := deleteJob(ctx, cluster, clientset, job); dErr != nil {
+			} else if dErr := deleteJob(ctx, cluster, v.clientset, job); dErr != nil {
 				// Log the job deletion error, but return the underlying error that prompted deletion.
 				log.Error(dErr, "failed to delete the job")
 			}
@@ -198,7 +188,7 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 		podLogOpts := corev1.PodLogOptions{}
 		//get pod for the job we created
 
-		pods, err := clientset.CoreV1().Pods(job.Namespace).List(ctx, metav1.ListOptions{
+		pods, err := v.clientset.CoreV1().Pods(job.Namespace).List(ctx, metav1.ListOptions{
 			LabelSelector: labels.Set(job.Spec.Selector.MatchLabels).AsSelector().String(),
 		})
 
@@ -221,7 +211,7 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 		}
 		podName := tmpPod.Name
 
-		req := clientset.CoreV1().Pods(job.Namespace).GetLogs(podName, &podLogOpts)
+		req := v.clientset.CoreV1().Pods(job.Namespace).GetLogs(podName, &podLogOpts)
 		podLogs, err := req.Stream(ctx)
 		if err != nil {
 			msg := "error in opening stream"
@@ -301,7 +291,7 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 	}
 
 	// If we got here, the version checker job was successful. Delete it.
-	if dErr := deleteJob(ctx, cluster, clientset, job); dErr != nil {
+	if dErr := deleteJob(ctx, cluster, v.clientset, job); dErr != nil {
 		log.Error(dErr, "version checker job succeeded, but job failed to delete properly")
 	}
 
@@ -324,7 +314,7 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster) err
 		return err
 	}
 	log.V(int(zapcore.DebugLevel)).Info("completed version checker", "calVersion", calVersion, "containerImage", containerImage)
-	CancelLoop(ctx)
+	CancelLoop(ctx, log)
 	return nil
 }
 

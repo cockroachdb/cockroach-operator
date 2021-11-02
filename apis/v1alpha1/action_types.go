@@ -19,27 +19,16 @@ package v1alpha1
 //ActionType type alias
 type ActionType string
 
+// All possible action types
 const (
-	//VersionCheckerAction string
-	VersionCheckerAction ActionType = "VersionCheckerAction"
-	//ClusterRestartAction string
-	ClusterRestartAction ActionType = "ClusterRestart"
-	//DeployAction string
-	DeployAction ActionType = "Deploy"
-	//DecommissionAction string
-	DecommissionAction ActionType = "Decommission"
-	//InitializeAction string
-	InitializeAction ActionType = "Initialize"
-	//RequestCertAction string
-	RequestCertAction ActionType = "RequestCert"
-	//GenerateCert string
-	GenerateCertAction ActionType = "GenerateCert"
-	//RequestCertAction string
-	ResizePVCAction ActionType = "ResizePVC"
-	//UpgradeAction string
-	UpgradeAction ActionType = "Upgrade"
-	//PartitionedUpdateAction string
+	VersionCheckerAction    ActionType = "VersionCheckerAction"
+	ClusterRestartAction    ActionType = "ClusterRestart"
+	DeployAction            ActionType = "Deploy"
+	DecommissionAction      ActionType = "Decommission"
+	InitializeAction        ActionType = "Initialize"
+	GenerateCertAction      ActionType = "GenerateCert"
+	ResizePVCAction         ActionType = "ResizePVC"
 	PartitionedUpdateAction ActionType = "PartitionedUpdate"
-	//UnknownAction string
-	UnknownAction ActionType = "Unknown"
+	SetupRBACAction         ActionType = "SetupRBAC"
+	UnknownAction           ActionType = "Unknown"
 )

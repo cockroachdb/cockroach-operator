@@ -22,6 +22,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-logr/logr"
+	"sigs.k8s.io/controller-runtime/pkg/log"
+
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/actor"
 	"github.com/cockroachdb/cockroach-operator/pkg/controller"
@@ -44,9 +47,9 @@ type fakeActor struct {
 	err       error
 }
 
-func (a *fakeActor) Act(ctx context.Context, _ *resource.Cluster) error {
+func (a *fakeActor) Act(ctx context.Context, _ *resource.Cluster, logger logr.Logger) error {
 	if a.cancelCtx {
-		actor.CancelLoop(ctx)
+		actor.CancelLoop(ctx, log.NullLogger{})
 	}
 	return a.err
 }
@@ -55,11 +58,15 @@ func (a *fakeActor) GetActionType() api.ActionType {
 }
 
 type fakeDirector struct {
-	actorsToExecute []actor.Actor
+	actorToExecute actor.Actor
 }
 
-func (fd *fakeDirector) GetActorsToExecute(_ *resource.Cluster) []actor.Actor {
-	return fd.actorsToExecute
+func (fd *fakeDirector) GetActor(aType api.ActionType) actor.Actor {
+	return fd.actorToExecute
+}
+
+func (fd *fakeDirector) GetActorToExecute(_ context.Context, _ *resource.Cluster, _ logr.Logger) (actor.Actor, error) {
+	return fd.actorToExecute, nil
 }
 
 func (fd *fakeDirector) ActAtomically(ctx context.Context, cluster *resource.Cluster, a actor.Actor) error {
@@ -82,7 +89,7 @@ func TestReconcile(t *testing.T) {
 		cluster,
 	}
 
-	cl := fake.NewFakeClientWithScheme(scheme, objs...)
+	cl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(objs...).Build()
 	log := zapr.NewLogger(zaptest.NewLogger(t)).WithName("cluster-controller-test")
 	req := ctrl.Request{NamespacedName: types.NamespacedName{Namespace: cluster.Namespace, Name: cluster.Name}}
 
@@ -142,7 +149,7 @@ func TestReconcile(t *testing.T) {
 				Log:    log,
 				Scheme: scheme,
 				Director: &fakeDirector{
-					actorsToExecute: []actor.Actor{&tt.action},
+					actorToExecute: &tt.action,
 				},
 			}
 

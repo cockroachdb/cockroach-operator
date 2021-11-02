@@ -104,36 +104,28 @@ sh_test(
     data = ["@//:all-srcs"],
 )
 
-# update-csv generates bundle format for DEV only
-sh_binary(
-    name = "update-csv",
-    srcs = ["update-csv.sh"],
+sh_test(
+    name = "verify-golangci-lint",
+    srcs = ["//hack/bin:golangci-lint"],
     args = [
-        "$(location %s)" % OPERATORSDK,
-        "$(location %s)" % KUSTOMIZE,
-        "$(location %s)" % OPM,
-        "$(location %s)" % FAQ,
+        "run",
+        "--config .golangci.yaml",
+        "--timeout 5m",
     ],
-    data = [
-        OPERATORSDK,
-        KUSTOMIZE,
-        OPM,
-        FAQ,
-        "@//:all-srcs",
-    ],
+    data = ["@//:all-srcs"],
+    env = {
+        "GOLANGCI_LINT_CACHE": "/tmp/ci_lint_cache",
+        "XDG_CACHE_HOME": "/tmp/xdgcache",
+        "GOPATH": "/tmp/gopath",
+        "GOCACHE": "/tmp/gocache",
+    },
 )
 
-# update-pkg-manifest script generates manifests and metadata for OpenShift certification release
+# update-pkg-bundle script generates manifests and metadata for OpenShift certification release
 # in the package manifests format
 sh_binary(
-    name = "update-pkg-manifest",
-    srcs = ["update-pkg-manifest.sh"],
-    args = [
-        "$(location %s)" % OPERATORSDK,
-        "$(location %s)" % KUSTOMIZE,
-        "$(location %s)" % OPM,
-        "$(location %s)" % FAQ,
-    ],
+    name = "update-pkg-bundle",
+    srcs = ["update-pkg-bundle.sh"],
     data = [
         OPERATORSDK,
         KUSTOMIZE,
@@ -160,9 +152,6 @@ sh_binary(
 sh_binary(
     name = "opm-build-bundle",
     srcs = ["opm-build-bundle.sh"],
-    args = [
-        "$(location %s)" % OPM,
-    ],
     data = [
         OPM,
         "@//:all-srcs",
@@ -186,7 +175,9 @@ filegroup(
         "//hack/crdbversions:all-srcs",
         "//hack/gke:all-srcs",
         "//hack/k8s:all-srcs",
-        "//hack/versionbump:all-srcs",
+        "//hack/release:all-srcs",
+        "//hack/smoketest:all-srcs",
+        "//hack/update_crdb_versions:all-srcs",
     ],
     tags = ["automanaged"],
     visibility = ["//visibility:public"],

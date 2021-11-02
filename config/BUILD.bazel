@@ -24,7 +24,11 @@ filegroup(
     srcs = [
         ":package-srcs",
         "//config/crd:all-srcs",
+        "//config/default:all-srcs",
+        "//config/manager:all-srcs",
         "//config/manifests:all-srcs",
+        "//config/operator:all-srcs",
+        "//config/rbac:all-srcs",
         "//config/samples:all-srcs",
         "//config/scorecard:all-srcs",
         "//config/webhook:all-srcs",

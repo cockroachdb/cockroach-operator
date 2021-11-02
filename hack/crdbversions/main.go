@@ -39,11 +39,12 @@ import (
 
 // List of templates and destinations
 var targets = []struct{ template, output string }{
-	{"config/templates/operator.yaml.in", "manifests/operator.yaml"},
-	{"config/templates/deployment_patch.yaml.in", "manifests/patches/deployment_patch.yaml"},
-	{"config/templates/crdb-tls-example.yaml.in", "config/samples/crdb-tls-example.yaml"},
-	{"config/templates/example.yaml.in", "examples/example.yaml"},
 	{"config/templates/client-secure-operator.yaml.in", "examples/client-secure-operator.yaml"},
+	{"config/templates/crdb-tls-example.yaml.in", "config/samples/crdb-tls-example.yaml"},
+	{"config/templates/deployment_image.yaml.in", "config/manager/patches/image.yaml"},
+	{"config/templates/deployment_patch.yaml.in", "config/manifests/patches/deployment_patch.yaml"},
+	{"config/templates/example.yaml.in", "examples/example.yaml"},
+	{"config/templates/smoketest.yaml.in", "examples/smoketest.yaml"},
 }
 
 // crdb-versions.yaml structure
@@ -62,6 +63,8 @@ type templateData struct {
 // readCrdbVersions reads CRDB versions from a YAML file and sorts them
 // according to the semantic version sorting rules
 func readCrdbVersions(r io.Reader) ([]*semver.Version, error) {
+	// nolint
+	// io.ReadAll is available from 1.16 onwards. Earlier it was available in io/ioutil package
 	contents, err := io.ReadAll(r)
 	if err != nil {
 		return nil, fmt.Errorf("cannot open CRDB version file: %w", err)
@@ -173,6 +176,10 @@ func main() {
 		if err != nil {
 			log.Fatalf("Cannot read template file `%s`: %s", tplFile, err)
 		}
+		if err := os.MkdirAll(filepath.Dir(outputFile), 0700); err != nil {
+			log.Fatalf("Cannot create directory for %s", outputFile)
+		}
+
 		output, err := os.Create(outputFile)
 		if err != nil {
 			log.Fatalf("Cannot create `%s`: %s", outputFile, err)

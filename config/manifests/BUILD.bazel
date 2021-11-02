@@ -14,15 +14,15 @@
 
 load("//hack/build:kustomize.bzl", "kustomization")
 
+# This base is used for deployment to OpenShift (et al.). In includes all of the
+# CSV, CRDs, RBAC details, deployments, samples, and the bundle scorecard tests.
 kustomization(
     name = "manifest",
     srcs = [
         ":all-srcs",
-        "//config/crd:manifest.srcs",
+        "//config/default:manifest.srcs",
         "//config/samples:manifest.srcs",
         "//config/scorecard:manifest.srcs",
-        "//config/webhook:manifest.srcs",
-        "//manifests:manifest.srcs",
     ],
 )
 

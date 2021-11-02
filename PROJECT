@@ -2,7 +2,8 @@ domain: cockroachlabs.com
 layout:
 - go.kubebuilder.io/v3
 plugins:
-  go.sdk.operatorframework.io/v2-alpha: {}
+  manifests.sdk.operatorframework.io/v2: {}
+  scorecard.sdk.operatorframework.io/v2: {}
 projectName: cockroach-operator
 repo: github.com/cockroachdb/cockroach-operator
 resources:
@@ -11,7 +12,7 @@ resources:
     namespaced: true
   controller: true
   domain: cockroachlabs.com
-  group: crdb.cockroachlabs.com
+  group: crdb
   kind: CrdbCluster
   path: github.com/cockroachdb/cockroach-operator/apis/v1alpha1
   version: v1alpha1

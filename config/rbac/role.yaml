@@ -20,6 +20,22 @@ metadata:
   name: cockroach-operator-role
 rules:
 - apiGroups:
+  - admissionregistration.k8s.io
+  resources:
+  - mutatingwebhookconfigurations
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - admissionregistration.k8s.io
+  resources:
+  - validatingwebhookconfigurations
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
   - apps
   resources:
   - statefulsets
@@ -42,6 +58,14 @@ rules:
 - apiGroups:
   - apps
   resources:
+  - statefulsets/scale
+  verbs:
+  - get
+  - update
+  - watch
+- apiGroups:
+  - apps
+  resources:
   - statefulsets/status
   verbs:
   - get
@@ -58,6 +82,14 @@ rules:
   - list
   - patch
   - update
+  - watch
+- apiGroups:
+  - batch
+  resources:
+  - jobs/finalizers
+  verbs:
+  - get
+  - list
   - watch
 - apiGroups:
   - batch
@@ -108,18 +140,26 @@ rules:
   - nodes
   verbs:
   - get
+  - list
 - apiGroups:
   - ""
   resources:
   - pods
   verbs:
   - get
+  - list
 - apiGroups:
   - ""
   resources:
   - pods/exec
   verbs:
   - create
+- apiGroups:
+  - ""
+  resources:
+  - pods/log
+  verbs:
+  - get
 - apiGroups:
   - ""
   resources:
@@ -130,6 +170,15 @@ rules:
   - list
   - patch
   - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - serviceaccounts
+  verbs:
+  - create
+  - get
+  - list
   - watch
 - apiGroups:
   - ""
@@ -174,6 +223,12 @@ rules:
 - apiGroups:
   - crdb.cockroachlabs.com
   resources:
+  - crdbclusters/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - crdb.cockroachlabs.com
+  resources:
   - crdbclusters/status
   verbs:
   - get
@@ -205,3 +260,27 @@ rules:
   - poddisruptionbudgets/status
   verbs:
   - get
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - rolebindings
+  verbs:
+  - create
+  - get
+  - list
+  - watch
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - roles
+  verbs:
+  - create
+  - get
+  - list
+  - watch
+- apiGroups:
+  - security.openshift.io
+  resources:
+  - securitycontextconstraints
+  verbs:
+  - use

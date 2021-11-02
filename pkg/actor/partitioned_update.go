@@ -19,6 +19,7 @@ package actor
 import (
 	"context"
 	"fmt"
+	"github.com/go-logr/logr"
 	"os"
 	"strings"
 	"time"
@@ -32,25 +33,21 @@ import (
 	"github.com/cockroachdb/errors"
 	"go.uber.org/zap/zapcore"
 	appsv1 "k8s.io/api/apps/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	kubetypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func newPartitionedUpdate(scheme *runtime.Scheme, cl client.Client, config *rest.Config) Actor {
+func newPartitionedUpdate(cl client.Client, config *rest.Config, clientset kubernetes.Interface) Actor {
 	return &partitionedUpdate{
-		action: newAction("partitionedUpdate", scheme, cl),
-		config: config,
+		action: newAction(nil, cl, config, clientset),
 	}
 }
 
 // upgrade handles minor and major version upgrades without finalization
 type partitionedUpdate struct {
 	action
-
-	config *rest.Config
 }
 
 // GetActionType returns api.PartitionedUpdateAction action used to set the cluster status errors
@@ -61,19 +58,12 @@ func (up *partitionedUpdate) GetActionType() api.ActionType {
 // Act runs a new partitionUpdate.
 // This update pattern handles the sql calls and workflow in order to
 // update a cr cluster.  This is replacing the old update actor.
-func (up *partitionedUpdate) Act(ctx context.Context, cluster *resource.Cluster) error {
+func (up *partitionedUpdate) Act(ctx context.Context, cluster *resource.Cluster, log logr.Logger) error {
 
 	// TODO we have edge cases that we are not covering
 	// see https://github.com/cockroachdb/cockroach-operator/issues/202
 
-	log := up.log.WithValues("CrdbCluster", cluster.ObjectKey())
 	log.V(DEBUGLEVEL).Info("checking update opportunities, using a partitioned update")
-	//we are not running decommission logic if a restart must be done
-	restartType := cluster.GetAnnotationRestartType()
-	if restartType != "" {
-		log.V(DEBUGLEVEL).Info("Not running partial update cluster action because restart already runs")
-		return nil
-	}
 
 	stsName := cluster.StatefulSetName()
 
@@ -136,11 +126,6 @@ func (up *partitionedUpdate) Act(ctx context.Context, cluster *resource.Cluster)
 	podUpdateTimeout := 10 * time.Minute
 	podMaxPollingInterval := 30 * time.Minute
 
-	clientset, err := kubernetes.NewForConfig(up.config)
-	if err != nil {
-		return errors.Wrapf(err, "failed to create kubernetes clientset")
-	}
-
 	// test to see if we are running inside of Kubernetes
 	// If we are running inside of k8s we will not find this file.
 	runningInsideK8s := inK8s("/var/run/secrets/kubernetes.io/serviceaccount/token")
@@ -191,7 +176,7 @@ func (up *partitionedUpdate) Act(ctx context.Context, cluster *resource.Cluster)
 
 	// TODO test downgrades
 	// see https://github.com/cockroachdb/cockroach-operator/issues/208
-	healthChecker := healthchecker.NewHealthChecker(cluster, clientset, up.scheme, up.config)
+	healthChecker := healthchecker.NewHealthChecker(cluster, up.clientset, up.config)
 	log.V(int(zapcore.InfoLevel)).Info("update starting with partitioned update", "old version", currentVersionCalFmtStr, "new version", versionWantedCalFmtStr, "image", containerWanted)
 
 	updateRoach := &update.UpdateRoach{
@@ -204,7 +189,7 @@ func (up *partitionedUpdate) Act(ctx context.Context, cluster *resource.Cluster)
 	}
 
 	k8sCluster := &update.UpdateCluster{
-		Clientset:             clientset,
+		Clientset:             up.clientset,
 		PodUpdateTimeout:      podUpdateTimeout,
 		PodMaxPollingInterval: podMaxPollingInterval,
 		HealthChecker:         healthChecker,
@@ -228,17 +213,14 @@ func (up *partitionedUpdate) Act(ctx context.Context, cluster *resource.Cluster)
 
 	// TODO set status that we are completed.
 	log.V(DEBUGLEVEL).Info("update completed with partitioned update", "new version", versionWantedCalFmtStr)
-	CancelLoop(ctx)
+	CancelLoop(ctx, log)
 	return nil
 }
 
 // inK8s checks to see if the a file exists
 func inK8s(file string) bool {
 	_, err := os.Stat(file)
-	if os.IsNotExist(err) {
-		return false
-	}
-	return true
+	return !os.IsNotExist(err)
 }
 
 func getImageNameNoVersion(image string) string {

@@ -33,7 +33,6 @@ import (
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/runtime"
 	kubetypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -42,10 +41,9 @@ import (
 
 const sleepDuration = 1 * time.Minute
 
-func newClusterRestart(scheme *runtime.Scheme, cl client.Client, config *rest.Config) Actor {
+func newClusterRestart(cl client.Client, config *rest.Config, clientset kubernetes.Interface) Actor {
 	return &clusterRestart{
-		action: newAction("Crdb Cluster Restart", scheme, cl),
-		config: config,
+		action: newAction(nil, cl, config, clientset),
 	}
 }
 
@@ -53,8 +51,6 @@ func newClusterRestart(scheme *runtime.Scheme, cl client.Client, config *rest.Co
 // Full Restart in case of CA renew
 type clusterRestart struct {
 	action
-
-	config *rest.Config
 }
 
 //GetActionType returns api.ClusterRestartAction action used to set the cluster status errors
@@ -62,8 +58,7 @@ func (r *clusterRestart) GetActionType() api.ActionType {
 	return api.ClusterRestartAction
 }
 
-func (r *clusterRestart) Act(ctx context.Context, cluster *resource.Cluster) error {
-	log := r.log.WithValues("CrdbCluster", cluster.ObjectKey())
+func (r *clusterRestart) Act(ctx context.Context, cluster *resource.Cluster, log logr.Logger) error {
 	log.V(DEBUGLEVEL).Info("starting cluster restart action")
 	restartType := cluster.GetAnnotationRestartType()
 	if restartType == "" {
@@ -74,10 +69,6 @@ func (r *clusterRestart) Act(ctx context.Context, cluster *resource.Cluster) err
 	key := kubetypes.NamespacedName{
 		Namespace: cluster.Namespace(),
 		Name:      cluster.StatefulSetName(),
-	}
-	clientset, err := kubernetes.NewForConfig(r.config)
-	if err != nil {
-		return errors.Wrapf(err, "failed to create kubernetes clientset")
 	}
 
 	statefulSet := &appsv1.StatefulSet{}
@@ -90,20 +81,20 @@ func (r *clusterRestart) Act(ctx context.Context, cluster *resource.Cluster) err
 		return NotReadyErr{Err: errors.New("restart statefulset is updating, waiting for the update to finish")}
 	}
 
-	err = statefulSetReplicasAvailable(&statefulSet.Status)
+	err := statefulSetReplicasAvailable(&statefulSet.Status)
 	if err != nil {
 		log.Info("restart statefulset does not have all replicas up")
 		return err
 	}
-	healthChecker := healthchecker.NewHealthChecker(cluster, clientset, r.scheme, r.config)
+	healthChecker := healthchecker.NewHealthChecker(cluster, r.clientset, r.config)
 	if strings.EqualFold(restartType, api.ClusterRestartType(api.RollingRestart).String()) {
 		log.V(DEBUGLEVEL).Info("initiating rolling restart action")
-		if err := r.rollingSts(ctx, statefulSet.DeepCopy(), clientset, r.log, healthChecker); err != nil {
+		if err := r.rollingSts(ctx, statefulSet.DeepCopy(), log, healthChecker); err != nil {
 			return errors.Wrapf(err, "error restarting statefulset %s.%s", cluster.Namespace(), cluster.StatefulSetName())
 		}
 		log.V(DEBUGLEVEL).Info("completed rolling cluster restart")
 	} else if strings.EqualFold(restartType, api.ClusterRestartType(api.FullCluster).String()) {
-		if err := r.fullClusterRestart(ctx, statefulSet, log, clientset); err != nil {
+		if err := r.fullClusterRestart(ctx, statefulSet, log, r.clientset); err != nil {
 			return errors.Wrapf(err, "error reseting statefulset %s.%s to 0 replicas", cluster.Namespace(), cluster.StatefulSetName())
 		}
 		//sleep 1 minute to make sure the crdb is up and running
@@ -133,7 +124,7 @@ func (r *clusterRestart) Act(ctx context.Context, cluster *resource.Cluster) err
 		log.Error(err, "failed reseting the restart cluster field")
 	}
 	log.V(DEBUGLEVEL).Info("completed cluster restart")
-	CancelLoop(ctx)
+	CancelLoop(ctx, log)
 	return nil
 }
 
@@ -146,7 +137,6 @@ func statefulSetReplicasAvailable(status *v1.StatefulSetStatus) error {
 
 // rollingSts performs a rolling update on the cluster.
 func (r *clusterRestart) rollingSts(ctx context.Context, sts *appsv1.StatefulSet,
-	clientset kubernetes.Interface,
 	l logr.Logger,
 	healthChecker healthchecker.HealthChecker) error {
 	timeNow := metav1.Now()
@@ -158,7 +148,7 @@ func (r *clusterRestart) rollingSts(ctx context.Context, sts *appsv1.StatefulSet
 		stsNamespace := sts.Namespace
 		replicas := sts.Spec.Replicas
 
-		refreshedSts, err := clientset.AppsV1().StatefulSets(stsNamespace).Get(ctx, stsName, metav1.GetOptions{})
+		refreshedSts, err := r.clientset.AppsV1().StatefulSets(stsNamespace).Get(ctx, stsName, metav1.GetOptions{})
 		if err != nil {
 			return handleStsError(err, l, stsName, stsNamespace)
 		}
@@ -172,7 +162,7 @@ func (r *clusterRestart) rollingSts(ctx context.Context, sts *appsv1.StatefulSet
 		sts.Spec.UpdateStrategy.RollingUpdate = &v1.RollingUpdateStatefulSetStrategy{
 			Partition: &partition,
 		}
-		_, err = clientset.AppsV1().StatefulSets(stsNamespace).Update(ctx, sts, metav1.UpdateOptions{})
+		_, err = r.clientset.AppsV1().StatefulSets(stsNamespace).Update(ctx, sts, metav1.UpdateOptions{})
 		if err != nil {
 			return handleStsError(err, l, stsName, stsNamespace)
 		}
@@ -181,7 +171,7 @@ func (r *clusterRestart) rollingSts(ctx context.Context, sts *appsv1.StatefulSet
 		// the status of.
 		l.V(DEBUGLEVEL).Info("waiting until partition done restarting", "partition number:", partition)
 
-		if err := scale.WaitUntilStatefulSetIsReadyToServe(ctx, clientset, stsNamespace, stsName, *replicas); err != nil {
+		if err := scale.WaitUntilStatefulSetIsReadyToServe(ctx, r.clientset, stsNamespace, stsName, *replicas); err != nil {
 			return errors.Wrapf(err, "error rolling update stategy on pod %d", int(partition))
 		}
 
