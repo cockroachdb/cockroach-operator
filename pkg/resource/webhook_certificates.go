@@ -29,13 +29,13 @@ import (
 )
 
 const (
-	mutatingHookConfig   = "mutating-webhook-configuration"
+	mutatingHookConfig   = "cockroach-operator-mutating-webhook-configuration"
 	mutatingHookName     = "mcrdbcluster.kb.io"
-	validatingHookConfig = "validating-webhook-configuration"
+	validatingHookConfig = "cockroach-operator-validating-webhook-configuration"
 	validatingHookName   = "vcrdbcluster.kb.io"
 	webhookCASecret      = "cockroach-operator-webhook-ca"
 	webhookSecretOrg     = "Cockroach DB Operator"
-	webhookService       = "webhook-service"
+	webhookService       = "cockroach-operator-webhook-service"
 )
 
 // ErrWebhookNotFound is returned when the particular CRDB webhook is not defined.

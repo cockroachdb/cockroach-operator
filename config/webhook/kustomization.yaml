@@ -16,8 +16,5 @@ resources:
   - manifests.yaml
   - service.yaml
 
-replacements:
-  - path: patches/namespace_selector.yaml
-
 configurations:
   - kustomizeconfig.yaml

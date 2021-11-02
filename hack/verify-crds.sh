@@ -45,7 +45,7 @@ create_working_dir() {
 # TODO: Ideally we'd back able to share this with the makefile
 generate_crds() {
   HOME="${TEST_TMPDIR}/home" "${1}" crd:trivialVersions=true \
-    rbac:roleName=cockroach-operator-role \
+    rbac:roleName=role \
     webhook \
     paths=./... \
     output:crd:artifacts:config=config/crd/bases

@@ -7,20 +7,22 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 # [Unreleased](https://github.com/cockroachdb/cockroach-operator/compare/v2.3.0...master)
 
+## Added
+
+* Fixed resource requirements for vcheck container
+* Ability to run the operator as a cluster scoped operator or a namespace scoped one
+
 ## Changed
 
 * Deprecated legacy OpenShift packaging format in favor of new bundle format
 * Removed unused beta channel
 * Dynamically create instance specific service account, role, and role binding
+* OpenShift deployment now allows the operator to run for all namespaces
 
 ## Fixed
 
 * Boilerplate test after updating to Go 1.17
 * Permissions for sts/scale subresource
-
-## Added
-
-* Resource Requirements for vcheck container
 
 ## Deleted
 

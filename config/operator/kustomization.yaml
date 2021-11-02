@@ -14,7 +14,8 @@
 #
 # This is used to generate //manifests/operator.yaml
 ---
-namespace: default
+namespace: cockroach-operator-system
+namePrefix: cockroach-operator-
 
 resources:
   - ../default/namespace.yaml

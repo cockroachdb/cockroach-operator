@@ -238,7 +238,7 @@ dev/update-codegen:
 dev/update-crds:
 	@bazel run //hack/bin:controller-gen \
 		crd:trivialVersions=true \
-		rbac:roleName=cockroach-operator-role \
+		rbac:roleName=role \
 		webhook \
 		paths=./... \
 		output:crd:artifacts:config=config/crd/bases

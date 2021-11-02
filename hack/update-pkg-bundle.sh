@@ -43,7 +43,7 @@ main() {
   ensure_unique_deployment "${deploy_path}/${rh_bundle_version}"
   generate_package_bundle "${rh_bundle_version}" "${rh_package_options}" "${deploy_path}"
   generate_csv "${deploy_path}/${rh_bundle_version}/manifests" "${rh_operator_image}"
-  combine_files "${deploy_path}/${rh_bundle_version}" "${rh_bundle_version}" "${deploy_path}"
+  cleanup_csv "${deploy_path}/${rh_bundle_version}" "${rh_bundle_version}" "${deploy_path}"
 }
 
 ensure_unique_deployment() {
@@ -89,19 +89,11 @@ generate_csv() {
   done
 }
 
-combine_files() {
+cleanup_csv() {
   pushd "${1}/manifests" >/dev/null
 
   local csv="cockroach-operator.v${2}.clusterserviceversion.yaml"
-
-  # sticks all the necessary cluster permissions into the operator's CSV yaml
-  faq -f yaml -o yaml \
-    --slurp '.[0].spec.install.spec.clusterPermissions+= [{serviceAccountName: .[3].metadata.name, rules: .[1].rules }] | .[0]' \
-    csv.yaml cockroach-*.yaml webhook-service*.yaml \
-    > "${csv}"
-
-  # remove the "replaces" attribute. This is a new bundle
-  sed '/replaces: .*/d' "${csv}" > tmp-csv && mv tmp-csv "${csv}"
+  mv csv.yaml "${csv}"
 
   # delete all except the new csv and crd files
   rm -v !("${csv}"|"crdb.cockroachlabs.com_crdbclusters.yaml")
@@ -116,4 +108,3 @@ combine_files() {
 }
 
 main "$@"
-

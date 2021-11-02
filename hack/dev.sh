@@ -76,7 +76,11 @@ install_operator() {
 
 wait_for_ready() {
   echo "Waiting for deployment to be available..."
-  kubectl wait --for=condition=Available deploy/cockroach-operator --timeout=2m
+  kubectl wait \
+    --for=condition=Available \
+    --timeout=2m \
+    -n cockroach-operator-system \
+    deploy/cockroach-operator-manager
 }
 
 main() {
