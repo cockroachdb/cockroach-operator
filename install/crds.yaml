@@ -1092,6 +1092,9 @@ spec:
           status:
             description: CrdbClusterStatus defines the observed state of Cluster
             properties:
+              activeActor:
+                description: ActiveActor keeps track of which Actor is currently running
+                type: string
               clusterStatus:
                 description: OperatorStatus represent the status of the operator(Failed,
                   Starting, Running or Other)
@@ -1121,6 +1124,19 @@ spec:
                 type: array
               crdbcontainerimage:
                 description: CrdbContainerImage is the container that will be installed
+                type: string
+              directorObservedGeneration:
+                description: DirectorObservedGeneration increments whenever DirectorState
+                  is updated
+                type: integer
+              directorState:
+                description: DirectorState is used internally by the director to coordinate
+                  actors
+                type: string
+              directorStateUpdatedAt:
+                description: DirectorStateUpdatedAt keeps track of the last time DirectorState
+                  was updated
+                format: date-time
                 type: string
               operatorActions:
                 items:
