@@ -40,7 +40,7 @@ import (
 )
 
 // This constructs a mock cluster that behaves as if it were a real cluster in a steady state.
-func createTestDirectorAndStableCluster(t *testing.T) (*resource.Cluster, actor.Director) {
+func createTestDirectorAndStableCluster(t *testing.T) (*resource.Cluster, actor.Director, *fake.Clientset) {
 	var numNodes int32 = 4
 	version := "fake.version"
 	storage := "1Gi"
@@ -62,8 +62,15 @@ func createTestDirectorAndStableCluster(t *testing.T) (*resource.Cluster, actor.
 
 	// Mock node for our mock cluster
 	node := &v1.Node{}
+	serviceAccount := &v1.ServiceAccount{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "cockroachdb-sa",
+			Namespace: "default",
+		},
+	}
 	objs := []runtime.Object{
 		node,
+		serviceAccount,
 	}
 
 	// Mock components of our mock cluster
@@ -145,11 +152,11 @@ func createTestDirectorAndStableCluster(t *testing.T) (*resource.Cluster, actor.
 	config := &rest.Config{}
 	director := actor.NewDirector(scheme, client, config, clientset)
 
-	return cluster, director
+	return cluster, director, clientset
 }
 
 func TestNoActionRequired(t *testing.T) {
-	cluster, director := createTestDirectorAndStableCluster(t)
+	cluster, director, _ := createTestDirectorAndStableCluster(t)
 
 	// We made no changes to the steady-state mock cluster. No actor should trigger.
 	actor, err := director.GetActorToExecute(context.Background(), cluster, zapr.NewLogger(zaptest.NewLogger(t)))
@@ -158,7 +165,7 @@ func TestNoActionRequired(t *testing.T) {
 }
 
 func TestNeedsRestart(t *testing.T) {
-	cluster, director := createTestDirectorAndStableCluster(t)
+	cluster, director, _ := createTestDirectorAndStableCluster(t)
 	updated := cluster.Unwrap()
 
 	// Trigger restart by adding restart annotation
@@ -177,8 +184,21 @@ func TestNeedsRestart(t *testing.T) {
 	require.Equal(t, api.VersionCheckerAction, actor.GetActionType())
 }
 
+func TestNeedsRBACSetup(t *testing.T) {
+	cluster, director, clientset := createTestDirectorAndStableCluster(t)
+
+	// Trigger RBAC setup by deleting service account
+	serviceAccounts := clientset.CoreV1().ServiceAccounts(cluster.Namespace())
+	err := serviceAccounts.Delete(context.Background(), cluster.ServiceAccountName(), metav1.DeleteOptions{})
+	require.Nil(t, err)
+
+	actor, err := director.GetActorToExecute(context.Background(), cluster, zapr.NewLogger(zaptest.NewLogger(t)))
+	require.Nil(t, err)
+	require.Equal(t, api.SetupRBACAction, actor.GetActionType())
+}
+
 func TestNeedsDecommission(t *testing.T) {
-	cluster, director := createTestDirectorAndStableCluster(t)
+	cluster, director, _ := createTestDirectorAndStableCluster(t)
 	updated := cluster.Unwrap()
 
 	// Trigger decommission by decreasing nodes
@@ -197,7 +217,7 @@ func TestNeedsDecommission(t *testing.T) {
 }
 
 func TestNeedsVersionCheck(t *testing.T) {
-	cluster, director := createTestDirectorAndStableCluster(t)
+	cluster, director, _ := createTestDirectorAndStableCluster(t)
 
 	// Trigger version check by setting condition to false
 	cluster.SetFalse(api.CrdbVersionChecked)
@@ -214,7 +234,7 @@ func TestNeedsVersionCheck(t *testing.T) {
 }
 
 func TestNeedsCertificate(t *testing.T) {
-	cluster, director := createTestDirectorAndStableCluster(t)
+	cluster, director, _ := createTestDirectorAndStableCluster(t)
 	updated := cluster.Unwrap()
 
 	// Trigger certificate generation by enabling TLS
@@ -234,7 +254,7 @@ func TestNeedsCertificate(t *testing.T) {
 }
 
 func TestNeedsUpdate(t *testing.T) {
-	cluster, director := createTestDirectorAndStableCluster(t)
+	cluster, director, _ := createTestDirectorAndStableCluster(t)
 	updated := cluster.Unwrap()
 
 	// Trigger update by changing requested version
@@ -254,7 +274,7 @@ func TestNeedsUpdate(t *testing.T) {
 }
 
 func TestNeedsPVCResize(t *testing.T) {
-	cluster, director := createTestDirectorAndStableCluster(t)
+	cluster, director, _ := createTestDirectorAndStableCluster(t)
 	updated := cluster.Unwrap()
 
 	// Trigger PVC resize by increasing requested amount
@@ -274,7 +294,7 @@ func TestNeedsPVCResize(t *testing.T) {
 }
 
 func TestNeedsDeploy(t *testing.T) {
-	cluster, director := createTestDirectorAndStableCluster(t)
+	cluster, director, _ := createTestDirectorAndStableCluster(t)
 	updated := cluster.Unwrap()
 
 	// Trigger deploy by increasing nodes
@@ -293,7 +313,7 @@ func TestNeedsDeploy(t *testing.T) {
 }
 
 func TestNeedsInitialization(t *testing.T) {
-	cluster, director := createTestDirectorAndStableCluster(t)
+	cluster, director, _ := createTestDirectorAndStableCluster(t)
 
 	// Trigger initialization by setting the condition to false
 	cluster.SetFalse(api.CrdbInitializedCondition)
@@ -311,7 +331,7 @@ func TestNeedsInitialization(t *testing.T) {
 
 // Make successive changes to the cluster and check that each change triggers an actor earlier in the order
 func TestOrderOfActors(t *testing.T) {
-	cluster, director := createTestDirectorAndStableCluster(t)
+	cluster, director, clientset := createTestDirectorAndStableCluster(t)
 
 	// We made no changes to the steady-state mock cluster. No actor should trigger.
 	actor, err := director.GetActorToExecute(context.Background(), cluster, zapr.NewLogger(zaptest.NewLogger(t)))
@@ -372,6 +392,14 @@ func TestOrderOfActors(t *testing.T) {
 	actor, err = director.GetActorToExecute(context.Background(), &newCluster, zapr.NewLogger(zaptest.NewLogger(t)))
 	require.Nil(t, err)
 	require.Equal(t, api.DecommissionAction, actor.GetActionType())
+
+	// Trigger RBAC setup by deleting service account
+	serviceAccounts := clientset.CoreV1().ServiceAccounts(cluster.Namespace())
+	err = serviceAccounts.Delete(context.Background(), cluster.ServiceAccountName(), metav1.DeleteOptions{})
+	require.Nil(t, err)
+	actor, err = director.GetActorToExecute(context.Background(), &newCluster, zapr.NewLogger(zaptest.NewLogger(t)))
+	require.Nil(t, err)
+	require.Equal(t, api.SetupRBACAction, actor.GetActionType())
 
 	// Trigger restart by adding restart annotation
 	newCluster.SetTrue(api.CrdbVersionChecked)

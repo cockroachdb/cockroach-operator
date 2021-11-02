@@ -25,9 +25,9 @@ import (
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	kubetypes "k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
@@ -36,6 +36,7 @@ import (
 )
 
 type Director interface {
+	GetActor(api.ActionType) Actor
 	GetActorToExecute(context.Context, *resource.Cluster, logr.Logger) (Actor, error)
 }
 
@@ -71,6 +72,10 @@ func NewDirector(scheme *runtime.Scheme, cl client.Client, config *rest.Config, 
 	}
 }
 
+func (cd *clusterDirector) GetActor(aType api.ActionType) Actor {
+	return cd.actors[aType]
+}
+
 func (cd *clusterDirector) GetActorToExecute(ctx context.Context, cluster *resource.Cluster, log logr.Logger) (Actor, error) {
 	if cd.needsRestart(cluster) {
 		return cd.actors[api.ClusterRestartAction], nil
@@ -88,7 +93,7 @@ func (cd *clusterDirector) GetActorToExecute(ctx context.Context, cluster *resou
 		Name:      cluster.StatefulSetName(),
 	}
 	ss := &appsv1.StatefulSet{}
-	err := kube.IgnoreNotFound(cd.client.Get(ctx, stsKey, ss))
+	err = kube.IgnoreNotFound(cd.client.Get(ctx, stsKey, ss))
 	if err != nil {
 		return nil, err
 	}
