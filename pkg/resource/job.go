@@ -19,15 +19,14 @@ package resource
 import (
 	"errors"
 	"fmt"
-
 	"github.com/cockroachdb/cockroach-operator/pkg/features"
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
 	"github.com/cockroachdb/cockroach-operator/pkg/labels"
 	"github.com/cockroachdb/cockroach-operator/pkg/ptr"
 	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
-
 	kbatch "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
+	apiresource "k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -126,14 +125,24 @@ func (b JobBuilder) MakeContainers() []corev1.Container {
 	// if image == NotSupportedVersion {
 	//		panic("unable to find image")
 	//}
+
 	return []corev1.Container{
 		{
 			Name:            JobContainerName,
 			Image:           b.GetCockroachDBImageName(),
 			ImagePullPolicy: *b.Spec().Image.PullPolicyName,
-			Resources:       b.Spec().Resources,
-			Command:         []string{"/bin/bash"},
-			Args:            []string{"-c", fmt.Sprintf("%s; sleep 150", GetTagVersionCommand)},
+			Resources: corev1.ResourceRequirements{
+				Limits: corev1.ResourceList{
+					corev1.ResourceCPU:    apiresource.MustParse("300m"),
+					corev1.ResourceMemory: apiresource.MustParse("256Mi"),
+				},
+				Requests: corev1.ResourceList{
+					corev1.ResourceCPU:    apiresource.MustParse("300m"),
+					corev1.ResourceMemory: apiresource.MustParse("256Mi"),
+				},
+			},
+			Command: []string{"/bin/bash"},
+			Args:    []string{"-c", fmt.Sprintf("%s; sleep 150", GetTagVersionCommand)},
 		},
 	}
 }
