@@ -18,8 +18,8 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"os"
+	"strings"
 
 	crdbv1alpha1 "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/controller"
@@ -29,6 +29,7 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
@@ -76,20 +77,30 @@ func main() {
 		}
 	}
 
-	namespace, err := getWatchNamespace()
-	if err != nil {
-		setupLog.Error(err, "unable to get watch namespace")
-		os.Exit(1)
-	}
+	// Namespaces that are managed. Can be one of:
+	//   (empty) - Watch all namespaces
+	//   ns1 - Watch one watchNamespace
+	//   ns1,ns2 - Watch multiple namespaces
+	// See:
+	// https://sdk.operatorframework.io/docs/building-operators/golang/operator-scope/#configuring-watch-namespaces-dynamically
+	watchNamespace := os.Getenv(watchNamespaceEnvVar)
 
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+	mgrOpts := ctrl.Options{
 		Scheme:             scheme,
-		Namespace:          namespace,
+		Namespace:          watchNamespace,
 		MetricsBindAddress: metricsAddr,
 		LeaderElection:     enableLeaderElection,
 		Port:               9443,
 		CertDir:            certDir,
-	})
+	}
+
+	if strings.Contains(watchNamespace, ",") {
+		setupLog.Info("manager set up with multiple namespaces", "namespaces", watchNamespace)
+		mgrOpts.Namespace = ""
+		mgrOpts.NewCache = cache.MultiNamespacedCacheBuilder(strings.Split(watchNamespace, ","))
+	}
+
+	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), mgrOpts)
 	if err != nil {
 		setupLog.Error(err, "unable to create manager")
 		os.Exit(1)
@@ -111,7 +122,7 @@ func main() {
 
 	if !skipWebhookConfig {
 		// ensure TLS is all set up for webhooks
-		if err := SetupWebhookTLS(ctx, namespace, certDir); err != nil {
+		if err := SetupWebhookTLS(ctx, os.Getenv("NAMESPACE"), certDir); err != nil {
 			setupLog.Error(err, "failed to setup TLS")
 			os.Exit(1)
 		}
@@ -122,13 +133,4 @@ func main() {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
-}
-
-// getWatchNamespace returns the namespace the operation should be watching for changes
-func getWatchNamespace() (string, error) {
-	ns, found := os.LookupEnv(watchNamespaceEnvVar)
-	if !found {
-		return "", fmt.Errorf("%s must be set", watchNamespaceEnvVar)
-	}
-	return ns, nil
 }

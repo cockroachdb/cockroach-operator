@@ -16,7 +16,7 @@ kind: Namespace
 metadata:
   labels:
     control-plane: cockroach-operator
-  name: default
+  name: cockroach-operator-system
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -24,7 +24,7 @@ metadata:
   labels:
     app: cockroach-operator
   name: cockroach-operator-sa
-  namespace: default
+  namespace: cockroach-operator-system
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -309,15 +309,15 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: cockroach-operator-sa
-  namespace: default
+  namespace: cockroach-operator-system
 ---
 apiVersion: v1
 kind: Service
 metadata:
   labels:
     control-plane: cockroach-operator
-  name: webhook-service
-  namespace: default
+  name: cockroach-operator-webhook-service
+  namespace: cockroach-operator-system
 spec:
   ports:
   - port: 443
@@ -330,8 +330,8 @@ kind: Deployment
 metadata:
   labels:
     app: cockroach-operator
-  name: cockroach-operator
-  namespace: default
+  name: cockroach-operator-manager
+  namespace: cockroach-operator-system
 spec:
   replicas: 1
   selector:
@@ -353,7 +353,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.name
-        - name: WATCH_NAMESPACE
+        - name: NAMESPACE
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
@@ -370,21 +370,17 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
   creationTimestamp: null
-  name: mutating-webhook-configuration
+  name: cockroach-operator-mutating-webhook-configuration
 webhooks:
 - admissionReviewVersions:
   - v1
-  - v1beta1
   clientConfig:
     service:
-      name: webhook-service
-      namespace: default
+      name: cockroach-operator-webhook-service
+      namespace: cockroach-operator-system
       path: /mutate-crdb-cockroachlabs-com-v1alpha1-crdbcluster
   failurePolicy: Fail
   name: mcrdbcluster.kb.io
-  namespaceSelector:
-    matchLabels:
-      control-plane: cockroach-operator
   rules:
   - apiGroups:
     - crdb.cockroachlabs.com
@@ -401,21 +397,17 @@ apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   creationTimestamp: null
-  name: validating-webhook-configuration
+  name: cockroach-operator-validating-webhook-configuration
 webhooks:
 - admissionReviewVersions:
   - v1
-  - v1beta1
   clientConfig:
     service:
-      name: webhook-service
-      namespace: default
+      name: cockroach-operator-webhook-service
+      namespace: cockroach-operator-system
       path: /validate-crdb-cockroachlabs-com-v1alpha1-crdbcluster
   failurePolicy: Fail
   name: vcrdbcluster.kb.io
-  namespaceSelector:
-    matchLabels:
-      control-plane: cockroach-operator
   rules:
   - apiGroups:
     - crdb.cockroachlabs.com

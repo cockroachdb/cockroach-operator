@@ -49,7 +49,7 @@ func (r *CrdbCluster) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).For(r).Complete()
 }
 
-//+kubebuilder:webhook:path=/mutate-crdb-cockroachlabs-com-v1alpha1-crdbcluster,mutating=true,failurePolicy=fail,groups=crdb.cockroachlabs.com,resources=crdbclusters,verbs=create;update,versions=v1alpha1,name=mcrdbcluster.kb.io,sideEffects=None,admissionReviewVersions={v1,v1beta1}
+//+kubebuilder:webhook:path=/mutate-crdb-cockroachlabs-com-v1alpha1-crdbcluster,mutating=true,failurePolicy=fail,groups=crdb.cockroachlabs.com,resources=crdbclusters,verbs=create;update,versions=v1alpha1,name=mcrdbcluster.kb.io,sideEffects=None,admissionReviewVersions=v1
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type.
 func (r *CrdbCluster) Default() {
@@ -77,7 +77,7 @@ func (r *CrdbCluster) Default() {
 	}
 }
 
-//+kubebuilder:webhook:path=/validate-crdb-cockroachlabs-com-v1alpha1-crdbcluster,mutating=false,failurePolicy=fail,groups=crdb.cockroachlabs.com,resources=crdbclusters,verbs=create;update,versions=v1alpha1,name=vcrdbcluster.kb.io,sideEffects=None,admissionReviewVersions={v1,v1beta1}
+//+kubebuilder:webhook:path=/validate-crdb-cockroachlabs-com-v1alpha1-crdbcluster,mutating=false,failurePolicy=fail,groups=crdb.cockroachlabs.com,resources=crdbclusters,verbs=create;update,versions=v1alpha1,name=vcrdbcluster.kb.io,sideEffects=None,admissionReviewVersions=v1
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
 func (r *CrdbCluster) ValidateCreate() error {

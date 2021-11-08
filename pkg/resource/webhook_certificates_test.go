@@ -73,10 +73,10 @@ func TestCreateWebhookCertificate(t *testing.T) {
 	ctx := context.Background()
 	namespace := "bogus-ns"
 	dnsNames := []string{
-		"webhook-service",
-		"webhook-service.bogus-ns",
-		"webhook-service.bogus-ns.svc",
-		"webhook-service.bogus-ns.svc.cluster.local",
+		"cockroach-operator-webhook-service",
+		"cockroach-operator-webhook-service.bogus-ns",
+		"cockroach-operator-webhook-service.bogus-ns.svc",
+		"cockroach-operator-webhook-service.bogus-ns.svc.cluster.local",
 	}
 
 	t.Run("generates CA when not found", func(t *testing.T) {
@@ -119,7 +119,7 @@ func TestCreateWebhookCertificate(t *testing.T) {
 }
 
 func TestPatchMutatingWebhookConfig(t *testing.T) {
-	name := "mutating-webhook-configuration"
+	name := "cockroach-operator-mutating-webhook-configuration"
 
 	tests := []struct {
 		name   string
@@ -175,7 +175,7 @@ func TestPatchMutatingWebhookConfig(t *testing.T) {
 }
 
 func TestPatchValidatingWebhookConfig(t *testing.T) {
-	name := "validating-webhook-configuration"
+	name := "cockroach-operator-validating-webhook-configuration"
 
 	tests := []struct {
 		name   string
