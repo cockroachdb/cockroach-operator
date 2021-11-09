@@ -36,7 +36,7 @@ type CrdbClusterSpec struct {
 	// +kubebuilder:validation:Minimum=3
 	// +required
 	Nodes int32 `json:"nodes"`
-	// Container image information
+	// (Optional) Container image information
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Cockroach Database Image"
 	// +optional
 	Image *PodImage `json:"image,omitempty"`

@@ -98,6 +98,8 @@ func (r *CrdbCluster) ValidateCreate() error {
 
 	if r.Spec.CockroachDBVersion == "" && (r.Spec.Image == nil || r.Spec.Image.Name == "") {
 		return errors.New("you have to provide the cockroachDBVersion or cockroach image")
+	} else if r.Spec.CockroachDBVersion != "" && (r.Spec.Image != nil && r.Spec.Image.Name != "") {
+		return errors.New("you have provided both cockroachDBVersion and cockroach image, please provide only one")
 	}
 	return nil
 }
@@ -117,6 +119,11 @@ func (r *CrdbCluster) ValidateUpdate(old runtime.Object) error {
 		return kerrors.NewAggregate(errors)
 	}
 
+	if r.Spec.CockroachDBVersion == "" &&  (r.Spec.Image == nil || r.Spec.Image.Name == "") {
+		return errors.New("you have to provide the cockroachDBVersion or cockroach image")
+	} else if r.Spec.CockroachDBVersion != "" && (r.Spec.Image != nil && r.Spec.Image.Name != "") {
+		return errors.New("you have provided both cockroachDBVersion and cockroach image, please provide only one")
+	}
 	return nil
 }
 
