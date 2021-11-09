@@ -5,6 +5,7 @@ load("@io_k8s_repo_infra//defs:run_in_workspace.bzl", "workspace_binary")
 genrule(
     name = "fetch_jq",
     srcs = select({
+        ":m1": ["@jq_osx//file"],
         ":darwin": ["@jq_osx//file"],
         ":k8": ["@jq_linux//file"],
     }),
@@ -16,6 +17,7 @@ genrule(
 genrule(
     name = "fetch_openshift",
     srcs = select({
+        ":m1": ["@openshift_darwin//:file"],
         ":darwin": ["@openshift_darwin//:file"],
         ":k8": ["@openshift_linux//:file"],
     }),
@@ -27,6 +29,7 @@ genrule(
 genrule(
     name = "fetch_oc",
     srcs = select({
+        ":m1": ["@oc_darwin//:file"],
         ":darwin": ["@oc_darwin//:file"],
         ":k8": ["@oc_linux//:file"],
     }),
@@ -38,6 +41,7 @@ genrule(
 genrule(
     name = "fetch_faq",
     srcs = select({
+        ":m1": ["@faq_osx//file"],
         ":darwin": ["@faq_osx//file"],
         ":k8": ["@faq_linux//file"],
     }),
@@ -49,6 +53,7 @@ genrule(
 genrule(
     name = "com_coreos_etcd",
     srcs = select({
+        ":m1": ["@com_coreos_etcd_darwin_amd64//:file"],
         ":darwin": ["@com_coreos_etcd_darwin_amd64//:file"],
         ":k8": ["@com_coreos_etcd_linux_amd64//:file"],
     }),
@@ -60,6 +65,7 @@ genrule(
 genrule(
     name = "io_kubernetes_kube-apiserver",
     srcs = select({
+        ":m1": ["@kube-apiserver_darwin_amd64//file"],
         ":darwin": ["@kube-apiserver_darwin_amd64//file"],
         ":k8": ["@kube-apiserver_linux_amd64//file"],
     }),
@@ -71,6 +77,7 @@ genrule(
 genrule(
     name = "fetch_kubectl",
     srcs = select({
+        ":m1": ["@kubectl_1_18_darwin//file"],
         ":darwin": ["@kubectl_1_18_darwin//file"],
         ":k8": ["@kubectl_1_18_linux//file"],
     }),
@@ -83,6 +90,7 @@ genrule(
 genrule(
     name = "fetch_golangci_lint",
     srcs = select({
+        ":m1": ["@golangci_lint_m1//:file"],
         ":darwin": ["@golangci_lint_darwin//:file"],
         ":k8": ["@golangci_lint_linux//:file"],
     }),
@@ -124,6 +132,7 @@ workspace_binary(
 genrule(
     name = "fetch_kind",
     srcs = select({
+        ":m1": ["@kind_m1//file"],
         ":darwin": ["@kind_darwin//file"],
         ":k8": ["@kind_linux//file"],
     }),
@@ -136,6 +145,7 @@ genrule(
 genrule(
     name = "fetch_kubetest2",
     srcs = select({
+        ":m1": ["@kubetest2_darwin//file"],
         ":darwin": ["@kubetest2_darwin//file"],
         ":k8": ["@kubetest2_linux//file"],
     }),
@@ -148,6 +158,7 @@ genrule(
 genrule(
     name = "fetch_kubetest2_kind",
     srcs = select({
+        ":m1": ["@kubetest2_kind_darwin//file"],
         ":darwin": ["@kubetest2_kind_darwin//file"],
         ":k8": ["@kubetest2_kind_linux//file"],
     }),
@@ -160,6 +171,7 @@ genrule(
 genrule(
     name = "fetch_kubetest2_gke",
     srcs = select({
+        ":m1": ["@kubetest2_gke_darwin//file"],
         ":darwin": ["@kubetest2_gke_darwin//file"],
         ":k8": ["@kubetest2_gke_linux//file"],
     }),
@@ -172,6 +184,7 @@ genrule(
 genrule(
     name = "fetch_kubetest2_exe",
     srcs = select({
+        ":m1": ["@kubetest2_exe_darwin//file"],
         ":darwin": ["@kubetest2_exe_darwin//file"],
         ":k8": ["@kubetest2_exe_linux//file"],
     }),
@@ -192,6 +205,7 @@ genrule(
 genrule(
     name = "fetch_operator-sdk",
     srcs = select({
+        ":m1": ["@operator_sdk_darwin//file"],
         ":darwin": ["@operator_sdk_darwin//file"],
         ":k8": ["@operator_sdk_linux//file"],
     }),
@@ -204,6 +218,7 @@ genrule(
 genrule(
     name = "fetch_opm",
     srcs = select({
+        ":m1": ["@opm_darwin//file"],
         ":darwin": ["@opm_darwin//file"],
         ":k8": ["@opm_linux//file"],
     }),
@@ -216,6 +231,7 @@ genrule(
 genrule(
     name = "fetch_crdb",
     srcs = select({
+        ":m1": ["@crdb_darwin//:file"],
         ":darwin": ["@crdb_darwin//:file"],
         ":k8": ["@crdb_linux//:file"],
     }),
@@ -228,6 +244,7 @@ genrule(
 genrule(
     name = "fetch_kustomize",
     srcs = select({
+        ":m1": ["@kustomize_darwin_arm//:file"],
         ":darwin": ["@kustomize_darwin//:file"],
         ":k8": ["@kustomize_linux//:file"],
     }),
@@ -239,6 +256,7 @@ genrule(
 genrule(
     name = "fetch-aws-k8s-tester",
     srcs = select({
+        ":m1": ["@aws-k8s-tester-m1//file"],
         ":darwin": ["@aws-k8s-tester-darwin//file"],
         ":k8": ["@aws-k8s-tester-linux//file"],
     }),
@@ -256,6 +274,12 @@ config_setting(
 config_setting(
     name = "darwin",
     values = {"host_cpu": "darwin"},
+    visibility = ["//visibility:private"],
+)
+
+config_setting(
+    name = "m1",
+    values = {"host_cpu": "darwin_arm64"},
     visibility = ["//visibility:private"],
 )
 
