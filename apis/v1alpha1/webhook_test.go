@@ -26,7 +26,11 @@ import (
 )
 
 func TestCrdbClusterDefault(t *testing.T) {
-	cluster := &CrdbCluster{}
+	cluster := &CrdbCluster{
+		Spec: CrdbClusterSpec{
+			Image: &PodImage{},
+		},
+	}
 
 	maxUnavailable := int32(1)
 	policy := v1.PullIfNotPresent
@@ -35,7 +39,7 @@ func TestCrdbClusterDefault(t *testing.T) {
 		HTTPPort:       &DefaultHTTPPort,
 		SQLPort:        &DefaultSQLPort,
 		MaxUnavailable: &maxUnavailable,
-		Image:          PodImage{PullPolicyName: &policy},
+		Image:          &PodImage{PullPolicyName: &policy},
 	}
 
 	cluster.Default()

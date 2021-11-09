@@ -38,8 +38,8 @@ type CrdbClusterSpec struct {
 	Nodes int32 `json:"nodes"`
 	// Container image information
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Cockroach Database Image"
-	// +required
-	Image PodImage `json:"image"`
+	// +optional
+	Image *PodImage `json:"image,omitempty"`
 	// (Optional) The database port (`--port` CLI parameter when starting the service)
 	// Default: 26258
 	// +optional

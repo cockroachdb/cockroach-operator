@@ -18,6 +18,7 @@ package v1alpha1
 
 import (
 	"fmt"
+	"errors"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
@@ -73,7 +74,7 @@ func (r *CrdbCluster) Default() {
 		r.Spec.MaxUnavailable = &DefaultMaxUnavailable
 	}
 
-	if r.Spec.Image.PullPolicyName == nil {
+	if r.Spec.Image != nil && r.Spec.Image.PullPolicyName == nil {
 		policy := v1.PullIfNotPresent
 		r.Spec.Image.PullPolicyName = &policy
 	}
@@ -95,6 +96,9 @@ func (r *CrdbCluster) ValidateCreate() error {
 		return kerrors.NewAggregate(errors)
 	}
 
+	if r.Spec.CockroachDBVersion == "" && (r.Spec.Image == nil || r.Spec.Image.Name == "") {
+		return errors.New("you have to provide the cockroachDBVersion or cockroach image")
+	}
 	return nil
 }
 
