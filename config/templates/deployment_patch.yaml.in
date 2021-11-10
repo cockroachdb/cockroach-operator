@@ -31,6 +31,10 @@ spec:
             - -zap-log-level
             - info
           env:
+            - name: WATCH_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.annotations['olm.targetNamespaces']
 {{- range .CrdbVersions}}{{if stable . }}
             {{- /*
                 .CrdbVersions: a slice of CockroachDB versions. Every item uses

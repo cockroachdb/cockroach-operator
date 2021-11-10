@@ -17,7 +17,6 @@ namespace: placeholder
 resources:
   - ../default
   - ../samples
-  - ../scorecard
 
 patchesStrategicMerge:
   - patches/deployment_patch.yaml

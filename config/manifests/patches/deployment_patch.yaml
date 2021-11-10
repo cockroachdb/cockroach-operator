@@ -31,6 +31,10 @@ spec:
             - -zap-log-level
             - info
           env:
+            - name: WATCH_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.annotations['olm.targetNamespaces']
             - name: RELATED_IMAGE_COCKROACH_v20_1_4
               value: RH_COCKROACH_DB_IMAGE_PLACEHOLDER_v20_1_4
             - name: RELATED_IMAGE_COCKROACH_v20_1_5

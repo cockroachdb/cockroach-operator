@@ -121,29 +121,14 @@ sh_test(
     },
 )
 
-# update-pkg-bundle script generates manifests and metadata for OpenShift certification release
-# in the package manifests format
 sh_binary(
-    name = "update-pkg-bundle",
-    srcs = ["update-pkg-bundle.sh"],
+    name = "bundle",
+    srcs = ["bundle.sh"],
     data = [
         OPERATORSDK,
         KUSTOMIZE,
         OPM,
         FAQ,
-        "@//:all-srcs",
-    ],
-)
-
-# push-openshift-images is used on DEV only - push images to registry provided
-sh_binary(
-    name = "push-openshift-images",
-    srcs = ["push-openshift-images.sh"],
-    args = [
-        "$(location %s)" % OPM,
-    ],
-    data = [
-        OPM,
         "@//:all-srcs",
     ],
 )
