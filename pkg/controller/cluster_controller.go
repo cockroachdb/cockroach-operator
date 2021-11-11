@@ -24,12 +24,15 @@ import (
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/actor"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
+	"github.com/cockroachdb/cockroach-operator/pkg/util"
 	"github.com/go-logr/logr"
 	"github.com/lithammer/shortuuid/v3"
 	"go.uber.org/zap/zapcore"
 	appsv1 "k8s.io/api/apps/v1"
 	kbatch "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/networking/v1"
+	"k8s.io/api/networking/v1beta1"
 	policy "k8s.io/api/policy/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
@@ -74,6 +77,9 @@ type ClusterReconciler struct {
 // +kubebuilder:rbac:groups=policy,resources=poddisruptionbudgets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=policy,resources=poddisruptionbudgets/status,verbs=get
 // +kubebuilder:rbac:groups=policy,resources=poddisruptionbudgets/finalizers,verbs=get;list;watch
+// +kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses/status,verbs=get
+// +kubebuilder:rbac:groups=networking.k8s.io,resources=ingresses/finalizers,verbs=get;list;watch
 // +kubebuilder:rbac:groups=batch,resources=jobs,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=batch,resources=jobs/status,verbs=get
 // +kubebuilder:rbac:groups=batch,resources=jobs/finalizers,verbs=get;list;watch
@@ -210,12 +216,19 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req reconcile.Request
 
 // SetupWithManager registers the controller with the controller.Manager from controller-runtime
 func (r *ClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	var ingress client.Object
+	ingress = &v1.Ingress{}
+	if !util.CheckIfAPIVersionKindAvailable(mgr.GetConfig(), "networking.k8s.io/v1", "Ingress") {
+		ingress = &v1beta1.Ingress{}
+	}
+
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&api.CrdbCluster{}).
 		Owns(&corev1.Service{}).
 		Owns(&appsv1.StatefulSet{}).
 		Owns(&policy.PodDisruptionBudget{}).
 		Owns(&kbatch.Job{}).
+		Owns(ingress).
 		Complete(r)
 }
 

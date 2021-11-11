@@ -27,6 +27,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zaptest"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/rest"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -50,7 +51,8 @@ func TestSetupRBACActionAct(t *testing.T) {
 
 	t.Run("creates service account, role, and role-binding", func(t *testing.T) {
 		client := testutil.NewFakeClient(scheme)
-		actor := NewDirector(scheme, client, nil, nil).GetActor(api.SetupRBACAction)
+		config := &rest.Config{}
+		actor := NewDirector(scheme, client, config, nil).GetActor(api.SetupRBACAction)
 		require.NoError(t, actor.Act(ctx, cluster, log))
 
 		sa := new(corev1.ServiceAccount)

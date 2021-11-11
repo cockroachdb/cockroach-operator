@@ -18,6 +18,7 @@ package v1alpha1
 
 import (
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -122,6 +123,10 @@ type CrdbClusterSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Map of nodeSelectors to match when scheduling pods on nodes"
 	// +optional
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
+	// (Optional) Ingress defines the Ingress configuration used to expose the services using Ingress
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Cockroach Database Ingress"
+	// +optional
+	Ingress *IngressConfig `json:"ingress,omitempty"`
 }
 
 // +k8s:openapi-gen=true
@@ -238,6 +243,38 @@ type Volume struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="PVC Supports Auto Resizing",xDescriptors="urn:alm:descriptor:com.tectonic.ui:booleanSwitch"
 	// +optional
 	SupportsAutoResize bool `json:"supportsAutoResize"`
+}
+
+// +k8s:openapi-gen=true
+// +kubebuilder:object:generate=true
+// +k8s:deepcopy-gen=true
+
+// IngressConfig defines the configuration required to create ingress resource
+type IngressConfig struct {
+	// (Optional) HTTP port (UI) to be exposed via ingress
+	// +optional
+	UI *Ingress `json:"ui,omitempty"`
+
+	// TODO: Add other ingress config for SQL and GRPC here when implemented
+}
+
+// +kubebuilder:object:generate=true
+// +k8s:openapi-gen=true
+// +k8s:deepcopy-gen=true
+
+type Ingress struct {
+	// (Optional) IngressClassName to be used by ingress resource
+	// +optional
+	IngressClassName string `json:"ingressClassName,omitempty"`
+	// (Optional) Annotations related to ingress resource
+	// +optional
+	Annotations map[string]string `json:"annotations,omitempty"`
+	// (Optional) TLS describes the TLS certificate info
+	// +optional
+	TLS []v1.IngressTLS `json:"tls,omitempty"`
+	// host is host to be used for exposing service
+	// +required
+	Host string `json:"host"`
 }
 
 // +kubebuilder:object:generate=true

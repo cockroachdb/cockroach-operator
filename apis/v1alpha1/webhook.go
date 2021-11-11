@@ -17,8 +17,10 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"fmt"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	kerrors "k8s.io/apimachinery/pkg/util/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -82,6 +84,16 @@ func (r *CrdbCluster) Default() {
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
 func (r *CrdbCluster) ValidateCreate() error {
 	webhookLog.Info("validate create", "name", r.Name)
+	var errors []error
+	if r.Spec.Ingress != nil {
+		if err := r.ValidateIngress(); err != nil {
+			errors = append(errors, err...)
+		}
+	}
+
+	if len(errors) != 0 {
+		return kerrors.NewAggregate(errors)
+	}
 
 	return nil
 }
@@ -89,6 +101,17 @@ func (r *CrdbCluster) ValidateCreate() error {
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
 func (r *CrdbCluster) ValidateUpdate(old runtime.Object) error {
 	webhookLog.Info("validate update", "name", r.Name)
+	var errors []error
+
+	if r.Spec.Ingress != nil {
+		if err := r.ValidateIngress(); err != nil {
+			errors = append(errors, err...)
+		}
+	}
+
+	if len(errors) != 0 {
+		return kerrors.NewAggregate(errors)
+	}
 
 	return nil
 }
@@ -99,4 +122,19 @@ func (r *CrdbCluster) ValidateDelete() error {
 
 	// we're not validating anything on delete. This is just a placeholder for now to satisfy the Validator interface
 	return nil
+}
+
+// ValidateIngress validates the ingress configuration used to create ingress resource
+func (r *CrdbCluster) ValidateIngress() (errors []error) {
+	webhookLog.Info("validate ingress", "name", r.Name)
+
+	if r.Spec.Ingress.UI == nil {
+		errors = append(errors, fmt.Errorf("UI related ingress config missing"))
+	}
+
+	if r.Spec.Ingress.UI.Host == "" {
+		errors = append(errors, fmt.Errorf("host required for UI"))
+	}
+
+	return
 }

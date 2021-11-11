@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1_test
 
 import (
+	"fmt"
 	"testing"
 
 	. "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
@@ -39,4 +40,31 @@ func TestCrdbClusterDefault(t *testing.T) {
 
 	cluster.Default()
 	require.Equal(t, expected, cluster.Spec)
+}
+
+func TestValidateIngress(t *testing.T) {
+
+	tests := []struct {
+		name     string
+		cluster  *CrdbCluster
+		expected []error
+	}{
+		{
+			name: "ingress config with UI host missing",
+			cluster: &CrdbCluster{
+				Spec: CrdbClusterSpec{
+					Ingress: &IngressConfig{UI: &Ingress{IngressClassName: "abc"}},
+				},
+			},
+			expected: []error{fmt.Errorf("host required for UI")},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			require.Equal(t, tt.expected, tt.cluster.ValidateIngress())
+		})
+
+	}
 }

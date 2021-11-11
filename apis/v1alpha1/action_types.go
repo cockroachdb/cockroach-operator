@@ -31,4 +31,5 @@ const (
 	PartitionedUpdateAction ActionType = "PartitionedUpdate"
 	SetupRBACAction         ActionType = "SetupRBAC"
 	UnknownAction           ActionType = "Unknown"
+	ExposeIngressAction     ActionType = "ExposeIngressAction"
 )

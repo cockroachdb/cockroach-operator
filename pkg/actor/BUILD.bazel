@@ -9,6 +9,7 @@ go_library(
         "decommission.go",
         "deploy.go",
         "director.go",
+        "expose_ingress.go",
         "generate_cert.go",
         "initialize.go",
         "partitioned_update.go",
