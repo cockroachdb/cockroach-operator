@@ -94,13 +94,13 @@ def install_integration_test_dependencies():
 
     http_archive(
         name = "com_coreos_etcd_darwin_amd64",
-        sha256 = "c8f36adf4f8fb7e974f9bafe6e390a03bc33e6e465719db71d7ed3c6447ce85a",
-        urls = ["https://github.com/etcd-io/etcd/releases/download/v3.3.12/etcd-v3.3.12-darwin-amd64.zip"],
+        sha256 = "27245adea2e0951913276d8c321d79b91caaf904ae3fdaab65194ab41c01db08",
+        urls = ["https://github.com/etcd-io/etcd/releases/download/v3.4.16/etcd-v3.4.16-darwin-amd64.zip"],
         build_file_content = """
 filegroup(
     name = "file",
     srcs = [
-        "etcd-v3.3.12-darwin-amd64/etcd",
+        "etcd-v3.4.16-darwin-amd64/etcd",
     ],
     visibility = ["//visibility:public"],
 )
@@ -109,13 +109,13 @@ filegroup(
 
     http_archive(
         name = "com_coreos_etcd_linux_amd64",
-        sha256 = "dc5d82df095dae0a2970e4d870b6929590689dd707ae3d33e7b86da0f7f211b6",
-        urls = ["https://github.com/etcd-io/etcd/releases/download/v3.3.12/etcd-v3.3.12-linux-amd64.tar.gz"],
+        sha256 = "2e2d5b3572e077e7641193ed07b4929b0eaf0dc2f9463e9b677765528acafb89",
+        urls = ["https://github.com/etcd-io/etcd/releases/download/v3.4.16/etcd-v3.4.16-linux-amd64.tar.gz"],
         build_file_content = """
 filegroup(
     name = "file",
     srcs = [
-        "etcd-v3.3.12-linux-amd64/etcd",
+        "etcd-v3.4.16-linux-amd64/etcd",
     ],
     visibility = ["//visibility:public"],
 )
@@ -152,6 +152,22 @@ filegroup(
         "golangci-lint-1.42.0-darwin-amd64/golangci-lint",
      ],
      visibility = ["//visibility:public"],
+)
+    """,
+    )
+
+    http_archive(
+            name = "golangci_lint_m1",
+            sha256 = "f649893bf2b1d24b2632b5e109884a15f3bf25cfdad46b34fb8fd13a016098fd",
+            urls = ["https://github.com/golangci/golangci-lint/releases/download/v1.42.1/golangci-lint-1.42.1-darwin-arm64.tar.gz"],
+            build_file_content =
+             """
+filegroup(
+    name = "file",
+    srcs = [
+       "golangci-lint-1.42.1-darwin-arm64/golangci-lint",
+    ],
+    visibility = ["//visibility:public"],
 )
     """,
     )
@@ -217,11 +233,19 @@ def install_kind():
     )
 
     http_file(
+            name = "kind_m1",
+            executable = 1,
+            sha256 = "4f019c578600c087908ac59dd0c4ce1791574f153a70608adb372d5abc58cd47",
+            urls = ["https://github.com/kubernetes-sigs/kind/releases/download/v0.11.1/kind-darwin-arm64"],
+    )
+
+    http_file(
         name = "kind_linux",
         executable = 1,
         sha256 = "949f81b3c30ca03a3d4effdecda04f100fa3edc07a28b19400f72ede7c5f0491",
         urls = ["https://github.com/kubernetes-sigs/kind/releases/download/v0.11.1/kind-linux-amd64"],
     )
+
 
 ## Fetch kubetest2 binary used during e2e tests
 def install_kubetest2():
@@ -311,6 +335,21 @@ def install_operator_sdk():
     )
 
 def install_kustomize():
+    http_archive(
+           name = "kustomize_darwin_arm",
+           sha256 = "9556143d01feb9d9fa7706a6b0f60f74617c808f1c8c06130647e36a4e6a8746",
+           urls = ["https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv4.4.0/kustomize_v4.4.0_darwin_arm64.tar.gz"],
+           build_file_content = """
+filegroup(
+    name = "file",
+    srcs = [
+    "kustomize",
+    ],
+    visibility = ["//visibility:public"],
+)
+""",
+    )
+
     http_archive(
        name = "kustomize_darwin",
        sha256 = "77898f8b7c37e3ba0c555b4b7c6d0e3301127fa0de7ade6a36ed767ca1715643",
@@ -428,6 +467,12 @@ def install_kubetest2_aws():
         executable = 1,
         sha256 = "f6a95feef94ab9a96145fff812eeebae14f974edfead98046351f3098808df54",
         urls = ["https://github.com/aws/aws-k8s-tester/releases/download/v1.6.1/aws-k8s-tester-v1.6.1-linux-amd64"],
+    )
+    http_file(
+            name = "aws-k8s-tester-m1",
+            executable = 1,
+            sha256 = "a0c4d6125c0dac4d5333560243975ecc2ef7712b71f5bd29e79c3f450ec7165e",
+            urls = ["https://github.com/aws/aws-k8s-tester/releases/download/v1.6.5/aws-k8s-tester-v1.6.5-darwin-arm64"],
     )
     http_file(
         name = "aws-k8s-tester-darwin",
