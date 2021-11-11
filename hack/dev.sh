@@ -40,7 +40,7 @@ nodes:
   image: ${NODE_IMAGE}
 containerdConfigPatches:
 - |-
-  [plugins."io.containerd.grpc.v1.cri".registry.mirrors."localhost:${REGISTRY_PORT}"]
+  [plugins."io.containerd.grpc.v1.cri".registry.mirrors."127.0.0.1:${REGISTRY_PORT}"]
     endpoint = ["http://${REGISTRY_NAME}:${REGISTRY_PORT}"]
 EOF
 }
@@ -56,7 +56,7 @@ metadata:
   namespace: kube-public
 data:
   localRegistryHosting.v1: |
-    host: "localhost:${REGISTRY_PORT}"
+    host: "127.0.0.1:${REGISTRY_PORT}"
     help: "https://kind.sigs.k8s.io/docs/user/local-registry/"
 EOF
 }
@@ -66,7 +66,7 @@ install_operator() {
   # now I've added a defined make variable which can be used for substitution
   # in //config/default/BUILD.bazel.
   K8S_CLUSTER="kind-${CLUSTER_NAME}" \
-    DEV_REGISTRY="localhost:${REGISTRY_PORT}" \
+    DEV_REGISTRY="127.0.0.1:${REGISTRY_PORT}" \
     bazel run \
     --stamp \
     --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
