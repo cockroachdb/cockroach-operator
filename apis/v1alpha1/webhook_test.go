@@ -75,7 +75,9 @@ func TestValidateIngress(t *testing.T) {
 
 func TestCreateCrdbClusterWithoutImageOrCockroachDBVersion(t *testing.T) {
 	cluster := &CrdbCluster{
-		Spec: CrdbClusterSpec{},
+		Spec: CrdbClusterSpec{
+			Image: &PodImage{},
+		},
 	}
 
 	err := cluster.ValidateCreate()
