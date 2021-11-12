@@ -73,61 +73,69 @@ func TestValidateIngress(t *testing.T) {
 	}
 }
 
-func TestCreateCrdbClusterWithoutImageOrCockroachDBVersion(t *testing.T) {
-	cluster := &CrdbCluster{
-		Spec: CrdbClusterSpec{
-			Image: &PodImage{},
+func TestCreateCrdbCluster(t *testing.T) {
+	testcases := []struct{
+		Cluster *CrdbCluster
+		ErrMsg string
+	}{
+		{
+			Cluster: &CrdbCluster{
+				Spec: CrdbClusterSpec{
+					Image: &PodImage{},
+				},
+			},
+			ErrMsg: "you have to provide the cockroachDBVersion or cockroach image",
+		},
+		{
+			Cluster: &CrdbCluster{
+				Spec: CrdbClusterSpec{
+					Image: &PodImage{Name: "testImage"},
+					CockroachDBVersion: "v2.1.20",
+				},
+			},
+			ErrMsg: "you have provided both cockroachDBVersion and cockroach image, please provide only one",
 		},
 	}
 
-	err := cluster.ValidateCreate()
-	require.Error(t, err)
-	require.Equal(t, err.Error(), "you have to provide the cockroachDBVersion or cockroach image")
+	for _, testcase := range testcases {
+		err := testcase.Cluster.ValidateCreate()
+		require.Error(t, err)
+		require.Equal(t, err.Error(), testcase.ErrMsg)
+	}
 }
 
-func TestCreateCrdbClusterWithImageAndCockroachDBVersion(t *testing.T) {
-	cluster := &CrdbCluster{
-		Spec: CrdbClusterSpec{
-			Image: &PodImage{Name: "testImage"},
-			CockroachDBVersion: "v2.1.20",
-		},
-	}
 
-	err := cluster.ValidateCreate()
-	require.Error(t, err)
-	require.Equal(t, err.Error(), "you have provided both cockroachDBVersion and cockroach image, please provide only one")
-}
-
-func TestUpdateCrdbClusterWithoutImageOrCockroachDBVersion(t *testing.T) {
-	oldCluster := CrdbCluster{
-		Spec: CrdbClusterSpec{
-			Image: &PodImage{},
-		},
-	}
-	cluster := &CrdbCluster{
-		Spec: CrdbClusterSpec{},
-	}
-
-	err := cluster.ValidateUpdate(&oldCluster)
-	require.Error(t, err)
-	require.Equal(t, err.Error(), "you have to provide the cockroachDBVersion or cockroach image")
-}
-
-func TestUpdateCrdbClusterWithImageAndCockroachDBVersion(t *testing.T) {
+func TestUpdateCrdbCluster(t *testing.T) {
 	oldCluster := CrdbCluster{
 		Spec: CrdbClusterSpec{
 			Image: &PodImage{},
 		},
 	}
 
-	cluster := &CrdbCluster{
-		Spec: CrdbClusterSpec{
-			Image: &PodImage{Name: "testImage"},
-			CockroachDBVersion: "v2.1.20",
+	testcases := []struct{
+		Cluster *CrdbCluster
+		ErrMsg string
+	}{
+		{
+			Cluster: &CrdbCluster{
+				Spec: CrdbClusterSpec{},
+			},
+			ErrMsg: "you have to provide the cockroachDBVersion or cockroach image",
+		},
+		{
+			Cluster: &CrdbCluster{
+				Spec: CrdbClusterSpec{
+					Image: &PodImage{Name: "testImage"},
+					CockroachDBVersion: "v2.1.20",
+				},
+			},
+			ErrMsg: "you have provided both cockroachDBVersion and cockroach image, please provide only one",
 		},
 	}
 
-	err := cluster.ValidateUpdate(&oldCluster)
-	require.Error(t, err)
-	require.Equal(t, err.Error(), "you have provided both cockroachDBVersion and cockroach image, please provide only one")
+	for _, testcase := range testcases {
+		err := testcase.Cluster.ValidateUpdate(&oldCluster)
+		require.Error(t, err)
+		require.Equal(t, err.Error(), testcase.ErrMsg)
+	}
 }
