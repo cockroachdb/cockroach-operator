@@ -313,7 +313,7 @@ release/gen-templates:
 # Generate various manifest files for OpenShift. We run this target after the
 # operator version is changed. The results are committed to Git.
 .PHONY: release/gen-files
-release/gen-files: | release/gen-templates release/update-pkg-bundle
+release/gen-files: | release/gen-templates release/generate-bundle
 	git add . && git commit -m "Bump version to $(VERSION)"
 
 .PHONY: release/image
@@ -354,54 +354,11 @@ endif
 PKG_MAN_OPTS ?= "$(PKG_CHANNELS) $(PKG_DEFAULT_CHANNEL)"
 
 # Build the packagemanifests
-.PHONY: release/update-pkg-bundle
-release/update-pkg-bundle: dev/generate
-	bazel run //hack:update-pkg-bundle -- $(RH_BUNDLE_VERSION) $(RH_OPERATOR_IMAGE) $(PKG_MAN_OPTS) $(RH_COCKROACH_DATABASE_IMAGE)
+.PHONY: release/generate-bundle
+release/generate-bundle: dev/generate
+	bazel run //hack:bundle -- $(RH_BUNDLE_VERSION) $(RH_OPERATOR_IMAGE) $(PKG_MAN_OPTS) $(RH_COCKROACH_DATABASE_IMAGE)
 
 #  Build the OPM bundle
 .PHONY: release/opm-build-bundle
-release/opm-build-bundle: release/update-pkg-bundle
+release/opm-build-bundle: release/generate-bundle
 	bazel run //hack:opm-build-bundle -- $(RH_BUNDLE_VERSION) $(RH_OPERATOR_IMAGE) $(PKG_MAN_OPTS)
-
-#
-# Release bundle image
-#
-.PHONY: release/bundle-image
-release/bundle-image:
-	RH_BUNDLE_REGISTRY=$(RH_BUNDLE_REGISTRY) \
-	RH_BUNDLE_IMAGE_REPOSITORY=$(RH_BUNDLE_IMAGE_REPOSITORY) \
-	RH_BUNDLE_VERSION=$(RH_BUNDLE_VERSION) \
-	RH_DEPLOY_PATH=$(RH_DEPLOY_FULL_PATH) \
-	RH_BUNDLE_IMAGE_TAG=$(APP_VERSION) \
-	bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
-		//:push_operator_bundle_image
-
-# This target:
-# 1. Updates CRD and CSV files
-# 2. Pushes the operator image to a registry
-# 3. Builds the OpenShift bundle
-# 4. Pushes the OpenShift bundle to a registry
-# 5. Run opm to create and push the OpenShift index container to a registry
-# 6. Removes the newly created OpenShift files so that it can run again.
-#
-# The following env variables are used for the above process.
-#
-# APP_VERSION
-# VERSION
-# RH_BUNDLE_VERSION
-# RH_OPERATOR_IMAGE
-# DOCKER_REGISTRY
-#
-# See hack/openshift-test-packaging.sh for more information on running this target.
-.PHONY: test/openshift-package
-test/openshift-package: release/opm-build-bundle release/image test/push-openshift-images
-	VERSION=$(VERSION) \
-	hack/cleanup-packaging.sh
-
-# This target pushes the OpenShift bundle, then uses opm to push the index bundle.
-.PHONY: test/push-openshift-images
-test/push-openshift-images:
-	APP_VERSION=$(APP_VERSION) \
-	DOCKER_REGISTRY=$(DOCKER_REGISTRY) \
-	bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
-		//hack:push-openshift-images

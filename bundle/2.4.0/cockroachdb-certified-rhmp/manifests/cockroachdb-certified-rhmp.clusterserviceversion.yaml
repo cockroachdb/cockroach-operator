@@ -1,0 +1,582 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    marketplace.openshift.io/remote-workflow: https://marketplace.redhat.com/en-us/operators/cockroachdb-certified-rhmp/pricing?utm_source=openshift_console
+    marketplace.openshift.io/support-workflow: https://marketplace.redhat.com/en-us/operators/cockroachdb-certified-rhmp/support?utm_source=openshift_console
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "crdb.cockroachlabs.com/v1alpha1",
+          "kind": "CrdbCluster",
+          "metadata": {
+            "name": "crdb-tls-example",
+            "namespace": "placeholder"
+          },
+          "spec": {
+            "cockroachDBVersion": "v21.1.11",
+            "dataStore": {
+              "pvc": {
+                "spec": {
+                  "accessModes": [
+                    "ReadWriteOnce"
+                  ],
+                  "resources": {
+                    "requests": {
+                      "storage": "10Gi"
+                    }
+                  },
+                  "volumeMode": "Filesystem"
+                }
+              }
+            },
+            "nodes": 3,
+            "tlsEnabled": true
+          }
+        }
+      ]
+    capabilities: Full Lifecycle
+    categories: Database
+    certified: "true"
+    containerImage: registry.connect.redhat.com/cockroachdb/cockroachdb-operator@sha256:2758a795570b63d0f7a9440b322848690bd8c89cbc69c1ec23c727a1b5bdbe93
+    createdAt: 2021-11-10T15:15:15Z
+    description: CockroachDB Operator
+    operators.operatorframework.io/builder: operator-sdk-v1.11.0+git
+    operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
+    repository: https://github.com/cockroachdb/cockroach-operator
+    support: Cockroach Labs
+  name: cockroach-operator.v2.4.0
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: CrdbCluster is the CRD for the cockroachDB clusters API
+      displayName: CockroachDB Operator
+      kind: CrdbCluster
+      name: crdbclusters.crdb.cockroachlabs.com
+      specDescriptors:
+      - description: (Optional) Additional custom resource annotations that are added
+          to all resources. Changing `AdditionalAnnotations` field will result in
+          cockroachDB cluster restart.
+        displayName: Map of additional custom annotations
+        path: additionalAnnotations
+      - description: (Optional) Additional custom resource labels that are added to
+          all resources
+        displayName: Map of additional custom labels
+        path: additionalLabels
+      - description: Database disk storage configuration
+        displayName: Data Store
+        path: dataStore
+      - description: '(Optional) SupportsAutoResize marks that a PVC will resize without
+          restarting the entire cluster Default: false'
+        displayName: PVC Supports Auto Resizing
+        path: dataStore.supportsAutoResize
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+      - description: Container image information
+        displayName: Cockroach Database Image
+        path: image
+      - description: (Optional) If specified, the pod's nodeSelector
+        displayName: Map of nodeSelectors to match when scheduling pods on nodes
+        path: nodeSelector
+      - description: Number of nodes (pods) in the cluster
+        displayName: Number of nodes
+        path: nodes
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:podCount
+      - description: (Optional) TLSEnabled determines if TLS is enabled for your CockroachDB
+          Cluster
+        displayName: TLS Enabled
+        path: tlsEnabled
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
+      - description: (Optional) Tolerations for scheduling pods onto some dedicated
+          nodes
+        displayName: Cockroach Database Tolerations
+        path: tolerations
+      statusDescriptors:
+      - description: OperatorStatus represent the status of the operator(Failed, Starting,
+          Running or Other)
+        displayName: OperatorStatus
+        path: clusterStatus
+      - description: List of conditions representing the current status of the cluster
+          resource.
+        displayName: Cluster Conditions
+        path: conditions
+        x-descriptors:
+        - urn:alm:descriptor:io.kubernetes.conditions
+      - description: CrdbContainerImage is the container that will be installed
+        displayName: CrdbContainerImage
+        path: crdbcontainerimage
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - displayName: Crdb Actions
+        path: operatorActions
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: Database service version. Not populated and is just a placeholder
+          currently.
+        displayName: Version
+        path: version
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      version: v1alpha1
+  description: This operator launches and manages a 3+ node cluster of CockroachDB.
+  displayName: CockroachDB Operator
+  icon:
+  - base64data: iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA/xJREFUeNq0V9uLE1cY/85k08wk2TWyf8AGH30oI8kigrLxgsULbqC1PrR0Z3rRQh928yD2ySUKgvhg9lFFZ1ZhZR+kkdaCgiUrBSm7YYc+9KmF2AfBBzF46V6SOcfvTM7kvu5kM/1gcgIz53y/7/fdzkegSQK77y4roKhhJkMEFAgzfPgKcjnCFAv/LyhMzt8pRizoIkezq2o1wtKVQTpWGWRqJcpiuML6IAW+8qcaZda/Q8O73D0DrUeQEv6o7QcTgBguKf4QINNnkrZFw2TmxhPJ5O9PnlnXUNlkhTIVNhMGpbazGxLcPR+v/HGq1L5n/+jfqsKQGZDHkZW0QmSwIwCotFDZRvmaciyMOk8eGbiPq/X7l9EOpkbKL+PPYsOlrgC8yNeJtVhQCk7ZYZh2aUWFgNRnqwrL/XxJLvdyntQrgFvFEFcw0uXVSK/KtwRgIrFioB81hz4KGSAs47hWAu3Y+VXjfwXwefLVFANWU26Dbv4ayM3NBXOoXBcO1T65vDLVy5meY+B48rkqQ2iZp6YMH2WuFwdyze/Hz65OVcNw1Uk1he367Yew5SsDFJhRyyJWaFfO5f4VmTNRcL4JMMNXFxxI/oO013KcEjqzYYpLbEbwqu67/VbzDQAlbLJRR1j5Aw61GmBg0hcAe0b/Ul3rPUi86WR1z703at8A0OJ0S79ggQ0tIzaZbHUJpPsGgME3VgMCZo1lkj6dqHb4d/zsmoZ1wVVoCgBjfjDAmxDYYGclIE70EyIZ3+2ldRCffb/OlRuiPuToAGRFTKQ2O3/Aa7o8WhrhDSSDlZB3Ro0FwNCO2LA2jH2AirRjYD48pziVce/c2/7T8OPRYkrQX+9es0VFR8tqFCMI9LshyrL54IKsN5ir7Uk8ep3qOw3RDS0t+tqipDenHCov/HQ1pLelZMmPNCyLwOtIJxpg2QYA0lGcCKtfbMpbBvDnYsJquhG1tuXHgbz7f/5WMN9lu7OneHjI6tcFjgWHk8+8FiMYu/nOk/WeAGDqFYQbUl4BYNCkRBEp9A0AFS8IIBOeezyFCREHC34AyLuBmE6+iG/2/aGZ/+JuACKQfN8Ani7uLKFys/axNL0pYBumxWo+/XSw1DcA5yMmzQoA2hfJNxvGwpGLKylMSU3QP+vbfeDx0o5CnQUmGd8mKh1peeLcaqxeFdH6J19FC74BENbzGl9GIHEJm1GXVmyg1XHMgDKykPH9UsrlVPKVGmKhZT4ZUQXM9W1Mc2a/IWrizMfHM+dC+vBHxfJuWA8yv7TdQiZ0dw5oKrvunKD3onxLg4lZlE1CiN5S5TjtOCf8clE2ez2v59nQlW8O2mo1zIwqDqm46tgPrK2c816AAQCBW4SEJD8W2QAAAABJRU5ErkJggg==
+    mediatype: image/png
+  install:
+    spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - admissionregistration.k8s.io
+          resources:
+          - mutatingwebhookconfigurations
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - admissionregistration.k8s.io
+          resources:
+          - validatingwebhookconfigurations
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - apps
+          resources:
+          - statefulsets
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - apps
+          resources:
+          - statefulsets/finalizers
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - apps
+          resources:
+          - statefulsets/scale
+          verbs:
+          - get
+          - update
+          - watch
+        - apiGroups:
+          - apps
+          resources:
+          - statefulsets/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - batch
+          resources:
+          - jobs
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - batch
+          resources:
+          - jobs/finalizers
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - batch
+          resources:
+          - jobs/status
+          verbs:
+          - get
+        - apiGroups:
+          - certificates.k8s.io
+          resources:
+          - certificatesigningrequests
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - watch
+        - apiGroups:
+          - certificates.k8s.io
+          resources:
+          - certificatesigningrequests/approval
+          verbs:
+          - update
+        - apiGroups:
+          - certificates.k8s.io
+          resources:
+          - certificatesigningrequests/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps
+          verbs:
+          - get
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps/status
+          verbs:
+          - get
+        - apiGroups:
+          - ""
+          resources:
+          - nodes
+          verbs:
+          - get
+          - list
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          verbs:
+          - get
+          - list
+        - apiGroups:
+          - ""
+          resources:
+          - pods/exec
+          verbs:
+          - create
+        - apiGroups:
+          - ""
+          resources:
+          - pods/log
+          verbs:
+          - get
+        - apiGroups:
+          - ""
+          resources:
+          - secrets
+          verbs:
+          - create
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - serviceaccounts
+          verbs:
+          - create
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - services
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - services/finalizers
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - ""
+          resources:
+          - services/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - crdb.cockroachlabs.com
+          resources:
+          - crdbclusters
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - crdb.cockroachlabs.com
+          resources:
+          - crdbclusters/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - crdb.cockroachlabs.com
+          resources:
+          - crdbclusters/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - policy
+          resources:
+          - poddisruptionbudgets
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - policy
+          resources:
+          - poddisruptionbudgets/finalizers
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - policy
+          resources:
+          - poddisruptionbudgets/status
+          verbs:
+          - get
+        - apiGroups:
+          - rbac.authorization.k8s.io
+          resources:
+          - rolebindings
+          verbs:
+          - create
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - rbac.authorization.k8s.io
+          resources:
+          - roles
+          verbs:
+          - create
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - security.openshift.io
+          resources:
+          - securitycontextconstraints
+          verbs:
+          - use
+        serviceAccountName: cockroach-operator-sa
+      deployments:
+      - name: cockroach-operator-manager
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              app: cockroach-operator
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                app: cockroach-operator
+            spec:
+              containers:
+              - args:
+                - -skip-webhook-config
+                - -zap-log-level
+                - info
+                env:
+                - name: WATCH_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.annotations['olm.targetNamespaces']
+                - name: RELATED_IMAGE_COCKROACH_v20_1_4
+                  value: registry.connect.redhat.com/cockroachdb/cockroach@sha256:288ae92ebdfc848540ff80ef682b74e50809e9742cafce22b028112326d66b65
+                - name: RELATED_IMAGE_COCKROACH_v20_1_5
+                  value: registry.connect.redhat.com/cockroachdb/cockroach@sha256:87dcdbdc07904b217880e70484582c9d87dde7e4071e01cf9e2e6da43111190e
+                - name: RELATED_IMAGE_COCKROACH_v20_1_8
+                  value: registry.connect.redhat.com/cockroachdb/cockroach@sha256:6667919a41d304d5d4ade3ded4f11b42d722a995a4283e11e15320529f7f9abf
+                - name: RELATED_IMAGE_COCKROACH_v20_1_11
+                  value: registry.connect.redhat.com/cockroachdb/cockroach@sha256:cdab9fc62e07dd349703ae394adb48ab3d2281610df35e081f4b76e208b38c8e
+                - name: RELATED_IMAGE_COCKROACH_v20_1_12
+                  value: registry.connect.redhat.com/cockroachdb/cockroach@sha256:c1a07a8686bbadcb8c68ffba4e40e1285e581e24d43e5811f38a22d57fb9cc56
+                - name: RELATED_IMAGE_COCKROACH_v20_1_13
+                  value: registry.connect.redhat.com/cockroachdb/cockroach@sha256:b02549e5c3673b8154441990afa05a478d1ecc2bd0a70af64fd693cb6b469cb0
+                - name: RELATED_IMAGE_COCKROACH_v20_1_15
+                  value: registry.connect.redhat.com/cockroachdb/cockroach@sha256:25791b76b0d4b7220dadab3a405b3fdc330ba264ef6c9fbfdfb924c154c4bb5e
+                - name: RELATED_IMAGE_COCKROACH_v20_1_16
+                  value: registry.connect.redhat.com/cockroachdb/cockroach@sha256:49421968126f9c98499bc0cf0c65729370ab566da3fbd1588c100b20052b972e
+                - name: RELATED_IMAGE_COCKROACH_v20_1_17
+                  value: registry.connect.redhat.com/cockroachdb/cockroach@sha256:e39bce1d9b08a7d62eb05d53e29fabc668bf6a4e4ae3eb9994eebf5b642ff6cf
+                - name: RELATED_IMAGE_COCKROACH_v20_2_0
+                  value: registry.connect.redhat.com/cockroachdb/cockroach@sha256:e67299fc0e79cff5b6caf9c0df154180dbaedc57b84f072acf68b7b2c958668d
+                - name: RELATED_IMAGE_COCKROACH_v20_2_1
+                  value: registry.connect.redhat.com/cockroachdb/cockroach@sha256:fec6b0f56f2b94f141c8553a63b2e08b9494d4e6c5dc109d73268621ca445c56
+                - name: RELATED_IMAGE_COCKROACH_v20_2_2
+                  value: registry.connect.redhat.com/cockroachdb/cockroach@sha256:3edda46eccce8350440a0ea78dad2e41a3eaa0838fe57945ad5318739e968516
+                - name: RELATED_IMAGE_COCKROACH_v20_2_3
+                  value: registry.connect.redhat.com/cockroachdb/cockroach@sha256:ba9da9aa9d662c0fa9fd16a40551eedf100869b008cf9c0c09cbb87a09fda697
+                - name: RELATED_IMAGE_COCKROACH_v20_2_4
+                  value: registry.connect.redhat.com/cockroachdb/cockroach@sha256:a5414e54c4c513c7877f925b09eadc4c28eb592d3e120bcf9c65ab10e07cd607
+                - name: RELATED_IMAGE_COCKROACH_v20_2_5
+                  value: registry.connect.redhat.com/cockroachdb/cockroach@sha256:2664d78fbe88c368927ddbf80704f430e6ca2ce1f72cb4b7e1906dfe72be7cd0
+                - name: RELATED_IMAGE_COCKROACH_v20_2_6
+                  value: registry.connect.redhat.com/cockroachdb/cockroach@sha256:867c46bb4d8ca3f2fb8dc94063facc99758344c7b9d04f10e50932023ef5d262
+                - name: RELATED_IMAGE_COCKROACH_v20_2_8
+                  value: registry.connect.redhat.com/cockroachdb/cockroach@sha256:fe0c615b4d1ef4ec6e089e85deae2b6bd85410be8ed525e2317c759669417f47
+                - name: RELATED_IMAGE_COCKROACH_v20_2_9
+                  value: registry.connect.redhat.com/cockroachdb/cockroach@sha256:ec1672ce8091b677689a31cf09dbde5d1697f4caddae0151040b0fb156722e9d
+                - name: RELATED_IMAGE_COCKROACH_v20_2_10
+                  value: registry.connect.redhat.com/cockroachdb/cockroach@sha256:fec6b0f56f2b94f141c8553a63b2e08b9494d4e6c5dc109d73268621ca445c560
+                - name: RELATED_IMAGE_COCKROACH_v20_2_11
+                  value: registry.connect.redhat.com/cockroachdb/cockroach@sha256:fec6b0f56f2b94f141c8553a63b2e08b9494d4e6c5dc109d73268621ca445c561
+                - name: RELATED_IMAGE_COCKROACH_v20_2_12
+                  value: registry.connect.redhat.com/cockroachdb/cockroach@sha256:fec6b0f56f2b94f141c8553a63b2e08b9494d4e6c5dc109d73268621ca445c562
+                - name: RELATED_IMAGE_COCKROACH_v20_2_13
+                  value: registry.connect.redhat.com/cockroachdb/cockroach@sha256:fec6b0f56f2b94f141c8553a63b2e08b9494d4e6c5dc109d73268621ca445c563
+                - name: RELATED_IMAGE_COCKROACH_v20_2_14
+                  value: registry.connect.redhat.com/cockroachdb/cockroach@sha256:fec6b0f56f2b94f141c8553a63b2e08b9494d4e6c5dc109d73268621ca445c564
+                - name: RELATED_IMAGE_COCKROACH_v20_2_15
+                  value: registry.connect.redhat.com/cockroachdb/cockroach@sha256:fec6b0f56f2b94f141c8553a63b2e08b9494d4e6c5dc109d73268621ca445c565
+                - name: RELATED_IMAGE_COCKROACH_v20_2_16
+                  value: registry.connect.redhat.com/cockroachdb/cockroach@sha256:fec6b0f56f2b94f141c8553a63b2e08b9494d4e6c5dc109d73268621ca445c566
+                - name: RELATED_IMAGE_COCKROACH_v20_2_17
+                  value: registry.connect.redhat.com/cockroachdb/cockroach@sha256:fec6b0f56f2b94f141c8553a63b2e08b9494d4e6c5dc109d73268621ca445c567
+                - name: RELATED_IMAGE_COCKROACH_v21_1_0
+                  value: registry.connect.redhat.com/cockroachdb/cockroach@sha256:0ef0234b6fd42977b8a9eda2c59ca8194cc1c8cf6425b99d7bf8fde8feb826c5
+                - name: RELATED_IMAGE_COCKROACH_v21_1_1
+                  value: registry.connect.redhat.com/cockroachdb/cockroach@sha256:162a356cc8b423926634f83a1372b6321104d8de7a2c5b9b7b2681c769a88cc7
+                - name: RELATED_IMAGE_COCKROACH_v21_1_2
+                  value: registry.connect.redhat.com/cockroachdb/cockroach@sha256:27ef61d9f320a52ee9617f2ab8a1d1a1eacc576a0add2d85d99f9413912b651f
+                - name: RELATED_IMAGE_COCKROACH_v21_1_3
+                  value: registry.connect.redhat.com/cockroachdb/cockroach@sha256:5eb59093ee81f8115d82ec6a8a1c35eefad055cbb3a175978cef7afe9196e6a0
+                - name: RELATED_IMAGE_COCKROACH_v21_1_4
+                  value: registry.connect.redhat.com/cockroachdb/cockroach@sha256:38e940144e34b69dfb7d1cf31456e7a0016c5dd40d5626baa346446c7678ceb0
+                - name: RELATED_IMAGE_COCKROACH_v21_1_5
+                  value: registry.connect.redhat.com/cockroachdb/cockroach@sha256:0bd22d69db5ac570f30d3379afc67f6c2e46fc5b027c8aab42c3f562085d4672
+                - name: RELATED_IMAGE_COCKROACH_v21_1_6
+                  value: registry.connect.redhat.com/cockroachdb/cockroach@sha256:9f5dfcde260804cd2d6976a6b3544ddabdd899365be2104210dc78ba13755ec3
+                - name: RELATED_IMAGE_COCKROACH_v21_1_7
+                  value: registry.connect.redhat.com/cockroachdb/cockroach@sha256:ab47ddd22328e0a1564814f049616c3e3569d24c0a290abee9308392c6a0de23
+                - name: RELATED_IMAGE_COCKROACH_v21_1_9
+                  value: registry.connect.redhat.com/cockroachdb/cockroach@sha256:1b56420753eac1126039b8ad4be82ddb59c89a4ec72fb7b6198cea88a10f3a91
+                - name: RELATED_IMAGE_COCKROACH_v21_1_10
+                  value: registry.connect.redhat.com/cockroachdb/cockroach@sha256:162a356cc8b423926634f83a1372b6321104d8de7a2c5b9b7b2681c769a88cc70
+                - name: RELATED_IMAGE_COCKROACH_v21_1_11
+                  value: registry.connect.redhat.com/cockroachdb/cockroach@sha256:162a356cc8b423926634f83a1372b6321104d8de7a2c5b9b7b2681c769a88cc71
+                - name: OPERATOR_NAME
+                  value: cockroachdb
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                image: registry.connect.redhat.com/cockroachdb/cockroachdb-operator@sha256:2758a795570b63d0f7a9440b322848690bd8c89cbc69c1ec23c727a1b5bdbe93
+                imagePullPolicy: IfNotPresent
+                name: cockroach-operator
+                resources:
+                  requests:
+                    cpu: 10m
+                    memory: 32Mi
+              serviceAccountName: cockroach-operator-sa
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: true
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - database
+  - cockroachDB
+  links:
+  - name: Documentation
+    url: https://docs.cockroachlabs.com
+  - name: Operator Source
+    url: https://github.com/cockroachdb/cockroach-operator
+  - name: Cockroach Labs
+    url: https://www.cockroachlabs.com
+  maintainers:
+  - email: support@cockroachlabs.com
+    name: Cockroach Labs Support
+  maturity: stable
+  provider:
+    name: Cockroach Labs
+  version: 2.4.0
+  webhookdefinitions:
+  - admissionReviewVersions:
+    - v1
+    containerPort: 443
+    deploymentName: cockroach-operator-manager
+    failurePolicy: Fail
+    generateName: mcrdbcluster.kb.io
+    rules:
+    - apiGroups:
+      - crdb.cockroachlabs.com
+      apiVersions:
+      - v1alpha1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - crdbclusters
+    sideEffects: None
+    targetPort: 9443
+    type: MutatingAdmissionWebhook
+    webhookPath: /mutate-crdb-cockroachlabs-com-v1alpha1-crdbcluster
+  - admissionReviewVersions:
+    - v1
+    containerPort: 443
+    deploymentName: cockroach-operator-manager
+    failurePolicy: Fail
+    generateName: vcrdbcluster.kb.io
+    rules:
+    - apiGroups:
+      - crdb.cockroachlabs.com
+      apiVersions:
+      - v1alpha1
+      operations:
+      - CREATE
+      - UPDATE
+      resources:
+      - crdbclusters
+    sideEffects: None
+    targetPort: 9443
+    type: ValidatingAdmissionWebhook
+    webhookPath: /validate-crdb-cockroachlabs-com-v1alpha1-crdbcluster

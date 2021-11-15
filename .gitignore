@@ -62,4 +62,5 @@ bazel-testlogs
 faq
 
 _artifacts
+bundle.Dockerfile
 tmp
