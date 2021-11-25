@@ -26,7 +26,11 @@ import (
 )
 
 func TestCrdbClusterDefault(t *testing.T) {
-	cluster := &CrdbCluster{}
+	cluster := &CrdbCluster{
+		Spec: CrdbClusterSpec{
+			Image: &PodImage{},
+		},
+	}
 
 	maxUnavailable := int32(1)
 	policy := v1.PullIfNotPresent
@@ -35,7 +39,7 @@ func TestCrdbClusterDefault(t *testing.T) {
 		HTTPPort:       &DefaultHTTPPort,
 		SQLPort:        &DefaultSQLPort,
 		MaxUnavailable: &maxUnavailable,
-		Image:          PodImage{PullPolicyName: &policy},
+		Image:          &PodImage{PullPolicyName: &policy},
 	}
 
 	cluster.Default()
@@ -66,5 +70,72 @@ func TestValidateIngress(t *testing.T) {
 			require.Equal(t, tt.expected, tt.cluster.ValidateIngress())
 		})
 
+	}
+}
+
+func TestCreateCrdbCluster(t *testing.T) {
+	testcases := []struct{
+		Cluster *CrdbCluster
+		ErrMsg string
+	}{
+		{
+			Cluster: &CrdbCluster{
+				Spec: CrdbClusterSpec{
+					Image: &PodImage{},
+				},
+			},
+			ErrMsg: "you have to provide the cockroachDBVersion or cockroach image",
+		},
+		{
+			Cluster: &CrdbCluster{
+				Spec: CrdbClusterSpec{
+					Image: &PodImage{Name: "testImage"},
+					CockroachDBVersion: "v2.1.20",
+				},
+			},
+			ErrMsg: "you have provided both cockroachDBVersion and cockroach image, please provide only one",
+		},
+	}
+
+	for _, testcase := range testcases {
+		err := testcase.Cluster.ValidateCreate()
+		require.Error(t, err)
+		require.Equal(t, err.Error(), testcase.ErrMsg)
+	}
+}
+
+
+func TestUpdateCrdbCluster(t *testing.T) {
+	oldCluster := CrdbCluster{
+		Spec: CrdbClusterSpec{
+			Image: &PodImage{},
+		},
+	}
+
+	testcases := []struct{
+		Cluster *CrdbCluster
+		ErrMsg string
+	}{
+		{
+			Cluster: &CrdbCluster{
+				Spec: CrdbClusterSpec{},
+			},
+			ErrMsg: "you have to provide the cockroachDBVersion or cockroach image",
+		},
+		{
+			Cluster: &CrdbCluster{
+				Spec: CrdbClusterSpec{
+					Image: &PodImage{Name: "testImage"},
+					CockroachDBVersion: "v2.1.20",
+				},
+			},
+			ErrMsg: "you have provided both cockroachDBVersion and cockroach image, please provide only one",
+		},
+	}
+
+	for _, testcase := range testcases {
+		err := testcase.Cluster.ValidateUpdate(&oldCluster)
+		require.Error(t, err)
+		require.Equal(t, err.Error(), testcase.ErrMsg)
 	}
 }

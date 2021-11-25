@@ -853,7 +853,7 @@ spec:
                 format: int32
                 type: integer
               image:
-                description: Container image information
+                description: (Optional) Container image information
                 properties:
                   name:
                     description: 'Container image with supported CockroachDB version.
@@ -1137,7 +1137,6 @@ spec:
                 type: array
             required:
             - dataStore
-            - image
             - nodes
             type: object
           status:

@@ -92,7 +92,11 @@ func TestRHImage(t *testing.T) {
 	rhImage := "redhat-coachroach-test:v22"
 	// os.Setenv(resource.RhEnvVar, rhImage)
 
-	cluster := resource.NewCluster(&api.CrdbCluster{})
+	cluster := resource.NewCluster(&api.CrdbCluster{
+		Spec: api.CrdbClusterSpec{
+			Image: &api.PodImage{},
+		},
+	})
 
 	b := resource.StatefulSetBuilder{
 		Cluster: &cluster,

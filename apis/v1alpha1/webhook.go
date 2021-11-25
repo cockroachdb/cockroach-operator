@@ -73,7 +73,7 @@ func (r *CrdbCluster) Default() {
 		r.Spec.MaxUnavailable = &DefaultMaxUnavailable
 	}
 
-	if r.Spec.Image.PullPolicyName == nil {
+	if r.Spec.Image != nil && r.Spec.Image.PullPolicyName == nil {
 		policy := v1.PullIfNotPresent
 		r.Spec.Image.PullPolicyName = &policy
 	}
@@ -89,6 +89,10 @@ func (r *CrdbCluster) ValidateCreate() error {
 		if err := r.ValidateIngress(); err != nil {
 			errors = append(errors, err...)
 		}
+	}
+
+	if err := r.ValidateCockroachVersion(); err != nil {
+		errors = append(errors, err)
 	}
 
 	if len(errors) != 0 {
@@ -107,6 +111,10 @@ func (r *CrdbCluster) ValidateUpdate(old runtime.Object) error {
 		if err := r.ValidateIngress(); err != nil {
 			errors = append(errors, err...)
 		}
+	}
+
+	if err := r.ValidateCockroachVersion(); err != nil {
+		errors = append(errors, err)
 	}
 
 	if len(errors) != 0 {
@@ -137,4 +145,15 @@ func (r *CrdbCluster) ValidateIngress() (errors []error) {
 	}
 
 	return
+}
+
+// ValidateCockroachVersion validates the cockroachdb version or image provided
+func (r *CrdbCluster) ValidateCockroachVersion() error {
+	if r.Spec.CockroachDBVersion == "" &&  (r.Spec.Image == nil || r.Spec.Image.Name == "") {
+		return fmt.Errorf("you have to provide the cockroachDBVersion or cockroach image")
+	} else if r.Spec.CockroachDBVersion != "" && (r.Spec.Image != nil && r.Spec.Image.Name != "") {
+		return fmt.Errorf("you have provided both cockroachDBVersion and cockroach image, please provide only one")
+	}
+
+	return nil
 }
