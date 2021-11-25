@@ -67,12 +67,7 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster, log
 	// If the image.name is set use that value and do not check that the
 	// version is set in the supported versions.
 	// If it is not set then pass through the if statement and check that
-	if cluster.Spec().Image.Name == "" {
-		if cluster.Spec().CockroachDBVersion == "" {
-			err := ValidationError{Err: errors.New("Cockroach image name and cockroachDBVersion api fields are not set, you must set one of them")}
-			log.Error(err, "invalid custom resources")
-			return err
-		}
+	if cluster.Spec().Image == nil || cluster.Spec().Image.Name == "" {
 		log.V(DEBUGLEVEL).Info("User set cockroachDBVersion")
 		// we check if the cockroachDBVersion is supported by the operator,
 		// this can return false only for api field CockroachDBVersion
