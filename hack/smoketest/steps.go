@@ -93,25 +93,25 @@ func ApplyManifest(file string) Step {
 }
 
 // WaitForDeploymentAvailable waits until the specified deployment is available. It will timeout after 2m.
-func WaitForDeploymentAvailable(name string) Step {
+func WaitForDeploymentAvailable(name, namespace string) Step {
 	return StepFn(func(fn ExecFn) error {
 		fmt.Println("Waiting for deployment to be available")
 		return fn(
 			"kubectl",
-			[]string{"wait", "--for", "condition=Available", "deploy/" + name, "--timeout", "2m"},
+			[]string{"wait", "--for", "condition=Available", "deploy/" + name, "-n", namespace, "--timeout", "2m"},
 			os.Environ(),
 		)
 	})
 }
 
 // WaitForSecret waits for a Kuebernetes secret to be available
-func WaitForSecret(name string) Step {
+func WaitForSecret(name, namespace string) Step {
 	return StepFn(func(fn ExecFn) error {
 		fmt.Println("Waiting for secret to be created")
 		return retry(5, 10*time.Second, func() error {
 			return fn(
 				"kubectl",
-				[]string{"get", "secret", name},
+				[]string{"get", "secret", name, "-n", namespace},
 				os.Environ(),
 			)
 		})
