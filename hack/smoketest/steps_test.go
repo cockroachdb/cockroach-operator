@@ -86,13 +86,15 @@ func TestApplyManifest(t *testing.T) {
 
 func TestWaitForDeploymentAvailable(t *testing.T) {
 	fn := new(mockExecFn)
-	require.NoError(t, WaitForDeploymentAvailable("deploy-name").Apply(fn.exec))
+	require.NoError(t, WaitForDeploymentAvailable("deploy-name", "some-ns").Apply(fn.exec))
 
 	expArgs := []string{
 		"wait",
 		"--for",
 		"condition=Available",
 		"deploy/deploy-name",
+		"-n",
+		"some-ns",
 		"--timeout",
 		"2m",
 	}
@@ -103,10 +105,10 @@ func TestWaitForDeploymentAvailable(t *testing.T) {
 
 func TestWaitForSecret(t *testing.T) {
 	fn := new(mockExecFn)
-	require.NoError(t, WaitForSecret("my-secret").Apply(fn.exec))
+	require.NoError(t, WaitForSecret("my-secret", "my-ns").Apply(fn.exec))
 
 	require.Equal(t, "kubectl", fn.cmd)
-	require.Equal(t, []string{"get", "secret", "my-secret"}, fn.args)
+	require.Equal(t, []string{"get", "secret", "my-secret", "-n", "my-ns"}, fn.args)
 }
 
 func TestWaitForStatefulSetRollout(t *testing.T) {

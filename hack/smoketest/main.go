@@ -63,8 +63,8 @@ func main() {
 		StartKindCluster(clusterName, version),
 		ApplyManifest(filepath.Join("install", "crds.yaml")),
 		ApplyManifest(filepath.Join("install", "operator.yaml")),
-		WaitForDeploymentAvailable("cockroach-operator"),
-		WaitForSecret("cockroach-operator-webhook-ca"),
+		WaitForDeploymentAvailable("cockroach-operator-manager", "cockroach-operator-system"),
+		WaitForSecret("cockroach-operator-webhook-ca", "cockroach-operator-system"),
 		sleep(10 * time.Second), // just give the manager time to write the TLS certs to disk
 		ApplyManifest(filepath.Join("examples", "smoketest.yaml")),
 		WaitForStatefulSetRollout("cockroachdb"),
