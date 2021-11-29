@@ -132,7 +132,9 @@ type CrdbClusterSpec struct {
 	// +optional
 	Ingress *IngressConfig `json:"ingress,omitempty"`
 	// (Optional) LogConfig define the log configuration used to send the logs through the proper channels in the
-	// cockroachdb.
+	// cockroachdb. LogConfig is available for cockroach version v21.1.0 onwards. The logging configuration is taken in
+	// format of yaml file, you can check the logging configuration here (https://www.cockroachlabs.com/docs/stable/configure-logs.html#default-logging-configuration)
+	// The default logging for cockroach version v20.x or less is stderr, logging API is ignored for older versions.
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Cockroach Database Logging configuration"
 	// +optional
 	LogConfig *LogConfig `json:"logConfig,omitempty"`

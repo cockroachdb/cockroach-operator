@@ -366,7 +366,7 @@ func (b StatefulSetBuilder) dbArgs() []string {
 		"--listen-addr=:" + fmt.Sprint(*b.Spec().GRPCPort),
 	}
 
-	if b.Cluster.IsLoggingAPIEnable() {
+	if b.Cluster.IsLoggingAPIEnabled() {
 		logConfig, _ := b.Cluster.LoggingConfiguration()
 		aa = append(aa, fmt.Sprintf("--log=%s", logConfig))
 	} else {

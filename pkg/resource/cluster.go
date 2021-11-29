@@ -342,7 +342,7 @@ func (cluster Cluster) LoggingConfiguration() (string, error) {
 	return logYaml, nil
 }
 
-func (cluster Cluster) IsLoggingAPIEnable() bool {
+func (cluster Cluster) IsLoggingAPIEnabled() bool {
 	var version string
 	if cluster.Spec().CockroachDBVersion != "" {
 		version = cluster.Spec().CockroachDBVersion

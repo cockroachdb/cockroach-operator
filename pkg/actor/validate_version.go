@@ -61,7 +61,7 @@ func (v *versionChecker) GetActionType() api.ActionType {
 
 func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster, log logr.Logger) error {
 	log.V(DEBUGLEVEL).Info("starting to check the logging config provided")
-	if cluster.IsLoggingAPIEnable() {
+	if cluster.IsLoggingAPIEnabled() {
 		if logConfig, err := cluster.LoggingConfiguration(); err == nil {
 			var stderr bytes.Buffer
 			cmd := exec.Command("bash", "-c", fmt.Sprintf("cockroach debug check-log-config --log=%s", logConfig))
