@@ -28,7 +28,7 @@ spec:
       - command:
         - /bin/bash
         - -ecx
-        - exec /cockroach/cockroach.sh start --join=test-cluster-0.test-cluster.test-ns:26258 --advertise-host=$(POD_NAME).test-cluster.test-ns --logtostderr=INFO --insecure --http-port=8080 --sql-addr=:26257 --listen-addr=:26258 --cache $(expr $MEMORY_LIMIT_MIB / 4)MiB --max-sql-memory $(expr $MEMORY_LIMIT_MIB / 4)MiB
+        - exec /cockroach/cockroach.sh start --join=test-cluster-0.test-cluster.test-ns:26258 --advertise-host=$(POD_NAME).test-cluster.test-ns --insecure --http-port=8080 --sql-addr=:26257 --listen-addr=:26258 --logtostderr=INFO --cache $(expr $MEMORY_LIMIT_MIB / 4)MiB --max-sql-memory $(expr $MEMORY_LIMIT_MIB / 4)MiB
         env:
         - name: COCKROACH_CHANNEL
           value: kubernetes-operator-gke

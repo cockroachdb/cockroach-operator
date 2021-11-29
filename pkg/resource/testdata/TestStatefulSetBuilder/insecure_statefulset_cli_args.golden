@@ -47,7 +47,7 @@ spec:
       - command:
         - /bin/bash
         - -ecx
-        - exec /cockroach/cockroach.sh start --join=test-cluster-0.test-cluster.test-ns:26258 --advertise-host=$(POD_NAME).test-cluster.test-ns --logtostderr=INFO --insecure --http-port=8080 --sql-addr=:26257 --listen-addr=:26258 --cache=30% --max-sql-memory=2GB --temp-dir=/tmp
+        - "exec /cockroach/cockroach.sh start --join=test-cluster-0.test-cluster.test-ns:26258 --advertise-host=$(POD_NAME).test-cluster.test-ns --insecure --http-port=8080 --sql-addr=:26257 --listen-addr=:26258 --log=\"{sinks: {stderr: {channels: OPS, redact: true}}}\" --cache=30% --max-sql-memory=2GB --temp-dir=/tmp"
         env:
         - name: COCKROACH_CHANNEL
           value: kubernetes-operator-gke
@@ -65,7 +65,7 @@ spec:
             resourceFieldRef:
               divisor: 1Mi
               resource: limits.memory
-        image: cockroachdb/cockroach:v20.2.7
+        image: cockroachdb/cockroach:v21.1.0
         imagePullPolicy: IfNotPresent
         lifecycle:
           preStop:

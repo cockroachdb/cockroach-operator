@@ -442,13 +442,13 @@ filegroup(
 def install_crdb():
     http_archive(
        name = "crdb_darwin", # todo fix or remove
-       sha256 = "bbe3a03c661555e8b083856c56c8a3b459f83064d1d552ed3467cbfb66e76db7",
-       urls = ["https://binaries.cockroachdb.com/cockroach-v20.2.5.darwin-10.9-amd64.tgz"],
+       sha256 = "292c9536ce8526ab71befd18431aa8e1da3f5a83ca92af8bfbde501254bdb148",
+       urls = ["https://binaries.cockroachdb.com/cockroach-v21.1.0.darwin-10.9-amd64.tgz"],
        build_file_content = """
 filegroup(
     name = "file",
     srcs = [
-        "cockroach-v20.2.5.darwin-10.9-amd64/cockroach",
+        "cockroach-v21.1.0.darwin-10.9-amd64/cockroach",
     ],
     visibility = ["//visibility:public"],
 )
@@ -457,13 +457,13 @@ filegroup(
 
     http_archive(
         name = "crdb_linux",
-        sha256 = "57f4b00c736d8511328d6f33997a3a66cb4ec7142cb126d872dade399a0922e6",
-        urls = ["https://binaries.cockroachdb.com/cockroach-v20.2.5.linux-amd64.tgz"],
+        sha256 = "b97612dff390d66db358cb3d9f2f3ab804e7de57b2250a61dccd385ef249e111",
+        urls = ["https://binaries.cockroachdb.com/cockroach-v21.1.0.linux-amd64.tgz"],
         build_file_content = """
 filegroup(
     name = "file",
     srcs = [
-        "cockroach-v20.2.5.linux-amd64/cockroach",
+        "cockroach-v21.1.0.linux-amd64/cockroach",
     ],
     visibility = ["//visibility:public"],
 )

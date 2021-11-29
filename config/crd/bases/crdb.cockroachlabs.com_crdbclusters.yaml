@@ -973,6 +973,11 @@ spec:
                     - host
                     type: object
                 type: object
+              logConfig:
+                description: (Optional) LogConfig define the log configuration used
+                  to send the logs through the proper channels in the cockroachdb.
+                type: object
+                x-kubernetes-preserve-unknown-fields: true
               maxSQLMemory:
                 description: '(Optional) The maximum in-memory storage capacity available
                   to store temporary data for SQL queries (`--max-sql-memory` parameter)

@@ -127,6 +127,11 @@ func (b ClusterBuilder) WithClusterAnnotations(annotations map[string]string) Cl
 	return b
 }
 
+func (b ClusterBuilder) WithClusterLogging(logConfig map[string]interface{}) ClusterBuilder {
+	b.cluster.Spec.LogConfig = &api.LogConfig{LogFile: logConfig}
+	return b
+}
+
 func (b ClusterBuilder) WithAnnotations(annotations map[string]string) ClusterBuilder {
 	b.cluster.Spec.AdditionalAnnotations = annotations
 	return b

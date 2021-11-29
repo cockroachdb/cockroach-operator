@@ -21,6 +21,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os/exec"
 	"strings"
 	"time"
 
@@ -59,6 +60,26 @@ func (v *versionChecker) GetActionType() api.ActionType {
 }
 
 func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster, log logr.Logger) error {
+	log.V(DEBUGLEVEL).Info("starting to check the logging config provided")
+	if cluster.IsLoggingAPIEnable() {
+		if logConfig, err := cluster.LoggingConfiguration(); err == nil {
+			var stderr bytes.Buffer
+			cmd := exec.Command("bash", "-c", fmt.Sprintf("cockroach debug check-log-config --log=%s", logConfig))
+			cmd.Stderr = &stderr
+			cErr := cmd.Run()
+			if cErr != nil || stderr.String() != "" {
+				log.Error(cErr, "The cockroachdb logging API is set to value that is not supported by the operator, See the default logging configuration here (https://www.cockroachlabs.com/docs/stable/configure-logs.html#default-logging-configuration) ")
+				return errors.New(stderr.String())
+			} else {
+				log.V(DEBUGLEVEL).Info("Validated the logging config")
+			}
+		} else {
+			err := ValidationError{Err: errors.New(fmt.Sprintf("logging configuration %v not supported", cluster.Spec().LogConfig.LogFile))}
+			log.Error(err, "The cockroachdb logging API value is set to a value that is not supported by the operator")
+			return err
+		}
+	}
+
 	log.V(DEBUGLEVEL).Info("starting to check the crdb version of the container provided")
 
 	r := resource.NewManagedKubeResource(ctx, v.client, cluster, kube.AnnotatingPersister)
