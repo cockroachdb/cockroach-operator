@@ -255,7 +255,9 @@ type IngressConfig struct {
 	// +optional
 	UI *Ingress `json:"ui,omitempty"`
 
-	// TODO: Add other ingress config for SQL and GRPC here when implemented
+	// (Optional) SQL port to be exposed via ingress
+	// +optional
+	SQL *Ingress `json:"sql,omitempty"`
 }
 
 // +kubebuilder:object:generate=true

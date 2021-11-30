@@ -113,24 +113,28 @@ func (b *UIIngressBuilder) BuildV1beta1Ingress(obj client.Object) error {
 	}
 
 	kube.MergeAnnotations(ingress.ObjectMeta.Annotations, b.SSLPassThroughAnnotations())
-	ingressConfig := b.Spec().Ingress.UI
+	ingressConfig := b.Spec().Ingress
 
-	kube.MergeAnnotations(ingress.ObjectMeta.Annotations, ingressConfig.Annotations)
+	if ingressConfig == nil {
+		return errors.New("ingressConfig not found")
+	}
+
+	kube.MergeAnnotations(ingress.ObjectMeta.Annotations, ingressConfig.UI.Annotations)
 
 	ingress.Spec = v1beta1.IngressSpec{
 		Rules: []v1beta1.IngressRule{
-			getV1beta1IngressRule(ingressConfig.Host, b.PublicServiceName(), intstr.FromString("http")),
+			getV1beta1IngressRule(ingressConfig.UI.Host, b.PublicServiceName(), intstr.FromString("http")),
 		},
 	}
 
-	if ingressConfig.IngressClassName != "" {
-		ingress.Spec.IngressClassName = &ingressConfig.IngressClassName
+	if ingressConfig.UI.IngressClassName != "" {
+		ingress.Spec.IngressClassName = &ingressConfig.UI.IngressClassName
 	}
 
-	for i := range ingressConfig.TLS {
+	for i := range ingressConfig.UI.TLS {
 		ingress.Spec.TLS = append(ingress.Spec.TLS, v1beta1.IngressTLS{
-			Hosts:      ingressConfig.TLS[i].Hosts,
-			SecretName: ingressConfig.TLS[i].SecretName,
+			Hosts:      ingressConfig.UI.TLS[i].Hosts,
+			SecretName: ingressConfig.UI.TLS[i].SecretName,
 		})
 	}
 

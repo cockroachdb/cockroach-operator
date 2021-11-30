@@ -288,6 +288,11 @@ func (in *IngressConfig) DeepCopyInto(out *IngressConfig) {
 		*out = new(Ingress)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.SQL != nil {
+		in, out := &in.SQL, &out.SQL
+		*out = new(Ingress)
+		(*in).DeepCopyInto(*out)
+	}
 	return
 }
 

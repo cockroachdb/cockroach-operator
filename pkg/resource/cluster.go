@@ -326,3 +326,13 @@ func getSupportedCrdbVersions() []string {
 func (cluster Cluster) IsIngressNeeded() bool {
 	return cluster.Spec().Ingress != nil
 }
+
+// IsUIIngressEnabled returns true if ingress config is given for UI
+func (cluster Cluster) IsUIIngressEnabled() bool {
+	return cluster.Spec().Ingress != nil && cluster.Spec().Ingress.UI != nil
+}
+
+// IsSQLIngressEnabled returns true if ingress config is given for SQL
+func (cluster Cluster) IsSQLIngressEnabled() bool {
+	return cluster.Spec().Ingress != nil && cluster.Spec().Ingress.SQL != nil
+}
