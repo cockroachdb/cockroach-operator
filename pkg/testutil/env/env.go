@@ -19,6 +19,8 @@ package env
 import (
 	"flag"
 	"fmt"
+	"os"
+
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	customClient "github.com/cockroachdb/cockroach-operator/pkg/client/clientset/versioned"
 	"github.com/cockroachdb/errors"
@@ -30,7 +32,6 @@ import (
 	kscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp" // GCP auth support
 	"k8s.io/client-go/rest"
-	"os"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 )
