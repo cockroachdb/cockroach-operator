@@ -215,7 +215,6 @@ var KindPodLabels = []string{"kindnet", "kube-proxy"}
 var KindComponentLabels = []string{"etcd", "kube-apiserver", "kube-controller-manager", "kube-scheduler"}
 
 func main() {
-
 	// -type is the flag we use to determine if we are checking kind or gke
 	k8sTypeFlag := flag.String("type", "", "gke or kind")
 	flag.Parse()
@@ -238,6 +237,9 @@ func main() {
 			klog.Error(err)
 			panic("unable to find gke pods")
 		}
+		// TODO(pseudomuto): This clearly isn't the right solution. Rather than sleeping and hoping for the best, we should
+		// figure out what exactly is requiring this period of time and wait on that directly.
+		time.Sleep(1 * time.Minute)
 		fmt.Println("gke is running")
 	case *k8sTypeFlag == "kind":
 		p := createK8sPodLabel(&Component, &KindComponentLabels)
