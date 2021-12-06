@@ -7,6 +7,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 # [Unreleased](https://github.com/cockroachdb/cockroach-operator/compare/v2.4.0...master)
 
+## Fixed
+
+* Mark nodes as decommissioned after draining the node
+
 # [v2.4.0](https://github.com/cockroachdb/cockroach-operator/compare/v2.3.0...v2.4.0)
 
 ## Added

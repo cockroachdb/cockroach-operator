@@ -103,7 +103,7 @@ func (d *CockroachNodeDrainer) Decommission(ctx context.Context, replica uint, g
 
 		// Node has finished draining successfully
 		if replicas == 0 {
-			return nil
+			return d.markNodeAsDecommissioned(ctx, lastNodeID, gRPCPort)
 		}
 
 		// If no replicas have been moved within our timeout, assume that the KV allocator
@@ -206,6 +206,25 @@ func (d *CockroachNodeDrainer) executeDrainCmd(ctx context.Context, id uint, gRP
 
 	if _, _, err := d.Executor.Exec(ctx, 0, cmd); err != nil {
 		return errors.Wrapf(err, "failed to start draining node %d", id)
+	}
+
+	return nil
+}
+
+// markNodeAsDecommissioned sets a node as `decommissioned`. This is the final step in decommissioning
+// a node which will transition it from `decommissioning` to `decommissioned`. This should be executed
+// after it's confirmed that there are 0 replicas on the node.
+func (d *CockroachNodeDrainer) markNodeAsDecommissioned(ctx context.Context, id uint, gRPCPort int32) error {
+	cmd := []string{"./cockroach", "node", "decommission", fmt.Sprintf("%d", id), fmt.Sprintf("--port=%d", gRPCPort)}
+
+	if d.Secure {
+		cmd = append(cmd, "--certs-dir=cockroach-certs")
+	} else {
+		cmd = append(cmd, "--insecure")
+	}
+
+	if _, _, err := d.Executor.Exec(ctx, 0, cmd); err != nil {
+		return errors.Wrapf(err, "failed to mark node as decommissioned: node: %d", id)
 	}
 
 	return nil

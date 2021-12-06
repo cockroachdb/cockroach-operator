@@ -19,7 +19,6 @@ package decommission
 import (
 	"context"
 	"flag"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"testing"
 	"time"
 
@@ -30,6 +29,7 @@ import (
 	"github.com/go-logr/zapr"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zaptest"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // TODO parallel seems to be buggy.  Not certain why, but we need to figure out if running with the operator
@@ -65,10 +65,15 @@ func TestDecommissionFunctionalityWithPrune(t *testing.T) {
 
 	sb := testenv.NewDiffingSandbox(t, env)
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
-	builder := testutil.NewBuilder("crdb").Namespaced(sb.Namespace).WithNodeCount(4).WithTLS().
+
+	builder := testutil.NewBuilder("crdb").
+		Namespaced(sb.Namespace).
+		WithNodeCount(4).
+		WithTLS().
 		WithImage("cockroachdb/cockroach:v20.2.5").
 		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
-	steps := testutil.Steps{
+
+	testutil.Steps{
 		{
 			Name: "creates a 4-node secure cluster and tests db",
 			Test: func(t *testing.T) {
@@ -94,8 +99,7 @@ func TestDecommissionFunctionalityWithPrune(t *testing.T) {
 				testutil.RequireNumberOfPVCs(t, context.TODO(), sb, builder, 3)
 			},
 		},
-	}
-	steps.Run(t)
+	}.Run(t)
 }
 
 // TestDecommissionFunctionality creates a cluster of 4 nodes and then decommissions on of the CRDB nodes.
@@ -123,10 +127,15 @@ func TestDecommissionFunctionality(t *testing.T) {
 
 	sb := testenv.NewDiffingSandbox(t, env)
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
-	builder := testutil.NewBuilder("crdb").Namespaced(sb.Namespace).WithNodeCount(4).WithTLS().
+
+	builder := testutil.NewBuilder("crdb").
+		Namespaced(sb.Namespace).
+		WithNodeCount(4).
+		WithTLS().
 		WithImage("cockroachdb/cockroach:v20.2.5").
 		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
-	steps := testutil.Steps{
+
+	testutil.Steps{
 		{
 			Name: "creates a 4-node secure cluster and tests db",
 			Test: func(t *testing.T) {
@@ -153,6 +162,5 @@ func TestDecommissionFunctionality(t *testing.T) {
 				testutil.RequireNumberOfPVCs(t, context.TODO(), sb, builder, 4)
 			},
 		},
-	}
-	steps.Run(t)
+	}.Run(t)
 }
