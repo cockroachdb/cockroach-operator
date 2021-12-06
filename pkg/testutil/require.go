@@ -285,6 +285,7 @@ func RequireDecommissionNode(t *testing.T, sb testenv.DiffingSandbox, b ClusterB
 		}
 		return true, nil
 	})
+
 	require.NoError(t, err)
 	t.Log("Done decommissioning node")
 }
@@ -339,9 +340,7 @@ func makeDrainStatusChecker(t *testing.T, sb testenv.DiffingSandbox, b ClusterBu
 		t.Logf("replicas=%s\n", replicasStr)
 		t.Logf("isDecommissioning=%v\n", isDecommissioning)
 
-		// we are not checking isLive != "true"  on tests because the operator exits with islive=true
-		// and when the checks for the test run the node is already decommissioned so isLive can be false
-		if isDecommissioning != "true" {
+		if isLive != "false" {
 			return errors.New("unexpected node status")
 		}
 
