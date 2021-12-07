@@ -145,6 +145,9 @@ type CrdbClusterStatus struct {
 	// CrdbContainerImage is the container that will be installed
 	// +operator-sdk:csv:customresourcedefinitions:type=status, displayName="CrdbContainerImage",xDescriptors="urn:alm:descriptor:com.tectonic.ui:hidden"
 	CrdbContainerImage string `json:"crdbcontainerimage,omitempty"`
+	// SQLHost is the host to be used with SQL ingress
+	// +operator-sdk:csv:customresourcedefinitions:type=status, displayName="SQLHost",xDescriptors="urn:alm:descriptor:com.tectonic.ui:hidden"
+	SQLHost string `json:"sqlHost,omitempty"`
 	// OperatorStatus represent the status of the operator(Failed, Starting, Running or Other)
 	// +operator-sdk:csv:customresourcedefinitions:type=status, displayName="OperatorStatus"
 	ClusterStatus string `json:"clusterStatus,omitempty"`
@@ -256,6 +259,7 @@ type IngressConfig struct {
 	UI *Ingress `json:"ui,omitempty"`
 
 	// (Optional) SQL port to be exposed via ingress
+	// Adding/changing the SQL host will result in rolling update of the crdb cluster nodes
 	// +optional
 	SQL *Ingress `json:"sql,omitempty"`
 }

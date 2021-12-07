@@ -137,7 +137,7 @@ func (r *CrdbCluster) ValidateIngress() (errors []error) {
 	webhookLog.Info("validate ingress", "name", r.Name)
 
 	if r.Spec.Ingress.UI == nil && r.Spec.Ingress.SQL == nil {
-		errors = append(errors, fmt.Errorf("atleast one of ui and sql UI ingresses must be present"))
+		errors = append(errors, fmt.Errorf("atleast one of UI and SQL ingresses must be present"))
 	}
 
 	if r.Spec.Ingress.UI != nil && r.Spec.Ingress.UI.Host == "" {

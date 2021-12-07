@@ -230,11 +230,15 @@ func (cd *clusterDirector) needsCertificateGeneration(cluster *resource.Cluster)
 	conditions := cluster.Status().Conditions
 	conditionCertificateGeneratedTrue := condition.True(api.CertificateGenerated, conditions)
 
-	// In order to generate a certificate,
+	// In order to generate/regenerate a certificate,
 	// - the certificate should not already be generated
 	// - TLS should be enabled and a certificate should not already be provided
+	// - Regenerate if SQL Host is changed
 
 	if conditionCertificateGeneratedTrue {
+		if cluster.IsSQLIngressEnabled() && cluster.Status().SQLHost != cluster.Spec().Ingress.SQL.Host {
+			return true
+		}
 		return false
 	}
 
@@ -391,16 +395,18 @@ func (cd *clusterDirector) processIngress(ctx context.Context, cluster *resource
 		var builders []resource.Builder
 		ui := resource.UIIngressBuilder{Cluster: cluster, Labels: labelSelector, V1Ingress: v1Ingress}
 		sql := resource.SQLIngressBuilder{Cluster: cluster, Labels: labelSelector, V1Ingress: v1Ingress}
+		uiIngressEnabled := cluster.IsUIIngressEnabled()
+		sqlIngressEnabled := cluster.IsSQLIngressEnabled()
 
-		if (!ui.Enabled() && uiIngressConditionTrue) || (!sql.Enabled() && sqlIngressConditionTrue) {
+		if (!uiIngressEnabled && uiIngressConditionTrue) || (!sqlIngressEnabled && sqlIngressConditionTrue) {
 			return true, nil
 		}
 
-		if ui.Enabled() {
+		if uiIngressEnabled {
 			builders = append(builders, ui)
 		}
 
-		if sql.Enabled() {
+		if sqlIngressEnabled {
 			builders = append(builders, sql)
 		}
 

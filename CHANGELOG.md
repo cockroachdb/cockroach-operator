@@ -39,7 +39,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## Added
 
 * Support for nodeSelectors
-* Support for Ingress (UI only)
+* Support for UI and SQL Ingress 
 
 ## Changed
 
@@ -144,5 +144,4 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Deleted
 
-* Dead code from multiple packages
-* Dependency on ginko and gomega
+* 

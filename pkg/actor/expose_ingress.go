@@ -121,6 +121,7 @@ func (ei exposeIngress) Act(ctx context.Context, cluster *resource.Cluster, log 
 		if !sqlIngressEnabled && sqlIngressConditionTrue {
 			builders = append(builders, sql)
 			conditionsToSet = append(conditionsToSet, api.CrdbSQLIngressExposedCondition)
+			cluster.SetSQLHost("")
 		}
 
 		for i, b := range builders {
