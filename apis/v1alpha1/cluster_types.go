@@ -254,11 +254,11 @@ type Volume struct {
 
 // IngressConfig defines the configuration required to create ingress resource
 type IngressConfig struct {
-	// (Optional) HTTP port (UI) to be exposed via ingress
+	// (Optional) Ingress options for UI (HTTP) connections
 	// +optional
 	UI *Ingress `json:"ui,omitempty"`
 
-	// (Optional) SQL port to be exposed via ingress
+	// (Optional) Ingress options for SQL connections
 	// Adding/changing the SQL host will result in rolling update of the crdb cluster nodes
 	// +optional
 	SQL *Ingress `json:"sql,omitempty"`

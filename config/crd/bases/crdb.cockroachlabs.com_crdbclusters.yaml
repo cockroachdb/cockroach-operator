@@ -879,7 +879,7 @@ spec:
                   used to expose the services using Ingress
                 properties:
                   sql:
-                    description: (Optional) SQL port to be exposed via ingress Adding/changing
+                    description: (Optional) Ingress options for SQL connections Adding/changing
                       the SQL host will result in rolling update of the crdb cluster
                       nodes
                     properties:
@@ -927,7 +927,7 @@ spec:
                     - host
                     type: object
                   ui:
-                    description: (Optional) HTTP port (UI) to be exposed via ingress
+                    description: (Optional) Ingress options for UI (HTTP) connections
                     properties:
                       annotations:
                         additionalProperties:
