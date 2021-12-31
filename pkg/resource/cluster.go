@@ -336,7 +336,7 @@ func (cluster Cluster) LoggingConfiguration() (string, error) {
 		}
 		logYaml = "\"" + out.String() + "\""
 	} else {
-		logYaml = "\"{sinks: {stderr: {channels: OPS, redact: true}}}\""
+		logYaml = "\"{sinks: {stderr: {channels: [OPS, HEALTH], redact: true}}}\""
 	}
 
 	return logYaml, nil
