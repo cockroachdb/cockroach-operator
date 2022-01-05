@@ -11,6 +11,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 * Mark nodes as decommissioned after draining the node
 
+## Added
+
+* Support for UI and SQL Ingress
+
 # [v2.4.0](https://github.com/cockroachdb/cockroach-operator/compare/v2.3.0...v2.4.0)
 
 ## Added
