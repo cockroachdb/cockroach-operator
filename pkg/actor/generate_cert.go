@@ -26,6 +26,7 @@ import (
 	"time"
 
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
+	"github.com/cockroachdb/cockroach-operator/pkg/condition"
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	"github.com/cockroachdb/cockroach-operator/pkg/security"
@@ -70,7 +71,7 @@ func (rc *generateCert) Act(ctx context.Context, cluster *resource.Cluster, log 
 		return nil
 	}
 
-	// create the various temporary directories to store the certficates in
+	// create the various temporary directories to store the certificates in
 	// the directors will delete when the code is completed.
 	certsDir, cleanup := util.CreateTempDir("certsDir")
 	defer cleanup()
@@ -106,6 +107,12 @@ func (rc *generateCert) Act(ctx context.Context, cluster *resource.Cluster, log 
 		return errors.Wrap(err, msg)
 	}
 
+	var restartRequired bool
+	sqlIngressConditionTrue := condition.True(api.CrdbSQLIngressExposedCondition, cluster.Status().Conditions)
+	if cluster.IsSQLIngressEnabled() && sqlIngressConditionTrue {
+		restartRequired = true
+	}
+
 	// Write the cert expiration annotation to the object. This is an annotation, which is NOT on the CrdbClusterStatus
 	// object, so we need to call rc.client.Update(ctx, crdbobj).
 	fetcher := resource.NewKubeFetcher(ctx, cluster.Namespace(), rc.client)
@@ -118,6 +125,9 @@ func (rc *generateCert) Act(ctx context.Context, cluster *resource.Cluster, log 
 		}
 		refreshedCluster := resource.NewCluster(newcr)
 		refreshedCluster.SetAnnotationCertExpiration(*expirationDatePtr)
+		if restartRequired {
+			refreshedCluster.SetRestartTypeAnnotation(api.ClusterRestartType(api.RollingRestart).String())
+		}
 		crdbobj := refreshedCluster.Unwrap()
 
 		err := rc.client.Update(ctx, crdbobj)
@@ -145,6 +155,10 @@ func (rc *generateCert) Act(ctx context.Context, cluster *resource.Cluster, log 
 		}
 		refreshedCluster := resource.NewCluster(newcr)
 		refreshedCluster.SetTrue(api.CertificateGenerated)
+		if refreshedCluster.IsSQLIngressEnabled() {
+			refreshedCluster.SetSQLHost(cluster.Spec().Ingress.SQL.Host)
+		}
+
 		crdbobj := refreshedCluster.Unwrap()
 		err = rc.client.Status().Update(ctx, crdbobj)
 		if err != nil {
@@ -175,6 +189,9 @@ func (rc *generateCert) generateCA(ctx context.Context, log logr.Logger, cluster
 	// if the secret is ready then don't update the secret
 	// the Actor should have already generated the secret
 	if secret.ReadyCA() {
+		if err := ioutil.WriteFile(rc.CAKey, secret.CAKey(), 0600); err != nil {
+			return errors.Wrap(err, "failed to write CA key")
+		}
 		log.V(DEBUGLEVEL).Info("not updating ca key as it exists")
 		return nil
 	}
@@ -225,11 +242,28 @@ func (rc *generateCert) generateNodeCert(ctx context.Context, log logr.Logger, c
 		return "", errors.Wrap(err, "failed to get node TLS secret")
 	}
 
+	var (
+		regenerateCert bool
+		SQLHost        string
+	)
+
+	if cluster.IsSQLIngressEnabled() && cluster.Status().SQLHost != cluster.Spec().Ingress.SQL.Host {
+		SQLHost = cluster.Spec().Ingress.SQL.Host
+		regenerateCert = true
+	}
+
 	// if the secret is ready then don't update the secret
 	// the Actor should have already generated the secret
 	if secret.Ready() {
-		log.V(DEBUGLEVEL).Info("not updating node certificate as it exists")
-		return rc.getCertificateExpirationDate(ctx, log, secret.Key())
+		if regenerateCert {
+			log.V(DEBUGLEVEL).Info("regenerating node certificate because of change in SQLHost")
+			if err = ioutil.WriteFile(filepath.Join(rc.CertsDir, "ca.crt"), secret.CA(), 0644); err != nil {
+				return "", errors.Wrap(err, "failed to write CA cert")
+			}
+		} else {
+			log.V(DEBUGLEVEL).Info("not updating node certificate as it exists")
+			return rc.getCertificateExpirationDate(ctx, log, secret.Key())
+		}
 	}
 
 	// hosts are the various DNS names and IP address that have to exist in the Node certificates
@@ -243,6 +277,10 @@ func (rc *generateCert) generateNodeCert(ctx context.Context, log logr.Logger, c
 		fmt.Sprintf("*.%s", cluster.DiscoveryServiceName()),
 		fmt.Sprintf("*.%s.%s", cluster.DiscoveryServiceName(), cluster.Namespace()),
 		fmt.Sprintf("*.%s.%s.%s", cluster.DiscoveryServiceName(), cluster.Namespace(), cluster.Domain()),
+	}
+
+	if SQLHost != "" {
+		hosts = append(hosts, SQLHost)
 	}
 
 	// create the Node Pair certificates

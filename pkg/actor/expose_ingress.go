@@ -18,6 +18,7 @@ package actor
 
 import (
 	"context"
+	"fmt"
 
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/condition"
@@ -59,18 +60,29 @@ func (ei exposeIngress) Act(ctx context.Context, cluster *resource.Cluster, log 
 	r := resource.NewManagedKubeResource(ctx, ei.client, cluster, kube.AnnotatingPersister)
 
 	labelSelector := r.Labels.Selector(cluster.Spec().AdditionalLabels)
-	var builders []resource.Builder
 
-	// TODO: Add other SQL and GRPC ingress builders here
-	builders = append(builders, resource.UIIngressBuilder{
-		Cluster:   cluster,
-		Labels:    labelSelector,
-		V1Ingress: ei.v1Ingress,
-	})
+	ui := resource.UIIngressBuilder{Cluster: cluster, Labels: labelSelector, V1Ingress: ei.v1Ingress}
+	sql := resource.SQLIngressBuilder{Cluster: cluster, Labels: labelSelector, V1Ingress: ei.v1Ingress}
+	uiIngressEnabled := cluster.IsUIIngressEnabled()
+	sqlIngressEnabled := cluster.IsSQLIngressEnabled()
 
 	if cluster.IsIngressNeeded() {
+		var (
+			builders        []resource.Builder
+			conditionsToSet []api.ClusterConditionType
+		)
 
-		for _, b := range builders {
+		if uiIngressEnabled {
+			builders = append(builders, ui)
+			conditionsToSet = append(conditionsToSet, api.CrdbUIIngressExposedCondition)
+		}
+
+		if sqlIngressEnabled {
+			builders = append(builders, sql)
+			conditionsToSet = append(conditionsToSet, api.CrdbSQLIngressExposedCondition)
+		}
+
+		for i, b := range builders {
 			_, err := resource.Reconciler{
 				ManagedResource: r,
 				Builder:         b,
@@ -80,9 +92,8 @@ func (ei exposeIngress) Act(ctx context.Context, cluster *resource.Cluster, log 
 			if err != nil {
 				return errors.Wrapf(err, "failed to reconcile %s", b.ResourceName())
 			}
+			cluster.SetTrue(conditionsToSet[i])
 		}
-
-		cluster.SetTrue(api.CrdbIngressExposedCondition)
 
 		if err := ei.client.Status().Update(ctx, cluster.Unwrap()); err != nil {
 			msg := "failed to update IngressExposed condition in status"
@@ -91,22 +102,38 @@ func (ei exposeIngress) Act(ctx context.Context, cluster *resource.Cluster, log 
 		}
 	}
 
-	ingressConditionTrue := condition.True(api.CrdbIngressExposedCondition, cluster.Status().Conditions)
+	uiIngressConditionTrue := condition.True(api.CrdbUIIngressExposedCondition, cluster.Status().Conditions)
+	sqlIngressConditionTrue := condition.True(api.CrdbSQLIngressExposedCondition, cluster.Status().Conditions)
 
 	// if ingress not needed but expose ingress condition is true, then its case of ingress update.
 	// delete the ingress resource
-	if !cluster.IsIngressNeeded() && ingressConditionTrue {
-		for _, b := range builders {
+	if !cluster.IsIngressNeeded() || (!uiIngressEnabled && uiIngressConditionTrue) || (!sqlIngressEnabled && sqlIngressConditionTrue) {
+		var (
+			builders        []resource.Builder
+			conditionsToSet []api.ClusterConditionType
+		)
+
+		if !uiIngressEnabled && uiIngressConditionTrue {
+			builders = append(builders, ui)
+			conditionsToSet = append(conditionsToSet, api.CrdbUIIngressExposedCondition)
+		}
+
+		if !sqlIngressEnabled && sqlIngressConditionTrue {
+			builders = append(builders, sql)
+			conditionsToSet = append(conditionsToSet, api.CrdbSQLIngressExposedCondition)
+			cluster.SetSQLHost("")
+		}
+
+		for i, b := range builders {
 			ing := b.Placeholder()
 			ing.SetNamespace(cluster.Namespace())
 			if err := ei.client.Delete(ctx, ing); err != nil {
-				msg := "failed to delete the ingress resource"
+				msg := fmt.Sprintf("failed to delete [%s] ingress resource", ing.GetName())
 				log.Error(err, msg)
 				return errors.Wrap(err, msg)
 			}
+			cluster.SetFalse(conditionsToSet[i])
 		}
-
-		cluster.SetFalse(api.CrdbIngressExposedCondition)
 
 		if err := ei.client.Status().Update(ctx, cluster.Unwrap()); err != nil {
 			msg := "failed to update IngressExposed condition in status"

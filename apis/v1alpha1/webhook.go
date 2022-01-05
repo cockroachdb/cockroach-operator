@@ -136,12 +136,16 @@ func (r *CrdbCluster) ValidateDelete() error {
 func (r *CrdbCluster) ValidateIngress() (errors []error) {
 	webhookLog.Info("validate ingress", "name", r.Name)
 
-	if r.Spec.Ingress.UI == nil {
-		errors = append(errors, fmt.Errorf("UI related ingress config missing"))
+	if r.Spec.Ingress.UI == nil && r.Spec.Ingress.SQL == nil {
+		errors = append(errors, fmt.Errorf("at least one of UI or SQL ingresses must be present"))
 	}
 
-	if r.Spec.Ingress.UI.Host == "" {
+	if r.Spec.Ingress.UI != nil && r.Spec.Ingress.UI.Host == "" {
 		errors = append(errors, fmt.Errorf("host required for UI"))
+	}
+
+	if r.Spec.Ingress.SQL != nil && r.Spec.Ingress.SQL.Host == "" {
+		errors = append(errors, fmt.Errorf("host required for SQL"))
 	}
 
 	return
@@ -149,7 +153,7 @@ func (r *CrdbCluster) ValidateIngress() (errors []error) {
 
 // ValidateCockroachVersion validates the cockroachdb version or image provided
 func (r *CrdbCluster) ValidateCockroachVersion() error {
-	if r.Spec.CockroachDBVersion == "" &&  (r.Spec.Image == nil || r.Spec.Image.Name == "") {
+	if r.Spec.CockroachDBVersion == "" && (r.Spec.Image == nil || r.Spec.Image.Name == "") {
 		return fmt.Errorf("you have to provide the cockroachDBVersion or cockroach image")
 	} else if r.Spec.CockroachDBVersion != "" && (r.Spec.Image != nil && r.Spec.Image.Name != "") {
 		return fmt.Errorf("you have provided both cockroachDBVersion and cockroach image, please provide only one")

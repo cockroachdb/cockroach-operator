@@ -130,10 +130,10 @@ func (cd *clusterDirector) GetActorToExecute(ctx context.Context, cluster *resou
 		return cd.actors[api.InitializeAction], nil
 	}
 
-	needsIngress, err := cd.needsIngress(ctx, cluster)
+	processIngress, err := cd.processIngress(ctx, cluster)
 	if err != nil {
 		return nil, err
-	} else if needsIngress {
+	} else if processIngress {
 		return cd.actors[api.ExposeIngressAction], nil
 	}
 
@@ -230,11 +230,15 @@ func (cd *clusterDirector) needsCertificateGeneration(cluster *resource.Cluster)
 	conditions := cluster.Status().Conditions
 	conditionCertificateGeneratedTrue := condition.True(api.CertificateGenerated, conditions)
 
-	// In order to generate a certificate,
+	// In order to generate/regenerate a certificate,
 	// - the certificate should not already be generated
 	// - TLS should be enabled and a certificate should not already be provided
+	// - Regenerate if SQL Host is changed
 
 	if conditionCertificateGeneratedTrue {
+		if cluster.IsSQLIngressEnabled() && cluster.Status().SQLHost != cluster.Spec().Ingress.SQL.Host {
+			return true
+		}
 		return false
 	}
 
@@ -361,10 +365,11 @@ func (cd *clusterDirector) needsInitialization(cluster *resource.Cluster) bool {
 	return true
 }
 
-func (cd *clusterDirector) needsIngress(ctx context.Context, cluster *resource.Cluster) (bool, error) {
+func (cd *clusterDirector) processIngress(ctx context.Context, cluster *resource.Cluster) (bool, error) {
 	conditions := cluster.Status().Conditions
 	conditionInitializedTrue := condition.True(api.CrdbInitializedCondition, conditions)
-	ingressConditionTrue := condition.True(api.CrdbIngressExposedCondition, conditions)
+	uiIngressConditionTrue := condition.True(api.CrdbUIIngressExposedCondition, conditions)
+	sqlIngressConditionTrue := condition.True(api.CrdbSQLIngressExposedCondition, conditions)
 
 	// In order to expose ingress,
 	// - the cluster initialized condition must be true
@@ -375,7 +380,7 @@ func (cd *clusterDirector) needsIngress(ctx context.Context, cluster *resource.C
 	}
 
 	// this is the case of update when ingress is removed from CR
-	if !cluster.IsIngressNeeded() && ingressConditionTrue {
+	if !cluster.IsIngressNeeded() && (uiIngressConditionTrue || sqlIngressConditionTrue) {
 		return true, nil
 	}
 
@@ -384,11 +389,27 @@ func (cd *clusterDirector) needsIngress(ctx context.Context, cluster *resource.C
 	r := resource.NewManagedKubeResource(ctx, cd.client, cluster, kube.AnnotatingPersister)
 
 	labelSelector := r.Labels.Selector(cluster.Spec().AdditionalLabels)
-	builders := []resource.Builder{
-		resource.UIIngressBuilder{Cluster: cluster, Labels: labelSelector, V1Ingress: v1Ingress},
-	}
 
 	if cluster.IsIngressNeeded() {
+
+		var builders []resource.Builder
+		ui := resource.UIIngressBuilder{Cluster: cluster, Labels: labelSelector, V1Ingress: v1Ingress}
+		sql := resource.SQLIngressBuilder{Cluster: cluster, Labels: labelSelector, V1Ingress: v1Ingress}
+		uiIngressEnabled := cluster.IsUIIngressEnabled()
+		sqlIngressEnabled := cluster.IsSQLIngressEnabled()
+
+		if (!uiIngressEnabled && uiIngressConditionTrue) || (!sqlIngressEnabled && sqlIngressConditionTrue) {
+			return true, nil
+		}
+
+		if uiIngressEnabled {
+			builders = append(builders, ui)
+		}
+
+		if sqlIngressEnabled {
+			builders = append(builders, sql)
+		}
+
 		for _, b := range builders {
 			hasChanged, err := resource.Reconciler{
 				ManagedResource: r,

@@ -94,6 +94,9 @@ func (cluster Cluster) SetClusterStatus() {
 func (cluster Cluster) SetClusterVersion(version string) {
 	cluster.cr.Status.Version = version
 }
+func (cluster Cluster) SetSQLHost(host string) {
+	cluster.cr.Status.SQLHost = host
+}
 func (cluster Cluster) SetCrdbContainerImage(containerimage string) {
 	cluster.cr.Status.CrdbContainerImage = containerimage
 }
@@ -236,6 +239,12 @@ func (cluster Cluster) SetAnnotationCertExpiration(certExpiration string) {
 	}
 	cluster.cr.Annotations[CrdbCertExpirationAnnotation] = certExpiration
 }
+func (cluster Cluster) SetRestartTypeAnnotation(restartType string) {
+	if cluster.cr.Annotations == nil {
+		cluster.cr.Annotations = make(map[string]string)
+	}
+	cluster.cr.Annotations[CrdbRestartTypeAnnotation] = restartType
+}
 func (cluster Cluster) DeleteRestartTypeAnnotation() {
 	if cluster.cr.Annotations == nil {
 		return
@@ -325,4 +334,14 @@ func getSupportedCrdbVersions() []string {
 // IsIngressNeeded returns true if ingress config is given in spec
 func (cluster Cluster) IsIngressNeeded() bool {
 	return cluster.Spec().Ingress != nil
+}
+
+// IsUIIngressEnabled returns true if ingress config is given for UI
+func (cluster Cluster) IsUIIngressEnabled() bool {
+	return cluster.Spec().Ingress != nil && cluster.Spec().Ingress.UI != nil
+}
+
+// IsSQLIngressEnabled returns true if ingress config is given for SQL
+func (cluster Cluster) IsSQLIngressEnabled() bool {
+	return cluster.Spec().Ingress != nil && cluster.Spec().Ingress.SQL != nil
 }
