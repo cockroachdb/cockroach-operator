@@ -1,5 +1,5 @@
 /*
-Copyright 2021 The Cockroach Authors
+Copyright 2022 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -74,9 +74,9 @@ func TestValidateIngress(t *testing.T) {
 }
 
 func TestCreateCrdbCluster(t *testing.T) {
-	testcases := []struct{
+	testcases := []struct {
 		Cluster *CrdbCluster
-		ErrMsg string
+		ErrMsg  string
 	}{
 		{
 			Cluster: &CrdbCluster{
@@ -89,7 +89,7 @@ func TestCreateCrdbCluster(t *testing.T) {
 		{
 			Cluster: &CrdbCluster{
 				Spec: CrdbClusterSpec{
-					Image: &PodImage{Name: "testImage"},
+					Image:              &PodImage{Name: "testImage"},
 					CockroachDBVersion: "v2.1.20",
 				},
 			},
@@ -104,7 +104,6 @@ func TestCreateCrdbCluster(t *testing.T) {
 	}
 }
 
-
 func TestUpdateCrdbCluster(t *testing.T) {
 	oldCluster := CrdbCluster{
 		Spec: CrdbClusterSpec{
@@ -112,9 +111,9 @@ func TestUpdateCrdbCluster(t *testing.T) {
 		},
 	}
 
-	testcases := []struct{
+	testcases := []struct {
 		Cluster *CrdbCluster
-		ErrMsg string
+		ErrMsg  string
 	}{
 		{
 			Cluster: &CrdbCluster{
@@ -125,7 +124,7 @@ func TestUpdateCrdbCluster(t *testing.T) {
 		{
 			Cluster: &CrdbCluster{
 				Spec: CrdbClusterSpec{
-					Image: &PodImage{Name: "testImage"},
+					Image:              &PodImage{Name: "testImage"},
 					CockroachDBVersion: "v2.1.20",
 				},
 			},
