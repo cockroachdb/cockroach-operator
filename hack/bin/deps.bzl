@@ -190,37 +190,31 @@ filegroup(
 
 # Define rules for different oc versions
 def install_oc():
-    http_archive(
-        name = "oc_linux",
-        sha256 = "1505efdf7b7ac8c1c275a8f5281db1885fe49bbb4467c08ab599745af802cc98",
-        urls = ["https://mirror.openshift.com/pub/openshift-v4/clients/ocp/4.8.12/openshift-client-linux-4.8.12.tar.gz"],
-        build_file_content =
-         """
-filegroup(
-     name = "file",
-     srcs = [
-        "oc",
-     ],
-     visibility = ["//visibility:public"],
-)
-    """,
-    )
+    versions = {
+        "oc_darwin": {
+            "file": "openshift-client-mac.tar.gz",
+            "sha": "d4fe964b9aa43a9287f0e9303eee509459964a5b27b9eb0feb4ea108d6ac42aa",
+        },
+        "oc_linux": {
+            "file": "openshift-client-linux.tar.gz",
+            "sha": "8906c39cc881eb8565e7cb756e9cd06917b439244e8bf9c4b0ee14d5a087588d",
+        }
+    }
 
-    http_archive(
-        name = "oc_darwin",
-        sha256 = "684f9413c7dfcc5963630b948576f0e4765db1ee355b6cc69ea556e76acf6f3e",
-        urls = ["https://mirror.openshift.com/pub/openshift-v4/clients/ocp/4.8.12/openshift-client-mac-4.8.12.tar.gz"],
-        build_file_content =
-         """
+    for k, v in versions.items():
+        http_archive(
+            name = k,
+            sha256 = v["sha"],
+            urls = ["https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/stable-4.9/{}".format(v["file"])],
+            build_file_content =
+             """
 filegroup(
      name = "file",
-     srcs = [
-        "oc",
-     ],
+     srcs = ["oc"],
      visibility = ["//visibility:public"],
 )
     """,
-    )
+        )
 
 ## Fetch kind images used during e2e tests
 def install_kind():
@@ -382,51 +376,51 @@ filegroup(
 
 ## Fetch opm used on generating csv
 def install_opm():
-    http_file(
-       name = "opm_darwin",
-       executable = 1,
-       sha256 = "adbfcdeef14c9a5a8ebfc1e94d57f3c3892c85477873187bfb65ef226d757a9a",
-       urls = ["https://storage.googleapis.com/crdb-bazel-artifacts/macos/opm"],
-    )
+    versions = {
+        "opm_darwin": {
+            "file": "opm-mac.tar.gz",
+            "sha": "fe8a661e6b7a5096d4d9e223a62681fcd65860bf91a6dc7dc4d82ce07987c262",
+         },
+        "opm_linux": {
+            "file": "opm-linux.tar.gz",
+            "sha": "789e196feb4d1e943eca43e9011cc57dcdd5785946238dd85262f11489b3be3c",
+        },
+    }
 
-    http_file(
-        name = "opm_linux",
-        executable = 1,
-        sha256 = "e3f15fbad17c903c7d69579e934153cb74fbd48ba84e4911d2ecf4e63b9a903d",
-        urls = ["https://storage.googleapis.com/crdb-bazel-artifacts/linux/opm"],
-    )
+    for k, v in versions.items():
+      http_file(
+         name = k,
+         executable = 1,
+         sha256 = v["sha"],
+         urls = ["https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/stable-4.9/{}".format(v["file"])],
+      )
 
 ## Fetch openshift-installer
 def install_openshift():
-    http_archive(
-       name = "openshift_darwin",
-       sha256 = "e3efcadbe554ad84283ac8caf2677b79a745895a0275647cef0b10971c7a3f0f",
-       urls = ["https://mirror.openshift.com/pub/openshift-v4/clients/ocp/4.8.12/openshift-install-mac-4.8.12.tar.gz"],
-       build_file_content = """
-filegroup(
-    name = "file",
-    srcs = [
-	"openshift-install",
-    ],
-    visibility = ["//visibility:public"],
-)
-""",
-    )
+    versions = {
+        "openshift_darwin": {
+            "file": "openshift-install-mac.tar.gz",
+            "sha": "08171ba88f981c819cde2eb1fa1564b854ad534d9f75a28e75fc2a7de5f11ce9",
+         },
+        "openshift_linux": {
+            "file": "openshift-install-linux.tar.gz",
+            "sha": "e00f4da6b5041398a3fc7c53dcf6a6f0d4886b6be0ead0e1b1cb68a764483da0",
+        },
+    }
 
-    http_archive(
-        name = "openshift_linux",
-        sha256 = "f8612aad0f5f0f9c95049543169af53dcd4e1d3f7fbf425a70a7aa5c61c036ec",
-        urls = ["https://mirror.openshift.com/pub/openshift-v4/clients/ocp/4.8.12/openshift-install-linux-4.8.12.tar.gz"],
-        build_file_content = """
+    for k, v in versions.items():
+      http_archive(
+          name = k,
+          sha256 = v["sha"],
+          urls = ["https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/stable-4.9/{}".format(v["file"])],
+          build_file_content = """
 filegroup(
     name = "file",
-    srcs = [
-	"openshift-install",
-    ],
+    srcs = ["openshift-install"],
     visibility = ["//visibility:public"],
 )
-""",
-    )
+"""
+      )
 
 ## Fetch crdb used in our container
 def install_crdb():
