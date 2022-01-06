@@ -29,7 +29,7 @@ main() {
   local rh_operator_image="${2}"
   local rh_package_options="${3}"
   local rh_crdb_image="${4}"
-  local deploy_path="bundle/${rh_bundle_version}"
+  local deploy_path="bundle"
 
   # move to the root project directory
   cd "${BUILD_WORKSPACE_DIRECTORY}"
@@ -41,8 +41,6 @@ main() {
   echo "RH_CRDB_IMAGE=${rh_crdb_image}"
   echo "DEPLOY_PATH=${deploy_path}"
 
-  ensure_unique_deployment "${deploy_path}"
-
   mkdir -p "${deploy_path}"
   rh_operator_image="$(digest_image ${rh_operator_image})"
 
@@ -52,13 +50,6 @@ main() {
   done
 
   patch_marketplace_csv "${deploy_path}" cockroachdb-certified-rhmp
-}
-
-ensure_unique_deployment() {
-  if [ -d "${1}" ]; then
-    echo "Folder ${1} already exists. Please increase the version or remove the folder manually." >&2
-    exit 1
-  fi
 }
 
 generate_manifests() {

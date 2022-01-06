@@ -133,16 +133,6 @@ sh_binary(
     ],
 )
 
-# opm-build-bundle is used in the certification release for OpenShift to create the bundle.Dockerfile and validate the packagemanifest format
-sh_binary(
-    name = "opm-build-bundle",
-    srcs = ["opm-build-bundle.sh"],
-    data = [
-        OPM,
-        "@//:all-srcs",
-    ],
-)
-
 filegroup(
     name = "package-srcs",
     srcs = glob(["**"]),
