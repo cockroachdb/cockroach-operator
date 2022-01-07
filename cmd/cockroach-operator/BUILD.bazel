@@ -48,7 +48,7 @@ container_run_and_commit_layer(
     commands = [
         "microdnf install yum",
         "yum -v -y update --all",
-        "microdnf remove yum && microdnf clean all",
+        "microdnf clean all && rm -rf /var/cache/yum",
     ],
     image = "@redhat_ubi_minimal//image",
 )
