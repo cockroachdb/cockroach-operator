@@ -86,7 +86,7 @@ spec:
         path: dataStore.supportsAutoResize
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:booleanSwitch
-      - description: Container image information
+      - description: (Optional) Container image information
         displayName: Cockroach Database Image
         path: image
       - description: (Optional) Ingress defines the Ingress configuration used to
@@ -129,6 +129,11 @@ spec:
         - urn:alm:descriptor:com.tectonic.ui:hidden
       - displayName: Crdb Actions
         path: operatorActions
+        x-descriptors:
+        - urn:alm:descriptor:com.tectonic.ui:hidden
+      - description: SQLHost is the host to be used with SQL ingress
+        displayName: SQLHost
+        path: sqlHost
         x-descriptors:
         - urn:alm:descriptor:com.tectonic.ui:hidden
       - description: Database service version. Not populated and is just a placeholder
