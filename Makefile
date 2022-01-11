@@ -32,7 +32,7 @@ GCP_PROJECT?=chris-love-operator-playground
 GCP_ZONE?=us-central1-a
 CLUSTER_NAME?=bazel-test
 DEV_REGISTRY?=gcr.io/$(GCP_PROJECT)
-COCKROACH_DATABASE_VERSION=v20.2.5
+COCKROACH_DATABASE_VERSION=v21.2.3
 
 # used for running e2e tests with OpenShift
 PULL_SECRET?=
@@ -335,8 +335,6 @@ release/image:
 RH_BUNDLE_REGISTRY?=registry.connect.redhat.com/cockroachdb
 RH_BUNDLE_IMAGE_REPOSITORY?=cockroachdb-operator-bundle
 RH_BUNDLE_VERSION?=$(VERSION)
-RH_DEPLOY_PATH="deploy/certified-metadata-bundle"
-RH_DEPLOY_FULL_PATH="$(RH_DEPLOY_PATH)/cockroach-operator/"
 RH_COCKROACH_DATABASE_IMAGE=registry.connect.redhat.com/cockroachdb/cockroach:$(COCKROACH_DATABASE_VERSION)
 RH_OPERATOR_IMAGE?=registry.connect.redhat.com/cockroachdb/cockroachdb-operator:$(APP_VERSION)
 
