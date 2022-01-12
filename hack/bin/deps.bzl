@@ -314,19 +314,24 @@ def install_kubetest2_exe():
 
 ## Fetch operator-sdk used on generating csv
 def install_operator_sdk():
-    http_file(
-       name = "operator_sdk_darwin",
-       executable = 1,
-       sha256 = "c9aa13d011f49d941edcd70453769dba2b4ab8cc59d5dedb48037897bf7e2a7e",
-       urls = ["https://github.com/operator-framework/operator-sdk/releases/download/v1.12.0/operator-sdk_darwin_amd64"],
-    )
+    versions = {
+        "operator_sdk_darwin": {
+            "file": "operator-sdk_darwin_amd64",
+            "sha": "5fc30d04a31736449adb5c9b0b44e78ebeaa5cf968cc7afcbdf533135b72e31a",
+        },
+        "operator_sdk_linux": {
+            "file": "operator-sdk_linux_amd64",
+            "sha": "d2065f1f7a0d03643ad71e396776dac0ee809ef33195e0f542773b377bab1b2a",
+        },
+    }
 
-    http_file(
-        name = "operator_sdk_linux",
-        executable = 1,
-        sha256 = "65f35614cdc8fb2f0d5acece80b0cb16e86966c45fe29c8b2d329260a02133a2",
-        urls = ["https://github.com/operator-framework/operator-sdk/releases/download/v1.12.0/operator-sdk_linux_amd64"],
-    )
+    for k, v in versions.items():
+      http_file(
+         name = k,
+         executable = 1,
+         sha256 = v["sha"],
+         urls = ["https://github.com/operator-framework/operator-sdk/releases/download/v1.15.0/{}".format(v["file"])],
+      )
 
 def install_kustomize():
     http_archive(

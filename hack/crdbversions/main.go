@@ -45,6 +45,7 @@ var targets = []struct{ template, output string }{
 	{"config/templates/deployment_patch.yaml.in", "config/manifests/patches/deployment_patch.yaml"},
 	{"config/templates/example.yaml.in", "examples/example.yaml"},
 	{"config/templates/smoketest.yaml.in", "examples/smoketest.yaml"},
+	{"config/templates/csv.yaml.in", "config/manifests/bases/cockroach-operator.clusterserviceversion.yaml"},
 }
 
 // crdb-versions.yaml structure

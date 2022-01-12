@@ -23,6 +23,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"regexp"
 	"sort"
 	"time"
@@ -140,9 +141,10 @@ func main() {
 
 	rawVersions := GetVersions(responseData)
 	sortedVersions := SortVersions(rawVersions)
+	outputFile := filepath.Join(os.Getenv("BUILD_WORKSPACE_DIRECTORY"), CrdbVersionsFileName)
 
-	err = GenerateCrdbVersionsFile(sortedVersions, CrdbVersionsFileName)
+	err = GenerateCrdbVersionsFile(sortedVersions, outputFile)
 	if err != nil {
-		log.Fatalf("Cannot write %s file: %s", CrdbVersionsFileName, err)
+		log.Fatalf("Cannot write %s file: %s", outputFile, err)
 	}
 }
