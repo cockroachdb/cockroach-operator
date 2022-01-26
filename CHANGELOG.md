@@ -10,6 +10,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## Fixed
 
 * Bundle generation for updated OpenShift marketplace requirements
+* Related images added to manager env for supporting cockroachDBVersion in the spec
 
 # [v2.5.0](https://github.com/cockroachdb/cockroach-operator/compare/v2.4.0...v2.5.0)
 
