@@ -73,11 +73,13 @@ generate_bundle() {
 
   # Ensure package name is correct for the specific bundle and that the CSV name matches the package name. Also removing
   # the testing annotations since these are handled automatically upstream.
-  sed -i '' \
+  sed \
     -e "s/package.v1: cockroach-operator/package.v1: ${pkg}/g" \
     -e "/\s*# Annotations for testing/d" \
     -e "/\s*operators.operatorframework.io.test/d" \
-    "${dir}/metadata/annotations.yaml"
+    "${dir}/metadata/annotations.yaml" > "${dir}/metadata/annotations.yaml.new"
+
+  mv "${dir}/metadata/annotations.yaml.new" "${dir}/metadata/annotations.yaml"
 
   # add supported openshift versions
   echo "  com.redhat.openshift.versions: 4.7-4.9" >> "${dir}/metadata/annotations.yaml"
@@ -97,10 +99,11 @@ adapt_csv() {
 
   # replace RH_COCKROACH_OP_IMAGE_PLACEHOLDER with the proper image and CREATED_AT_PLACEHOLDER with the current time
   sed \
-    -i '' \
     -e "s+RH_COCKROACH_OP_IMAGE_PLACEHOLDER+${img}+g" \
     -e "s+CREATED_AT_PLACEHOLDER+"$(date +"%FT%H:%M:%SZ")"+g" \
-    "${csv}"
+    "${csv}" > "${csv}.new"
+
+  mv "${csv}.new" "${csv}"
 
   # for each RH_COCKROACH_DB_IMAGE_PLACEHOLDER_* set to the corresponding image image
   local version env rh_img
@@ -108,7 +111,8 @@ adapt_csv() {
     version=${v//./_}
     env="RH_COCKROACH_DB_IMAGE_PLACEHOLDER_${version}"
     rh_img="$(digest_image "registry.connect.redhat.com/cockroachdb/cockroach:${v}")"
-    sed -i '' "s+${env}+${rh_img}+g" "${csv}"
+    sed "s+${env}+${rh_img}+g" "${csv}" > "${csv}.new"
+    mv "${csv}.new" "${csv}"
   done
 }
 
@@ -125,9 +129,10 @@ patch_marketplace_csv() {
   local rhmp_annotations="    marketplace.openshift.io/remote-workflow: https://marketplace.redhat.com/en-us/operators/${2}/pricing?utm_source=openshift_console"
   rhmp_annotations="${rhmp_annotations}\n    marketplace.openshift.io/support-workflow: https://marketplace.redhat.com/en-us/operators/${2}/support?utm_source=openshift_console"
 
-  sed -i '' \
-    "s+  annotations:+  annotations:\n${rhmp_annotations}+" \
-    "${1}/cockroachdb-certified-rhmp/manifests/${2}.clusterserviceversion.yaml"
+  local csv="${1}/cockroachdb-certified-rhmp/manifests/${2}.clusterserviceversion.yaml"
+  sed "s+  annotations:+  annotations:\n${rhmp_annotations}+" \
+    "${csv}" > "${csv}.new"
+  mv "${csv}.new" "${csv}"
 }
 
 main "$@"
