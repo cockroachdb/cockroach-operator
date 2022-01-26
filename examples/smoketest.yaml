@@ -39,5 +39,5 @@ spec:
       memory: 300Mi
   tlsEnabled: true
   image:
-    name: cockroachdb/cockroach:v21.2.3
+    name: cockroachdb/cockroach:v21.2.4
   nodes: 3
