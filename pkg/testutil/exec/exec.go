@@ -22,48 +22,25 @@ import (
 	"sigs.k8s.io/kubetest2/pkg/process"
 )
 
-// TODO maybe add a call to delete the kind k8s cluster
-// Sometimes when we stop kind the cluster is not deleted
-//  bazel-bin/hack/bin/kind delete cluster --name test
-// the above command can delete the kind cluster
-
-// StopKubeTest2 stops a kind server.
-func StopKubeTest2(clusterName string) error {
-	args := []string{"kind", "--down", "--cluster-name",
-		clusterName}
-
-	println("Down(): stopin kind cluster...\n")
-	// we want to see the output so use process.ExecJUnit
-	return process.ExecJUnit("kubetest2", args, os.Environ())
-}
-
-// TODO kind does not wait for all of the base elements to start
-// in a k8s cluster.  For instance it does not wait for
-// all of the deployments in the kube-system ns to start.
-// This is causing out e2e tests to start before k8s is
-// even running fully.
-// I put in a feature request here https://github.com/kubernetes-sigs/kind/issues/2126
-// but we may want to do something in the mean time.
-
-// StartKubeTest2 starts a kind server.
-func StartKubeTest2(clusterName string) error {
+// StartGKEKubeTest2 starts a GKE server.
+func StartGKEKubeTest2(clusterName string, zone string, project string) error {
 	args := []string{
-		"kind", "--up", "--cluster-name", clusterName, "-v", "10",
+		"gke",
+		"--up",
+		"--cluster-name",
+		clusterName,
+		"--version",
+		"latest",
+		"--zone",
+		zone,
+		"--project",
+		project,
+		"--ignore-gcp-ssh-key",
 	}
 
-	println("Up(): startin kind cluster...\n")
+	println("Up(): startin gke cluster...\n")
 	// we want to see the output so use process.ExecJUnit
 	return process.ExecJUnit("kubetest2", args, os.Environ())
-}
-
-// GetKubeconfig gets kubeconfig from kind
-func GetKubeConfig(clusterName string) error {
-	args := []string{
-		"export", "kubeconfig", "--name", clusterName, "--verbosity", "10",
-	}
-	println("getting kubeconfig for cluster ...\n")
-	// we want to see the output so use process.ExecJUnit
-	return process.ExecJUnit("kind", args, os.Environ())
 }
 
 // StopGKEKubeTest2 stops a GKE server.
@@ -83,27 +60,6 @@ func StopGKEKubeTest2(clusterName string, zone string, project string) error {
 	}
 
 	println("Down(): stopin gke cluster...\n")
-	// we want to see the output so use process.ExecJUnit
-	return process.ExecJUnit("kubetest2", args, os.Environ())
-}
-
-// StartGKEKubeTest2 starts a GKE server.
-func StartGKEKubeTest2(clusterName string, zone string, project string) error {
-	args := []string{
-		"gke",
-		"--up",
-		"--cluster-name",
-		clusterName,
-		"--version",
-		"latest",
-		"--zone",
-		zone,
-		"--project",
-		project,
-		"--ignore-gcp-ssh-key",
-	}
-
-	println("Up(): startin gke cluster...\n")
 	// we want to see the output so use process.ExecJUnit
 	return process.ExecJUnit("kubetest2", args, os.Environ())
 }

@@ -38,4 +38,4 @@ jobs:
           key: bazel
 
       - name: End-to-end (kind)
-        run: make test/e2e/kind-versionchecker
+        run: make test/e2e/k3d-versionchecker

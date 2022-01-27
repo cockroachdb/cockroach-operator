@@ -128,15 +128,13 @@ workspace_binary(
     cmd = "@go_sdk//:bin/go",
 )
 
-# fetch_kind rules to fetch the kind binary from github
 genrule(
-    name = "fetch_kind",
+    name = "fetch_k3d",
     srcs = select({
-        ":m1": ["@kind_m1//file"],
-        ":darwin": ["@kind_darwin//file"],
-        ":k8": ["@kind_linux//file"],
+        ":darwin": ["@k3d_darwin//file"],
+        ":k8": ["@k3d_linux//file"],
     }),
-    outs = ["kind"],
+    outs = ["k3d"],
     cmd = "cp $(SRCS) $@",
     visibility = ["//visibility:public"],
 )
@@ -154,20 +152,7 @@ genrule(
     visibility = ["//visibility:public"],
 )
 
-# fetch_kubetest2_kind rules to fetch the binary for kubetest2_kind used on e2e tests that are saved on a google cloud bucket
-genrule(
-    name = "fetch_kubetest2_kind",
-    srcs = select({
-        ":m1": ["@kubetest2_kind_darwin//file"],
-        ":darwin": ["@kubetest2_kind_darwin//file"],
-        ":k8": ["@kubetest2_kind_linux//file"],
-    }),
-    outs = ["kubetest2-kind"],
-    cmd = "cp $(SRCS) $@",
-    visibility = ["//visibility:public"],
-)
-
-# fetch_kubetest2_gke rules to fetch the binary for kubetest2_kind used on e2e tests that are saved on a google cloud bucket
+# fetch_kubetest2_gke rules to fetch the binary for kubetest2_gke used on e2e tests that are saved on a google cloud bucket
 genrule(
     name = "fetch_kubetest2_gke",
     srcs = select({
@@ -201,7 +186,7 @@ genrule(
     visibility = ["//visibility:public"],
 )
 
-#  fetch_operator-sdk rules to fetch the kind binary from github
+#  fetch_operator-sdk rules to fetch the binary from github
 genrule(
     name = "fetch_operator-sdk",
     srcs = select({
@@ -214,7 +199,7 @@ genrule(
     visibility = ["//visibility:public"],
 )
 
-#  fetch_opm rules to fetch the kind binary from github
+#  fetch_opm rules to fetch the binary from github
 genrule(
     name = "fetch_opm",
     srcs = select({
@@ -240,7 +225,7 @@ genrule(
     visibility = ["//visibility:public"],
 )
 
-#  fetch_kustomize rules to fetch the kind binary from github
+#  fetch_kustomize rules to fetch the binary from github
 genrule(
     name = "fetch_kustomize",
     srcs = select({

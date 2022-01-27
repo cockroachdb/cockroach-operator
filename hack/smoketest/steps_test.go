@@ -17,6 +17,7 @@ limitations under the License.
 package main_test
 
 import (
+	"fmt"
 	"path/filepath"
 	"testing"
 	"time"
@@ -39,7 +40,7 @@ func (m *mockExecFn) exec(cmd string, args, env []string) error {
 	return m.err
 }
 
-func TestStartKindCluster(t *testing.T) {
+func TestStartCluster(t *testing.T) {
 	tests := []struct {
 		name    string
 		version string
@@ -50,28 +51,27 @@ func TestStartKindCluster(t *testing.T) {
 
 	for _, tt := range tests {
 		fn := new(mockExecFn)
-		require.NoError(t, StartKindCluster(tt.name, tt.version).Apply(fn.exec))
+		require.NoError(t, StartCluster(tt.name, tt.version).Apply(fn.exec))
 
 		expArgs := []string{
-			"create",
 			"cluster",
-			"--name",
+			"create",
 			tt.name,
 			"--image",
-			"kindest/node:v" + tt.version,
+			fmt.Sprintf("rancher/k3s:v%s-k3s1", tt.version),
 		}
 
-		require.Equal(t, "kind", fn.cmd)
+		require.Equal(t, "k3d", fn.cmd)
 		require.Equal(t, expArgs, fn.args)
 	}
 }
 
-func TestStopKindCluster(t *testing.T) {
+func TestStopCluster(t *testing.T) {
 	fn := new(mockExecFn)
-	require.NoError(t, StopKindCluster("test-cluster").Apply(fn.exec))
+	require.NoError(t, StopCluster("test-cluster").Apply(fn.exec))
 
-	require.Equal(t, "kind", fn.cmd)
-	require.Equal(t, []string{"delete", "cluster", "--name", "test-cluster"}, fn.args)
+	require.Equal(t, "k3d", fn.cmd)
+	require.Equal(t, []string{"cluster", "delete", "test-cluster"}, fn.args)
 }
 
 func TestApplyManifest(t *testing.T) {

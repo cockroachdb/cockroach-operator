@@ -6,13 +6,11 @@ See: https://docs.bazel.build/versions/master/install.html
 
 Take a look at the [Makefile](https://github.com/cockroachdb/cockroach-operator/blob/master/Makefile) for various
 targets you can run. The e2e testing requires a container engine like docker running as it starts a K8s cluster with
-Kind. The Makefile is simply a wrapper for bazel commands and does not have any build functionality in it.
+[k3d]. The Makefile is simply a wrapper for bazel commands and does not have any build functionality in it.
 
 You will also need kubectl and a running Kubernetes cluster to run the k8s targets like `make k8s/apply`.
 
 Bazel has been primarily tested on Linux but "should" run on macOS as well. Windows at this time has not been tested.
-
-TODO: notes on python configuration for the host.
 
 If you are new to Bazel take a look at the Workspace file, as it lays out which rule sets we are using, such as docker
 rules and k8s rules. The Makefile notes below talk about the different target groups that run various bazel commands.
@@ -39,25 +37,24 @@ Please run the testing targets locally before you push a PR.
 
 ## Running Locally
 
-We use [kind] to run the operator in a local environment. This can provide a faster feedback cycle while developing
+We use [k3d] to run the operator in a local environment. This can provide a faster feedback cycle while developing
 since there's no need to set up a remote GKE/OpenShift cluster.
 
-[kind]: https://kind.sigs.k8s.io/
+[k3d]: https://k3d.io
 
 **make dev/up**
 
 This command will get everything set up for you to begin testing out the operator. Specifically it will:
 
-* Start a local docker registry (via docker run) and configure it to work with kind/K8s
-* Start a kind cluster named test (context=kind-test)
+* Start a k3d cluster named test (context=k3d-test) with a managed docker registry
 * Install the CRDs
-* Build a docker image and publish it to the local registry
+* Build a docker image and publish it to the k3d registry
 * Deploy the operator and wait for it to be available
 * Ensure your shell is configured to use the new cluster (kube context)
 
 **make dev/down**
 
-Tears down the kind cluster.
+Tears down the k3d cluster.
 
 ## Testing CR Database
 
@@ -108,8 +105,8 @@ When you have removed your example and the persitent volumes you can use the fol
 1. If you do not have a GKE cluster we have a helper script `./hack/create-gke-cluster.sh -c test`.
 1. Locate the latest released tag here  https://github.com/cockroachdb/cockroach-operator/tags
 1. Clone the tag `git clone --depth 1 --branch <tag_name> https://github.com/cockroachdb/cockroach-operator`
-1. Execute `kubectl apply -f config/crd/bases/crdb.cockroachlabs.com_crdbclusters.yaml`
-1. Execute `kubectl apply -f manifests/operator.yaml`
+1. Execute `kubectl apply -f install/crds.yaml`
+1. Execute `kubectl apply -f install/operator.yaml`
 1. Check that the operator has deployed properly
 
 The examples directory contains various examples, for example you can run `kubectl apply -f examples/example.yaml`.

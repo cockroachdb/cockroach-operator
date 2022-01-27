@@ -21,6 +21,7 @@ filegroup(
         "//e2e/create:all-srcs",
         "//e2e/decommission:all-srcs",
         "//e2e/kubetest2-eks:all-srcs",
+        "//e2e/kubetest2-k3d:all-srcs",
         "//e2e/kubetest2-openshift:all-srcs",
         "//e2e/openshift:all-srcs",
         "//e2e/pvcresize:all-srcs",

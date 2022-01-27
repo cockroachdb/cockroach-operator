@@ -37,5 +37,5 @@ jobs:
           path: "~/.cache/bazel"
           key: bazel
 
-      - name: End-to-end (kind)
-        run: make test/e2e/kind-upgrades
+      - name: End-to-end (k3d)
+        run: make test/e2e/k3d-upgrades

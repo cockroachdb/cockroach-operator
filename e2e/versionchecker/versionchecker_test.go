@@ -53,7 +53,7 @@ func TestVersionCheckerJobPodPending(t *testing.T) {
 
 	builder := testutil.NewBuilder("crdb").Namespaced(sb.Namespace).WithNodeCount(3).WithTLS().
 		WithImage(e2e.MajorVersion).
-		WithPVDataStore("32Mi", "standard" /* default storage class in KIND */).
+		WithPVDataStore("32Mi").
 		WithResources(
 			corev1.ResourceRequirements{
 				// This is a hack to make the version checker pod unschedulable. There's likely a better way to do it.
@@ -94,7 +94,7 @@ func TestLoggingAPIValidCheck(t *testing.T) {
 
 	builder := testutil.NewBuilder("crdb").Namespaced(sb.Namespace).WithNodeCount(3).WithTLS().
 		WithImage("cockroachdb/cockroach:v21.1.0").
-		WithPVDataStore("32Mi", "standard" /* default storage class in KIND */).
+		WithPVDataStore("32Mi").
 		WithClusterLogging("logging-configmap")
 
 	steps := testutil.Steps{

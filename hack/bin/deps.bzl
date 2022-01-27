@@ -61,12 +61,11 @@ def install():
     install_crdb()
     install_golangci_lint()
     install_kubectl()
-    install_kind()
+    install_k3d()
     install_kubetest2()
     install_kubetest2_aws()
     install_kubetest2_exe()
     install_kubetest2_gke()
-    install_kubetest2_kind()
     install_kustomize()
     install_oc()
     install_operator_sdk()
@@ -176,6 +175,26 @@ def install_kubectl():
         urls = ["https://storage.googleapis.com/kubernetes-release/release/v1.18.0/bin/linux/amd64/kubectl"],
     )
 
+def install_k3d():
+    versions = {
+        "k3d_darwin": {
+            "url": "https://github.com/rancher/k3d/releases/download/v5.2.2/k3d-darwin-amd64",
+            "sha": "40ac312bc762611de80daff24cb66d79aaaf17bf90e5e8d61caf90e63b57542d",
+        },
+        "k3d_linux": {
+            "url": "https://github.com/rancher/k3d/releases/download/v5.2.2/k3d-linux-amd64",
+            "sha": "7ddb900e6e50120b65d61568f6af007a82331bf83918608a6a7be8910792faef",
+        },
+    }
+
+    for k, v in versions.items():
+      http_file(
+          name = k,
+          executable = 1,
+          sha256 = v["sha"],
+          urls = [v["url"]],
+      )
+
 # Define rules for different golangci-lint versions
 def install_golangci_lint():
     http_archive(
@@ -245,35 +264,9 @@ filegroup(
     """,
         )
 
-## Fetch kind images used during e2e tests
-def install_kind():
-    # install kind binary
-    http_file(
-        name = "kind_darwin",
-        executable = 1,
-        sha256 = "432bef555a70e9360b44661c759658265b9eaaf7f75f1beec4c4d1e6bbf97ce3",
-        urls = ["https://github.com/kubernetes-sigs/kind/releases/download/v0.11.1/kind-darwin-amd64"],
-    )
-
-    http_file(
-            name = "kind_m1",
-            executable = 1,
-            sha256 = "4f019c578600c087908ac59dd0c4ce1791574f153a70608adb372d5abc58cd47",
-            urls = ["https://github.com/kubernetes-sigs/kind/releases/download/v0.11.1/kind-darwin-arm64"],
-    )
-
-    http_file(
-        name = "kind_linux",
-        executable = 1,
-        sha256 = "949f81b3c30ca03a3d4effdecda04f100fa3edc07a28b19400f72ede7c5f0491",
-        urls = ["https://github.com/kubernetes-sigs/kind/releases/download/v0.11.1/kind-linux-amd64"],
-    )
-
-
 ## Fetch kubetest2 binary used during e2e tests
 def install_kubetest2():
     # install kubetest2 binary
-    # TODO osx support
     http_file(
        name = "kubetest2_darwin",
        executable = 1,
@@ -286,24 +279,6 @@ def install_kubetest2():
         executable = 1,
         sha256 = "7f0b05654fa43ca1c607db297b5f3a775f65eea90355bb6b10137a7fffff5e1a",
         urls = ["https://storage.googleapis.com/crdb-bazel-artifacts/linux/kubetest2"],
-    )
-
-## Fetch kubetest2-kind binary used during e2e tests
-def install_kubetest2_kind():
-    # install kubetest2-kind binary
-    # TODO osx support
-    http_file(
-       name = "kubetest2_kind_darwin",
-       executable = 1,
-       sha256 = "a68bad1b94fd5e432f0555d699d0ce0470d0bf16f1b087e857d55f16f5373385",
-       urls = ["https://storage.googleapis.com/crdb-bazel-artifacts/osx/kubetest2-kind"],
-    )
-
-    http_file(
-        name = "kubetest2_kind_linux",
-        executable = 1,
-        sha256 = "b13014d3e1464ce58e2bbbec94bead267936155d537f3232ec0a24727263a2a1",
-        urls = ["https://storage.googleapis.com/crdb-bazel-artifacts/linux/kubetest2-kind"],
     )
 
 ## Fetch kubetest2-gke binary used during e2e tests
