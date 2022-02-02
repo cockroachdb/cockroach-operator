@@ -95,6 +95,10 @@ func (r *CrdbCluster) ValidateCreate() error {
 		errors = append(errors, err)
 	}
 
+	if err := r.ValidateVolumeMode(); err != nil {
+		errors = append(errors, err)
+	}
+
 	if len(errors) != 0 {
 		return kerrors.NewAggregate(errors)
 	}
@@ -159,5 +163,21 @@ func (r *CrdbCluster) ValidateCockroachVersion() error {
 		return fmt.Errorf("you have provided both cockroachDBVersion and cockroach image, please provide only one")
 	}
 
+	return nil
+}
+
+// ValidateVolumeMode validates that the volumeMode of the pvc is set to filesystem.
+func (r *CrdbCluster) ValidateVolumeMode() error {
+	claim := r.Spec.DataStore.VolumeClaim
+	if claim == nil {
+		return nil
+	}
+	if claim.PersistentVolumeClaimSpec.VolumeMode == nil {
+		return fmt.Errorf("you have not provided pvc.volumeMode value.")
+	}
+	if *claim.PersistentVolumeClaimSpec.VolumeMode != v1.PersistentVolumeFilesystem {
+		return fmt.Errorf(
+			"you have provided unsupported pvc.volumeMode, currently only Filesystem is supported.")
+	}
 	return nil
 }
