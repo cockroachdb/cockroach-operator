@@ -78,6 +78,8 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster, log
 			return err
 		}
 		log.V(int(zapcore.DebugLevel)).Info(fmt.Sprintf("supported CockroachDBVersion %s", cluster.Spec().CockroachDBVersion))
+		return v.completeVersionChecker(ctx, cluster, cluster.Spec().CockroachDBVersion,
+			cluster.GetCockroachDBImageName(), log)
 	} else {
 		log.V(int(zapcore.DebugLevel)).Info("User set image.name, using that field instead of cockroachDBVersion")
 	}
@@ -290,6 +292,14 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster, log
 		log.Error(dErr, "version checker job succeeded, but job failed to delete properly")
 	}
 
+	return v.completeVersionChecker(ctx, cluster, calVersion, containerImage, log)
+}
+
+func (v *versionChecker) completeVersionChecker(
+	ctx context.Context,
+	cluster *resource.Cluster, version,
+	imageName string,
+	log logr.Logger) error {
 	// we force the saving of the status on the cluster and cancel the loop
 	fetcher := resource.NewKubeFetcher(ctx, cluster.Namespace(), v.client)
 
@@ -302,13 +312,14 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster, log
 	refreshedCluster := resource.NewCluster(cr)
 	// save the status of the cluster
 	refreshedCluster.SetTrue(api.CrdbVersionChecked)
-	refreshedCluster.SetClusterVersion(calVersion)
-	refreshedCluster.SetCrdbContainerImage(containerImage)
+	refreshedCluster.SetClusterVersion(version)
+	refreshedCluster.SetCrdbContainerImage(imageName)
 	if err := v.client.Status().Update(ctx, refreshedCluster.Unwrap()); err != nil {
 		log.Error(err, "failed saving cluster status on version checker")
 		return err
 	}
-	log.V(int(zapcore.DebugLevel)).Info("completed version checker", "calVersion", calVersion, "containerImage", containerImage)
+	log.V(int(zapcore.DebugLevel)).Info("completed version checker", "calVersion", version,
+		"containerImage", imageName)
 	CancelLoop(ctx, log)
 	return nil
 }

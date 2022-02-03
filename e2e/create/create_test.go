@@ -249,3 +249,48 @@ func TestCreateSecureClusterWithNonCRDBImage(t *testing.T) {
 		steps.Run(t)
 	}
 }
+
+// TestCreateSecureClusterWithCRDBVersionSet tests creating a cluster with
+// CRDBVersion set.
+// Creation should succeed.
+func TestCreateSecureClusterWithCRDBVersionSet(t *testing.T) {
+	// Test create a cluster with non valid CRDB image
+	// Check it went into failed state in initialized state
+	// tear it down
+
+	if parallel {
+		t.Parallel()
+	}
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+
+	testLog := zapr.NewLogger(zaptest.NewLogger(t))
+
+	steps := testutil.Steps{
+			{
+				Name: "creates 3-node secure cluster with valid version number",
+				Test: func(subT *testing.T) {
+					os.Setenv(relatedImageEnvName, validImage)
+					e := testenv.CreateActiveEnvForTest()
+					env := e.Start()
+
+					sb := testenv.NewDiffingSandbox(subT, env)
+					sb.StartManager(subT, controller.InitClusterReconcilerWithLogger(testLog))
+
+					builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
+						WithPVDataStore("1Gi", "standard" /* default storage class in KIND */).
+						WithCockroachDBVersion(crdbVersion)
+
+					require.NoError(subT, sb.Create(builder.Cr()))
+					testutil.RequireClusterToBeReadyEventuallyTimeout(subT, sb, builder,
+						500*time.Second)
+					subT.Log("Done with basic invalid cluster with image other than crdb")
+					require.NoError(subT, sb.Delete(builder.Cr()))
+
+					e.Stop()
+				},
+			},
+		}
+	steps.Run(t)
+}

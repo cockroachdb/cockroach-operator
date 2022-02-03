@@ -11,6 +11,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 * Bundle generation for updated OpenShift marketplace requirements
 * Related images added to manager env for supporting cockroachDBVersion in the spec
+* Fixed operator crash loop when cockroachDBVersion is used.
+
+## Changed
+
+* Now validates if `pvc.Volumemode` set correctly to `Filesystem`
 
 # [v2.5.0](https://github.com/cockroachdb/cockroach-operator/compare/v2.4.0...v2.5.0)
 
@@ -35,7 +40,6 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 * Removed unused beta channel
 * Dynamically create instance specific service account, role, and role binding
 * OpenShift deployment now allows the operator to run for all namespaces
-* Now validates if `pvc.Volumemode` set correctly to `Filesystem`
 
 ## Fixed
 
