@@ -74,6 +74,8 @@ func TestValidateIngress(t *testing.T) {
 }
 
 func TestCreateCrdbCluster(t *testing.T) {
+	block := v1.PersistentVolumeBlock
+	fs := v1.PersistentVolumeFilesystem
 	testcases := []struct {
 		Cluster *CrdbCluster
 		ErrMsg  string
@@ -95,10 +97,52 @@ func TestCreateCrdbCluster(t *testing.T) {
 			},
 			ErrMsg: "you have provided both cockroachDBVersion and cockroach image, please provide only one",
 		},
+		{
+			Cluster: &CrdbCluster{Spec: CrdbClusterSpec{
+				Image: &PodImage{Name: "testImage"},
+				DataStore: Volume{
+					VolumeClaim: &VolumeClaim{
+						PersistentVolumeClaimSpec: v1.PersistentVolumeClaimSpec{
+						},
+					},
+				},
+			}},
+			ErrMsg: "you have not provided pvc.volumeMode value.",
+		},
+		{
+			Cluster: &CrdbCluster{Spec: CrdbClusterSpec{
+				Image: &PodImage{Name: "testImage"},
+				DataStore: Volume{
+					VolumeClaim: &VolumeClaim{
+						PersistentVolumeClaimSpec: v1.PersistentVolumeClaimSpec{
+							VolumeMode: &block,
+						},
+					},
+				},
+			}},
+			ErrMsg: "you have provided unsupported pvc.volumeMode, currently only Filesystem is supported.",
+		},
+		{
+			Cluster: &CrdbCluster{Spec: CrdbClusterSpec{
+				Image: &PodImage{Name: "testImage"},
+				DataStore: Volume{
+					VolumeClaim: &VolumeClaim{
+						PersistentVolumeClaimSpec: v1.PersistentVolumeClaimSpec{
+							VolumeMode: &fs,
+						},
+					},
+				},
+			}},
+			ErrMsg: "",
+		},
 	}
 
 	for _, testcase := range testcases {
 		err := testcase.Cluster.ValidateCreate()
+		if testcase.ErrMsg == "" {
+			require.NoError(t, err)
+			continue
+		}
 		require.Error(t, err)
 		require.Equal(t, err.Error(), testcase.ErrMsg)
 	}
