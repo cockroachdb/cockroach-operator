@@ -89,6 +89,8 @@ spec:
               value: RH_COCKROACH_DB_IMAGE_PLACEHOLDER_v20_2_17
             - name: RELATED_IMAGE_COCKROACH_v20_2_18
               value: RH_COCKROACH_DB_IMAGE_PLACEHOLDER_v20_2_18
+            - name: RELATED_IMAGE_COCKROACH_v20_2_19
+              value: RH_COCKROACH_DB_IMAGE_PLACEHOLDER_v20_2_19
             - name: RELATED_IMAGE_COCKROACH_v21_1_0
               value: RH_COCKROACH_DB_IMAGE_PLACEHOLDER_v21_1_0
             - name: RELATED_IMAGE_COCKROACH_v21_1_1
@@ -115,6 +117,8 @@ spec:
               value: RH_COCKROACH_DB_IMAGE_PLACEHOLDER_v21_1_12
             - name: RELATED_IMAGE_COCKROACH_v21_1_13
               value: RH_COCKROACH_DB_IMAGE_PLACEHOLDER_v21_1_13
+            - name: RELATED_IMAGE_COCKROACH_v21_1_14
+              value: RH_COCKROACH_DB_IMAGE_PLACEHOLDER_v21_1_14
             - name: RELATED_IMAGE_COCKROACH_v21_2_0
               value: RH_COCKROACH_DB_IMAGE_PLACEHOLDER_v21_2_0
             - name: RELATED_IMAGE_COCKROACH_v21_2_1
