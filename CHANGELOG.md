@@ -12,7 +12,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 * Bundle generation for updated OpenShift marketplace requirements
 * Related images added to manager env for supporting cockroachDBVersion in the spec
 * Fixed operator crash loop when cockroachDBVersion is used.
-
+* Fix issue when sidecar container is injected to job pod
+ 
 ## Changed
 
 * Now validates if `pvc.Volumemode` set correctly to `Filesystem`

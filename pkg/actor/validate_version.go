@@ -182,7 +182,9 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster, log
 			}
 			return errors.Wrapf(err, "failed to check the version of the crdb")
 		}
-		podLogOpts := corev1.PodLogOptions{}
+		podLogOpts := corev1.PodLogOptions{
+			Container: resource.JobContainerName,
+		}
 		//get pod for the job we created
 
 		pods, err := v.clientset.CoreV1().Pods(job.Namespace).List(ctx, metav1.ListOptions{
