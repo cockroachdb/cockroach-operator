@@ -19,6 +19,7 @@ package resource
 import (
 	"errors"
 	"fmt"
+
 	"github.com/cockroachdb/cockroach-operator/pkg/features"
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
 	"github.com/cockroachdb/cockroach-operator/pkg/labels"
@@ -85,6 +86,9 @@ func (b JobBuilder) buildPodTemplate() corev1.PodTemplateSpec {
 				Labels: b.Selector,
 			},
 		*/
+		ObjectMeta: metav1.ObjectMeta{
+			Annotations: b.Spec().AdditionalAnnotations,
+		},
 		Spec: corev1.PodSpec{
 			SecurityContext: &corev1.PodSecurityContext{
 				RunAsUser: ptr.Int64(1000581000),
