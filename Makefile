@@ -16,23 +16,19 @@
 # This project requires the use of bazel.
 # Install instuctions https://docs.bazel.build/versions/master/install.html
 
-# load env vars from .envrc if it exists
-ifneq ("$(wildcard .envrc)","")
-include .envrc
-endif
-
 SHELL:=/usr/bin/env bash -O globstar
 
 # values used in workspace-status.sh
-DOCKER_REGISTRY?=cockroachdb
-DOCKER_IMAGE_REPOSITORY?=cockroachdb-operator
-VERSION?=$(shell cat version.txt)
-APP_VERSION?=v$(VERSION)
-GCP_PROJECT?=chris-love-operator-playground
-GCP_ZONE?=us-central1-a
 CLUSTER_NAME?=bazel-test
-DEV_REGISTRY?=gcr.io/$(GCP_PROJECT)
 COCKROACH_DATABASE_VERSION=v21.2.3
+DOCKER_IMAGE_REPOSITORY?=cockroachdb-operator
+DOCKER_REGISTRY?=cockroachdb
+GCP_PROJECT?=
+GCP_ZONE?=
+VERSION?=$(shell cat version.txt)
+
+APP_VERSION?=v$(VERSION)
+DEV_REGISTRY?=gcr.io/$(GCP_PROJECT)
 
 # used for running e2e tests with OpenShift
 PULL_SECRET?=
