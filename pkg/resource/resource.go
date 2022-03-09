@@ -161,6 +161,7 @@ func (r Reconciler) reconcileAnnotations(current, desired runtime.Object) error 
 	aa := daccessor.GetAnnotations()
 	if aa == nil {
 		aa = make(map[string]string)
+		daccessor.SetAnnotations(aa)
 	}
 
 	for k, v := range caccessor.GetAnnotations() {
