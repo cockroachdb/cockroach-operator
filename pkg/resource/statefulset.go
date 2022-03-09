@@ -226,6 +226,10 @@ func (b StatefulSetBuilder) makePodTemplate() corev1.PodTemplateSpec {
 		pod.Spec.Tolerations = b.Spec().Tolerations
 	}
 
+	if utilfeature.DefaultMutableFeatureGate.Enabled(features.TopologySpreadRules) {
+		pod.Spec.TopologySpreadConstraints = b.Spec().TopologySpreadConstraints
+	}
+
 	if b.Spec().NodeSelector != nil && len(b.Spec().NodeSelector) > 0 {
 		pod.Spec.NodeSelector = b.Spec().NodeSelector
 	}
