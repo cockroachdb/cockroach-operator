@@ -110,6 +110,10 @@ func (b JobBuilder) buildPodTemplate() corev1.PodTemplateSpec {
 		pod.Spec.Tolerations = b.Spec().Tolerations
 	}
 
+	if utilfeature.DefaultMutableFeatureGate.Enabled(features.TopologySpreadRules) {
+		pod.Spec.TopologySpreadConstraints = b.Spec().TopologySpreadConstraints
+	}
+
 	secret := b.Spec().Image.PullSecret
 	if secret != nil {
 		local := corev1.LocalObjectReference{

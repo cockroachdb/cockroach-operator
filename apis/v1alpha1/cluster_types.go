@@ -108,7 +108,7 @@ type CrdbClusterSpec struct {
 	Affinity *corev1.Affinity `json:"affinity,omitempty"`
 	// (Optional) If specified, the pod's topology spread constraints
 	// +optional
-	TopologySpreadConstraints []corev1.TopologySpreadConstraint `json:"topologySpreadConstraints"`
+	TopologySpreadConstraints []corev1.TopologySpreadConstraint `json:"topologySpreadConstraints,omitempty"`
 	// (Optional) Additional custom resource labels that are added to all resources
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Map of additional custom labels"
 	// +optional

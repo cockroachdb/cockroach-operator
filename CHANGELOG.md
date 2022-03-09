@@ -14,7 +14,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 * Fixed operator crash loop when cockroachDBVersion is used.
 * Fix add custom annotations to the pod created by the job
 * Fix issue when sidecar container is injected to job pod
-* Add support for pod ToplogySpreadConstraint and associated feature gate
+* Add support for pod TopologySpreadConstraint and associated feature gate
 
 ## Changed
 
