@@ -21,35 +21,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Masterminds/semver/v3"
+	"github.com/stretchr/testify/require"
 )
-
-func TestIsStable(t *testing.T) {
-	tests := []struct {
-		version string
-		stable  bool
-	}{
-		{"1.2.3", true},
-		{"1.2.3+test.01", false},
-		{"1.2.3-alpha.-1", false},
-		{"1.2.0-x.Y.0+metadata", false},
-		{"1.2.0-x.Y.0+metadata-width-hypen", false},
-		{"1.2.3-rc1-with-hypen", false},
-		{"1.2.2147483648", true},
-		{"1.2147483648.3", true},
-		{"2147483648.3.0", true},
-	}
-
-	for _, tc := range tests {
-		v, err := semver.NewVersion(tc.version)
-		if err != nil {
-			t.Fatalf("error parsing %q: %s", tc.version, err)
-		}
-		if isStable(*v) != tc.stable {
-			t.Errorf("expected %t for isStable(`%s`) ", tc.stable, v)
-		}
-	}
-}
 
 func TestDotsToUndescore(t *testing.T) {
 	tests := []struct {
@@ -60,79 +33,57 @@ func TestDotsToUndescore(t *testing.T) {
 		{"1.2.3+test.01", "1_2_3+test_01"},
 		{"1.2.3-alpha.-1", "1_2_3-alpha_-1"},
 	}
+
 	for _, tc := range tests {
-		got := dotsToUnderscore(tc.version)
-		if got != tc.expected {
-			t.Errorf("expected %q for dotsToUnderscore(`%s`), got %s", tc.expected, tc.version, got)
-		}
+		require.Equal(t, tc.expected, dotsToUnderscore(tc.version))
 	}
 }
 
 func TestReadCrdbVersions(t *testing.T) {
 	s := `
 CrdbVersions:
-  - v21.2.0-beta.1
-  - v21.1.0
-  - v21.1.1
-  - v20.1.11`
+  - tag: v21.2.0
+  - tag: v21.1.0
+  - tag: v21.1.1
+  - tag: v20.1.11`
 	versions, err := readCrdbVersions(strings.NewReader(s))
-	if err != nil {
-		t.Fatalf("cannot read versions file: %s", err)
+	require.NoError(t, err)
+
+	expected := []string{"v20.1.11", "v21.1.0", "v21.1.1", "v21.2.0"}
+	got := make([]string, len(expected))
+	for idx, v := range versions {
+		got[idx] = v.Tag
 	}
-	expected := "v20.1.11, v21.1.0, v21.1.1, v21.2.0-beta.1, "
-	got := ""
-	for _, v := range versions {
-		got += v.Original() + ", "
-	}
-	if got != expected {
-		t.Errorf("Expected `%s`, got `%s`", expected, got)
-	}
+
+	require.ElementsMatch(t, expected, got)
 }
 
 func TestGenerateTemplateData(t *testing.T) {
-	versions := []string{"1.2.3", "1.2.3+test.01", "1.2.3-alpha.-1"}
-	var crdbVersions []*semver.Version
+	versions := []string{"1.2.1", "1.2.2", "1.2.3"}
+	var crdbVersions []crdbVersion
 	for _, r := range versions {
-		v, err := semver.NewVersion(r)
-		if err != nil {
-			t.Fatalf("error parsing %q: %s", r, err)
-		}
-		crdbVersions = append(crdbVersions, v)
+		crdbVersions = append(crdbVersions, crdbVersion{Tag: r})
 	}
+
 	data, err := generateTemplateData(crdbVersions, "2.0.1")
-	if err != nil {
-		t.Fatalf("error generating data: %s", err)
-	}
-	if len(data.CrdbVersions) != len(crdbVersions) {
-		t.Error("CrdbVersions len mismatch")
-	}
-	if data.LatestStableCrdbVersion != "1.2.3" {
-		t.Errorf("Expected LatestStableCrdbVersion 1.2.3, got %s", data.LatestStableCrdbVersion)
-	}
-	if data.OperatorVersion != "2.0.1" {
-		t.Errorf("Expected OperatorVersion 2.0.1, got %s", data.OperatorVersion)
-	}
+	require.NoError(t, err)
+	require.Len(t, data.CrdbVersions, len(crdbVersions))
+	require.Equal(t, "1.2.3", data.LatestStableCrdbVersion)
+	require.Equal(t, "2.0.1", data.OperatorVersion)
 }
 
 func TestGenerateFile(t *testing.T) {
 	versions := []string{"1.2.3", "1.2.3+test.01", "1.2.3-alpha.-1"}
 	var data templateData
 	for _, r := range versions {
-		v, err := semver.NewVersion(r)
-		if err != nil {
-			t.Fatalf("error parsing %q: %s", r, err)
-		}
-		data.CrdbVersions = append(data.CrdbVersions, v)
+		data.CrdbVersions = append(data.CrdbVersions, crdbVersion{Tag: r})
 	}
+
 	// test custom function
-	tplText := "{{range .CrdbVersions}}{{if stable .}}{{ underscore .Original }} {{end}}{{end}}{{range .CrdbVersions}}{{underscore .Original}} {{ end }}"
-	expected := "1_2_3 1_2_3 1_2_3+test_01 1_2_3-alpha_-1 "
+	tplText := "{{range .CrdbVersions}}{{ underscore .Tag }} {{end}}"
+	expected := "1_2_3 1_2_3+test_01 1_2_3-alpha_-1 "
+
 	var output bytes.Buffer
-	err := generateFile("name", tplText, &output, data)
-	if err != nil {
-		t.Fatalf("error generating template")
-	}
-	if output.String() != expected {
-		t.Errorf("Expected `%s`, got `%s`", expected, output.String())
-	}
+	require.NoError(t, generateFile("name", tplText, &output, data))
+	require.Equal(t, expected, output.String())
 }

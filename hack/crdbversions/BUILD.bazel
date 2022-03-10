@@ -5,10 +5,7 @@ go_library(
     srcs = ["main.go"],
     importpath = "github.com/cockroachdb/cockroach-operator/hack/crdbversions",
     visibility = ["//visibility:private"],
-    deps = [
-        "@com_github_masterminds_semver_v3//:go_default_library",
-        "@in_gopkg_yaml_v2//:go_default_library",
-    ],
+    deps = ["@in_gopkg_yaml_v2//:go_default_library"],
 )
 
 go_binary(
@@ -32,17 +29,8 @@ filegroup(
 )
 
 go_test(
-    name = "tests",
-    srcs = ["main_test.go"],
-    embed = [":go_default_library"],
-    deps = [
-        "@com_github_masterminds_semver_v3//:go_default_library",
-    ],
-)
-
-go_test(
     name = "go_default_test",
     srcs = ["main_test.go"],
     embed = [":go_default_library"],
-    deps = ["@com_github_masterminds_semver_v3//:go_default_library"],
+    deps = ["@com_github_stretchr_testify//require:go_default_library"],
 )

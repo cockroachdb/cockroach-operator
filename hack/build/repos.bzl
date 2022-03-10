@@ -3283,6 +3283,7 @@ def _go_dependencies():
         sum = "h1:zukEsf/1JZwCMgHiK3GZftabmxiCw4apj3a28RPBiVg=",
         version = "v1.1.0",
     )
+
     go_repository(
         name = "com_github_masterminds_semver_v3",
         build_file_generation = "on",
