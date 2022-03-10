@@ -28,12 +28,10 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 	"text/template"
 	"time"
 
-	"github.com/Masterminds/semver/v3"
 	"gopkg.in/yaml.v2"
 )
 
@@ -50,94 +48,21 @@ var targets = []struct{ template, output string }{
 
 // crdb-versions.yaml structure
 type crdbVersions struct {
-	CrdbVersions []string `yaml:"CrdbVersions"`
+	CrdbVersions []crdbVersion `yaml:"CrdbVersions"`
+}
+
+type crdbVersion struct {
+	Image       string `yaml:"image"`
+	RedhatImage string `yaml:"redhatImage"`
+	Tag         string `yaml:"tag"`
 }
 
 type templateData struct {
-	CrdbVersions            []*semver.Version
+	CrdbVersions            []crdbVersion
 	LatestStableCrdbVersion string
 	OperatorVersion         string
 	GeneratedWarning        string
 	Year                    string
-}
-
-// readCrdbVersions reads CRDB versions from a YAML file and sorts them
-// according to the semantic version sorting rules
-func readCrdbVersions(r io.Reader) ([]*semver.Version, error) {
-	// nolint
-	// io.ReadAll is available from 1.16 onwards. Earlier it was available in io/ioutil package
-	contents, err := io.ReadAll(r)
-	if err != nil {
-		return nil, fmt.Errorf("cannot open CRDB version file: %w", err)
-	}
-	var versions crdbVersions
-	if err := yaml.Unmarshal(contents, &versions); err != nil {
-		return nil, fmt.Errorf("cannot parse CRDB version file: %w", err)
-	}
-	var vs []*semver.Version
-	for _, raw := range versions.CrdbVersions {
-		v, err := semver.NewVersion(raw)
-		if err != nil {
-			return nil, fmt.Errorf("cannot convert version `%s`: %w", r, err)
-		}
-		vs = append(vs, v)
-	}
-	sort.Sort(semver.Collection(vs))
-	return vs, nil
-}
-
-func generateTemplateData(crdbVersions []*semver.Version, operatorVersion string) (templateData, error) {
-	var data templateData
-	data.Year = fmt.Sprint(time.Now().Year())
-	data.OperatorVersion = operatorVersion
-	data.CrdbVersions = crdbVersions
-	var stableVersions []*semver.Version
-	for _, v := range data.CrdbVersions {
-		if isStable(*v) {
-			stableVersions = append(stableVersions, v)
-		}
-	}
-	if len(stableVersions) == 0 {
-		return templateData{}, fmt.Errorf("cannot find stable versions")
-	}
-	latestStable := stableVersions[len(stableVersions)-1]
-	data.LatestStableCrdbVersion = latestStable.Original()
-	return data, nil
-}
-
-func isStable(v semver.Version) bool {
-	return v.Prerelease() == "" && v.Metadata() == ""
-}
-
-func dotsToUnderscore(v string) string {
-	return strings.ReplaceAll(v, ".", "_")
-}
-
-func generateFile(name string, tplText string, output io.Writer, data templateData) error {
-	// Template functions
-	funcs := template.FuncMap{
-		"underscore": dotsToUnderscore,
-		"stable":     isStable,
-	}
-	tpl, err := template.New(name).Funcs(funcs).Parse(tplText)
-	if err != nil {
-		return fmt.Errorf("cannot parse `%s`: %w", name, err)
-	}
-	return tpl.Execute(output, data)
-}
-
-// verifyYamlLoads tries to open a YAML file and parses its content in order to
-// verify that the generated file doesn't have any syntax errors
-func verifyYamlLoads(fName string) error {
-	contents, err := ioutil.ReadFile(fName)
-	if err != nil {
-		return fmt.Errorf("cannot read file `%s`: %w", fName, err)
-	}
-	var data struct{}
-	if err := yaml.Unmarshal(contents, &data); err != nil {
-		return fmt.Errorf("cannot parse YAML file: %w", err)
-	}
-	return nil
 }
 
 func main() {
@@ -198,4 +123,58 @@ func main() {
 			log.Fatalf("Cannot load YAML `%s`: %s", outputFile, err)
 		}
 	}
+}
+
+func readCrdbVersions(r io.Reader) ([]crdbVersion, error) {
+	contents, err := io.ReadAll(r)
+	if err != nil {
+		return nil, fmt.Errorf("cannot open CRDB version file: %w", err)
+	}
+	var versions crdbVersions
+	if err := yaml.Unmarshal(contents, &versions); err != nil {
+		return nil, fmt.Errorf("cannot parse CRDB version file: %w", err)
+	}
+
+	return versions.CrdbVersions, nil
+}
+
+func generateTemplateData(crdbVersions []crdbVersion, operatorVersion string) (templateData, error) {
+	var data templateData
+	data.Year = fmt.Sprint(time.Now().Year())
+	data.OperatorVersion = operatorVersion
+	data.CrdbVersions = crdbVersions
+
+	latestStable := crdbVersions[len(crdbVersions)-1].Tag
+	data.LatestStableCrdbVersion = latestStable
+	return data, nil
+}
+
+func dotsToUnderscore(v string) string {
+	return strings.ReplaceAll(v, ".", "_")
+}
+
+func generateFile(name string, tplText string, output io.Writer, data templateData) error {
+	// Template functions
+	funcs := template.FuncMap{
+		"underscore": dotsToUnderscore,
+	}
+	tpl, err := template.New(name).Funcs(funcs).Parse(tplText)
+	if err != nil {
+		return fmt.Errorf("cannot parse `%s`: %w", name, err)
+	}
+	return tpl.Execute(output, data)
+}
+
+// verifyYamlLoads tries to open a YAML file and parses its content in order to
+// verify that the generated file doesn't have any syntax errors
+func verifyYamlLoads(fName string) error {
+	contents, err := ioutil.ReadFile(fName)
+	if err != nil {
+		return fmt.Errorf("cannot read file `%s`: %w", fName, err)
+	}
+	var data struct{}
+	if err := yaml.Unmarshal(contents, &data); err != nil {
+		return fmt.Errorf("cannot parse YAML file: %w", err)
+	}
+	return nil
 }

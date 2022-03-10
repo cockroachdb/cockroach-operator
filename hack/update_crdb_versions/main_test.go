@@ -17,85 +17,76 @@ limitations under the License.
 package main_test
 
 import (
-	"bytes"
-	"encoding/json"
-	"io/ioutil"
-	"path"
-	"reflect"
+	"fmt"
+	"html/template"
+	"math/rand"
+	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
+	"time"
 
 	. "github.com/cockroachdb/cockroach-operator/hack/update_crdb_versions"
+	"github.com/stretchr/testify/require"
 )
 
-func TestIsValid(t *testing.T) {
-	tests := []struct {
-		version string
-		valid   bool
+func TestUpdateCrdbVersions(t *testing.T) {
+	images := []struct {
+		Note string
+		Sha  string
+		Tag  string
 	}{
-		{"v1.2.3", true},
-		{"latest", false},
-		{"v1.2.3-ubi", false},
-		{"v19.1.5", false},
-		{"v21.1.8", false},
-		{"v21.1.9", true},
-		{"v20.2.11", true},
+		// These are in expected order
+		{Sha: "sha256:image1", Tag: "v1"},
+		{Sha: "sha256:image1.2", Tag: "v1.2"},
+		{Sha: "sha256:image1.10", Tag: "v1.10"},
+		{Sha: "sha256:image2", Tag: "v2"},
+		{Note: "v19* not supported", Tag: "v19.0.1"},
+		{Note: "v21.1.8 has an issue with rollbacks", Tag: "v21.1.8"},
+		{Note: "latest isn't stable", Tag: "latest"},
+		{Note: "ubi is not wanted", Tag: "ubi"},
+		{Note: "prerelease not suppored", Tag: "v1-alpha"},
+		{Note: "metadata not supported", Tag: "v1+snapshot"},
 	}
 
-	for _, tc := range tests {
-		if IsValid(tc.version) != tc.valid {
-			t.Errorf("expected %t for valid(`%s`) ", tc.valid, tc.version)
+	tmpl := template.Must(template.New("rhAPI").Parse(`
+{
+  "data": [
+{{ range $index, $el:= . }}
+  {{ if $index }},{{ end }}
+  {
+    "docker_image_digest": "{{ $el.Sha }}",
+    "repositories": [
+      { "tags": [{ "name": "{{ $el.Tag }}" }] }
+    ]
+  }
+{{ end }}
+  ]
+}
+`))
+
+	var expected strings.Builder
+	expected.WriteString("CrdbVersions:\n")
+	for _, img := range images {
+		if img.Sha != "" {
+			expected.WriteString(fmt.Sprintf("- image: cockroachdb/cockroach:%s\n", img.Tag))
+			expected.WriteString(fmt.Sprintf("  redhatImage: registry.connect.redhat.com/cockroachdb/cockroach@%s\n", img.Sha))
+			expected.WriteString(fmt.Sprintf("  tag: %s\n", img.Tag))
 		}
 	}
-}
 
-func TestSortVersions(t *testing.T) {
-	versions := []string{"v1.2.3", "v2.10.5", "v2.2.3", "v2.1.1", "v1.11.0"}
-	expected := []string{"v1.2.3", "v1.11.0", "v2.1.1", "v2.2.3", "v2.10.5"}
-	got := SortVersions(versions)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
 
-	if !reflect.DeepEqual(got, expected) {
-		t.Errorf("Expected `%s`, got `%s`", expected, got)
-	}
-}
+		// shuffle images to ensure semver sort is working
+		rand.Seed(time.Now().UnixNano())
+		rand.Shuffle(len(images), func(i, j int) { images[i], images[j] = images[j], images[i] })
 
-func TestGetVersions(t *testing.T) {
-	expected := []string{"v1.2.3", "v1.2.3+test.01"}
+		tmpl.Execute(w, images)
+	}))
+	defer server.Close()
 
-	data := `{"data":[{"repositories": [{"tags": [{"name": "v1.2.3"}, {"name": "v1.2.3+test.01"}]}]}]}`
-	resp := CrdbVersionsResponse{}
-	if err := json.Unmarshal([]byte(data), &resp); err != nil {
-		t.Errorf("Error unmarshalling JSON: %v", err)
-	}
-
-	got := GetVersions(resp)
-
-	if !reflect.DeepEqual(got, expected) {
-		t.Errorf("Expected `%s`, got `%s`", expected, got)
-	}
-}
-
-func TestCrdbVersionsFile(t *testing.T) {
-	versions := []string{"v1.2.3", "v1.2.3+test.01"}
-
-	output := `CrdbVersions:
-- v1.2.3
-- v1.2.3+test.01
-`
-	expected := append([]byte(CrdbVersionsFileDescription), []byte(output)...)
-
-	tmpdir := t.TempDir()
-	filePath := path.Join(tmpdir, CrdbVersionsFileName)
-	err := GenerateCrdbVersionsFile(versions, filePath)
-	if err != nil {
-		t.Fatalf("error generating file: %s", err)
-	}
-
-	got, err := ioutil.ReadFile(filePath)
-	if err != nil {
-		t.Fatalf("error reading generated file: %s", err)
-	}
-
-	if !bytes.Equal(got, expected) {
-		t.Errorf("Expected `%s`, got `%s`", expected, got)
-	}
+	var str strings.Builder
+	require.NoError(t, UpdateCrdbVersions(server.URL, &str))
+	require.Equal(t, expected.String(), str.String())
 }

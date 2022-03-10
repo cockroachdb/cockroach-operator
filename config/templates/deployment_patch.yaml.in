@@ -35,7 +35,7 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.annotations['olm.targetNamespaces']
-{{- range .CrdbVersions}}{{if stable . }}
+{{- range .CrdbVersions}}
             {{- /*
                 .CrdbVersions: a slice of CockroachDB versions. Every item uses
                 semver.Version as its type. See https://github.com/Masterminds/semver for
@@ -46,7 +46,7 @@ spec:
                 versions to RedHat Connect.
                 The `underscore` template function replaces all dots with underscores.
             */}}
-            - name: RELATED_IMAGE_COCKROACH_{{ underscore .Original }}
-              value: RH_COCKROACH_DB_IMAGE_PLACEHOLDER_{{ underscore .Original }}
-{{- end }}{{ end }}
+            - name: RELATED_IMAGE_COCKROACH_{{ underscore .Tag }}
+              value: {{ .RedhatImage }}
+{{- end }}
           image: RH_COCKROACH_OP_IMAGE_PLACEHOLDER

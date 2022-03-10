@@ -42,7 +42,10 @@ main() {
   echo "DEPLOY_PATH=${deploy_path}"
 
   mkdir -p "${deploy_path}"
-  rh_operator_image="$(digest_image ${rh_operator_image})"
+
+  # ensure operator image is pinned to a SHA (OpenShift requirement)
+  docker pull "${rh_operator_image}"
+  rh_operator_image="$(docker inspect --format='{{index .RepoDigests 0}}' "${rh_operator_image}")"
 
   generate_manifests
   for pkg in cockroachdb-certified cockroachdb-certified-rhmp; do
@@ -104,24 +107,6 @@ adapt_csv() {
     "${csv}" > "${csv}.new"
 
   mv "${csv}.new" "${csv}"
-
-  # for each RH_COCKROACH_DB_IMAGE_PLACEHOLDER_* set to the corresponding image image
-  local version env rh_img
-  for v in $(faq -r '.CrdbVersions' crdb-versions.yaml | cut -d ' ' -f2); do
-    version=${v//./_}
-    env="RH_COCKROACH_DB_IMAGE_PLACEHOLDER_${version}"
-    rh_img="$(digest_image "registry.connect.redhat.com/cockroachdb/cockroach:${v}")"
-    sed "s+${env}+${rh_img}+g" "${csv}" > "${csv}.new"
-    mv "${csv}.new" "${csv}"
-  done
-}
-
-digest_image() {
-  local sha="$(docker manifest inspect "${1}" -v | faq -r .Descriptor.digest)"
-  local parts=(${1//:/ })
-
-  # return <registry>/repo@sha256:...
-  echo "${parts[0]}@${sha}"
 }
 
 patch_marketplace_csv() {

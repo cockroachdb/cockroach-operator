@@ -19,8 +19,8 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -28,21 +28,17 @@ import (
 	"sort"
 	"time"
 
-	"github.com/Masterminds/semver/v3"
+	semver "github.com/Masterminds/semver/v3"
+	"github.com/cockroachdb/errors"
 	"gopkg.in/yaml.v2"
 )
 
-const crdbVersionsInvertedRegexp = "^v19|^v21.1.8$|latest|ubi$"
-const CrdbVersionsFileName = "crdb-versions.yaml"
+const (
+	httpTimeoutSecs = 30
+	repo            = "registry.connect.redhat.com/cockroachdb/cockroach"
+	versionsFile    = "crdb-versions.yaml"
 
-// TODO(rail): we may need to add pagination handling in case we pass 500 versions
-// Use anonymous API to get the list of published images from the RedHat Catalog.
-const crdbVersionsUrl = "https://catalog.redhat.com/api/containers/v1/repositories/registry/" +
-	"registry.connect.redhat.com/repository/cockroachdb/cockroach/images?" +
-	"exclude=data.repositories.comparison.advisory_rpm_mapping,data.brew," +
-	"data.cpe_ids,data.top_layer_id&page_size=500&page=0"
-const crdbVersionsDefaultTimeout = 30
-const CrdbVersionsFileDescription = `#
+	fileHeader = `#
 # Supported CockroachDB versions.
 #
 # This file contains a list of CockroachDB versions that are supported by the
@@ -54,97 +50,133 @@ const CrdbVersionsFileDescription = `#
 
 `
 
-type CrdbVersionsResponse struct {
+	// TODO(rail): we may need to add pagination handling in case we pass 500 versions
+	// Use anonymous API to get the list of published images from the RedHat Catalog.
+	reqPath = "/api/containers/v1/repositories/registry/registry.connect.redhat.com/" +
+		"repository/cockroachdb/cockroach/images?" +
+		"include=data.docker_image_digest,data.repositories.tags.name&page_size=500&page=0"
+)
+
+var (
+	// invalidVersions are known bad versions or non-semver versions that should not
+	// be included in the results.
+	invalidVersions = regexp.MustCompile("^v19|^v21.1.8$|latest|ubi$")
+
+	// semVerRegex defines a Regexp for ensuring a valid (non-prerelease) version.
+	semVerRegex = regexp.MustCompile(`v?([0-9]+)(\.[0-9]+)?(\.[0-9]+)?$`)
+)
+
+func main() {
+	path := filepath.Join(os.Getenv("BUILD_WORKSPACE_DIRECTORY"), versionsFile)
+	if err := ioutil.WriteFile(path, []byte(fileHeader), 0644); err != nil {
+		panic(err)
+	}
+
+	f, err := os.OpenFile(path, os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		panic(err)
+	}
+
+	defer f.Close()
+	if err := UpdateCrdbVersions("https://catalog.redhat.com/", f); err != nil {
+		panic(err)
+	}
+}
+
+// UpdateCrdbVersions fetches all published versions of CRDB from the redhat
+// connect registry. It then writes the results to the given io.Writer.
+func UpdateCrdbVersions(baseURL string, w io.Writer) error {
+	resp, err := fetchAPIResponse(fmt.Sprintf("%s%s", baseURL, reqPath))
+	if err != nil {
+		return err
+	}
+
+	data, err := yaml.Marshal(generateOutput(resp))
+	if err != nil {
+		return errors.Wrap(err, "marshaling YAML")
+	}
+
+	if _, err := w.Write(data); err != nil {
+		return errors.Wrap(err, "writing YAML")
+	}
+
+	return nil
+}
+
+func fetchAPIResponse(url string) (*apiResponse, error) {
+	client := http.Client{Timeout: httpTimeoutSecs * time.Second}
+
+	r, err := client.Get(url)
+	if err != nil {
+		return nil, errors.Wrap(err, "fetching CRDB versions")
+	}
+	defer r.Body.Close()
+
+	var resp apiResponse
+	if err := json.NewDecoder(r.Body).Decode(&resp); err != nil {
+		return nil, errors.Wrap(err, "decoding API response")
+	}
+
+	return &resp, nil
+}
+
+func generateOutput(resp *apiResponse) *yamlOutput {
+	output := new(yamlOutput)
+	for _, data := range resp.Data {
+		for _, r := range data.Repos {
+			for _, tag := range r.Tags {
+				if !isValid(tag.Name) {
+					continue
+				}
+
+				output.CrdbVersions = append(output.CrdbVersions, version{
+					Image:       fmt.Sprintf("cockroachdb/cockroach:%s", tag.Name),
+					RedhatImage: fmt.Sprintf("%s@%s", repo, data.Digest),
+					Tag:         tag.Name,
+				})
+			}
+		}
+	}
+
+	// ensure results are sorted properly by version
+	sort.Slice(output.CrdbVersions, func(i, j int) bool {
+		// safe to ignore error due to previous regexp check in isValid
+		v1, _ := semver.NewVersion(output.CrdbVersions[i].Tag)
+		v2, _ := semver.NewVersion(output.CrdbVersions[j].Tag)
+		return v1.LessThan(v2)
+	})
+
+	return output
+}
+
+func isValid(tag string) bool {
+	if invalidVersions.MatchString(tag) {
+		return false
+	}
+
+	return semVerRegex.MatchString(tag)
+}
+
+// apiResponse encapsulates the response from the RH Catalog API.
+type apiResponse struct {
 	Data []struct {
-		Repositories []struct {
+		// Digest is used for digest pinning in OLM bundles (e.g. sha256@<sha>).
+		Digest string `json:"docker_image_digest"`
+		Repos  []struct {
 			Tags []struct {
+				// The image tag including the `v` prefix
 				Name string `json:"name"`
-			} `json:"tags"`
+			}
 		} `json:"repositories"`
 	} `json:"data"`
 }
 
-func GetData(data *CrdbVersionsResponse) error {
-	client := http.Client{Timeout: crdbVersionsDefaultTimeout * time.Second}
-	r, err := client.Get(crdbVersionsUrl)
-	if err != nil {
-		return fmt.Errorf("Cannot make a get request: %s", err)
-	}
-	defer r.Body.Close()
-
-	return json.NewDecoder(r.Body).Decode(data)
+type yamlOutput struct {
+	CrdbVersions []version `yaml:"CrdbVersions"`
 }
 
-func GetVersions(data CrdbVersionsResponse) []string {
-	var versions []string
-	for _, data := range data.Data {
-		for _, repo := range data.Repositories {
-			for _, tag := range repo.Tags {
-				if IsValid(tag.Name) {
-					versions = append(versions, tag.Name)
-				}
-			}
-		}
-	}
-	return versions
-}
-
-func IsValid(version string) bool {
-	match, _ := regexp.MatchString(crdbVersionsInvertedRegexp, version)
-	return !match
-}
-
-// sortVersions converts the slice with versions to slice with semver.Version
-// sorts them and converts back to slice with version strings
-func SortVersions(versions []string) []string {
-	vs := make([]*semver.Version, len(versions))
-	for i, r := range versions {
-		v, err := semver.NewVersion(r)
-		if err != nil {
-			log.Fatalf("Cannot parse version : %s", err)
-		}
-
-		vs[i] = v
-	}
-	sort.Sort(semver.Collection(vs))
-
-	var sortedVersions []string
-	for _, v := range vs {
-		sortedVersions = append(sortedVersions, v.Original())
-	}
-	return sortedVersions
-}
-
-func GenerateCrdbVersionsFile(versions []string, path string) error {
-	f, err := os.Create(path)
-	if err != nil {
-		log.Fatalf("Cannot create %s file: %s", path, err)
-	}
-	defer f.Close()
-
-	versionsMap := map[string][]string{"CrdbVersions": versions}
-	yamlVersions, err := yaml.Marshal(&versionsMap)
-	if err != nil {
-		log.Fatalf("error while converting to yaml: %v", err)
-	}
-
-	result := append([]byte(CrdbVersionsFileDescription), yamlVersions...)
-	return ioutil.WriteFile(path, result, 0)
-}
-
-func main() {
-	responseData := CrdbVersionsResponse{}
-	err := GetData(&responseData)
-	if err != nil {
-		log.Fatalf("Cannot parse response: %s", err)
-	}
-
-	rawVersions := GetVersions(responseData)
-	sortedVersions := SortVersions(rawVersions)
-	outputFile := filepath.Join(os.Getenv("BUILD_WORKSPACE_DIRECTORY"), CrdbVersionsFileName)
-
-	err = GenerateCrdbVersionsFile(sortedVersions, outputFile)
-	if err != nil {
-		log.Fatalf("Cannot write %s file: %s", outputFile, err)
-	}
+type version struct {
+	Image       string `yaml:"image"`
+	RedhatImage string `yaml:"redhatImage"`
+	Tag         string `yaml:"tag"`
 }

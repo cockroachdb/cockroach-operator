@@ -26,7 +26,7 @@ spec:
         - name: cockroach-operator
           image: cockroachdb/cockroach-operator:{{.OperatorVersion}}
           env:
-{{- range .CrdbVersions}}{{if stable . }}
+{{- range .CrdbVersions}}
             {{- /*
                 .CrdbVersions: a slice of CockroachDB versions. Every item uses
                 semver.Version as its type. See https://github.com/Masterminds/semver for
@@ -37,6 +37,6 @@ spec:
                 versions to RedHat Connect.
                 The `underscore` template function replaces all dots with underscores.
             */}}
-            - name: RELATED_IMAGE_COCKROACH_{{ underscore .Original }}
-              value: cockroachdb/cockroach:{{ .Original }}
-{{- end }}{{ end }}
+            - name: RELATED_IMAGE_COCKROACH_{{ underscore .Tag }}
+              value: {{ .Image }}
+{{- end }}

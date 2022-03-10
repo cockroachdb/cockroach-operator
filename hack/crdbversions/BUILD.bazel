@@ -5,10 +5,7 @@ go_library(
     srcs = ["main.go"],
     importpath = "github.com/cockroachdb/cockroach-operator/hack/crdbversions",
     visibility = ["//visibility:private"],
-    deps = [
-        "@com_github_masterminds_semver_v3//:go_default_library",
-        "@in_gopkg_yaml_v2//:go_default_library",
-    ],
+    deps = ["@in_gopkg_yaml_v2//:go_default_library"],
 )
 
 go_binary(
