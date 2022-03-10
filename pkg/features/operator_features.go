@@ -90,6 +90,8 @@ const (
 	// alpha: v1.0
 	// TolerationRules allows setting toleration rules for scheduling sts pods onto some dedicated nodes
 	TolerationRules featuregate.Feature = "TolerationRules"
+
+	TopologySpreadRules featuregate.Feature = "TopologySpreadRules"
 )
 
 func init() {
@@ -114,6 +116,7 @@ var defaultOperatorFeatureGates = map[featuregate.Feature]featuregate.FeatureSpe
 	AutoPrunePVC: {Default: false, PreRelease: featuregate.Alpha},
 
 	// New features
-	AffinityRules:   {Default: false, PreRelease: featuregate.Alpha},
-	TolerationRules: {Default: false, PreRelease: featuregate.Alpha},
+	AffinityRules:       {Default: false, PreRelease: featuregate.Alpha},
+	TolerationRules:     {Default: false, PreRelease: featuregate.Alpha},
+	TopologySpreadRules: {Default: false, PreRelease: featuregate.Alpha},
 }

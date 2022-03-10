@@ -174,6 +174,13 @@ func (in *CrdbClusterSpec) DeepCopyInto(out *CrdbClusterSpec) {
 		*out = new(v1.Affinity)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.TopologySpreadConstraints != nil {
+		in, out := &in.TopologySpreadConstraints, &out.TopologySpreadConstraints
+		*out = make([]v1.TopologySpreadConstraint, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
+		}
+	}
 	if in.AdditionalLabels != nil {
 		in, out := &in.AdditionalLabels, &out.AdditionalLabels
 		*out = make(map[string]string, len(*in))

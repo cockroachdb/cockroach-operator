@@ -5,7 +5,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-# [Unreleased](https://github.com/cockroachdb/cockroach-operator/compare/v2.5.0...master)
+# [Unreleased](https://github.com/cockroachdb/cockroach-operator/compare/v2.5.1...master)
+
+# [v2.5.1](https://github.com/cockroachdb/cockroach-operator/compare/v2.5.0...v2.5.1)
 
 ## Fixed
 
@@ -14,6 +16,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 * Fixed operator crash loop when cockroachDBVersion is used.
 * Fix add custom annotations to the pod created by the job
 * Fix issue when sidecar container is injected to job pod
+* Add support for pod TopologySpreadConstraint and associated feature gate
 
 ## Changed
 
