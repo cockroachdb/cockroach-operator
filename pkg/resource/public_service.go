@@ -48,7 +48,15 @@ func (b PublicServiceBuilder) Build(obj client.Object) error {
 		service.ObjectMeta.Labels = map[string]string{}
 	}
 
-	service.Annotations = b.Spec().AdditionalAnnotations
+	annotations :=  make(map[string]string)
+	for k,v := range  b.Spec().AdditionalAnnotations {
+		annotations[k] = v
+	}
+	for k,v := range  b.Spec().PublicServiceAnnotations {
+		annotations[k] = v
+	}
+
+	service.Annotations = annotations
 
 	if service.Spec.Type != corev1.ServiceTypeClusterIP {
 		service.Spec = corev1.ServiceSpec{

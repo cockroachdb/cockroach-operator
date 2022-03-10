@@ -60,6 +60,12 @@ spec:
                   are added to all resources. Changing `AdditionalAnnotations` field
                   will result in cockroachDB cluster restart.
                 type: object
+              publicServiceAnnotations:
+                additionalProperties:
+                  type: string
+                description: (Optional) Additional custom resource annotations that
+                  are added to the public service. 
+                type: object
               additionalArgs:
                 description: '(Optional) Additional command line arguments for the
                   `cockroach` binary Default: ""'

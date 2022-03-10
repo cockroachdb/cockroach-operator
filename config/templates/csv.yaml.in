@@ -76,6 +76,10 @@ spec:
           cockroachDB cluster restart.
         displayName: Map of additional custom annotations
         path: additionalAnnotations
+      - description: (Optional) Additional custom resource annotations that
+          are added to the public service. 
+        displayName: Map of additional custom annotations
+        path: publicServiceAnnotations
       - description: (Optional) Additional custom resource labels that are added to
           all resources
         displayName: Map of additional custom labels
