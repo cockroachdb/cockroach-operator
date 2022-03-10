@@ -126,6 +126,8 @@ func main() {
 }
 
 func readCrdbVersions(r io.Reader) ([]crdbVersion, error) {
+	// nolint
+	// io.ReadAll is available from 1.16 onwards. Earlier it was available in io/ioutil package
 	contents, err := io.ReadAll(r)
 	if err != nil {
 		return nil, fmt.Errorf("cannot open CRDB version file: %w", err)

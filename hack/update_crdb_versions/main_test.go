@@ -82,7 +82,7 @@ func TestUpdateCrdbVersions(t *testing.T) {
 		rand.Seed(time.Now().UnixNano())
 		rand.Shuffle(len(images), func(i, j int) { images[i], images[j] = images[j], images[i] })
 
-		tmpl.Execute(w, images)
+		require.NoError(t, tmpl.Execute(w, images))
 	}))
 	defer server.Close()
 
