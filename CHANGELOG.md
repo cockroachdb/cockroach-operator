@@ -10,6 +10,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## Changed
 
 * Image digests now calculated when generating templates, rather than when creating bundles
+* Use [bazelisk](https://github.com/bazelbuild/bazelisk) for CI workflows
 
 # [v2.5.1](https://github.com/cockroachdb/cockroach-operator/compare/v2.5.0...v2.5.1)
 
