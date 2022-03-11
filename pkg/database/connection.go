@@ -205,7 +205,7 @@ func (c dbConfig) openDB() (*sql.DB, error) {
 
 	pgURL := url.URL{
 		Scheme:   "postgresql",
-		Host:     fmt.Sprintf("%s:%d", c.Host, c.Port),
+		Host:     fmt.Sprintf("%s.%s:%d", c.Host, c.Namespace, c.Port),
 		Path:     fmt.Sprintf("/%s", c.Database),
 		RawQuery: connOptions.Encode(),
 	}
