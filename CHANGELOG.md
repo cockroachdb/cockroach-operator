@@ -7,6 +7,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 # [Unreleased](https://github.com/cockroachdb/cockroach-operator/compare/v2.5.1...master)
 
+## Fixed
+
+* #863 - Add flag for `leader-election-id` to enable leader election support
+
 ## Changed
 
 * Image digests now calculated when generating templates, rather than when creating bundles
