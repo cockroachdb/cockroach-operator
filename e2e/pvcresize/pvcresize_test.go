@@ -19,10 +19,11 @@ package pvcresize
 import (
 	"context"
 	"flag"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"testing"
-	"time"
 
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/cockroachdb/cockroach-operator/e2e"
 	"github.com/cockroachdb/cockroach-operator/pkg/controller"
 	"github.com/cockroachdb/cockroach-operator/pkg/testutil"
 	testenv "github.com/cockroachdb/cockroach-operator/pkg/testutil/env"
@@ -32,11 +33,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apiresource "k8s.io/apimachinery/pkg/api/resource"
 )
-
-// TODO parallel seems to be buggy.  Not certain why, but we need to figure out if running with the operator
-// deployed in the cluster helps
-// We may have a threadsafe problem where one test starts messing with another test
-var parallel = *flag.Bool("parallel", false, "run tests in parallel")
 
 // run the pvc test
 var pvc = flag.Bool("pvc", false, "run pvc test")
@@ -49,9 +45,6 @@ func TestPVCResize(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
 	}
-	if parallel {
-		t.Parallel()
-	}
 	testLog := zapr.NewLogger(zaptest.NewLogger(t))
 
 	e := testenv.CreateActiveEnvForTest()
@@ -61,14 +54,14 @@ func TestPVCResize(t *testing.T) {
 	sb := testenv.NewDiffingSandbox(t, env)
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
-		WithImage("cockroachdb/cockroach:v20.2.10").
+		WithImage(e2e.MajorVersion).
 		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
 	steps := testutil.Steps{
 		{
 			Name: "creates a 3-node secure cluster db",
 			Test: func(t *testing.T) {
 				require.NoError(t, sb.Create(builder.Cr()))
-				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
+				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, e2e.CreateClusterTimeout)
 			},
 		},
 		{

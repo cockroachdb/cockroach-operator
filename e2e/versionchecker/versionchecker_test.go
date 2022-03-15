@@ -17,13 +17,13 @@ limitations under the License.
 package versionchecker_test
 
 import (
-	"flag"
 	"testing"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	apiresource "k8s.io/apimachinery/pkg/api/resource"
 
+	"github.com/cockroachdb/cockroach-operator/e2e"
 	"github.com/cockroachdb/cockroach-operator/pkg/controller"
 	"github.com/cockroachdb/cockroach-operator/pkg/testutil"
 	testenv "github.com/cockroachdb/cockroach-operator/pkg/testutil/env"
@@ -32,11 +32,6 @@ import (
 	"go.uber.org/zap/zaptest"
 )
 
-// TODO parallel seems to be buggy.  Not certain why, but we need to figure out if running with the operator
-// deployed in the cluster helps
-// We may have a threadsafe problem where one test starts messing with another test
-var parallel = *flag.Bool("parallel", false, "run tests in parallel")
-
 // TestVersionCheckerJobPodPending creates a cluster and then tries to run an unscheduleable version checker job.
 // It checks that there is never more than one version checker job running.
 func TestVersionCheckerJobPodPending(t *testing.T) {
@@ -44,9 +39,6 @@ func TestVersionCheckerJobPodPending(t *testing.T) {
 		t.Skip("skipping test in short mode.")
 	}
 	// Does not seem to like running in parallel
-	if parallel {
-		t.Parallel()
-	}
 	testLog := zapr.NewLogger(zaptest.NewLogger(t))
 
 	e := testenv.CreateActiveEnvForTest()
@@ -57,7 +49,7 @@ func TestVersionCheckerJobPodPending(t *testing.T) {
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
 
 	builder := testutil.NewBuilder("crdb").Namespaced(sb.Namespace).WithNodeCount(3).WithTLS().
-		WithImage("cockroachdb/cockroach:v20.2.5").
+		WithImage(e2e.MajorVersion).
 		WithPVDataStore("32Mi", "standard" /* default storage class in KIND */).
 		WithResources(
 			corev1.ResourceRequirements{

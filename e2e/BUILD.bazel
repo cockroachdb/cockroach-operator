@@ -1,0 +1,33 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = ["e2e.go"],
+    importpath = "github.com/cockroachdb/cockroach-operator/e2e",
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "package-srcs",
+    srcs = glob(["**"]),
+    tags = ["automanaged"],
+    visibility = ["//visibility:private"],
+)
+
+filegroup(
+    name = "all-srcs",
+    srcs = [
+        ":package-srcs",
+        "//e2e/create:all-srcs",
+        "//e2e/decommission:all-srcs",
+        "//e2e/kubetest2-eks:all-srcs",
+        "//e2e/kubetest2-openshift:all-srcs",
+        "//e2e/openshift:all-srcs",
+        "//e2e/pvcresize:all-srcs",
+        "//e2e/upgrades:all-srcs",
+        "//e2e/upgradessha256:all-srcs",
+        "//e2e/versionchecker:all-srcs",
+    ],
+    tags = ["automanaged"],
+    visibility = ["//visibility:public"],
+)
