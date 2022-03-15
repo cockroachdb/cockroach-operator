@@ -5,6 +5,7 @@ go_test(
     size = "enormous",
     srcs = ["decommission_test.go"],
     deps = [
+        "//e2e:go_default_library",
         "//pkg/controller:go_default_library",
         "//pkg/testutil:go_default_library",
         "//pkg/testutil/env:go_default_library",
