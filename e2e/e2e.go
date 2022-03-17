@@ -23,7 +23,7 @@ import (
 var (
 	// CreateClusterTimeout is the amount of time to wait for a new cluster to be
 	// ready.
-	CreateClusterTimeout = 10 * time.Minute
+	CreateClusterTimeout = 20 * time.Minute
 )
 
 // Some common values used in e2e test suites.
