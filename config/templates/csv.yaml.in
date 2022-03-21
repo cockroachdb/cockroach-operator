@@ -186,7 +186,7 @@ spec:
     name: Cockroach Labs
   version: 0.0.0
   relatedImages:
-{{- range .CrdbVersions}}{{if stable . }}
-  - name: RELATED_IMAGE_COCKROACH_{{ underscore .Original }}
-    image: RH_COCKROACH_DB_IMAGE_PLACEHOLDER_{{ underscore .Original }}
-{{- end }}{{ end }}
+{{- range .CrdbVersions}}
+  - name: RELATED_IMAGE_COCKROACH_{{ underscore .Tag }}
+    image: {{ .RedhatImage }}
+{{- end }}

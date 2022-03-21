@@ -24,7 +24,7 @@ spec:
     spec:
       containers:
         - name: cockroach-operator
-          image: cockroachdb/cockroach-operator:v2.5.1
+          image: cockroachdb/cockroach-operator:v2.5.2
           env:
             - name: RELATED_IMAGE_COCKROACH_v20_1_4
               value: cockroachdb/cockroach:v20.1.4
@@ -112,6 +112,8 @@ spec:
               value: cockroachdb/cockroach:v21.1.14
             - name: RELATED_IMAGE_COCKROACH_v21_1_15
               value: cockroachdb/cockroach:v21.1.15
+            - name: RELATED_IMAGE_COCKROACH_v21_1_16
+              value: cockroachdb/cockroach:v21.1.16
             - name: RELATED_IMAGE_COCKROACH_v21_2_0
               value: cockroachdb/cockroach:v21.2.0
             - name: RELATED_IMAGE_COCKROACH_v21_2_1

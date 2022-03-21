@@ -29,15 +29,13 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      matrix:
-        bazel: ["4.0.0"]
     steps:
       - uses: actions/checkout@v2
-
-      - name: Setup Bazel
-        uses: abhinavsingh/setup-bazel@v3
+      - uses: bazelbuild/setup-bazelisk@v1
+      - name: Mount bazel cache
+        uses: actions/cache@v2
         with:
-          version: ${{ matrix.bazel }}
-
+          path: "~/.cache/bazel"
+          key: bazel
       - name: Tests
         run: make test/all

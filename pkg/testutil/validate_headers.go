@@ -53,16 +53,17 @@ type ValidateHeaders struct {
 var DateRegex = "20\\d\\d"
 
 var SkippedPaths = map[string]bool{
-	"Godeps":      true,
-	"third_party": true,
-	"_gopath":     true,
-	"_artifacts":  true,
-	"_output":     true,
-	".git":        true,
-	"vendor":      true,
-	"external":    true,
-	"3rdparty":    true,
-	"bundle":      true,
+	"Godeps":            true,
+	"third_party":       true,
+	"_gopath":           true,
+	"_artifacts":        true,
+	"_output":           true,
+	".git":              true,
+	"vendor":            true,
+	"external":          true,
+	"3rdparty":          true,
+	"bundle":            true,
+	"bundle.Dockerfile": true,
 }
 
 // NewValidateHeaders creates a new struct used to validate a project.
@@ -213,7 +214,6 @@ func (v ValidateHeaders) hasValidHeader(filename string) (bool, error) {
 }
 
 func (v ValidateHeaders) getFiles() (filesPtr *[]string, err error) {
-
 	if v.fileNames != nil && len(*v.fileNames) != 0 {
 		return v.fileNames, nil
 	}
@@ -234,7 +234,7 @@ func (v ValidateHeaders) getFiles() (filesPtr *[]string, err error) {
 		if info.IsDir() && SkippedPaths[info.Name()] {
 			return filepath.SkipDir
 		}
-		if info.IsDir() {
+		if info.IsDir() || SkippedPaths[info.Name()] {
 			return nil
 		} else if fileExtensions[fullFileExt(p)] || fileExtensions[path.Base(p)] {
 			files = append(files, p)
