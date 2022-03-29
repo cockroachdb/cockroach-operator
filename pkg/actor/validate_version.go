@@ -61,8 +61,12 @@ func (v *versionChecker) GetActionType() api.ActionType {
 
 func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster, log logr.Logger) error {
 	log.V(DEBUGLEVEL).Info("starting to check the logging config provided")
+	//we refresh the resource to make sure we use the latest version
+	fetcher := resource.NewKubeFetcher(ctx, cluster.Namespace(), v.client)
+
 	if cluster.IsLoggingAPIEnabled() {
-		if logConfig, err := cluster.LoggingConfiguration(); err == nil {
+		if logConfig, err := cluster.LoggingConfiguration(fetcher); err == nil {
+			log.V(DEBUGLEVEL).Info(fmt.Sprintf("Log configuration for the cockroach cluster: %s", logConfig))
 			var stderr bytes.Buffer
 			cmd := exec.Command("bash", "-c", fmt.Sprintf("cockroach debug check-log-config --log=%s", logConfig))
 			cmd.Stderr = &stderr
@@ -74,8 +78,8 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster, log
 				log.V(DEBUGLEVEL).Info("Validated the logging config")
 			}
 		} else {
-			err := ValidationError{Err: errors.New(fmt.Sprintf("logging configuration %v not supported", cluster.Spec().LogConfig.LogFile))}
-			log.Error(err, "The cockroachdb logging API value is set to a value that is not supported by the operator")
+			vErr := ValidationError{Err: err}
+			log.Error(vErr, "The cockroachdb logging API value is set to a value that is not supported by the operator")
 			return err
 		}
 	}
@@ -293,6 +297,7 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster, log
 		}
 
 		refreshedCluster := resource.NewCluster(cr)
+		refreshedCluster.Fetcher = fetcher
 		refreshedCluster.SetClusterVersion(calVersion)
 		refreshedCluster.SetAnnotationVersion(calVersion)
 		refreshedCluster.SetCrdbContainerImage(containerImage)
@@ -333,6 +338,7 @@ func (v *versionChecker) completeVersionChecker(
 	}
 
 	refreshedCluster := resource.NewCluster(cr)
+	refreshedCluster.Fetcher = fetcher
 	// save the status of the cluster
 	refreshedCluster.SetTrue(api.CrdbVersionChecked)
 	refreshedCluster.SetClusterVersion(version)

@@ -367,7 +367,7 @@ func (b StatefulSetBuilder) dbArgs() []string {
 	}
 
 	if b.Cluster.IsLoggingAPIEnabled() {
-		logConfig, _ := b.Cluster.LoggingConfiguration()
+		logConfig, _ := b.Cluster.LoggingConfiguration(b.Cluster.Fetcher)
 		aa = append(aa, fmt.Sprintf("--log=%s", logConfig))
 	} else {
 		aa = append(aa, "--logtostderr=INFO")

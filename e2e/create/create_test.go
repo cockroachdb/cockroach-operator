@@ -59,9 +59,10 @@ func TestCreateInsecureCluster(t *testing.T) {
 	logJson := []byte(`{"sinks": {"file-groups": {"dev": {"channels": "DEV", "filter": "WARNING"}}}}`)
 	logConfig := make(map[string]interface{})
 	require.NoError(t, json.Unmarshal(logJson, &logConfig))
+	testutil.RequireLoggingConfigMap(t, sb, "logging-configmap", string(logJson))
 
 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).
-		WithImage(e2e.MajorVersion).WithClusterLogging(logConfig).
+		WithImage(e2e.MajorVersion).WithClusterLogging("logging-configmap").
 		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
 
 	steps := testutil.Steps{

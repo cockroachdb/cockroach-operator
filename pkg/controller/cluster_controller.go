@@ -114,6 +114,7 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req reconcile.Request
 	}
 
 	cluster := resource.NewCluster(cr)
+	cluster.Fetcher = fetcher
 	// on first run we need to save the status and exit to pass Openshift CI
 	// we added a state called Starting for field ClusterStatus to accomplish this
 	if cluster.Status().ClusterStatus == "" {

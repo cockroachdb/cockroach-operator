@@ -17,9 +17,8 @@ limitations under the License.
 package resource
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
+	corev1 "k8s.io/api/core/v1"
 	"os"
 	"strings"
 	"time"
@@ -322,19 +321,22 @@ func (cluster Cluster) IsFresh(fetcher Fetcher) (bool, error) {
 	return cluster.cr.ResourceVersion == actual.ResourceVersion, nil
 }
 
-func (cluster Cluster) LoggingConfiguration() (string, error) {
+func (cluster Cluster) LoggingConfiguration(fetcher Fetcher) (string, error) {
 	var logYaml string
-	if cluster.Spec().LogConfig != nil {
-		logYamlBytes, err := json.Marshal(cluster.Spec().LogConfig.LogFile)
+	if cluster.Spec().LogConfigMap != "" {
+		cm := &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: cluster.Spec().LogConfigMap,
+			},
+		}
+		err := fetcher.Fetch(cm)
 		if err != nil {
 			return "", err
 		}
-		var out bytes.Buffer
-		err = json.Indent(&out, logYamlBytes, "", " ")
-		if err != nil {
-			return "", err
+
+		for _, val := range cm.Data {
+			logYaml = "\"" + val + "\""
 		}
-		logYaml = "\"" + out.String() + "\""
 	} else {
 		logYaml = "\"{sinks: {stderr: {channels: [OPS, HEALTH], redact: true}}}\""
 	}

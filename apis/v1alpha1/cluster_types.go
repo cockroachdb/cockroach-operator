@@ -17,7 +17,6 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"encoding/json"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -131,13 +130,13 @@ type CrdbClusterSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Cockroach Database Ingress"
 	// +optional
 	Ingress *IngressConfig `json:"ingress,omitempty"`
-	// (Optional) LogConfig define the log configuration used to send the logs through the proper channels in the
-	// cockroachdb. LogConfig is available for cockroach version v21.1.0 onwards. The logging configuration is taken in
-	// format of yaml file, you can check the logging configuration here (https://www.cockroachlabs.com/docs/stable/configure-logs.html#default-logging-configuration)
+	// (Optional) LogConfigMap define the config map which contains log configuration used to send the logs through the
+	// proper channels in the cockroachdb. Logging configuration is available for cockroach version v21.1.0 onwards.
+	// The logging configuration is taken in format of yaml file, you can check the logging configuration here (https://www.cockroachlabs.com/docs/stable/configure-logs.html#default-logging-configuration)
 	// The default logging for cockroach version v20.x or less is stderr, logging API is ignored for older versions.
-	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Cockroach Database Logging configuration"
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Cockroach Database Logging configuration config map"
 	// +optional
-	LogConfig *LogConfig `json:"logConfig,omitempty"`
+	LogConfigMap string `json:"logConfigMap,omitempty"`
 }
 
 // +k8s:openapi-gen=true
@@ -275,13 +274,6 @@ type IngressConfig struct {
 	SQL *Ingress `json:"sql,omitempty"`
 }
 
-//+kubebuilder:validation:XPreserveUnknownFields
-type LogConfig struct {
-	// (Optional) Logging config yaml to be passed to cockroach db
-	// +optional
-	LogFile map[string]interface{} `json:"-"`
-}
-
 // +kubebuilder:object:generate=true
 // +k8s:openapi-gen=true
 // +k8s:deepcopy-gen=true
@@ -329,37 +321,4 @@ type CrdbClusterList struct {
 
 func init() {
 	SchemeBuilder.Register(&CrdbCluster{}, &CrdbClusterList{})
-}
-
-// DeepCopyInto function is need to marshal map[string]interface{} as controller-gen doesn't support the interface{} type
-// in deep copy. Reference: https://github.com/kubernetes/gengo/pull/140/files
-func (in *LogConfig) DeepCopyInto(out *LogConfig) {
-	b, err := json.Marshal(in.LogFile)
-	if err != nil {
-		// The marshal should have been performed cleanly as otherwise
-		// the resource would not have been created by the API server.
-		panic(err)
-	}
-	var c map[string]interface{}
-	err = json.Unmarshal(b, &c)
-	if err != nil {
-		panic(err)
-	}
-	out.LogFile = c
-}
-
-// MarshalJSON marshals the LogConfig data to a JSON blob.
-func (in LogConfig) MarshalJSON() ([]byte, error) {
-	return json.Marshal(in.LogFile)
-}
-
-// UnmarshalJSON sets the LogConfig to a copy of data.
-func (in *LogConfig) UnmarshalJSON(data []byte) error {
-	var out map[string]interface{}
-	err := json.Unmarshal(data, &out)
-	if err != nil {
-		return err
-	}
-	in.LogFile = out
-	return nil
 }

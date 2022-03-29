@@ -25,8 +25,8 @@ import (
 	apiresource "k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/cockroachdb/cockroach-operator/e2e"
 	crdbv1alpha1 "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
+	"github.com/cockroachdb/cockroach-operator/e2e"
 	"github.com/cockroachdb/cockroach-operator/pkg/controller"
 	"github.com/cockroachdb/cockroach-operator/pkg/testutil"
 	testenv "github.com/cockroachdb/cockroach-operator/pkg/testutil/env"
@@ -90,11 +90,12 @@ func TestLoggingAPIValidCheck(t *testing.T) {
 	logJson := []byte(`{"sinkss": "invalidvalue"}`)
 	logConfig := make(map[string]interface{})
 	require.NoError(t, json.Unmarshal(logJson, &logConfig))
+	testutil.RequireLoggingConfigMap(t, sb, "logging-configmap", string(logJson))
 
 	builder := testutil.NewBuilder("crdb").Namespaced(sb.Namespace).WithNodeCount(3).WithTLS().
 		WithImage("cockroachdb/cockroach:v21.1.0").
 		WithPVDataStore("32Mi", "standard" /* default storage class in KIND */).
-		WithClusterLogging(logConfig)
+		WithClusterLogging("logging-configmap")
 
 	steps := testutil.Steps{
 		{
