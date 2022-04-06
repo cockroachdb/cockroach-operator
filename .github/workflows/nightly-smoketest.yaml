@@ -33,10 +33,9 @@ jobs:
         # supported Kubenetes versions
         NODE_VERSION: [1.18.19, 1.19.11, 1.20.7, 1.21.2, 1.22.1]
     steps:
-      - uses: actions/checkout@v2
-      - uses: bazelbuild/setup-bazelisk@v1
+      - uses: actions/checkout@v3
       - name: Mount bazel cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: "~/.cache/bazel"
           key: bazel

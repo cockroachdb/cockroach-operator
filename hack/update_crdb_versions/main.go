@@ -54,7 +54,7 @@ const (
 	// Use anonymous API to get the list of published images from the RedHat Catalog.
 	reqPath = "/api/containers/v1/repositories/registry/registry.connect.redhat.com/" +
 		"repository/cockroachdb/cockroach/images?" +
-		"include=data.docker_image_digest,data.repositories.tags.name&page_size=500&page=0"
+		"include=data.docker_image_digest,data.repositories&page_size=500&page=0"
 )
 
 var (

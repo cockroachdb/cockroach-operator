@@ -25,9 +25,9 @@ jobs:
     name: Update crdb versions
     runs-on: ubuntu-latest
     steps:
-      - uses: bazelbuild/setup-bazelisk@v1
+      - uses: actions/checkout@v3
       - name: Mount bazel cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: "~/.cache/bazel"
           key: bazel

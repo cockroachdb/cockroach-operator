@@ -461,6 +461,8 @@ spec:
           value: cockroachdb/cockroach:v21.1.15
         - name: RELATED_IMAGE_COCKROACH_v21_1_16
           value: cockroachdb/cockroach:v21.1.16
+        - name: RELATED_IMAGE_COCKROACH_v21_1_17
+          value: cockroachdb/cockroach:v21.1.17
         - name: RELATED_IMAGE_COCKROACH_v21_2_0
           value: cockroachdb/cockroach:v21.2.0
         - name: RELATED_IMAGE_COCKROACH_v21_2_1
@@ -475,6 +477,8 @@ spec:
           value: cockroachdb/cockroach:v21.2.5
         - name: RELATED_IMAGE_COCKROACH_v21_2_7
           value: cockroachdb/cockroach:v21.2.7
+        - name: RELATED_IMAGE_COCKROACH_v21_2_8
+          value: cockroachdb/cockroach:v21.2.8
         - name: OPERATOR_NAME
           value: cockroachdb
         - name: POD_NAME
