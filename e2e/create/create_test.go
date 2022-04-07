@@ -259,7 +259,7 @@ func TestCreateSecureClusterWithCRDBVersionSet(t *testing.T) {
 
 				builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
 					WithPVDataStore("1Gi", "standard" /* default storage class in KIND */).
-					WithCockroachDBVersion(crdbVersion)
+					WithCockroachDBVersion(crdbVersion).WithImageObject(nil)
 
 				require.NoError(subT, sb.Create(builder.Cr()))
 				testutil.RequireClusterToBeReadyEventuallyTimeout(subT, sb, builder,

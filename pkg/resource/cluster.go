@@ -27,6 +27,7 @@ import (
 	"github.com/cockroachdb/cockroach-operator/pkg/condition"
 	"github.com/cockroachdb/errors"
 	"github.com/gosimple/slug"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -270,6 +271,20 @@ func (cluster Cluster) GetCockroachDBImageName() string {
 	}
 	//we validate the version after the job runs with exec
 	return cluster.Spec().Image.Name
+}
+
+func (cluster Cluster) GetImagePullPolicy() corev1.PullPolicy {
+	if cluster.Spec().Image == nil || cluster.Spec().Image.PullPolicyName == nil {
+		return corev1.PullIfNotPresent
+	}
+	return *cluster.Spec().Image.PullPolicyName
+}
+
+func (cluster Cluster) GetImagePullSecret() *string {
+	if cluster.Spec().Image == nil {
+		return nil
+	}
+	return cluster.Spec().Image.PullSecret
 }
 
 func (cluster Cluster) NodeTLSSecretName() string {

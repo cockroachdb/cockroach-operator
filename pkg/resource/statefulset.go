@@ -234,7 +234,7 @@ func (b StatefulSetBuilder) makePodTemplate() corev1.PodTemplateSpec {
 		pod.Spec.NodeSelector = b.Spec().NodeSelector
 	}
 
-	secret := b.Spec().Image.PullSecret
+	secret := b.GetImagePullSecret()
 	if secret != nil {
 		local := corev1.LocalObjectReference{
 			Name: *secret,
@@ -256,7 +256,7 @@ func (b StatefulSetBuilder) MakeInitContainers() []corev1.Container {
 			Name:            initContainer,
 			Image:           image,
 			Command:         []string{"/bin/sh", "-c", certCpCmd},
-			ImagePullPolicy: *b.Spec().Image.PullPolicyName,
+			ImagePullPolicy: b.GetImagePullPolicy(),
 			SecurityContext: &corev1.SecurityContext{
 				RunAsUser:                ptr.Int64(0),
 				AllowPrivilegeEscalation: ptr.Bool(false),
@@ -273,7 +273,7 @@ func (b StatefulSetBuilder) MakeContainers() []corev1.Container {
 		{
 			Name:            DbContainerName,
 			Image:           image,
-			ImagePullPolicy: *b.Spec().Image.PullPolicyName,
+			ImagePullPolicy: b.GetImagePullPolicy(),
 			Lifecycle: &corev1.Lifecycle{
 				PreStop: &corev1.Handler{
 					Exec: &corev1.ExecAction{

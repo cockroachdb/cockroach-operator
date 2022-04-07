@@ -107,6 +107,11 @@ func (b ClusterBuilder) WithCockroachDBVersion(version string) ClusterBuilder {
 	return b
 }
 
+func (b ClusterBuilder) WithImageObject(image *api.PodImage) ClusterBuilder {
+	b.cluster.Spec.Image = image
+	return b
+}
+
 func (b ClusterBuilder) WithMaxUnavailable(max *int32) ClusterBuilder {
 	b.cluster.Spec.MaxUnavailable = max
 	return b
