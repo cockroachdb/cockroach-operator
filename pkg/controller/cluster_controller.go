@@ -60,7 +60,7 @@ type ClusterReconciler struct {
 // +kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core,resources=services/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=core,resources=services/finalizers,verbs=get;list;watch
-// +kubebuilder:rbac:groups=core,resources=configmaps,verbs=get
+// +kubebuilder:rbac:groups=core,resources=configmaps,verbs=get;list;watch
 // +kubebuilder:rbac:groups=core,resources=configmaps/status,verbs=get
 // +kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch;create;update;patch
 // +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list
