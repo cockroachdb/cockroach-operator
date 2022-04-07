@@ -114,7 +114,7 @@ func (b JobBuilder) buildPodTemplate() corev1.PodTemplateSpec {
 		pod.Spec.TopologySpreadConstraints = b.Spec().TopologySpreadConstraints
 	}
 
-	secret := b.Spec().Image.PullSecret
+	secret := b.GetImagePullSecret()
 	if secret != nil {
 		local := corev1.LocalObjectReference{
 			Name: *secret,
@@ -138,7 +138,7 @@ func (b JobBuilder) MakeContainers() []corev1.Container {
 		{
 			Name:            JobContainerName,
 			Image:           b.GetCockroachDBImageName(),
-			ImagePullPolicy: *b.Spec().Image.PullPolicyName,
+			ImagePullPolicy: b.GetImagePullPolicy(),
 			Resources: corev1.ResourceRequirements{
 				Limits: corev1.ResourceList{
 					corev1.ResourceCPU:    apiresource.MustParse("300m"),

@@ -12,6 +12,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## Fixed
 
 * #863 - Add flag for `leader-election-id` to enable leader election support
+* Fix nil-pointer errors when `spec.Image` is not provided.
 
 ## Changed
 
