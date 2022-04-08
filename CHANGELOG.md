@@ -7,12 +7,16 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 # [Unreleased](https://github.com/cockroachdb/cockroach-operator/compare/v2.5.2...master)
 
+## Fixed
+
+* Fix nil-pointer errors when `spec.Image` is not provided.
+* Update gogo/protobuf to address CVE-2021-3121
+
 # [v2.5.2](https://github.com/cockroachdb/cockroach-operator/compare/v2.5.1...v2.5.2)
 
 ## Fixed
 
 * #863 - Add flag for `leader-election-id` to enable leader election support
-* Fix nil-pointer errors when `spec.Image` is not provided.
 
 ## Changed
 
