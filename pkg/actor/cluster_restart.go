@@ -117,6 +117,7 @@ func (r *clusterRestart) Act(ctx context.Context, cluster *resource.Cluster, log
 		return err
 	}
 	refreshedCluster := resource.NewCluster(cr)
+	refreshedCluster.Fetcher = fetcher
 	//delete annotation
 	refreshedCluster.DeleteRestartTypeAnnotation()
 	//TODO  use patch for annotations

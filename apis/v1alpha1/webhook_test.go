@@ -102,8 +102,7 @@ func TestCreateCrdbCluster(t *testing.T) {
 				Image: &PodImage{Name: "testImage"},
 				DataStore: Volume{
 					VolumeClaim: &VolumeClaim{
-						PersistentVolumeClaimSpec: v1.PersistentVolumeClaimSpec{
-						},
+						PersistentVolumeClaimSpec: v1.PersistentVolumeClaimSpec{},
 					},
 				},
 			}},

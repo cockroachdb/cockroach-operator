@@ -973,6 +973,15 @@ spec:
                     - host
                     type: object
                 type: object
+              logConfigMap:
+                description: (Optional) LogConfigMap define the config map which contains
+                  log configuration used to send the logs through the proper channels
+                  in the cockroachdb. Logging configuration is available for cockroach
+                  version v21.1.0 onwards. The logging configuration is taken in format
+                  of yaml file, you can check the logging configuration here (https://www.cockroachlabs.com/docs/stable/configure-logs.html#default-logging-configuration)
+                  The default logging for cockroach version v20.x or less is stderr,
+                  logging API is ignored for older versions.
+                type: string
               maxSQLMemory:
                 description: '(Optional) The maximum in-memory storage capacity available
                   to store temporary data for SQL queries (`--max-sql-memory` parameter)

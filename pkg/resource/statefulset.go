@@ -360,11 +360,17 @@ func (b StatefulSetBuilder) dbArgs() []string {
 		"--join=" + b.joinStr(),
 		fmt.Sprintf("--advertise-host=$(POD_NAME).%s.%s",
 			b.Cluster.DiscoveryServiceName(), b.Cluster.Namespace()),
-		"--logtostderr=INFO",
 		b.Cluster.SecureMode(),
 		"--http-port=" + fmt.Sprint(*b.Spec().HTTPPort),
 		"--sql-addr=:" + fmt.Sprint(*b.Spec().SQLPort),
 		"--listen-addr=:" + fmt.Sprint(*b.Spec().GRPCPort),
+	}
+
+	if b.Cluster.IsLoggingAPIEnabled() {
+		logConfig, _ := b.Cluster.LoggingConfiguration(b.Cluster.Fetcher)
+		aa = append(aa, fmt.Sprintf("--log=%s", logConfig))
+	} else {
+		aa = append(aa, "--logtostderr=INFO")
 	}
 
 	if b.Spec().Cache != "" {

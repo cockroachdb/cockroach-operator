@@ -17,6 +17,7 @@ limitations under the License.
 package e2e
 
 import (
+	"encoding/json"
 	"os"
 	"testing"
 
@@ -54,8 +55,14 @@ func TestCreateInsecureCluster(t *testing.T) {
 	sb := testenv.NewDiffingSandbox(t, env)
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
 
+	// Create cluster with different logging config than the default one.
+	logJson := []byte(`{"sinks": {"file-groups": {"dev": {"channels": "DEV", "filter": "WARNING"}}}}`)
+	logConfig := make(map[string]interface{})
+	require.NoError(t, json.Unmarshal(logJson, &logConfig))
+	testutil.RequireLoggingConfigMap(t, sb, "logging-configmap", string(logJson))
+
 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).
-		WithImage(e2e.MajorVersion).
+		WithImage(e2e.MajorVersion).WithClusterLogging("logging-configmap").
 		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
 
 	steps := testutil.Steps{

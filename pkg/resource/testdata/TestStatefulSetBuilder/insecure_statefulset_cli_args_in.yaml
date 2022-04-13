@@ -31,7 +31,7 @@ spec:
   grpcPort: 26258
   httpPort: 8080
   image:
-    name: cockroachdb/cockroach:v20.2.7
+    name: cockroachdb/cockroach:v21.1.0
   cache: 30%
   maxSQLMemory: 2GB
   additionalArgs:

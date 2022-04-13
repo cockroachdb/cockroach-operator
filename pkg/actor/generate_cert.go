@@ -124,6 +124,7 @@ func (rc *generateCert) Act(ctx context.Context, cluster *resource.Cluster, log 
 			return errors.Wrap(err, msg)
 		}
 		refreshedCluster := resource.NewCluster(newcr)
+		refreshedCluster.Fetcher = fetcher
 		refreshedCluster.SetAnnotationCertExpiration(*expirationDatePtr)
 		if restartRequired {
 			refreshedCluster.SetRestartTypeAnnotation(api.ClusterRestartType(api.RollingRestart).String())
@@ -154,6 +155,7 @@ func (rc *generateCert) Act(ctx context.Context, cluster *resource.Cluster, log 
 			return errors.Wrap(err, msg)
 		}
 		refreshedCluster := resource.NewCluster(newcr)
+		refreshedCluster.Fetcher = fetcher
 		refreshedCluster.SetTrue(api.CertificateGenerated)
 		if refreshedCluster.IsSQLIngressEnabled() {
 			refreshedCluster.SetSQLHost(cluster.Spec().Ingress.SQL.Host)

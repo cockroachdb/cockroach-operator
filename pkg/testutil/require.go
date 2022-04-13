@@ -654,3 +654,18 @@ func RequireClusterInFailedState(t *testing.T, sb testenv.DiffingSandbox, b Clus
 
 	require.NoError(t, wErr)
 }
+
+func RequireLoggingConfigMap(t *testing.T, sb testenv.DiffingSandbox, name string, logConfig string) {
+	var loggingConfigMap = corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: sb.Namespace,
+		},
+		Data: map[string]string{
+			"logging.yaml": logConfig,
+		},
+	}
+
+	err := sb.Create(&loggingConfigMap)
+	require.NoError(t, err)
+}

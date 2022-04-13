@@ -7,6 +7,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 # [Unreleased](https://github.com/cockroachdb/cockroach-operator/compare/v2.5.3...master)
 
+## Added
+
+* Custom logging configuration can be used through the configmap when `spec.logConfigMap` is provided.
+
 # [v2.5.3](https://github.com/cockroachdb/cockroach-operator/compare/v2.5.2...v2.5.3)
 
 ## Fixed

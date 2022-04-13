@@ -22,6 +22,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Masterminds/semver/v3"
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/clusterstatus"
 	"github.com/cockroachdb/cockroach-operator/pkg/condition"
@@ -317,6 +318,47 @@ func (cluster Cluster) IsFresh(fetcher Fetcher) (bool, error) {
 	}
 
 	return cluster.cr.ResourceVersion == actual.ResourceVersion, nil
+}
+
+func (cluster Cluster) LoggingConfiguration(fetcher Fetcher) (string, error) {
+	if cluster.Spec().LogConfigMap != "" {
+		cm := &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: cluster.Spec().LogConfigMap,
+			},
+		}
+		err := fetcher.Fetch(cm)
+		if err != nil {
+			return "", err
+		}
+
+		if val, ok := cm.Data["logging.yaml"]; ok {
+			return `"` + val + `"`, nil
+		}
+	}
+
+	return "\"{sinks: {stderr: {channels: [OPS, HEALTH], redact: true}}}\"", nil
+}
+
+func (cluster Cluster) IsLoggingAPIEnabled() bool {
+	var version string
+	if cluster.Spec().CockroachDBVersion != "" {
+		version = cluster.Spec().CockroachDBVersion
+	} else if cluster.Spec().Image != nil && cluster.Spec().Image.Name != "" {
+		version = strings.Split(cluster.Spec().Image.Name, ":")[1]
+	} else {
+		return false
+	}
+
+	// No need to handle the error as the version provided is constant
+	c, _ := semver.NewConstraint(">= v21.1")
+
+	v, err := semver.NewVersion(version)
+	if err != nil {
+		return false
+	}
+
+	return c.Check(v)
 }
 
 // TODO add error handling to ensure that env variables are set correctly and
