@@ -321,7 +321,6 @@ func (cluster Cluster) IsFresh(fetcher Fetcher) (bool, error) {
 }
 
 func (cluster Cluster) LoggingConfiguration(fetcher Fetcher) (string, error) {
-	var logYaml string
 	if cluster.Spec().LogConfigMap != "" {
 		cm := &corev1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
@@ -333,14 +332,12 @@ func (cluster Cluster) LoggingConfiguration(fetcher Fetcher) (string, error) {
 			return "", err
 		}
 
-		for _, val := range cm.Data {
-			logYaml = "\"" + val + "\""
+		if val, ok := cm.Data["logging.yaml"]; ok {
+			return `"` + val + `"`, nil
 		}
-	} else {
-		logYaml = "\"{sinks: {stderr: {channels: [OPS, HEALTH], redact: true}}}\""
 	}
 
-	return logYaml, nil
+	return "\"{sinks: {stderr: {channels: [OPS, HEALTH], redact: true}}}\"", nil
 }
 
 func (cluster Cluster) IsLoggingAPIEnabled() bool {

@@ -662,7 +662,7 @@ func RequireLoggingConfigMap(t *testing.T, sb testenv.DiffingSandbox, name strin
 			Namespace: sb.Namespace,
 		},
 		Data: map[string]string{
-			"logConfig": logConfig,
+			"logging.yaml": logConfig,
 		},
 	}
 
