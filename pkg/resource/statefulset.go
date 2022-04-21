@@ -359,7 +359,6 @@ func (b StatefulSetBuilder) dbArgs() []string {
 	aa := []string{
 		"/cockroach/cockroach.sh",
 		"start",
-		"--join=" + b.joinStr(),
 		fmt.Sprintf("--advertise-host=$(POD_NAME).%s.%s",
 			b.Cluster.DiscoveryServiceName(), b.Cluster.Namespace()),
 		b.Cluster.SecureMode(),
@@ -387,7 +386,20 @@ func (b StatefulSetBuilder) dbArgs() []string {
 		aa = append(aa, "--max-sql-memory $(expr $MEMORY_LIMIT_MIB / 4)MiB")
 	}
 
-	return append(aa, b.Spec().AdditionalArgs...)
+	aa = append(aa, b.Spec().AdditionalArgs...)
+
+	needsDefaultJoin := true
+	for _, f := range b.Spec().AdditionalArgs {
+		if strings.Contains(f, "--join") {
+			needsDefaultJoin = false
+			break
+		}
+	}
+
+	if needsDefaultJoin {
+		aa = append(aa, "--join="+b.joinStr())
+	}
+	return aa
 }
 
 func (b StatefulSetBuilder) joinStr() string {

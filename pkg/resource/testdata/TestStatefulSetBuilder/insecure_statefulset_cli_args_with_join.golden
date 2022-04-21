@@ -4,6 +4,7 @@ metadata:
   annotations:
     crdb.io/containerimage: ""
     crdb.io/version: ""
+    key: "test-value"
   creationTimestamp: null
   name: test-cluster
 spec:
@@ -22,7 +23,25 @@ spec:
         app.kubernetes.io/component: database
         app.kubernetes.io/instance: test-cluster
         app.kubernetes.io/name: cockroachdb
+      annotations:
+        key: "test-value"
     spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app.kubernetes.io/instance
+                  operator: In
+                  values:
+                  - test-cluster
+              topologyKey: kubernetes.io/hostname
+            weight: 100
+      tolerations:
+        - key: "key"
+          operator: "Exists"
+          effect: "NoSchedule"
       automountServiceAccountToken: false
       containers:
       - command:
@@ -31,9 +50,8 @@ spec:
         - 'exec /cockroach/cockroach.sh start
           --advertise-host=$(POD_NAME).test-cluster.test-ns --insecure --http-port=8080
           --sql-addr=:26257 --listen-addr=:26258 --log="{sinks: {stderr: {channels:
-          [OPS, HEALTH], redact: true}}}" --cache $(expr $MEMORY_LIMIT_MIB / 4)MiB
-          --max-sql-memory $(expr $MEMORY_LIMIT_MIB / 4)MiB
-          --join=test-cluster-0.test-cluster.test-ns:26258'
+          [OPS, HEALTH], redact: true}}}" --cache=30% --max-sql-memory=2GB
+          --join=test-cluster-1.new-test-cluster.new-test-ns:26258'
         env:
         - name: COCKROACH_CHANNEL
           value: kubernetes-operator-gke
@@ -97,11 +115,11 @@ spec:
   volumeClaimTemplates:
   - metadata:
       creationTimestamp: null
+      name: datadir
       labels:
         app.kubernetes.io/component: database
         app.kubernetes.io/instance: test-cluster
         app.kubernetes.io/name: cockroachdb
-      name: datadir
     spec:
       accessModes:
       - ReadWriteOnce
