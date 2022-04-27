@@ -19,6 +19,7 @@ package decommission
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/cockroachdb/cockroach-operator/e2e"
 	"github.com/cockroachdb/cockroach-operator/pkg/controller"
@@ -86,6 +87,10 @@ func TestDecommissionFunctionalityWithPrune(t *testing.T) {
 				testutil.RequireDecommissionNode(t, sb, builder, 3)
 				testutil.RequireDatabaseToFunction(t, sb, builder)
 				t.Log("Done with decommission")
+
+				// Sleeping helps prevents flakes.
+				time.Sleep(5 * time.Second)
+
 				testutil.RequireNumberOfPVCs(t, context.TODO(), sb, builder, 3)
 			},
 		},
