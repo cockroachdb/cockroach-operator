@@ -334,6 +334,9 @@ func (cluster Cluster) LoggingConfiguration(fetcher Fetcher) (string, error) {
 
 		if val, ok := cm.Data["logging.yaml"]; ok {
 			return `"` + val + `"`, nil
+		} else {
+			return "", errors.Newf(
+				"`logging.yaml` entry not found in configMap %s", cluster.Spec().LogConfigMap)
 		}
 	}
 
