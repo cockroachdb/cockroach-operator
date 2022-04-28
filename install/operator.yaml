@@ -159,6 +159,13 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - persistentvolumeclaims
+  verbs:
+  - list
+  - update
+- apiGroups:
+  - ""
+  resources:
   - pods
   verbs:
   - delete
