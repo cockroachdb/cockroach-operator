@@ -10,6 +10,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## Fixed
 
 * Grant operator deletecollection permissions to fix fullcluster restart flow
+* Grant operator list and update permissions on pvcs to fix pvc resize flow
 
 # [v2.6.0](https://github.com/cockroachdb/cockroach-operator/compare/v2.5.3...v2.6.0)
 
