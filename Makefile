@@ -60,7 +60,7 @@ test/verify:
 test/lint:
 	bazel run //hack:verify-gofmt
 
-# NODE_VERSION refers the to version of the kindest/node image. E.g. 1.22.1
+# NODE_VERSION refers the to patch version of Kubernetes (e.g. 1.22.6)
 .PHONY: test/smoketest
 test/smoketest:
 	@bazel run //hack/smoketest -- -dir $(PWD) -version $(NODE_VERSION)
@@ -71,10 +71,9 @@ test/smoketest:
 test/e2e-short:
 	bazel test //e2e/... --test_arg=--test.short
 
-#
 # End to end testing targets
 #
-# kind: use make test/e2e/kind
+# k3d: use make test/e2e/k3d
 # gke: use make test/e2e/gke
 #
 # kubetest2 binaries from the kubernetes testing team is used
@@ -83,31 +82,32 @@ test/e2e-short:
 # Once the repo releases binaries we should vendor the tag or
 # download the built binaries.
 
-# This target is used by kubetest2-tester-exec when running a kind test
-# This target exportis the kubeconfig from kind and then runs
-# k8s:k8s -type kind which checks to see if kind is up and running.
+# This target is used by kubetest2-tester-exec when running a k3d test
+# It run k8s:k8s -type k3d which checks to see if k3d is up and running.
 # Then bazel e2e testing is run.
-# An example of calling this is using make test/e2e/testrunner-kind-upgrades
-test/e2e/testrunner-kind-%: PACKAGE=$*
-test/e2e/testrunner-kind-%:
-	bazel-bin/hack/bin/kind export kubeconfig --name $(CLUSTER_NAME)
-	bazel run //hack/k8s:k8s -- -type kind
+# An example of calling this is using make test/e2e/testrunner-k3d-upgrades
+test/e2e/testrunner-k3d-%: PACKAGE=$*
+test/e2e/testrunner-k3d-%:
+	bazel run //hack/k8s:k8s -- -type k3d
 	bazel test --stamp //e2e/$(PACKAGE)/... --test_arg=-test.v --test_arg=-test.parallel=8 --test_arg=parallel=true
 
-# Use this target to run e2e tests using a kind k8s cluster.
-# This target uses kind to start a k8s cluster  and runs the e2e tests
+# Use this target to run e2e tests using a k3d k8s cluster.
+# This target uses k3d to start a k8s cluster  and runs the e2e tests
 # against that cluster.
-# This is the main entrypoint for running the e2e tests on kind.
-# This target runs kubetest2 kind that starts a kind cluster
+#
+# This is the main entrypoint for running the e2e tests on k3d.
+# This target runs kubetest2 k3d that starts a k3d cluster
 # Then kubetest2 tester exec is run which runs the make target
-# test/e2e/testrunner-kind.
+# test/e2e/testrunner-k3d.
 # After the tests run the cluster is deleted.
 # If you need a unique cluster name override CLUSTER_NAME.
-test/e2e/kind-%: PACKAGE=$*
-test/e2e/kind-%:
-	bazel build //hack/bin/...
-	PATH=${PATH}:bazel-bin/hack/bin kubetest2 kind --cluster-name=$(CLUSTER_NAME) \
-		--up --down -v 10 --test=exec -- make test/e2e/testrunner-kind-$(PACKAGE)
+test/e2e/k3d-%: PACKAGE=$*
+test/e2e/k3d-%:
+	bazel build //hack/bin/... //e2e/kubetest2-k3d/...
+	PATH=bazel-bin/hack/bin:bazel-bin/e2e/kubetest2-k3d/kubetest2-k3d_/:${PATH} \
+		bazel-bin/hack/bin/kubetest2 k3d \
+		--cluster-name=$(CLUSTER_NAME) --image rancher/k3s:v1.23.3-k3s1 --servers 3 \
+		--up --down -v 10 --test=exec -- make test/e2e/testrunner-k3d-$(PACKAGE)
 
 # This target is used by kubetest2-eks to run e2e tests.
 .PHONY: test/e2e/testrunner-eks
@@ -118,7 +118,7 @@ test/e2e/testrunner-eks:
 	bazel test --stamp //e2e/decommission/...  --action_env=KUBECONFIG=$(TMPDIR)/$(CLUSTER_NAME)-eks.kubeconfig.yaml
 
 # Use this target to run e2e tests with a eks cluster.
-# This target uses kind to start a eks k8s cluster  and runs the e2e tests
+# This target uses kubetest2 to start a eks k8s cluster and runs the e2e tests
 # against that cluster.
 .PHONY: test/e2e/eks
 test/e2e/eks:
@@ -148,9 +148,9 @@ test/e2e/testrunner-gke:
 	bazel test --stamp //e2e/decommission/...
 
 # Use this target to run e2e tests with a gke cluster.
-# This target uses kind to start a gke k8s cluster  and runs the e2e tests
+# This target uses kubetest2 to start a gke k8s cluster and runs the e2e tests
 # against that cluster.
-# This is the main entrypoint for running the e2e tests on gke kind.
+# This is the main entrypoint for running the e2e tests on gke.
 # This target runs kubetest2 gke that starts a gke cluster
 # Then kubetest2 tester exec is run which runs the make target
 # test/e2e/testrunner-gke.
@@ -175,7 +175,7 @@ test/e2e/testrunner-openshift:
 	bazel test --stamp //e2e/decommission/...  --action_env=KUBECONFIG=$(HOME)/openshift-$(CLUSTER_NAME)/auth/kubeconfig
 
 # Use this target to run e2e tests with a openshift cluster.
-# This target uses kind to start a openshift cluster and runs the e2e tests
+# This target uses kubetest2 to start a openshift cluster and runs the e2e tests
 # against that cluster. A full TLD is required to creat an openshift clutser.
 # This target runs kubetest2 openshift that starts a openshift cluster
 # Then kubetest2 tester exec is run which runs the make target
@@ -257,7 +257,7 @@ dev/syncdeps:
 	@make dev/syncbazel
 
 .PHONY: dev/up
-dev/up:
+dev/up: dev/down
 	@hack/dev.sh up
 
 .PHONY: dev/down

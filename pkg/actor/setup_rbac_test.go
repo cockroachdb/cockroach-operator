@@ -41,7 +41,7 @@ func TestSetupRBACActionAct(t *testing.T) {
 		NewBuilder("cockroachdb").
 		Namespaced("bogus-ns").
 		WithUID("cockroachdb-uid").
-		WithPVDataStore("500Mu", "standard").
+		WithPVDataStore("500Mu").
 		WithNodeCount(1).
 		Cluster()
 

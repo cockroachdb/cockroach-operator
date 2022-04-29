@@ -61,7 +61,7 @@ func (b ClusterBuilder) WithNodeCount(c int32) ClusterBuilder {
 	return b
 }
 
-func (b ClusterBuilder) WithPVDataStore(size, storageClass string) ClusterBuilder {
+func (b ClusterBuilder) WithPVDataStore(size string) ClusterBuilder {
 	quantity, _ := apiresource.ParseQuantity(size)
 
 	volumeMode := corev1.PersistentVolumeFilesystem
@@ -74,8 +74,7 @@ func (b ClusterBuilder) WithPVDataStore(size, storageClass string) ClusterBuilde
 						corev1.ResourceStorage: quantity,
 					},
 				},
-				StorageClassName: &storageClass,
-				VolumeMode:       &volumeMode,
+				VolumeMode: &volumeMode,
 			},
 		},
 	}

@@ -52,7 +52,7 @@ func TestUpgradesMinorVersion(t *testing.T) {
 
 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
 		WithImage(e2e.MinorVersion1).
-		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
+		WithPVDataStore("1Gi")
 
 	steps := testutil.Steps{
 		{
@@ -103,7 +103,7 @@ func TestUpgradesMajorVersion20to21(t *testing.T) {
 
 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
 		WithImage(e2e.MinorVersion2).
-		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
+		WithPVDataStore("1Gi")
 
 	steps := testutil.Steps{
 		{
@@ -152,7 +152,7 @@ func TestUpgradesMajorVersion20_1To20_2(t *testing.T) {
 
 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
 		WithImage("cockroachdb/cockroach:v20.1.16").
-		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
+		WithPVDataStore("1Gi")
 
 	steps := testutil.Steps{
 		{
@@ -206,7 +206,7 @@ func TestUpgradesMinorVersionThenRollback(t *testing.T) {
 
 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
 		WithImage(e2e.MinorVersion1).
-		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
+		WithPVDataStore("1Gi")
 
 	steps := testutil.Steps{
 		{
@@ -271,7 +271,7 @@ func TestUpgradeWithInvalidVersion(t *testing.T) {
 
 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
 		WithImage(e2e.MinorVersion1).
-		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
+		WithPVDataStore("1Gi")
 
 	steps := testutil.Steps{
 		{
@@ -321,7 +321,7 @@ func TestUpgradeWithInvalidImage(t *testing.T) {
 
 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
 		WithImage(e2e.MinorVersion1).
-		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
+		WithPVDataStore("1Gi")
 
 	steps := testutil.Steps{
 		{
@@ -371,7 +371,7 @@ func TestUpgradeWithMajorVersionExcludingMajorFeature(t *testing.T) {
 
 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
 		WithImage(e2e.SkipFeatureVersion).
-		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
+		WithPVDataStore("1Gi")
 
 	steps := testutil.Steps{
 		{

@@ -32,7 +32,7 @@ spec:
         volumeMode: Filesystem
   resources:
     requests:
-      # This is intentionally low to make it work on local kind clusters.
+      # This is intentionally low to make it work on local k3d clusters.
       cpu: 500m
       memory: 2Gi
     limits:

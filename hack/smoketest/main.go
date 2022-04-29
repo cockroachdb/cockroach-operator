@@ -39,18 +39,18 @@ var (
 // https://www.cockroachlabs.com/docs/stable/deploy-cockroachdb-with-kubernetes.html#step-2-start-cockroachdb
 //
 // It will:
-// * Start a kind cluster
+// * Start a cluster
 // * Install the CRDs and the operator from the install dir
 // * Apply the smoketest cluster
 // * Add the client-secure-operator
 // * Run the bank workload
 func main() {
-	flag.StringVar(&clusterName, "cluster", "smoketest", "the name of the kind cluster")
+	flag.StringVar(&clusterName, "cluster", "smoketest", "the name of the cluster")
 	flag.StringVar(&dir, "dir", ".", "the directory run in")
-	flag.StringVar(&version, "version", "1.22.1", "the version of kubernetes (kindest node)")
+	flag.StringVar(&version, "version", "1.22.1", "the (patch) version of kubernetes")
 	flag.Parse()
 
-	// ensure kind, kubectl, etc. are on the path
+	// ensure k3d, kubectl, etc. are on the path
 	path := os.Getenv("PATH")
 	os.Setenv("PATH", fmt.Sprintf("%s:%s", filepath.Join(os.Getenv("PWD"), "hack", "bin"), path))
 
@@ -60,7 +60,7 @@ func main() {
 	}
 
 	steps := []Step{
-		StartKindCluster(clusterName, version),
+		StartCluster(clusterName, version),
 		ApplyManifest(filepath.Join("install", "crds.yaml")),
 		ApplyManifest(filepath.Join("install", "operator.yaml")),
 		WaitForDeploymentAvailable("cockroach-operator-manager", "cockroach-operator-system"),
@@ -79,7 +79,7 @@ func main() {
 			fmt.Print(err.Error())
 
 		}
-	}(StopKindCluster(clusterName), process.ExecJUnit)
+	}(StopCluster(clusterName), process.ExecJUnit)
 
 	for _, step := range steps {
 		if err := step.Apply(process.ExecJUnit); err != nil {
@@ -90,7 +90,7 @@ func main() {
 
 func bail(err error) {
 	fmt.Fprintf(os.Stderr, "OOPS! An error occurred: %s\n", err)
-	if err = StopKindCluster(clusterName).Apply(process.ExecJUnit); err != nil {
+	if err = StopCluster(clusterName).Apply(process.ExecJUnit); err != nil {
 		fmt.Print(err.Error())
 	}
 	os.Exit(1)

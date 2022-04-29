@@ -14,7 +14,7 @@ go_library(
 go_binary(
     name = "smoketest",
     data = [
-        "//hack/bin:kind",
+        "//hack/bin:k3d",
         "//hack/bin:kubectl",
     ],
     embed = [":go_default_library"],

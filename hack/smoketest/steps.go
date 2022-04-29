@@ -56,25 +56,25 @@ func (fn StepFn) Apply(ex ExecFn) error {
 // ExecFn describes a function that executes shell commands.
 type ExecFn func(cmd string, args, env []string) error
 
-// StartKindCluster starts a kind cluster named `kind-<name>` using the specified image
-func StartKindCluster(name string, version string) Step {
+// StartCluster starts a k3d cluster named `k3d-<name>` using the specified image
+func StartCluster(name string, version string) Step {
 	return StepFn(func(fn ExecFn) error {
-		fmt.Println("Creating kind cluster...")
+		fmt.Println("Creating k3d cluster...")
 		return fn(
-			"kind",
-			[]string{"create", "cluster", "--name", name, "--image", "kindest/node:v" + version},
+			"k3d",
+			[]string{"cluster", "create", name, "--image", fmt.Sprintf("rancher/k3s:v%s-k3s1", version)},
 			os.Environ(),
 		)
 	})
 }
 
-// StopKindCluster stops the cluster named `kind-<name>`.
-func StopKindCluster(name string) Step {
-	fmt.Println("Deleting kind cluster...")
+// StopCluster stops the cluster named `k3d-<name>`.
+func StopCluster(name string) Step {
+	fmt.Println("Deleting k3d cluster...")
 	return StepFn(func(fn ExecFn) error {
 		return fn(
-			"kind",
-			[]string{"delete", "cluster", "--name", name},
+			"k3d",
+			[]string{"cluster", "delete", name},
 			os.Environ(),
 		)
 	})

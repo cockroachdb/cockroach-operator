@@ -19,54 +19,34 @@ PATH="bazel-bin/hack/bin:${PATH}"
 
 APP_VERSION="${APP_VERSION:-v$(cat version.txt)}"
 CLUSTER_NAME="dev"
-NODE_IMAGE="kindest/node:v1.22.1"
-REGISTRY_NAME="kind-registry"
+NODE_IMAGE="rancher/k3s:v1.23.3-k3s1"
+REGISTRY_NAME="registry.localhost"
 REGISTRY_PORT=5000
 
-run_local_registry() {
-  running="$(docker inspect -f '{{.State.Running}}' "${REGISTRY_NAME}" 2>/dev/null || true)"
-  if [ "${running}" == 'true' ]; then return; fi
-
-  # start a local registry in docker
-  docker run -d --restart=always -p "127.0.0.1:${REGISTRY_PORT}:5000" --name "${REGISTRY_NAME}" registry:2
+main() {
+  case "${1:-}" in
+    up)
+    create_cluster
+    install_operator
+    wait_for_ready;;
+    down)
+      k3d cluster delete "${CLUSTER_NAME}";;
+    *) echo "Unknown command. Usage $0 <up|down>" 1>&2; exit 1;;
+  esac
 }
 
-create_kind_cluster() {
-  cat <<EOF | kind create cluster --name "${CLUSTER_NAME}" --config=-
-apiVersion: kind.x-k8s.io/v1alpha4
-kind: Cluster
-nodes:
-- role: control-plane
-  image: ${NODE_IMAGE}
-containerdConfigPatches:
-- |-
-  [plugins."io.containerd.grpc.v1.cri".registry.mirrors."127.0.0.1:${REGISTRY_PORT}"]
-    endpoint = ["http://${REGISTRY_NAME}:${REGISTRY_PORT}"]
-EOF
-}
-
-setup_k8s_registry_hosting() {
-  docker network connect "kind" "${REGISTRY_NAME}"
-
-  cat <<EOF | kubectl apply -f -
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: local-registry-hosting
-  namespace: kube-public
-data:
-  localRegistryHosting.v1: |
-    host: "127.0.0.1:${REGISTRY_PORT}"
-    help: "https://kind.sigs.k8s.io/docs/user/local-registry/"
-EOF
+create_cluster() {
+  k3d cluster create "${CLUSTER_NAME}" \
+    --image "${NODE_IMAGE}" \
+    --registry-create "${REGISTRY_NAME}:${REGISTRY_PORT}"
 }
 
 install_operator() {
   # Can't seem to figure out how to leverage the stamp variables here. So for
   # now I've added a defined make variable which can be used for substitution
   # in //config/default/BUILD.bazel.
-  K8S_CLUSTER="kind-${CLUSTER_NAME}" \
-    DEV_REGISTRY="127.0.0.1:${REGISTRY_PORT}" \
+  K8S_CLUSTER="k3d-${CLUSTER_NAME}" \
+    DEV_REGISTRY="${REGISTRY_NAME}:${REGISTRY_PORT}" \
     bazel run \
     --stamp \
     --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
@@ -81,21 +61,6 @@ wait_for_ready() {
     --timeout=2m \
     -n cockroach-operator-system \
     deploy/cockroach-operator-manager
-}
-
-main() {
-  case "${1:-}" in
-    up)
-    run_local_registry
-    create_kind_cluster
-    setup_k8s_registry_hosting
-    install_operator
-    wait_for_ready;;
-    down)
-      kind delete cluster --name "${CLUSTER_NAME}"
-      docker rm -f "${REGISTRY_NAME}" 2>/dev/null || true;;
-    *) echo "Unknown command. Usage $0 <up|down>" 1>&2; exit 1;;
-  esac
 }
 
 main "$@"

@@ -62,7 +62,7 @@ func TestDecommissionFunctionalityWithPrune(t *testing.T) {
 		WithNodeCount(4).
 		WithTLS().
 		WithImage(e2e.MajorVersion).
-		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
+		WithPVDataStore("1Gi")
 
 	testutil.Steps{
 		{
@@ -124,7 +124,7 @@ func TestDecommissionFunctionality(t *testing.T) {
 		WithNodeCount(4).
 		WithTLS().
 		WithImage(e2e.MajorVersion).
-		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
+		WithPVDataStore("1Gi")
 
 	testutil.Steps{
 		{
