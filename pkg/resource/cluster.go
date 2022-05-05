@@ -26,6 +26,7 @@ import (
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/clusterstatus"
 	"github.com/cockroachdb/cockroach-operator/pkg/condition"
+	"github.com/cockroachdb/cockroach-operator/pkg/util"
 	"github.com/cockroachdb/errors"
 	"github.com/gosimple/slug"
 	corev1 "k8s.io/api/core/v1"
@@ -199,7 +200,7 @@ func (cluster Cluster) LookupSupportedVersion(version string) (string, bool) {
 	return "", false
 }
 
-//GetVersionAnnotation  gets the current version of the cluster  retrieved by version checker action
+// GetVersionAnnotation  gets the current version of the cluster  retrieved by version checker action
 func (cluster Cluster) GetVersionAnnotation() string {
 	return cluster.getAnnotation(CrdbVersionAnnotation)
 }
@@ -270,7 +271,7 @@ func (cluster Cluster) GetCockroachDBImageName() string {
 		}
 		return NotSupportedVersion
 	}
-	//we validate the version after the job runs with exec
+	// we validate the version after the job runs with exec
 	return cluster.Spec().Image.Name
 }
 
@@ -308,7 +309,7 @@ func (cluster Cluster) CASecretName() string {
 }
 
 func (cluster Cluster) Domain() string {
-	return "svc.cluster.local"
+	return fmt.Sprintf("svc.%s", util.GetClusterDomain())
 }
 
 func (cluster Cluster) SecureMode() string {

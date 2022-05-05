@@ -21,6 +21,7 @@ import (
 	"fmt"
 
 	"github.com/cockroachdb/cockroach-operator/pkg/security"
+	"github.com/cockroachdb/cockroach-operator/pkg/util"
 	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
 	"go.uber.org/zap/zapcore"
@@ -97,7 +98,7 @@ func CreateWebhookCertificate(ctx context.Context, api SecretsInterface, ns stri
 		webhookService,
 		fmt.Sprintf("%s.%s", webhookService, ns),
 		fmt.Sprintf("%s.%s.svc", webhookService, ns),
-		fmt.Sprintf("%s.%s.svc.cluster.local", webhookService, ns),
+		fmt.Sprintf("%s.%s.svc.%s", webhookService, ns, util.GetClusterDomain()),
 	))
 
 	if err != nil {
