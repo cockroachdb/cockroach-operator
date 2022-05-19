@@ -88,10 +88,10 @@ func TestDecommissionFunctionalityWithPrune(t *testing.T) {
 				testutil.RequireDatabaseToFunction(t, sb, builder)
 				t.Log("Done with decommission")
 
-				// Sleeping helps prevents flakes.
-				time.Sleep(5 * time.Second)
-
-				testutil.RequireNumberOfPVCs(t, context.TODO(), sb, builder, 3)
+				// Give some time for the PVCs to be cleaned up.
+				require.Eventually(t, func() bool {
+					return testutil.HasNumPVCs(context.TODO(), sb, builder, 3)
+				}, 1*time.Minute, 3*time.Second)
 			},
 		},
 	}.Run(t)

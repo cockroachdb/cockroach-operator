@@ -48,6 +48,8 @@ const (
 
 	// DbContainerName is the name of the container definition in the pod spec
 	DbContainerName = "db"
+
+	terminationGracePeriodSecs = 300
 )
 
 type StatefulSetBuilder struct {
@@ -207,7 +209,7 @@ func (b StatefulSetBuilder) makePodTemplate() corev1.PodTemplateSpec {
 				RunAsUser: ptr.Int64(1000581000),
 				FSGroup:   ptr.Int64(1000581000),
 			},
-			TerminationGracePeriodSeconds: ptr.Int64(60),
+			TerminationGracePeriodSeconds: ptr.Int64(terminationGracePeriodSecs),
 			Containers:                    b.MakeContainers(),
 			AutomountServiceAccountToken:  ptr.Bool(false),
 			ServiceAccountName:            b.ServiceAccountName(),

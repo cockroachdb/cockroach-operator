@@ -11,6 +11,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 * Grant operator deletecollection permissions to fix fullcluster restart flow
 * Grant operator list and update permissions on pvcs to fix pvc resize flow
+* Bump TerminationGracePeriodSeconds from 1m to 5m
 
 # [v2.6.0](https://github.com/cockroachdb/cockroach-operator/compare/v2.5.3...v2.6.0)
 
