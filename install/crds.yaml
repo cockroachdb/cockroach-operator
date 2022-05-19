@@ -663,6 +663,13 @@ spec:
                         type: array
                     type: object
                 type: object
+              automountServiceAccountToken:
+                description: '(Optional) AutomountServiceAccountToken determines whether
+                  or not the stateful set pods should automount the service account
+                  token. This is the default behavior in Kubernetes. For backward
+                  compatibility reasons, this value defaults to `false` here. Default:
+                  false'
+                type: boolean
               cache:
                 description: '(Optional) The total size for caches (`--cache` command
                   line parameter) Default: "25%"'

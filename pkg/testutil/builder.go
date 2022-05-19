@@ -51,6 +51,11 @@ func (b ClusterBuilder) Namespaced(namespace string) ClusterBuilder {
 	return b
 }
 
+func (b ClusterBuilder) WithAutomountServiceAccountToken(mount bool) ClusterBuilder {
+	b.cluster.Spec.AutomountServiceAccountToken = mount
+	return b
+}
+
 func (b ClusterBuilder) WithUID(uid string) ClusterBuilder {
 	b.cluster.ObjectMeta.UID = amtypes.UID(uid)
 	return b
