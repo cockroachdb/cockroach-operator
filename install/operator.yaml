@@ -498,6 +498,10 @@ spec:
           value: cockroachdb/cockroach:v21.2.9
         - name: RELATED_IMAGE_COCKROACH_v21_2_10
           value: cockroachdb/cockroach:v21.2.10
+        - name: RELATED_IMAGE_COCKROACH_v21_2_11
+          value: cockroachdb/cockroach:v21.2.11
+        - name: RELATED_IMAGE_COCKROACH_v22_1_0
+          value: cockroachdb/cockroach:v22.1.0
         - name: OPERATOR_NAME
           value: cockroachdb
         - name: POD_NAME
