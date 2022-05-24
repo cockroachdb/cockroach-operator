@@ -563,6 +563,24 @@ func RequireNumberOfPVCs(t *testing.T, ctx context.Context, sb testenv.DiffingSa
 	require.Equal(t, quantity, boundPVCCount)
 }
 
+// HasNumPVCs returns true when the number of bound PVCs is equal to the supplied
+// quantity. If an error occurs, it returns false.
+func HasNumPVCs(ctx context.Context, sb testenv.DiffingSandbox, b ClusterBuilder, quantity int) bool {
+	pvcList, err := fetchPVCs(ctx, sb, b)
+	if err != nil {
+		return false
+	}
+
+	boundPVCCount := 0
+	for _, pvc := range pvcList.Items {
+		if pvc.Status.Phase == corev1.ClaimBound {
+			boundPVCCount = boundPVCCount + 1
+		}
+	}
+
+	return boundPVCCount == quantity
+}
+
 func fetchPVCs(ctx context.Context, sb testenv.DiffingSandbox, b ClusterBuilder) (*corev1.PersistentVolumeClaimList, error) {
 	cluster := b.Cluster()
 	var pvcList *corev1.PersistentVolumeClaimList
