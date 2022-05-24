@@ -20,12 +20,14 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"time"
 
+	"github.com/cenkalti/backoff"
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	customClient "github.com/cockroachdb/cockroach-operator/pkg/client/clientset/versioned"
 	"github.com/cockroachdb/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	apiruntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
@@ -40,7 +42,7 @@ import (
 // environments.
 var testBinaries = flag.String("binaries", "hack/bin", "")
 
-func NewEnv(builder apiruntime.SchemeBuilder) *Env {
+func NewEnv(builder runtime.SchemeBuilder) *Env {
 	flag.Parse()
 
 	// ensure hack/bin is added to the path and KUBEBUILDER_ASSETS
@@ -48,7 +50,7 @@ func NewEnv(builder apiruntime.SchemeBuilder) *Env {
 	os.Setenv("KUBEBUILDER_ASSETS", p)
 	PrependToPath(p)
 
-	scheme := apiruntime.NewScheme()
+	scheme := runtime.NewScheme()
 
 	if err := kscheme.AddToScheme(scheme); err != nil {
 		panic(err)
@@ -76,7 +78,7 @@ func NewEnv(builder apiruntime.SchemeBuilder) *Env {
 
 type Env struct {
 	envtest.Environment
-	Scheme *apiruntime.Scheme
+	Scheme *runtime.Scheme
 }
 
 func (env *Env) Start() *ActiveEnv {
@@ -129,7 +131,7 @@ func (k k8s) namespaceableResource(gvr schema.GroupVersionResource) dynamic.Name
 
 type ActiveEnv struct {
 	*k8s
-	scheme    *apiruntime.Scheme
+	scheme    *runtime.Scheme
 	resources []schema.GroupVersionResource
 }
 
@@ -139,8 +141,19 @@ func CreateActiveEnvForTest() *Env {
 }
 
 func loadResources(k *k8s) ([]schema.GroupVersionResource, error) {
-	lists, err := k.DiscoveryClient.ServerPreferredResources()
-	if err != nil {
+	b := backoff.NewExponentialBackOff()
+	b.MaxElapsedTime = 60 * time.Second
+	lists := make([]*metav1.APIResourceList, 0)
+
+	// GKE was having issues fetching api resources. Giving it some time
+	// (tested via time.Sleep(10*time.Second)) seemed to resolve this issue.
+	// Rather than a sleep call, we should retry until it's ready or ultimately
+	// fails.
+	if err := backoff.Retry(func() error {
+		var err error
+		lists, err = k.DiscoveryClient.ServerPreferredResources()
+		return err
+	}, b); err != nil {
 		return nil, errors.Wrap(err, "failed to fetch preferred server resource")
 	}
 

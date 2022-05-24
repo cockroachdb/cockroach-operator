@@ -143,38 +143,16 @@ genrule(
 genrule(
     name = "fetch_kubetest2",
     srcs = select({
-        ":m1": ["@kubetest2_darwin//file"],
-        ":darwin": ["@kubetest2_darwin//file"],
-        ":k8": ["@kubetest2_linux//file"],
+        ":m1": ["@kubetest2_darwin//:files"],
+        ":darwin": ["@kubetest2_darwin//:files"],
+        ":k8": ["@kubetest2_linux//:files"],
     }),
-    outs = ["kubetest2"],
-    cmd = "cp $(SRCS) $@",
-    visibility = ["//visibility:public"],
-)
-
-# fetch_kubetest2_gke rules to fetch the binary for kubetest2_gke used on e2e tests that are saved on a google cloud bucket
-genrule(
-    name = "fetch_kubetest2_gke",
-    srcs = select({
-        ":m1": ["@kubetest2_gke_darwin//file"],
-        ":darwin": ["@kubetest2_gke_darwin//file"],
-        ":k8": ["@kubetest2_gke_linux//file"],
-    }),
-    outs = ["kubetest2-gke"],
-    cmd = "cp $(SRCS) $@",
-    visibility = ["//visibility:public"],
-)
-
-# fetch_kubetest2_exe`rules to fetch the binary for kubetest2_exe used on e2e tests that are saved on a google cloud bucket
-genrule(
-    name = "fetch_kubetest2_exe",
-    srcs = select({
-        ":m1": ["@kubetest2_exe_darwin//file"],
-        ":darwin": ["@kubetest2_exe_darwin//file"],
-        ":k8": ["@kubetest2_exe_linux//file"],
-    }),
-    outs = ["kubetest2-tester-exec"],
-    cmd = "cp $(SRCS) $@",
+    outs = [
+        "kubetest2",
+        "kubetest2-gke",
+        "kubetest2-tester-exec",
+    ],
+    cmd = "cp $(SRCS) $(@D)",
     visibility = ["//visibility:public"],
 )
 
