@@ -24,7 +24,7 @@ spec:
     spec:
       containers:
         - name: cockroach-operator
-          image: cockroachdb/cockroach-operator:v2.6.0
+          image: cockroachdb/cockroach-operator:v2.6.1
           env:
             - name: RELATED_IMAGE_COCKROACH_v20_1_4
               value: cockroachdb/cockroach:v20.1.4
