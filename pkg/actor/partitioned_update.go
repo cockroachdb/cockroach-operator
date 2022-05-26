@@ -19,7 +19,7 @@ package actor
 import (
 	"context"
 	"fmt"
-	"github.com/go-logr/logr"
+	"io/ioutil"
 	"os"
 	"strings"
 	"time"
@@ -31,6 +31,7 @@ import (
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	"github.com/cockroachdb/cockroach-operator/pkg/update"
 	"github.com/cockroachdb/errors"
+	"github.com/go-logr/logr"
 	"go.uber.org/zap/zapcore"
 	appsv1 "k8s.io/api/apps/v1"
 	kubetypes "k8s.io/apimachinery/pkg/types"
@@ -128,10 +129,14 @@ func (up *partitionedUpdate) Act(ctx context.Context, cluster *resource.Cluster,
 
 	// test to see if we are running inside of Kubernetes
 	// If we are running inside of k8s we will not find this file.
-	runningInsideK8s := inK8s("/var/run/secrets/kubernetes.io/serviceaccount/token")
+	var (
+		runningInsideK8s = inK8s("/var/run/secrets/kubernetes.io/serviceaccount/token")
+		k8sNamespace     = readK8Sfile("/var/run/secrets/kubernetes.io/serviceaccount/namespace")
+	)
 
-	serviceName := cluster.PublicServiceName()
-	if runningInsideK8s {
+	var serviceName string
+	if runningInsideK8s && k8sNamespace == cluster.Namespace() {
+		serviceName = cluster.PublicServiceName()
 		log.V(DEBUGLEVEL).Info("operator is running inside of kubernetes, connecting to service for db connection")
 	} else {
 		serviceName = fmt.Sprintf("%s-0.%s.%s", cluster.Name(), cluster.Name(), cluster.Namespace())
@@ -221,6 +226,20 @@ func (up *partitionedUpdate) Act(ctx context.Context, cluster *resource.Cluster,
 func inK8s(file string) bool {
 	_, err := os.Stat(file)
 	return !os.IsNotExist(err)
+}
+
+func readK8Sfile(file string) string {
+	_, err := os.Stat(file)
+	if os.IsNotExist(err) {
+		return ""
+	}
+
+	out, err := ioutil.ReadFile(file)
+	if err != nil {
+		return ""
+	}
+
+	return string(out)
 }
 
 func getImageNameNoVersion(image string) string {
