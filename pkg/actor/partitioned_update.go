@@ -19,7 +19,6 @@ package actor
 import (
 	"context"
 	"fmt"
-	"github.com/go-logr/logr"
 	"os"
 	"strings"
 	"time"
@@ -31,6 +30,7 @@ import (
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	"github.com/cockroachdb/cockroach-operator/pkg/update"
 	"github.com/cockroachdb/errors"
+	"github.com/go-logr/logr"
 	"go.uber.org/zap/zapcore"
 	appsv1 "k8s.io/api/apps/v1"
 	kubetypes "k8s.io/apimachinery/pkg/types"
@@ -213,7 +213,6 @@ func (up *partitionedUpdate) Act(ctx context.Context, cluster *resource.Cluster,
 
 	// TODO set status that we are completed.
 	log.V(DEBUGLEVEL).Info("update completed with partitioned update", "new version", versionWantedCalFmtStr)
-	CancelLoop(ctx, log)
 	return nil
 }
 
