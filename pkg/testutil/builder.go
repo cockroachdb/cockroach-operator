@@ -92,6 +92,11 @@ func (b ClusterBuilder) WithTLS() ClusterBuilder {
 	return b
 }
 
+func (b ClusterBuilder) WithClientTLS(secret string) ClusterBuilder {
+	b.cluster.Spec.ClientTLSSecret = secret
+	return b
+}
+
 func (b ClusterBuilder) WithNodeTLS(secret string) ClusterBuilder {
 	b.cluster.Spec.NodeTLSSecret = secret
 	return b
