@@ -27,7 +27,7 @@ set -o pipefail
 command -v gcloud >/dev/null 2>&1 || { \
  echo >&2 "I require gcloud but it's not installed.  Aborting."; exit 1; }
 command -v openshift-install >/dev/null 2>&1 || { \
- echo >&2 "I require gcloud but it's not installed.  Aborting."; exit 1; }
+ echo >&2 "I require openshift-install but it's not installed.  Aborting."; exit 1; }
 
 PROJ=
 PULL_SECRET=
@@ -87,7 +87,7 @@ fi
 
 mkdir $HOME/.gcp $HOME/openshift-$NAME
 
-SA=open-shift-sa-$NAME
+SA=openshift-sa-$NAME
 gcloud config set project $PROJ
 gcloud services enable compute.googleapis.com
 gcloud services enable cloudapis.googleapis.com

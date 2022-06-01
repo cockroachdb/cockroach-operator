@@ -7,6 +7,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 # [Unreleased](https://github.com/cockroachdb/cockroach-operator/compare/v2.7.0...master)
 
+## Fixed
+
+* Make operator image run as nonroot
+
 # [v2.7.0](https://github.com/cockroachdb/cockroach-operator/compare/v2.6.0...v2.7.0)
 
 ## Fixed
