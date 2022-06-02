@@ -289,10 +289,18 @@ func (cluster Cluster) GetImagePullSecret() *string {
 }
 
 func (cluster Cluster) NodeTLSSecretName() string {
+	if cluster.Spec().NodeTLSSecret != "" {
+		return cluster.Spec().NodeTLSSecret
+	}
+
 	return fmt.Sprintf("%s-node", cluster.Name())
 }
 
 func (cluster Cluster) ClientTLSSecretName() string {
+	if cluster.Spec().ClientTLSSecret != "" {
+		return cluster.Spec().ClientTLSSecret
+	}
+
 	return fmt.Sprintf("%s-root", cluster.Name())
 }
 func (cluster Cluster) CASecretName() string {
