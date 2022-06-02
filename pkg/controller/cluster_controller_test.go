@@ -23,7 +23,6 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/actor"
@@ -43,14 +42,10 @@ import (
 )
 
 type fakeActor struct {
-	cancelCtx bool
-	err       error
+	err error
 }
 
 func (a *fakeActor) Act(ctx context.Context, _ *resource.Cluster, logger logr.Logger) error {
-	if a.cancelCtx {
-		actor.CancelLoop(ctx, log.NullLogger{})
-	}
 	return a.err
 }
 func (a *fakeActor) GetActionType() api.ActionType {
@@ -113,14 +108,6 @@ func TestReconcile(t *testing.T) {
 			name:    "on first reconcile we update and requeue",
 			action:  fakeActor{},
 			want:    ctrl.Result{Requeue: true},
-			wantErr: "",
-		},
-		{
-			name: "reconcile action cancels the context",
-			action: fakeActor{
-				cancelCtx: true,
-			},
-			want:    ctrl.Result{Requeue: false},
 			wantErr: "",
 		},
 		{

@@ -147,8 +147,7 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req reconcile.Request
 		return noRequeue()
 	}
 
-	// Save context cancellation function for actors to call if needed
-	ctx = actor.ContextWithCancelFn(ctx, cancel)
+	ctx = context.Background()
 
 	log.Info(fmt.Sprintf("Running action with name: %s", actorToExecute.GetActionType()))
 	if err := actorToExecute.Act(ctx, &cluster, log); err != nil {
@@ -185,13 +184,6 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req reconcile.Request
 	// this is to cover the not ready case
 	if cluster.Failed(actorToExecute.GetActionType()) {
 		cluster.SetActionFinished(actorToExecute.GetActionType())
-	}
-
-	// Stop processing and wait for Kubernetes scheduler to call us again as the actor
-	// modified actorToExecute resource owned by the controller
-	if cancelled(ctx) {
-		log.V(int(zapcore.InfoLevel)).Info("request was interrupted")
-		return noRequeue()
 	}
 
 	// Check if the resource has been updated while the controller worked on it
@@ -252,14 +244,5 @@ func InitClusterReconcilerWithLogger(l logr.Logger) func(ctrl.Manager) error {
 			Scheme:   mgr.GetScheme(),
 			Director: actor.NewDirector(mgr.GetScheme(), mgr.GetClient(), mgr.GetConfig(), clientset),
 		}).SetupWithManager(mgr)
-	}
-}
-
-func cancelled(ctx context.Context) bool {
-	select {
-	case <-ctx.Done():
-		return true
-	default:
-		return false
 	}
 }

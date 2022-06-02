@@ -136,7 +136,6 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster, log
 
 	if changed {
 		log.V(int(zapcore.DebugLevel)).Info("created/updated job, stopping request processing")
-		CancelLoop(ctx, log)
 		return nil
 	}
 
@@ -349,7 +348,6 @@ func (v *versionChecker) completeVersionChecker(
 	}
 	log.V(int(zapcore.DebugLevel)).Info("completed version checker", "calVersion", version,
 		"containerImage", imageName)
-	CancelLoop(ctx, log)
 	return nil
 }
 

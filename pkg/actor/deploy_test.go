@@ -81,7 +81,7 @@ func TestDeploysNotInitalizedClusterAfterVersionChecker(t *testing.T) {
 	// 3 is the number of resources we expect to be created. The action should be repeated as it is
 	// restarted on successful creation or update
 	for i := 0; i < 3; i++ {
-		assert.NoError(t, deploy.Act(actor.ContextWithCancelFn(context.TODO(), func() {}), cluster, testLog))
+		assert.NoError(t, deploy.Act(context.Background(), cluster, testLog))
 	}
 
 	assert.Equal(t, expected, actual)
