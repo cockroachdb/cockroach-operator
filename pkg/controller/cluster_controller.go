@@ -25,6 +25,7 @@ import (
 	"github.com/cockroachdb/cockroach-operator/pkg/actor"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	"github.com/cockroachdb/cockroach-operator/pkg/util"
+	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
 	"github.com/lithammer/shortuuid/v3"
 	"go.uber.org/zap/zapcore"
@@ -154,32 +155,38 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req reconcile.Request
 		// Save the error on the Status for each action
 		log.Info("Error on action", "Action", actorToExecute.GetActionType(), "err", err.Error())
 		cluster.SetActionFailed(actorToExecute.GetActionType(), err.Error())
+
 		defer func(ctx context.Context, cluster *resource.Cluster) {
 			if err := r.Client.Status().Update(ctx, cluster.Unwrap()); err != nil {
 				log.Error(err, "failed to update cluster status")
 			}
 		}(ctx, &cluster)
+
 		// Short pause
-		if notReadyErr, ok := err.(actor.NotReadyErr); ok {
+		var notReadyErr actor.NotReadyErr
+		if errors.As(err, &notReadyErr) {
 			log.V(int(zapcore.DebugLevel)).Info("requeueing", "reason", notReadyErr.Error(), "Action", actorToExecute.GetActionType())
 			return requeueAfter(5*time.Second, nil)
 		}
 
 		// Long pause
-		if cantRecoverErr, ok := err.(actor.PermanentErr); ok {
+		var cantRecoverErr actor.PermanentErr
+		if errors.As(err, &cantRecoverErr) {
 			log.Error(cantRecoverErr, "can't proceed with reconcile", "Action", actorToExecute.GetActionType())
 			return noRequeue()
 		}
 
 		// No requeue until the user makes changes
-		if validationError, ok := err.(actor.ValidationError); ok {
-			log.Error(validationError, "can't proceed with reconcile")
+		var validationErr actor.ValidationError
+		if errors.As(err, &validationErr) {
+			log.Error(validationErr, "can't proceed with reconcile")
 			return noRequeue()
 		}
 
 		log.Error(err, "action failed")
 		return requeueIfError(err)
 	}
+
 	// reset errors on each run  if there was an error,
 	// this is to cover the not ready case
 	if cluster.Failed(actorToExecute.GetActionType()) {
