@@ -22,6 +22,13 @@ OPENSHIFT_REPO = "https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/o
 
 # filenames and versions from ${OPENSHIFT_REPO}/sha256sum.txt
 OPENSHIFT_BINS = {
+    "preflight": {
+        # currently, preflight is only available on linux
+        "preflight_linux": {
+            "url": "https://github.com/redhat-openshift-ecosystem/openshift-preflight/releases/download/1.2.1/preflight-linux-amd64",
+            "sha": "e5754a81d4baae4f4956fc0842179a3daeac4778e202450f886a9afb05d218ba",
+        },
+    },
     "oc": {
         "oc_darwin": {
             "url": "{}/openshift-client-mac-{}.tar.gz".format(OPENSHIFT_REPO, OPENSHIFT_VERSION),
@@ -71,6 +78,7 @@ def install():
     install_operator_sdk()
     install_opm()
     install_openshift()
+    install_preflight()
 
     # Install golang.org/x/build as kubernetes/repo-infra requires it for the
     # build-tar bazel target.
@@ -412,6 +420,17 @@ filegroup(
 )
 """
       )
+
+def install_preflight():
+    versions = OPENSHIFT_BINS["preflight"]
+
+    for k, v in versions.items():
+        http_file(
+            name = k,
+            executable = 1,
+            sha256 = v["sha"],
+            urls = [v["url"]]
+        )
 
 ## Fetch crdb used in our container
 def install_crdb():
