@@ -319,15 +319,6 @@ func (cluster Cluster) SecureMode() string {
 	return "--insecure"
 }
 
-func (cluster Cluster) IsFresh(fetcher Fetcher) (bool, error) {
-	actual := ClusterPlaceholder(cluster.Name())
-	if err := fetcher.Fetch(actual); err != nil {
-		return false, errors.Wrapf(err, "failed to fetch cluster resource")
-	}
-
-	return cluster.cr.ResourceVersion == actual.ResourceVersion, nil
-}
-
 func (cluster Cluster) LoggingConfiguration(fetcher Fetcher) (string, error) {
 	if cluster.Spec().LogConfigMap != "" {
 		cm := &corev1.ConfigMap{
