@@ -12,6 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Set below with call to ensure_valid_tag
+export TAG=""
+
 # Common helpers for teamcity-*.sh scripts.
 
 remove_files_on_exit() {
@@ -29,10 +32,12 @@ tc_end_block() {
 }
 
 docker_login() {
-  local registry=$1
-  local registry_user=$2
-  local registry_token=$3
-  echo "${registry_token}" | docker login --username "${registry_user}" --password-stdin $registry
+  configure_docker_creds
+
+  local registry="${1}"
+  local registry_user="${2}"
+  local registry_token="${3}"
+  echo "${registry_token}" | docker login --username "${registry_user}" --password-stdin "${registry}"
 }
 
 configure_docker_creds() {
@@ -55,3 +60,24 @@ docker_image_exists() {
   docker pull "$1"
   return $?
 }
+
+ensure_valid_tag() {
+  tc_start_block "Extracting image tag"
+  local version="v$(cat version.txt)"
+
+  # Matching the version name regex from within the cockroach code except
+  # for the `metadata` part at the end because Docker tags don't support
+  # `+` in the tag name.
+  # https://github.com/cockroachdb/cockroach/blob/4c6864b44b9044874488cfedee3a31e6b23a6790/pkg/util/version/version.go#L75
+  TAG="$(echo -n "${version}" | grep -E -o '^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[-.0-9A-Za-z]+)?$')"
+  #                                         ^major           ^minor           ^patch         ^preRelease
+
+  if [[ -z "${TAG}" ]] ; then
+    echo "Invalid VERSION \"${version}\". Must be of the format \"vMAJOR.MINOR.PATCH(-PRERELEASE)?\"."
+    exit 1
+  fi
+
+  tc_end_block "Extracting image tag"
+}
+
+ensure_valid_tag
