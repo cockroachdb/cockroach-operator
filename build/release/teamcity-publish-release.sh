@@ -17,45 +17,45 @@ set -euxo pipefail
 
 source "$(dirname "${0}")/teamcity-support.sh"
 
-tc_start_block "Variable Setup"
-VERSION="v"$(cat version.txt)
-# Matching the version name regex from within the cockroach code except
-# for the `metadata` part at the end because Docker tags don't support
-# `+` in the tag name.
-# https://github.com/cockroachdb/cockroach/blob/4c6864b44b9044874488cfedee3a31e6b23a6790/pkg/util/version/version.go#L75
-image_tag="$(echo "${VERSION}" | grep -E -o '^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[-.0-9A-Za-z]+)?$')"
-#                                         ^major           ^minor           ^patch         ^preRelease
+REGISTRY="docker.io"
+REPO="cockroachdb/cockroach-operator"
+if ! [[ -z "${DRY_RUN}" ]] ; then REPO="${REPO}-misc"; fi
 
-if [[ -z "$image_tag" ]] ; then
-  echo "Invalid VERSION \"${VERSION}\". Must be of the format \"vMAJOR.MINOR.PATCH(-PRERELEASE)?\"."
-  exit 1
-fi
+OPERATOR_IMG="${REGISTRY}/${REPO}:${TAG}"
 
-docker_registry="docker.io"
-operator_image_repository="cockroachdb/cockroach-operator"
+main() {
+  docker_login "${REGISTRY}" "${OPERATOR_DOCKER_ID}" "${OPERATOR_DOCKER_ACCESS_TOKEN}"
 
-if ! [[ -z "${DRY_RUN}" ]] ; then
-  operator_image_repository="cockroachdb/cockroach-operator-misc"
-fi
+  validate_image
+  publish_to_registry
+}
 
-tc_end_block "Variable Setup"
+validate_image() {
+  tc_start_block "Ensure image should be pushed"
+  
+  if docker_image_exists "${OPERATOR_IMG}"; then
+    echo "Docker image ${OPERATOR_IMG} already exists!"
 
-tc_start_block "Make and push docker images"
-configure_docker_creds
-docker_login "$docker_registry" "$OPERATOR_DOCKER_ID" "$OPERATOR_DOCKER_ACCESS_TOKEN"
-
-if docker_image_exists "$docker_registry/$operator_image_repository:$image_tag"; then
-  echo "Docker image $docker_registry/$operator_image_repository:$image_tag already exists"
-  if [[ -z "${FORCE}" ]] ; then
-    echo "Use FORCE=1 to force push the docker image."
-    echo "Alternatively you can delete the tag in Docker Hub."
-    exit 1
+    if [[ -z "${FORCE}" ]] ; then
+      echo "Use FORCE=1 to force push the docker image."
+      echo "Alternatively you can delete the tag in Docker Hub."
+      exit 1
+    fi
+    echo "Forcing docker push..."
   fi
-  echo "Forcing docker push..."
-fi
 
-make \
-  DOCKER_REGISTRY="$docker_registry" \
-  DOCKER_IMAGE_REPOSITORY="$operator_image_repository" \
-  release/image
-tc_end_block "Make and push docker images"
+  tc_end_block "Ensure image should be pushed"
+}
+
+publish_to_registry() {
+  tc_start_block "Make and push docker image"
+
+  make \
+    DOCKER_REGISTRY="${REGISTRY}" \
+    DOCKER_IMAGE_REPOSITORY="${REPO}" \
+    release/image
+
+  tc_end_block "Make and push docker image"
+}
+
+main "$@"

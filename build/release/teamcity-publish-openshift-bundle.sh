@@ -17,38 +17,54 @@ set -euxo pipefail
 
 source "$(dirname "${0}")/teamcity-support.sh"
 
+# Default values are defined for the certified bundle.
+RH_PROJECT="5f5a433f9d6546ed7aa8634d"
+RH_REGISTRY="scan.connect.redhat.com"
+RH_REPO="ospid-857fe786-3eb7-4508-aafd-cc74c1b1dc24/cockroachdb-operator-bundle"
+BUNDLE_DIR="bundle/cockroachdb-certified"
 
-tc_start_block "Variable Setup"
-VERSION="v"$(cat version.txt)
-# Matching the version name regex from within the cockroach code except
-# for the `metadata` part at the end because Docker tags don't support
-# `+` in the tag name.
-# https://github.com/cockroachdb/cockroach/blob/4c6864b44b9044874488cfedee3a31e6b23a6790/pkg/util/version/version.go#L75
-image_tag="$(echo "${VERSION}" | grep -E -o '^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[-.0-9A-Za-z]+)?$')"
-#                                         ^major           ^minor           ^patch         ^preRelease
-
-if [[ -z "$image_tag" ]] ; then
-    echo "Invalid VERSION \"${VERSION}\". Must be of the format \"vMAJOR.MINOR.PATCH(-PRERELEASE)?\"."
-    exit 1
+# If this is the marketplace bundle, update accordingly.
+if ! [[ -z "${MARKETPLACE}" ]]; then
+  RH_PROJECT="61765afbdd607bfc82e643b8"
+  RH_REPO="ospid-61765afbdd607bfc82e643b8/cockroachdb-operator-bundle-marketplace"
+  BUNDLE_DIR="bundle/cockroachdb-certified-rhmp"
 fi
 
-rhel_registry="scan.connect.redhat.com"
-rh_bundle_image_repository="ospid-857fe786-3eb7-4508-aafd-cc74c1b1dc24/cockroachdb-operator-bundle"
-image="$rhel_registry/$rh_bundle_image_repository:$image_tag"
+# If it's a dry run, add -dryrun to the image
+if ! [[ -z "${DRY_RUN}" ]]; then RH_REPO="${RH_REPO}-dryrun"; fi
 
-if ! [[ -z "${DRY_RUN}" ]] ; then
-  image="${image}-dryrun"
-fi
-tc_end_block "Variable Setup"
+IMAGE="${RH_REGISTRY}/${RH_REPO}:${TAG}"
 
+main() {
+  docker_login "${RH_REGISTRY}" "${OPERATOR_REDHAT_REGISTRY_USER}" "${OPERATOR_REDHAT_REGISTRY_KEY}"
 
-tc_start_block "Make and push docker images"
-configure_docker_creds
-docker_login "$rhel_registry" "$OPERATOR_BUNDLE_REDHAT_REGISTRY_USER" "$OPERATOR_BUNDLE_REDHAT_REGISTRY_KEY"
+  generate_bundle
+  publish_bundle_image
+  run_preflight
+}
 
-# TODO(rail): switch to bazel generated images when it supports "FROM: scratch"
-cd deploy/certified-metadata-bundle/cockroach-operator
-docker build -t $image -f bundle.Dockerfile .
-docker push $image
+generate_bundle() {
+  # create the certified and marketplace bundles
+  tc_start_block "Generate bundle"
+  make release/generate-bundle
+  tc_end_block "Generate bundle"
+}
 
-tc_end_block "Make and push docker images"
+publish_bundle_image() {
+  tc_start_block "Make and push bundle image"
+
+  pushd "${BUNDLE_DIR}"
+  docker build -t "${IMAGE}" .
+  docker push "${IMAGE}"
+  popd
+
+  tc_end_block "Make and push bundle image"
+}
+
+run_preflight() {
+  bazel build //hack/bin:preflight
+  PFLT_PYXIS_API_TOKEN="${REDHAT_API_TOKEN}" bazel-bin/hack/bin/preflight \
+    check operator "${IMAGE}" --docker-config ~/.docker/config.json
+}
+
+main "$@"

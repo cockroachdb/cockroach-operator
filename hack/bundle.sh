@@ -89,6 +89,13 @@ generate_bundle() {
 
   # Update CSV with correct images, and timestamps
   adapt_csv "${dir}" "${img}"
+
+  # move the dockerfile into the bundle directory and make it valid
+  sed \
+    -e "s+${dir}/++g" bundle.Dockerfile \ # fix up paths
+    -e "/\s*COPY tests/d" > "${dir}/Dockerfile" # remove scorecard tests
+
+  rm bundle.Dockerfile
 }
 
 adapt_csv() {
