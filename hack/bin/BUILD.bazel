@@ -39,6 +39,16 @@ genrule(
 )
 
 genrule(
+    name = "fetch_preflight",
+    srcs = select({
+        ":k8": ["@preflight_linux//file"],
+    }),
+    outs = ["preflight"],
+    cmd = "cp $(SRCS) $@",
+    visibility = ["//visibility:public"],
+)
+
+genrule(
     name = "fetch_faq",
     srcs = select({
         ":m1": ["@faq_osx//file"],
