@@ -18,17 +18,16 @@ package controller_test
 
 import (
 	"context"
-	"errors"
 	"testing"
 	"time"
-
-	"github.com/go-logr/logr"
 
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/actor"
 	"github.com/cockroachdb/cockroach-operator/pkg/controller"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	"github.com/cockroachdb/cockroach-operator/pkg/testutil"
+	"github.com/cockroachdb/errors"
+	"github.com/go-logr/logr"
 	"github.com/go-logr/zapr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -90,24 +89,34 @@ func TestReconcile(t *testing.T) {
 		want    ctrl.Result
 		wantErr string
 	}{
-		// {
-		// 	name: "reconcile action fails",
-		// 	action: fakeActor{
-		// 		err: errors.New("failed to reconcile resource"),
-		// 	},
-		// 	want:    ctrl.Result{Requeue: false},
-		// 	wantErr: "failed to reconcile resource",
-		// },
-		// {
-		// 	name:    "reconcile action updates owned resource successfully",
-		// 	action:  fakeActor{},
-		// 	want:    ctrl.Result{Requeue: false},
-		// 	wantErr: "",
-		// },
 		{
 			name:    "on first reconcile we update and requeue",
 			action:  fakeActor{},
 			want:    ctrl.Result{Requeue: true},
+			wantErr: "",
+		},
+		{
+			name: "reconcile action fails genericly",
+			action: fakeActor{
+				err: errors.New("failed to reconcile resource"),
+			},
+			want:    ctrl.Result{},
+			wantErr: "failed to reconcile resource",
+		},
+		{
+			name: "reconcile action permanently fails",
+			action: fakeActor{
+				err: errors.Wrap(actor.PermanentErr{Err: errors.New("foo")}, "bar"),
+			},
+			want:    ctrl.Result{Requeue: false},
+			wantErr: "",
+		},
+		{
+			name: "reconcile action validation fails",
+			action: fakeActor{
+				err: actor.ValidationError{Err: errors.New("bar")},
+			},
+			want:    ctrl.Result{Requeue: false},
 			wantErr: "",
 		},
 		{

@@ -136,7 +136,9 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster, log
 
 	if changed {
 		log.V(int(zapcore.DebugLevel)).Info("created/updated job, stopping request processing")
-		return nil
+		// Return a non error error here to prevent the controller from
+		// clearing any previously set Status fields.
+		return NotReadyErr{errors.New("job changed")}
 	}
 
 	log.V(int(zapcore.DebugLevel)).Info("version checker", "job", jobName)
@@ -144,47 +146,21 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster, log
 		Namespace: cluster.Namespace(),
 		Name:      jobName,
 	}
+
 	job := &kbatch.Job{}
-
 	if err := v.client.Get(ctx, key, job); err != nil {
-		err := WaitUntilJobPodIsRunning(ctx, v.clientset, job, log)
-		if err != nil {
-			log.Error(err, "job pod is not running; deleting job")
-			if dErr := deleteJob(ctx, cluster, v.clientset, job); dErr != nil {
-				// Log the job deletion error, but return the underlying error that prompted deletion.
-				log.Error(dErr, "failed to delete the job")
-			}
-			return err
-		}
+		log.Error(err, "failed getting Job '%s'", jobName)
+		return err
 	}
 
-	// We have hit an edge case were sometimes the job selector is nil, the following block is extra code
-	// that tries to list the jobs and then get the job again, which probably will reconcile
-	// the API.  We also removed setting the job selector as well.
-	if job.Spec.Selector == nil {
-		log.V(int(zapcore.DebugLevel)).Info("Job or Job Selector returned as nil, attempting to get it again.")
-
-		// The job is nil or the selector is nil, we are doing a list, which
-		// should reconcile the API and we we do another get the job should have
-		// the selector.
-		jobs, err := v.clientset.BatchV1().Jobs(job.Namespace).List(ctx, metav1.ListOptions{})
-		if err != nil {
-			log.Error(err, "unable to list jobs")
-			return err
-		}
-
-		if jobs == nil || len(jobs.Items) == 0 {
-			err := errors.New("unable to find any jobs")
-			log.Error(err, err.Error())
-			return err
-		}
-
-		if err := v.client.Get(ctx, key, job); err != nil {
-			log.Error(err, "unable to get job")
-			return err
-		}
-	}
-
+	// Left over insanity check just in case there's a missed edge case.
+	// WaitUntilJobPodIsRunning will panic with a nil dereference if passed an
+	// empty Job. There was previously an incorrect error check which would
+	// always panic if the above .Get failed leading to some strange flakiness
+	// in test. An extremely defensive block (See #607) was added as an attempt
+	// to mitigate this panic (assumedly). It's been removed but this final
+	// check is leftover just in case this after the fact correction was
+	// misinformed.
 	if job.Spec.Selector == nil {
 		err := errors.New("job selector is nil")
 		log.Error(err, err.Error())
@@ -198,7 +174,7 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster, log
 			// We need to stop requeueing until further changes on the CR
 			image := cluster.GetCockroachDBImageName()
 			if errBackoff := IsContainerStatusImagePullBackoff(ctx, v.clientset, job, log, image); errBackoff != nil {
-				err := InvalidContainerVersionError{Err: errBackoff}
+				err := PermanentErr{Err: errBackoff}
 				return LogError("job image incorrect", err, log)
 			} else if dErr := deleteJob(ctx, cluster, v.clientset, job); dErr != nil {
 				// Log the job deletion error, but return the underlying error that prompted deletion.
@@ -232,6 +208,7 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster, log
 				}
 			}
 		}
+
 		podName := tmpPod.Name
 
 		req := v.clientset.CoreV1().Pods(job.Namespace).GetLogs(podName, &podLogOpts)

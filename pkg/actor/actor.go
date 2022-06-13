@@ -52,15 +52,6 @@ func (e PermanentErr) Error() string {
 	return e.Err.Error()
 }
 
-//InvalidContainerVersionError error used to stop requeue the request on failure
-type InvalidContainerVersionError struct {
-	Err error
-}
-
-func (e InvalidContainerVersionError) Error() string {
-	return e.Err.Error()
-}
-
 //ValidationError error used to stop requeue the request on failure
 type ValidationError struct {
 	Err error
