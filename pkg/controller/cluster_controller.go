@@ -37,6 +37,7 @@ import (
 	policy "k8s.io/api/policy/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -121,8 +122,8 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req reconcile.Request
 	// we added a state called Starting for field ClusterStatus to accomplish this
 	if cluster.Status().ClusterStatus == "" {
 		cluster.SetClusterStatusOnFirstReconcile()
-		if err := r.Client.Status().Update(ctx, cluster.Unwrap()); err != nil {
-			log.Error(err, "failed to update cluster status on action")
+		if err := r.updateClusterStatus(ctx, log, &cluster); err != nil {
+			log.Error(err, "failed to update cluster status")
 			return requeueIfError(err)
 		}
 		return requeueImmediately()
@@ -132,8 +133,8 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req reconcile.Request
 	if cluster.True(api.CrdbVersionChecked) {
 		if cluster.GetCockroachDBImageName() != cluster.Status().CrdbContainerImage {
 			cluster.SetFalse(api.CrdbVersionChecked)
-			if err := r.Client.Status().Update(ctx, cluster.Unwrap()); err != nil {
-				log.Error(err, "failed to update cluster status on action")
+			if err := r.updateClusterStatus(ctx, log, &cluster); err != nil {
+				log.Error(err, "failed to update cluster status")
 				return requeueIfError(err)
 			}
 			return requeueImmediately()
@@ -148,8 +149,6 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req reconcile.Request
 		return noRequeue()
 	}
 
-	ctx = context.Background()
-
 	log.Info(fmt.Sprintf("Running action with name: %s", actorToExecute.GetActionType()))
 	if err := actorToExecute.Act(ctx, &cluster, log); err != nil {
 		// Save the error on the Status for each action
@@ -157,7 +156,7 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req reconcile.Request
 		cluster.SetActionFailed(actorToExecute.GetActionType(), err.Error())
 
 		defer func(ctx context.Context, cluster *resource.Cluster) {
-			if err := r.Client.Status().Update(ctx, cluster.Unwrap()); err != nil {
+			if err := r.updateClusterStatus(ctx, log, cluster); err != nil {
 				log.Error(err, "failed to update cluster status")
 			}
 		}(ctx, &cluster)
@@ -193,26 +192,22 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req reconcile.Request
 		cluster.SetActionFinished(actorToExecute.GetActionType())
 	}
 
-	// Check if the resource has been updated while the controller worked on it
-	fresh, err := cluster.IsFresh(fetcher)
-	if err != nil {
-		return requeueIfError(err)
-	}
-
-	// If the resource was updated, it is needed to start all over again
-	// to ensure that the latest state was reconciled
-	if !fresh {
-		log.V(int(zapcore.DebugLevel)).Info("cluster resources is not up to date")
-		return requeueImmediately()
-	}
-	cluster.SetClusterStatus()
-	if err := r.Client.Status().Update(ctx, cluster.Unwrap()); err != nil {
+	if err := r.updateClusterStatus(ctx, log, &cluster); err != nil {
 		log.Error(err, "failed to update cluster status")
 		return requeueIfError(err)
 	}
 
 	log.V(int(zapcore.InfoLevel)).Info("reconciliation completed")
 	return noRequeue()
+}
+
+// updateClusterStatus preprocesses a cluster's Status and then persists it to
+// the Kubernetes API. updateClusterStatus will retry on conflict errors.
+func (r *ClusterReconciler) updateClusterStatus(ctx context.Context, log logr.Logger, cluster *resource.Cluster) error {
+	cluster.SetClusterStatus()
+	return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		return r.Client.Status().Update(ctx, cluster.Unwrap())
+	})
 }
 
 // SetupWithManager registers the controller with the controller.Manager from controller-runtime
