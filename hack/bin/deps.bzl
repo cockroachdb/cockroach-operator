@@ -17,7 +17,7 @@ load("@io_bazel_rules_docker//container:container.bzl", "container_pull")
 load("@bazel_gazelle//:deps.bzl", "go_repository")
 
 # This controls the version for all openshift binaries (opm, oc, opernshift-install, etc.)
-OPENSHIFT_VERSION = "4.9.17"
+OPENSHIFT_VERSION = "4.10.18"
 OPENSHIFT_REPO = "https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/{}".format(OPENSHIFT_VERSION)
 
 # filenames and versions from ${OPENSHIFT_REPO}/sha256sum.txt
@@ -32,31 +32,31 @@ OPENSHIFT_BINS = {
     "oc": {
         "oc_darwin": {
             "url": "{}/openshift-client-mac-{}.tar.gz".format(OPENSHIFT_REPO, OPENSHIFT_VERSION),
-            "sha": "2b06b400ab929275b55d3dbb8d7c54b9f1dd17df0b50247b8fc24b9efc8b1566",
+            "sha": "285c307491d8ffd19c065a942515fda78e53f95289d4b4985aa4c92439f7f339",
         },
         "oc_linux": {
             "url": "{}/openshift-client-linux-{}.tar.gz".format(OPENSHIFT_REPO, OPENSHIFT_VERSION),
-            "sha": "390268a64029f2aea7492f493034b75d4979f676f98762dbbf33eb0da5b294db",
+            "sha": "101bc7e11604b829157b3b314de3760eec857e55f51eeca978825307ff61c190",
         },
     },
     "openshift-install": {
         "openshift_darwin": {
             "url": "{}/openshift-install-mac-{}.tar.gz".format(OPENSHIFT_REPO, OPENSHIFT_VERSION),
-            "sha": "0c51934bfff15f8a8bf666bb9b15c894994afd87d838ffc5579e998f56110738",
+            "sha": "3a36acb92a6759d964a1af62512c747e075a2937a6368203d0598d804db10da2",
          },
         "openshift_linux": {
             "url": "{}/openshift-install-linux-{}.tar.gz".format(OPENSHIFT_REPO, OPENSHIFT_VERSION),
-            "sha": "4213bf060c25a6f38f86f2245f1f28060185e8baa7431f272e726d50f0044604",
+            "sha": "27e6ccb60ce2c7dfe611e1639642277572af78a21c622a7443d5a19006b2e45b",
         },
     },
     "opm": {
         "opm_darwin": {
             "url": "{}/opm-mac-{}.tar.gz".format(OPENSHIFT_REPO, OPENSHIFT_VERSION),
-            "sha": "f6fb6205f242ffef62ac0f4db738b1c099d3302ebb98b23d94926ef2903ed5d8",
+            "sha": "36d7104b1fd29e77a880b63e3e1aa67639a48cca1fdf537411b40a0c36140dba",
          },
         "opm_linux": {
             "url": "{}/opm-linux-{}.tar.gz".format(OPENSHIFT_REPO, OPENSHIFT_VERSION),
-            "sha": "f88d3dcc18950d8cd8512e460de5addcf11e8eb8f31ae675f0dd879908843747",
+            "sha": "6d422682fd688cbebc7818247005e2baf87675efef4931d2f0a2e744dc613b88",
         },
     },
 }
@@ -396,12 +396,18 @@ def install_opm():
     versions = OPENSHIFT_BINS["opm"]
 
     for k, v in versions.items():
-      http_file(
-         name = k,
-         executable = 1,
-         sha256 = v["sha"],
-         urls = [v["url"]],
-      )
+      http_archive(
+          name = k,
+          sha256 = v["sha"],
+          urls = [v["url"]],
+          build_file_content = """
+filegroup(
+    name = "file",
+    srcs = ["opm"],
+    visibility = ["//visibility:public"],
+)
+"""
+			)
 
 ## Fetch openshift-installer
 def install_openshift():
