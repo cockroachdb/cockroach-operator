@@ -210,6 +210,12 @@ test/e2e/testrunner-openshift-packaging: test/openshift-package
 		--action_env=APP_VERSION=$(APP_VERSION) \
 		--action_env=DOCKER_REGISTRY=$(DOCKER_REGISTRY)
 
+# Run preflight checks for OpenShift. This expects a running OpenShift cluster.
+# Eg. make test/preflight-<operator|bundle|marketplace>
+test/preflight-%: CONTAINER=$*
+test/preflight-%: release/generate-bundle
+	@bazel run //hack:redhat-preflight -- $(CONTAINER)
+
 #
 # Different dev targets
 #
@@ -267,6 +273,7 @@ dev/up: dev/down
 
 .PHONY: dev/down
 dev/down:
+	@bazel build //hack/bin:k3d
 	@hack/dev.sh down
 #
 # Targets that allow to install the operator on an existing cluster

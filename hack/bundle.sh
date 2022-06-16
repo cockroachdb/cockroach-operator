@@ -85,17 +85,19 @@ generate_bundle() {
   mv "${dir}/metadata/annotations.yaml.new" "${dir}/metadata/annotations.yaml"
 
   # add supported openshift versions
-  echo "  com.redhat.openshift.versions: 4.7-4.9" >> "${dir}/metadata/annotations.yaml"
+  echo "  com.redhat.openshift.versions: 4.7-4.10" >> "${dir}/metadata/annotations.yaml"
 
   # Update CSV with correct images, and timestamps
   adapt_csv "${dir}" "${img}"
 
   # move the dockerfile into the bundle directory and make it valid
   sed \
-    -e "s+${dir}/++g" bundle.Dockerfile \ # fix up paths
-    -e "/\s*COPY tests/d" > "${dir}/Dockerfile" # remove scorecard tests
+    -e "/\s*tests\/scorecard/d" \
+    -e "s+${dir}/++g" \
+    bundle.Dockerfile > "${dir}/Dockerfile"
 
   rm bundle.Dockerfile
+	rm "${dir}/manifests/cockroach-operator-webhook-service_v1_service.yaml"
 }
 
 adapt_csv() {

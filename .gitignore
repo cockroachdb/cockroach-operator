@@ -63,5 +63,5 @@ bundle/
 faq
 
 _artifacts
-bundle.Dockerfile
+artifacts
 tmp
