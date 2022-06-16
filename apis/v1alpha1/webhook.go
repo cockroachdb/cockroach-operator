@@ -111,6 +111,31 @@ func (r *CrdbCluster) ValidateUpdate(old runtime.Object) error {
 	webhookLog.Info("validate update", "name", r.Name)
 	var errors []error
 
+	oldCluster, ok := old.(*CrdbCluster)
+	if !ok {
+		webhookLog.Info(fmt.Sprintf("unexpected old cluster type %t", old))
+	} else {
+	    // Validate if labels changed.
+		// k8s does not support changing selector/labels on sts:
+		//  https://github.com/kubernetes/kubernetes/issues/90519.
+		oldLabels := oldCluster.Spec.AdditionalLabels
+		newLabels := r.Spec.AdditionalLabels
+		labelsMismatch := false
+		if len(oldLabels) != len(newLabels) {
+			labelsMismatch = true
+		} else {
+			for k, v := range oldLabels {
+				if vv, ok := newLabels[k]; !ok || vv != v {
+					labelsMismatch = true
+					break
+				}
+			}
+		}
+		if labelsMismatch {
+			errors = append(errors, fmt.Errorf("mutating additionalLabels field is not supported"))
+		}
+	}
+
 	if r.Spec.Ingress != nil {
 		if err := r.ValidateIngress(); err != nil {
 			errors = append(errors, err...)

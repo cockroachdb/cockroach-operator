@@ -18,6 +18,7 @@ package v1alpha1_test
 
 import (
 	"fmt"
+	"k8s.io/apimachinery/pkg/runtime"
 	"testing"
 
 	. "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
@@ -181,3 +182,90 @@ func TestUpdateCrdbCluster(t *testing.T) {
 		require.Equal(t, err.Error(), testcase.ErrMsg)
 	}
 }
+
+func TestUpdateCrdbClusterLabels(t *testing.T) {
+	oldCluster := CrdbCluster{
+		Spec: CrdbClusterSpec{
+			Image: &PodImage{},
+			AdditionalLabels: map[string]string{
+				"k": "v",
+			},
+		},
+	}
+	fs := v1.PersistentVolumeFilesystem
+
+	testcases := []struct {
+		Cluster *CrdbCluster
+		ShouldError bool
+	}{
+		{
+			Cluster: &CrdbCluster{Spec: CrdbClusterSpec{
+				Image: &PodImage{Name: "testImage"},
+				AdditionalLabels: map[string]string{"k":"v"},
+				DataStore: Volume{
+					VolumeClaim: &VolumeClaim{
+						PersistentVolumeClaimSpec: v1.PersistentVolumeClaimSpec{
+							VolumeMode: &fs,
+						},
+					},
+				},
+			}},
+			ShouldError: false,
+		},
+		{
+			Cluster: &CrdbCluster{Spec: CrdbClusterSpec{
+				Image: &PodImage{Name: "testImage"},
+				AdditionalLabels: map[string]string{"k":"x"},
+				DataStore: Volume{
+					VolumeClaim: &VolumeClaim{
+						PersistentVolumeClaimSpec: v1.PersistentVolumeClaimSpec{
+							VolumeMode: &fs,
+						},
+					},
+				},
+			}},
+			// label k has a different value.
+			ShouldError: true,
+		},
+		{
+			Cluster: &CrdbCluster{Spec: CrdbClusterSpec{
+				Image: &PodImage{Name: "testImage"},
+				DataStore: Volume{
+					VolumeClaim: &VolumeClaim{
+						PersistentVolumeClaimSpec: v1.PersistentVolumeClaimSpec{
+							VolumeMode: &fs,
+						},
+					},
+				},
+			}},
+			// labels are missing / empty.
+			ShouldError: true,
+		},
+		{
+			Cluster: &CrdbCluster{Spec: CrdbClusterSpec{
+				Image: &PodImage{Name: "testImage"},
+				AdditionalLabels: map[string]string{"k":"v", "kk": "v"},
+				DataStore: Volume{
+					VolumeClaim: &VolumeClaim{
+						PersistentVolumeClaimSpec: v1.PersistentVolumeClaimSpec{
+							VolumeMode: &fs,
+						},
+					},
+				},
+			}},
+			// labels contain additional kv.
+			ShouldError: true,
+		},
+	}
+
+	for _, tc := range testcases {
+		err := tc.Cluster.ValidateUpdate(runtime.Object(&oldCluster))
+		if tc.ShouldError {
+			require.Error(t, err)
+			require.Equal(t, err.Error(), "mutating additionalLabels field is not supported")
+		} else {
+			require.NoError(t, err)
+		}
+	}
+}
+
