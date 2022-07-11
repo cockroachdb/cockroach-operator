@@ -14,6 +14,7 @@ spec:
       app.kubernetes.io/component: database
       app.kubernetes.io/instance: test-cluster
       app.kubernetes.io/name: cockroachdb
+      car: koenigsegg
   serviceName: test-cluster
   template:
     metadata:
@@ -22,16 +23,18 @@ spec:
         app.kubernetes.io/component: database
         app.kubernetes.io/instance: test-cluster
         app.kubernetes.io/name: cockroachdb
+        car: koenigsegg
     spec:
-      automountServiceAccountToken: false
+      automountServiceAccountToken: true
       containers:
       - command:
         - /bin/bash
         - -ecx
         - 'exec /cockroach/cockroach.sh start --advertise-host=$(POD_NAME).test-cluster.test-ns
-          --insecure --http-port=8080 --sql-addr=:26257 --listen-addr=:26258 --log="{sinks:
-          {stderr: {channels: [OPS, HEALTH], redact: true}}}" --cache $(expr $MEMORY_LIMIT_MIB
-          / 4)MiB --max-sql-memory $(expr $MEMORY_LIMIT_MIB / 4)MiB --join=test-cluster-0.test-cluster.test-ns:26258'
+          --certs-dir=/cockroach/cockroach-certs/ --http-port=8080 --sql-addr=:26257
+          --listen-addr=:26258 --log="{sinks: {stderr: {channels: [OPS, HEALTH], redact:
+          true}}}" --cache $(expr $MEMORY_LIMIT_MIB / 4)MiB --max-sql-memory $(expr
+          $MEMORY_LIMIT_MIB / 4)MiB --join=test-cluster-0.test-cluster.test-ns:26258'
         env:
         - name: COCKROACH_CHANNEL
           value: kubernetes-operator-gke
@@ -57,7 +60,8 @@ spec:
               command:
               - sh
               - -c
-              - /cockroach/cockroach node drain --insecure || exit 0
+              - /cockroach/cockroach node drain --certs-dir=/cockroach/cockroach-certs/
+                || exit 0
         name: db
         ports:
         - containerPort: 26258
@@ -74,13 +78,34 @@ spec:
           httpGet:
             path: /health?ready=1
             port: http
-            scheme: HTTP
+            scheme: HTTPS
           initialDelaySeconds: 10
           periodSeconds: 5
         resources: {}
         volumeMounts:
         - mountPath: /cockroach/cockroach-data/
           name: datadir
+        - mountPath: /cockroach/cockroach-certs/
+          name: emptydir
+      initContainers:
+      - command:
+        - /bin/sh
+        - -c
+        - '>- cp -p /cockroach/cockroach-certs-prestage/..data/* /cockroach/cockroach-certs/
+          && chmod 700 /cockroach/cockroach-certs/*.key && chown 1000581000:1000581000
+          /cockroach/cockroach-certs/*.key'
+        image: cockroachdb/cockroach:v21.1.0
+        imagePullPolicy: IfNotPresent
+        name: db-init
+        resources: {}
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsUser: 0
+        volumeMounts:
+        - mountPath: /cockroach/cockroach-certs-prestage/
+          name: certs
+        - mountPath: /cockroach/cockroach-certs/
+          name: emptydir
       securityContext:
         fsGroup: 1000581000
         runAsUser: 1000581000
@@ -90,6 +115,33 @@ spec:
       - name: datadir
         persistentVolumeClaim:
           claimName: ""
+      - emptyDir: {}
+        name: emptydir
+      - name: certs
+        projected:
+          defaultMode: 400
+          sources:
+          - secret:
+              items:
+              - key: ca.crt
+                mode: 504
+                path: ca.crt
+              - key: tls.crt
+                mode: 504
+                path: node.crt
+              - key: tls.key
+                mode: 400
+                path: node.key
+              name: test-cluster-node
+          - secret:
+              items:
+              - key: tls.crt
+                mode: 504
+                path: client.root.crt
+              - key: tls.key
+                mode: 400
+                path: client.root.key
+              name: test-cluster-root
   updateStrategy:
     rollingUpdate: {}
   volumeClaimTemplates:
@@ -99,6 +151,7 @@ spec:
         app.kubernetes.io/component: database
         app.kubernetes.io/instance: test-cluster
         app.kubernetes.io/name: cockroachdb
+        car: koenigsegg
       name: datadir
     spec:
       accessModes:

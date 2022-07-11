@@ -211,7 +211,7 @@ func (b StatefulSetBuilder) makePodTemplate() corev1.PodTemplateSpec {
 			},
 			TerminationGracePeriodSeconds: ptr.Int64(terminationGracePeriodSecs),
 			Containers:                    b.MakeContainers(),
-			AutomountServiceAccountToken:  ptr.Bool(false),
+			AutomountServiceAccountToken:  ptr.Bool(b.Spec().AutomountServiceAccountToken),
 			ServiceAccountName:            b.ServiceAccountName(),
 		},
 	}

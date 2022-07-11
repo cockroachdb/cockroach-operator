@@ -204,7 +204,10 @@ func TestUpgradesMinorVersionThenRollback(t *testing.T) {
 	sb := testenv.NewDiffingSandbox(t, env)
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
 
-	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
+	builder := testutil.NewBuilder("crdb").
+		WithAutomountServiceAccountToken(true).
+		WithNodeCount(3).
+		WithTLS().
 		WithImage(e2e.MinorVersion1).
 		WithPVDataStore("1Gi")
 

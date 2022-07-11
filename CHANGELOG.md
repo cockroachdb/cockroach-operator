@@ -15,6 +15,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 # [v2.7.0](https://github.com/cockroachdb/cockroach-operator/compare/v2.6.0...v2.7.0)
 
+## Added
+
+* `AutomountServiceAccountToken` field for cluster spec to allow mounting the default service account token.
+
 ## Fixed
 
 * Grant operator deletecollection permissions to fix fullcluster restart flow
