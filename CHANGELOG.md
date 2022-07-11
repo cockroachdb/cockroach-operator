@@ -7,6 +7,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 # [Unreleased](https://github.com/cockroachdb/cockroach-operator/compare/v2.7.0...master)
 
+## Added
+
+* `AutomountServiceAccountToken` field for cluster spec to allow mounting the default service account token.
+
 ## Fixed
 
 * Delete the CancelLoop function, fixing a cluster status update bug
@@ -14,10 +18,6 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 * retry cluster status updates, reducing test flakes
 
 # [v2.7.0](https://github.com/cockroachdb/cockroach-operator/compare/v2.6.0...v2.7.0)
-
-## Added
-
-* `AutomountServiceAccountToken` field for cluster spec to allow mounting the default service account token.
 
 ## Fixed
 
