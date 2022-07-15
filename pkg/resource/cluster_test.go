@@ -85,3 +85,29 @@ func TestClusterTLSSecrets(t *testing.T) {
 		})
 	}
 }
+
+func TestClusterImageName(t *testing.T) {
+	var (
+		testCluster     = "test-cluster"
+		testNS          = "test-ns"
+		customImageName = "custom-image-name"
+	)
+	clusterBuilder := testutil.NewBuilder(testCluster).Namespaced(testNS)
+	for _, tt := range []struct {
+		name      string
+		cluster   *resource.Cluster
+		imageName string
+	}{
+		{
+			name:      "verify image name without colon",
+			cluster:   clusterBuilder.WithImage(customImageName).Cluster(),
+			imageName: customImageName,
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.cluster.IsLoggingAPIEnabled() {
+				assert.Fail(t, "LoggingAPI should be disabled when image name does not contain colon")
+			}
+		})
+	}
+}
