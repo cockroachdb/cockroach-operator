@@ -88,9 +88,10 @@ func TestClusterTLSSecrets(t *testing.T) {
 
 func TestClusterImageName(t *testing.T) {
 	var (
-		testCluster     = "test-cluster"
-		testNS          = "test-ns"
-		customImageName = "custom-image-name"
+		testCluster      = "test-cluster"
+		testNS           = "test-ns"
+		invalidImageName = "custom-image-name"
+		validImageName   = "cockroachdb/cockroach:v20.1.4"
 	)
 	clusterBuilder := testutil.NewBuilder(testCluster).Namespaced(testNS)
 	for _, tt := range []struct {
@@ -100,8 +101,13 @@ func TestClusterImageName(t *testing.T) {
 	}{
 		{
 			name:      "verify image name without colon",
-			cluster:   clusterBuilder.WithImage(customImageName).Cluster(),
-			imageName: customImageName,
+			cluster:   clusterBuilder.WithImage(invalidImageName).Cluster(),
+			imageName: invalidImageName,
+		},
+		{
+			name:      "verify image name with colon",
+			cluster:   clusterBuilder.WithImage(validImageName).Cluster(),
+			imageName: validImageName,
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
