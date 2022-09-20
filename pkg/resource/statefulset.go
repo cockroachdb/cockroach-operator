@@ -277,7 +277,7 @@ func (b StatefulSetBuilder) MakeContainers() []corev1.Container {
 			Image:           image,
 			ImagePullPolicy: b.GetImagePullPolicy(),
 			Lifecycle: &corev1.Lifecycle{
-				PreStop: &corev1.Handler{
+				PreStop: &corev1.LifecycleHandler{
 					Exec: &corev1.ExecAction{
 						Command: []string{
 							"sh", "-c",
@@ -307,7 +307,7 @@ func (b StatefulSetBuilder) MakeContainers() []corev1.Container {
 				},
 			},
 			ReadinessProbe: &corev1.Probe{
-				Handler: corev1.Handler{
+				ProbeHandler: corev1.ProbeHandler{
 					HTTPGet: &corev1.HTTPGetAction{
 						Path:   "/health?ready=1",
 						Port:   intstr.FromString(httpPortName),

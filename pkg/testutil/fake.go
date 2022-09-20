@@ -149,7 +149,7 @@ func (c *FakeClient) AddReactor(verb string, resource string, reaction ReactionF
 	c.ReactionChain = append(c.ReactionChain, &simpleReactor{verb, resource, reaction})
 }
 
-func (c *FakeClient) Get(ctx context.Context, key client.ObjectKey, obj client.Object) error {
+func (c *FakeClient) Get(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
 	gvr, err := getGVRFromObject(c.scheme, obj)
 	if err != nil {
 		return errors.Wrapf(err, "failed to find GVR of object %s", key.String())
