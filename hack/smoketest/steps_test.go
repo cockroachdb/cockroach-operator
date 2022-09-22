@@ -45,8 +45,8 @@ func TestStartCluster(t *testing.T) {
 		name    string
 		version string
 	}{
-		{name: "cluster1", version: "1.18.2"},
-		{name: "cluster2", version: "1.22.1"},
+		{name: "cluster1", version: "1.21.0"},
+		{name: "cluster2", version: "1.25.0"},
 	}
 
 	for _, tt := range tests {
