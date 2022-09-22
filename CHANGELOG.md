@@ -11,6 +11,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 * Install init container certs with 600 permissions
 
+* Fixed operator unable to work in Kubernetes 1.25 due to the deprecation of `PodDisruptionBudget/v1beta` getting
+deprecated. Kubernetes 1.21 or higher is now a requirement.
+
 # [v2.8.0](https://github.com/cockroachdb/cockroach-operator/compare/v2.7.0...v2.8.0)
 
 ## Added

@@ -23,7 +23,7 @@ OpenShift Nightly: [![OpenShift Nightly](https://teamcity.cockroachdb.com/guestA
 
 ## Prerequisites
 
-- Kubernetes 1.18 or higher
+- Kubernetes 1.21 or higher
 - [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
 - A GKE cluster (`n2-standard-4` is the minimum requirement for testing)
 
