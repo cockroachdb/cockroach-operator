@@ -42,6 +42,9 @@ const (
 	dataDirName      = "datadir"
 	dataDirMountPath = "/cockroach/cockroach-data/"
 
+	encryptionKeyDirName      = "encryptionkeys"
+	encryptionKeyDirMountPath = "/cockroach/encryption-keys/"
+
 	certsDirName = "certs"
 	certCpCmd    = ">- cp -p /cockroach/cockroach-certs-prestage/..data/* /cockroach/cockroach-certs/ && chmod 700 /cockroach/cockroach-certs/*.key && chown 1000581000:1000581000 /cockroach/cockroach-certs/*.key"
 	emptyDirName = "emptydir"
@@ -96,6 +99,62 @@ func (b StatefulSetBuilder) Build(obj client.Object) error {
 			}
 		}); err != nil {
 		return err
+	}
+
+	if b.Spec().EncryptionEnabled {
+		if err := addStoreKeysVolumeMountOnInitContiners(DbContainerName, &ss.Spec.Template.Spec); err != nil {
+			return err
+		}
+		if err := addStoreKeysVolumeMount(DbContainerName, &ss.Spec.Template.Spec); err != nil {
+			return err
+		}
+		volumeProjections := make([]corev1.VolumeProjection, 0)
+		if b.Spec().EncryptionStoreKeySecret != "" {
+			volumeProjections = append(volumeProjections,
+				corev1.VolumeProjection{
+					Secret: &corev1.SecretProjection{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: b.encryptionKeySecretName(),
+						},
+						Items: []corev1.KeyToPath{
+							{
+								Key:  "key",
+								Path: "key",
+								Mode: ptr.Int32(400),
+							},
+						},
+					},
+				})
+		}
+		// only map the secret for the old store key if it exists (otherwise we assume it was previously plain text)
+		if b.Spec().OldEncryptionStoreKeySecret != "" {
+			volumeProjections = append(volumeProjections,
+				corev1.VolumeProjection{
+					Secret: &corev1.SecretProjection{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: b.oldEncryptionKeySecretName(),
+						},
+						Items: []corev1.KeyToPath{
+							{
+								Key:  "old-key",
+								Path: "old-key",
+								Mode: ptr.Int32(400),
+							},
+						},
+					},
+				})
+		}
+		if len(volumeProjections) > 0 {
+			ss.Spec.Template.Spec.Volumes = append(ss.Spec.Template.Spec.Volumes, corev1.Volume{
+				Name: encryptionKeyDirName,
+				VolumeSource: corev1.VolumeSource{
+					Projected: &corev1.ProjectedVolumeSource{
+						DefaultMode: ptr.Int32(400),
+						Sources:     volumeProjections,
+					},
+				},
+			})
+		}
 	}
 
 	if b.Spec().TLSEnabled {
@@ -350,6 +409,22 @@ func (b StatefulSetBuilder) clientTLSSecretName() string {
 	return b.Spec().ClientTLSSecret
 }
 
+func (b StatefulSetBuilder) encryptionKeySecretName() string {
+	if b.Spec().EncryptionStoreKeySecret == "" {
+		return b.Cluster.EncryptionKeySecretName()
+	}
+
+	return b.Spec().EncryptionStoreKeySecret
+}
+
+func (b StatefulSetBuilder) oldEncryptionKeySecretName() string {
+	if b.Spec().OldEncryptionStoreKeySecret == "" {
+		return b.Cluster.OldEncryptionKeySecretName()
+	}
+
+	return b.Spec().OldEncryptionStoreKeySecret
+}
+
 func (b StatefulSetBuilder) commandArgs() []string {
 	exec := "exec " + strings.Join(b.dbArgs(), " ")
 	return []string{"/bin/bash", "-ecx", exec}
@@ -386,6 +461,18 @@ func (b StatefulSetBuilder) dbArgs() []string {
 		aa = append(aa, "--max-sql-memory $(expr $MEMORY_LIMIT_MIB / 4)MiB")
 	}
 
+	if b.Spec().EncryptionEnabled {
+		key := "plain"
+		oldKey := "plain"
+		if b.Spec().EncryptionStoreKeySecret != "" {
+			key = encryptionKeyDirMountPath + "key"
+		}
+		if b.Spec().OldEncryptionStoreKeySecret != "" {
+			oldKey = encryptionKeyDirMountPath + "old-key"
+		}
+		aa = append(aa, fmt.Sprintf("--enterprise-encryption=path=%s,key=%s,old-key=%s", dataDirMountPath, key, oldKey))
+	}
+
 	aa = append(aa, b.Spec().AdditionalArgs...)
 
 	needsDefaultJoin := true
@@ -412,6 +499,53 @@ func (b StatefulSetBuilder) joinStr() string {
 
 	return strings.Join(seeds, ",")
 }
+
+func addStoreKeysVolumeMountOnInitContiners(container string, spec *corev1.PodSpec) error {
+	found := false
+	initContainer := fmt.Sprintf("%s-init", container)
+	for i := range spec.InitContainers {
+		c := &spec.InitContainers[i]
+		if c.Name == initContainer {
+			found = true
+
+			c.VolumeMounts = append(c.VolumeMounts, corev1.VolumeMount{
+				Name:      encryptionKeyDirName,
+				MountPath: encryptionKeyDirMountPath,
+			})
+
+			break
+		}
+	}
+
+	if !found {
+		return fmt.Errorf("failed to find container %s to attach volume", container)
+	}
+
+	return nil
+}
+
+func addStoreKeysVolumeMount(container string, spec *corev1.PodSpec) error {
+	found := false
+	for i := range spec.Containers {
+		c := &spec.Containers[i]
+		if c.Name == container {
+			found = true
+
+			c.VolumeMounts = append(c.VolumeMounts, corev1.VolumeMount{
+				Name:      encryptionKeyDirName,
+				MountPath: encryptionKeyDirMountPath,
+			})
+			break
+		}
+	}
+
+	if !found {
+		return fmt.Errorf("failed to find container %s to attach volume", container)
+	}
+
+	return nil
+}
+
 func addCertsVolumeMountOnInitContiners(container string, spec *corev1.PodSpec) error {
 	found := false
 	initContainer := fmt.Sprintf("%s-init", container)

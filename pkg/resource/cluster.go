@@ -199,7 +199,7 @@ func (cluster Cluster) LookupSupportedVersion(version string) (string, bool) {
 	return "", false
 }
 
-//GetVersionAnnotation  gets the current version of the cluster  retrieved by version checker action
+// GetVersionAnnotation  gets the current version of the cluster  retrieved by version checker action
 func (cluster Cluster) GetVersionAnnotation() string {
 	return cluster.getAnnotation(CrdbVersionAnnotation)
 }
@@ -303,6 +303,23 @@ func (cluster Cluster) ClientTLSSecretName() string {
 
 	return fmt.Sprintf("%s-root", cluster.Name())
 }
+
+func (cluster Cluster) EncryptionKeySecretName() string {
+	if cluster.Spec().EncryptionStoreKeySecret != "" {
+		return cluster.Spec().EncryptionStoreKeySecret
+	}
+	return "store-encryption-key"
+}
+
+func (cluster Cluster) OldEncryptionKeySecretName() string {
+	if cluster.Spec().OldEncryptionStoreKeySecret != "" {
+		return cluster.Spec().OldEncryptionStoreKeySecret
+	}
+	// if this key is not provided it means the old key should default to
+	// plain text
+	return ""
+}
+
 func (cluster Cluster) CASecretName() string {
 	return fmt.Sprintf("%s-ca", cluster.Name())
 }

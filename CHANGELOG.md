@@ -7,6 +7,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 # [Unreleased](https://github.com/cockroachdb/cockroach-operator/compare/v2.8.0...master)
 
+## Added
+
+* Add support for enabling Enterprise Encryption at Rest
+
 # [v2.8.0](https://github.com/cockroachdb/cockroach-operator/compare/v2.7.0...v2.8.0)
 
 ## Added

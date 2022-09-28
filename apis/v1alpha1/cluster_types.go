@@ -145,6 +145,21 @@ type CrdbClusterSpec struct {
 	// Default: false
 	// +optional
 	AutomountServiceAccountToken bool `json:"automountServiceAccountToken,omitempty"`
+	// (Optional) EncryptionEnabled determines if enterprise encryption is enabled for your CockroachDB Cluster
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Enterprise Encryption Enabled",xDescriptors="urn:alm:descriptor:com.tectonic.ui:booleanSwitch"
+	// +optional
+	EncryptionEnabled bool `json:"encryptionEnabled,omitempty"`
+	// (Optional) The secret with the encryption store key
+	// The naming of files is expected as (key)
+	// Default: ""
+	// +optional
+	EncryptionStoreKeySecret string `json:"encryptionStoreKeySecret,omitempty"`
+	// (Optional) The secret with the old encryption store key
+	// The naming of files is expected as (old-key). If this is omitted, the "plain"
+	// will be assumed as the previous store key.
+	// Default: ""
+	// +optional
+	OldEncryptionStoreKeySecret string `json:"oldEncryptionStoreKeySecret,omitempty"`
 }
 
 // +k8s:openapi-gen=true
