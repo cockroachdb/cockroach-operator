@@ -149,17 +149,22 @@ type CrdbClusterSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Enterprise Encryption Enabled",xDescriptors="urn:alm:descriptor:com.tectonic.ui:booleanSwitch"
 	// +optional
 	EncryptionEnabled bool `json:"encryptionEnabled,omitempty"`
-	// (Optional) The secret with the encryption store key
-	// The naming of files is expected as (key)
+	// (Optional) The secret with the encryption store keys
+	// The naming of files is expected as (key) for the active store key
+	// and (old-key) for the previous store key.
 	// Default: ""
 	// +optional
 	EncryptionStoreKeySecret string `json:"encryptionStoreKeySecret,omitempty"`
-	// (Optional) The secret with the old encryption store key
-	// The naming of files is expected as (old-key). If this is omitted, the "plain"
-	// will be assumed as the previous store key.
+	// (Optional) Whether the active encryption type is plaintext. This is only applicable
+	// if encryptionEnabled is set to true
 	// Default: ""
 	// +optional
-	OldEncryptionStoreKeySecret string `json:"oldEncryptionStoreKeySecret,omitempty"`
+	EncryptionTypePlain bool `json:"encryptionTypePlain,omitempty"`
+	// (Optional) Whether the previous encryption type is plaintext. This is only applicable
+	// if encryptionEnabled is set to true
+	// Default: ""
+	// +optional
+	OldEncryptionTypePlain bool `json:"oldEncryptionTypePlain,omitempty"`
 }
 
 // +k8s:openapi-gen=true

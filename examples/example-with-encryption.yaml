@@ -41,6 +41,8 @@ spec:
   tlsEnabled: true
   encryptionEnabled: true
   encryptionStoreKeySecret: store-encryption-key
+  encryptionTypePlain: false
+  oldEncryptionTypePlain: true
   image:
     name: cockroachdb/cockroach:v22.1.7
   # nodes refers to the number of crdb pods that are created

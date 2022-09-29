@@ -856,9 +856,15 @@ spec:
                   encryption is enabled for your CockroachDB Cluster
                 type: boolean
               encryptionStoreKeySecret:
-                description: '(Optional) The secret with the encryption store key
-                  The naming of files is expected as (key) Default: ""'
+                description: '(Optional) The secret with the encryption store keys
+                  The naming of files is expected as (key) for the active store key
+                  and (old-key) for the previous store key. Default: ""'
                 type: string
+              encryptionTypePlain:
+                description: '(Optional) Whether the active encryption type is plaintext.
+                  This is only applicable if encryptionEnabled is set to true Default:
+                  ""'
+                type: boolean
               grpcPort:
                 description: '(Optional) The database port (`--port` CLI parameter
                   when starting the service) Default: 26258'
@@ -1032,12 +1038,11 @@ spec:
                 format: int32
                 minimum: 3
                 type: integer
-              oldEncryptionStoreKeySecret:
-                description: '(Optional) The secret with the old encryption store
-                  key The naming of files is expected as (old-key). If this is omitted,
-                  the "plain" will be assumed as the previous store key. Default:
+              oldEncryptionTypePlain:
+                description: '(Optional) Whether the previous encryption type is plaintext.
+                  This is only applicable if encryptionEnabled is set to true Default:
                   ""'
-                type: string
+                type: boolean
               podEnvVariables:
                 description: '(Optional) PodEnvVariables is a slice of environment
                   variables that are added to the pods Default: (empty list)'

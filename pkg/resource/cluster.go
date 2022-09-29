@@ -311,15 +311,6 @@ func (cluster Cluster) EncryptionKeySecretName() string {
 	return "store-encryption-key"
 }
 
-func (cluster Cluster) OldEncryptionKeySecretName() string {
-	if cluster.Spec().OldEncryptionStoreKeySecret != "" {
-		return cluster.Spec().OldEncryptionStoreKeySecret
-	}
-	// if this key is not provided it means the old key should default to
-	// plain text
-	return ""
-}
-
 func (cluster Cluster) CASecretName() string {
 	return fmt.Sprintf("%s-ca", cluster.Name())
 }
