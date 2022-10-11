@@ -277,8 +277,8 @@ def install_kubetest2():
     http_file(
         name = "kubetest2_linux",
         executable = 1,
-        sha256 = "7f0b05654fa43ca1c607db297b5f3a775f65eea90355bb6b10137a7fffff5e1a",
-        urls = ["https://storage.googleapis.com/crdb-bazel-artifacts/linux/kubetest2"],
+        # sha256 = "7f0b05654fa43ca1c607db297b5f3a775f65eea90355bb6b10137a7fffff5e1a",
+        urls = ["https://storage.googleapis.com/cockroach-operator-bazel-artifacts/kubetest2_linux_amd64_v1/kubetest2"],
     )
 
 ## Fetch kubetest2-gke binary used during e2e tests
@@ -295,9 +295,10 @@ def install_kubetest2_gke():
     http_file(
         name = "kubetest2_gke_linux",
         executable = 1,
-        sha256 = "9ac658234efc7f59968888662dd2d21908587789f6b812392ac5b6766b17c0b4",
-        urls = ["https://storage.googleapis.com/crdb-bazel-artifacts/linux/kubetest2-gke"],
+        sha256 = "2b294abe037243e8bf71fcef6f02d93ee69abadfd0034681237478fa69474097",
+        urls = ["https://storage.googleapis.com/cockroach-operator-bazel-artifacts/kubetest2-gke_linux_amd64_v1/kubetest2-gke"],
     )
+
 ## Fetch kubetest2-tester-exe binary used during e2e tests
 def install_kubetest2_exe():
     # install kubetest2-exe binary
@@ -312,8 +313,8 @@ def install_kubetest2_exe():
     http_file(
         name = "kubetest2_exe_linux",
         executable = 1,
-        sha256 = "4483f40f48b98e8a6aa41f58bfdf1f2787066a4e1ad1343e4281892aa1326736",
-        urls = ["https://storage.googleapis.com/crdb-bazel-artifacts/linux/kubetest2-tester-exec"],
+        # sha256 = "4483f40f48b98e8a6aa41f58bfdf1f2787066a4e1ad1343e4281892aa1326736",
+        urls = ["https://storage.googleapis.com/cockroach-operator-bazel-artifacts/kubetest2-tester-exec_linux_amd64_v1/kubetest2-tester-exec"],
     )
 
 ## Fetch operator-sdk used on generating csv
