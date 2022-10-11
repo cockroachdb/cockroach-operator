@@ -268,16 +268,16 @@ filegroup(
 def install_kubetest2():
     # install kubetest2 binary
     http_file(
-       name = "kubetest2_darwin",
-       executable = 1,
-       sha256 = "5b20aadd05eca47dead180a7c8296d75e81c184aabf182d4a41ef96597db543d",
-       urls = ["https://storage.googleapis.com/crdb-bazel-artifacts/osx/kubetest2"],
+        name = "kubetest2_darwin",
+        executable = 1,
+        sha256 = "9fab82888e5c955778a8c49fdd2b9d2216be1a58f70615977fb92f678383e688",
+        urls = ["https://storage.googleapis.com/cockroach-operator-bazel-artifacts/kubetest2_darwin_amd64_v1/kubetest2"],
     )
 
     http_file(
         name = "kubetest2_linux",
         executable = 1,
-        # sha256 = "7f0b05654fa43ca1c607db297b5f3a775f65eea90355bb6b10137a7fffff5e1a",
+        sha256 = "f9306a103dc222d51753e788550bd77c05a910a957a7eb4901ccb7f78256f7b8",
         urls = ["https://storage.googleapis.com/cockroach-operator-bazel-artifacts/kubetest2_linux_amd64_v1/kubetest2"],
     )
 
@@ -286,10 +286,10 @@ def install_kubetest2_gke():
     # install kubetest2-gke binary
     # TODO osx support
     http_file(
-       name = "kubetest2_gke_darwin",
-       executable = 1,
-       sha256 = "a1cbe02f61931dbe6c8d1662442f42cb538c81e4ec8cdd40f548f0e05cbd55a7",
-       urls = ["https://storage.googleapis.com/crdb-bazel-artifacts/osx/kubetest2-gke"],
+        name = "kubetest2_gke_darwin",
+        executable = 1,
+        sha256 = "12d0b7cc9eb2ab2befe781f08672f2707631debd852f2805bed1565699e44a6e",
+        urls = ["https://storage.googleapis.com/cockroach-operator-bazel-artifacts/kubetest2-gke_darwin_amd64_v1/kubetest2-gke"],
     )
 
     http_file(
@@ -304,16 +304,16 @@ def install_kubetest2_exe():
     # install kubetest2-exe binary
     # TODO osx support
     http_file(
-       name = "kubetest2_exe_darwin",
-       executable = 1,
-       sha256 = "818690cb55590440e163b18dd139c8a8714df9480f869bafe19eb344047cf37c",
-       urls = ["https://storage.googleapis.com/crdb-bazel-artifacts/osx/kubetest2-tester-exec"],
+        name = "kubetest2_exe_darwin",
+        executable = 1,
+        sha256 = "15a6c8ff2e6b3962954553eacc9aeefb40ac81f67c326144db2ad94d58756357",
+        urls = ["https://storage.googleapis.com/cockroach-operator-bazel-artifacts/kubetest2-tester-exec_darwin_amd64_v1/kubetest2-tester-exec"],
     )
 
     http_file(
         name = "kubetest2_exe_linux",
         executable = 1,
-        # sha256 = "4483f40f48b98e8a6aa41f58bfdf1f2787066a4e1ad1343e4281892aa1326736",
+        sha256 = "b96c9b651c6a4449adfa41d6760ec1b34ec02230b5debd850976ced3926d80db",
         urls = ["https://storage.googleapis.com/cockroach-operator-bazel-artifacts/kubetest2-tester-exec_linux_amd64_v1/kubetest2-tester-exec"],
     )
 
