@@ -148,6 +148,10 @@ spec:
               value: cockroachdb/cockroach:v21.2.13
             - name: RELATED_IMAGE_COCKROACH_v21_2_14
               value: cockroachdb/cockroach:v21.2.14
+            - name: RELATED_IMAGE_COCKROACH_v21_2_15
+              value: cockroachdb/cockroach:v21.2.15
+            - name: RELATED_IMAGE_COCKROACH_v21_2_16
+              value: cockroachdb/cockroach:v21.2.16
             - name: RELATED_IMAGE_COCKROACH_v22_1_0
               value: cockroachdb/cockroach:v22.1.0
             - name: RELATED_IMAGE_COCKROACH_v22_1_1
@@ -160,3 +164,7 @@ spec:
               value: cockroachdb/cockroach:v22.1.4
             - name: RELATED_IMAGE_COCKROACH_v22_1_5
               value: cockroachdb/cockroach:v22.1.5
+            - name: RELATED_IMAGE_COCKROACH_v22_1_7
+              value: cockroachdb/cockroach:v22.1.7
+            - name: RELATED_IMAGE_COCKROACH_v22_1_8
+              value: cockroachdb/cockroach:v22.1.8
