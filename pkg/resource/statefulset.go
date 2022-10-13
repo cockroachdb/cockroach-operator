@@ -43,7 +43,7 @@ const (
 	dataDirMountPath = "/cockroach/cockroach-data/"
 
 	certsDirName = "certs"
-	certCpCmd    = ">- cp -p /cockroach/cockroach-certs-prestage/..data/* /cockroach/cockroach-certs/ && chmod 700 /cockroach/cockroach-certs/*.key && chown 1000581000:1000581000 /cockroach/cockroach-certs/*.key"
+	certCpCmd    = ">- cp -p /cockroach/cockroach-certs-prestage/..data/* /cockroach/cockroach-certs/ && chmod 600 /cockroach/cockroach-certs/*.key && chown 1000581000:1000581000 /cockroach/cockroach-certs/*.key"
 	emptyDirName = "emptydir"
 
 	// DbContainerName is the name of the container definition in the pod spec
