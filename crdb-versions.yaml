@@ -211,6 +211,9 @@ CrdbVersions:
 - image: cockroachdb/cockroach:v21.2.16
   redhatImage: registry.connect.redhat.com/cockroachdb/cockroach@sha256:08496b84b3cc691909227be17e67bcd6f4d5185a93712f44d8a0985bd2c5fcd7
   tag: v21.2.16
+- image: cockroachdb/cockroach:v21.2.17
+  redhatImage: registry.connect.redhat.com/cockroachdb/cockroach@sha256:3b046aa0a42dae992a03685ed82a20835532d6d4bf048e2366ff7382be4b3138
+  tag: v21.2.17
 - image: cockroachdb/cockroach:v22.1.0
   redhatImage: registry.connect.redhat.com/cockroachdb/cockroach@sha256:5a54d564e08baefc2786f4b742b2507d31984664cd00333406aa7a3aa5b9c913
   tag: v22.1.0
@@ -235,3 +238,6 @@ CrdbVersions:
 - image: cockroachdb/cockroach:v22.1.8
   redhatImage: registry.connect.redhat.com/cockroachdb/cockroach@sha256:f6bb15b36d64eebb6e4c1db5a5466e108b271d53383c58e0b6c78cec214756a9
   tag: v22.1.8
+- image: cockroachdb/cockroach:v22.1.9
+  redhatImage: registry.connect.redhat.com/cockroachdb/cockroach@sha256:851144827007c2e6fc03bfb9b500294fe574b5007000bf2cea96a22881be8517
+  tag: v22.1.9
