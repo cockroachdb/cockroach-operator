@@ -130,8 +130,9 @@ func (up *partitionedUpdate) Act(ctx context.Context, cluster *resource.Cluster,
 	// If we are running inside of k8s we will not find this file.
 	runningInsideK8s := inK8s("/var/run/secrets/kubernetes.io/serviceaccount/token")
 
-	serviceName := cluster.PublicServiceName()
+	var serviceName string
 	if runningInsideK8s {
+		serviceName = fmt.Sprintf("%s.%s", cluster.PublicServiceName(), cluster.Namespace())
 		log.V(DEBUGLEVEL).Info("operator is running inside of kubernetes, connecting to service for db connection")
 	} else {
 		serviceName = fmt.Sprintf("%s-0.%s.%s", cluster.Name(), cluster.Name(), cluster.Namespace())
