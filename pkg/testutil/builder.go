@@ -51,6 +51,11 @@ func (b ClusterBuilder) Namespaced(namespace string) ClusterBuilder {
 	return b
 }
 
+func (b ClusterBuilder) WithAutomountServiceAccountToken(mount bool) ClusterBuilder {
+	b.cluster.Spec.AutomountServiceAccountToken = mount
+	return b
+}
+
 func (b ClusterBuilder) WithUID(uid string) ClusterBuilder {
 	b.cluster.ObjectMeta.UID = amtypes.UID(uid)
 	return b
@@ -61,7 +66,7 @@ func (b ClusterBuilder) WithNodeCount(c int32) ClusterBuilder {
 	return b
 }
 
-func (b ClusterBuilder) WithPVDataStore(size, storageClass string) ClusterBuilder {
+func (b ClusterBuilder) WithPVDataStore(size string) ClusterBuilder {
 	quantity, _ := apiresource.ParseQuantity(size)
 
 	volumeMode := corev1.PersistentVolumeFilesystem
@@ -74,8 +79,7 @@ func (b ClusterBuilder) WithPVDataStore(size, storageClass string) ClusterBuilde
 						corev1.ResourceStorage: quantity,
 					},
 				},
-				StorageClassName: &storageClass,
-				VolumeMode:       &volumeMode,
+				VolumeMode: &volumeMode,
 			},
 		},
 	}
@@ -90,6 +94,11 @@ func (b ClusterBuilder) WithHTTPPort(port int32) ClusterBuilder {
 
 func (b ClusterBuilder) WithTLS() ClusterBuilder {
 	b.cluster.Spec.TLSEnabled = true
+	return b
+}
+
+func (b ClusterBuilder) WithClientTLS(secret string) ClusterBuilder {
+	b.cluster.Spec.ClientTLSSecret = secret
 	return b
 }
 

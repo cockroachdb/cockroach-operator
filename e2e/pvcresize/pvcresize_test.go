@@ -55,7 +55,7 @@ func TestPVCResize(t *testing.T) {
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
 		WithImage(e2e.MajorVersion).
-		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
+		WithPVDataStore("1Gi")
 	steps := testutil.Steps{
 		{
 			Name: "creates a 3-node secure cluster db",

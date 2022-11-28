@@ -19,6 +19,7 @@ package actor
 import (
 	"context"
 	"fmt"
+
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/clustersql"
 	"github.com/cockroachdb/cockroach-operator/pkg/database"
@@ -144,12 +145,10 @@ func (d decommission) Act(ctx context.Context, cluster *resource.Cluster, log lo
 		/// now check if the decommissionStaleErr and update status
 		log.Error(err, "decommission failed")
 		cluster.SetFalse(api.DecommissionCondition)
-		CancelLoop(ctx, log)
 		return err
 	}
 	// TO DO @alina we will need to save the status foreach action
 	cluster.SetTrue(api.DecommissionCondition)
 	log.V(DEBUGLEVEL).Info("decommission completed", "cond", ss.Status.Conditions)
-	CancelLoop(ctx, log)
 	return nil
 }

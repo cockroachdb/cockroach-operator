@@ -58,6 +58,7 @@ go_test(
     name = "go_default_test",
     srcs = [
         "certificate_test.go",
+        "cluster_test.go",
         "discovery_service_test.go",
         "pod_distruption_budget_test.go",
         "public_service_test.go",

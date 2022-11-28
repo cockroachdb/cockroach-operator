@@ -19,6 +19,7 @@ package decommission
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/cockroachdb/cockroach-operator/e2e"
 	"github.com/cockroachdb/cockroach-operator/pkg/controller"
@@ -61,7 +62,7 @@ func TestDecommissionFunctionalityWithPrune(t *testing.T) {
 		WithNodeCount(4).
 		WithTLS().
 		WithImage(e2e.MajorVersion).
-		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
+		WithPVDataStore("1Gi")
 
 	testutil.Steps{
 		{
@@ -86,7 +87,11 @@ func TestDecommissionFunctionalityWithPrune(t *testing.T) {
 				testutil.RequireDecommissionNode(t, sb, builder, 3)
 				testutil.RequireDatabaseToFunction(t, sb, builder)
 				t.Log("Done with decommission")
-				testutil.RequireNumberOfPVCs(t, context.TODO(), sb, builder, 3)
+
+				// Give some time for the PVCs to be cleaned up.
+				require.Eventually(t, func() bool {
+					return testutil.HasNumPVCs(context.TODO(), sb, builder, 3)
+				}, 1*time.Minute, 3*time.Second)
 			},
 		},
 	}.Run(t)
@@ -119,7 +124,7 @@ func TestDecommissionFunctionality(t *testing.T) {
 		WithNodeCount(4).
 		WithTLS().
 		WithImage(e2e.MajorVersion).
-		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
+		WithPVDataStore("1Gi")
 
 	testutil.Steps{
 		{

@@ -43,11 +43,13 @@ const (
 	dataDirMountPath = "/cockroach/cockroach-data/"
 
 	certsDirName = "certs"
-	certCpCmd    = ">- cp -p /cockroach/cockroach-certs-prestage/..data/* /cockroach/cockroach-certs/ && chmod 700 /cockroach/cockroach-certs/*.key && chown 1000581000:1000581000 /cockroach/cockroach-certs/*.key"
+	certCpCmd    = ">- cp -p /cockroach/cockroach-certs-prestage/..data/* /cockroach/cockroach-certs/ && chmod 600 /cockroach/cockroach-certs/*.key && chown 1000581000:1000581000 /cockroach/cockroach-certs/*.key"
 	emptyDirName = "emptydir"
 
 	// DbContainerName is the name of the container definition in the pod spec
 	DbContainerName = "db"
+
+	terminationGracePeriodSecs = 300
 )
 
 type StatefulSetBuilder struct {
@@ -207,9 +209,9 @@ func (b StatefulSetBuilder) makePodTemplate() corev1.PodTemplateSpec {
 				RunAsUser: ptr.Int64(1000581000),
 				FSGroup:   ptr.Int64(1000581000),
 			},
-			TerminationGracePeriodSeconds: ptr.Int64(60),
+			TerminationGracePeriodSeconds: ptr.Int64(terminationGracePeriodSecs),
 			Containers:                    b.MakeContainers(),
-			AutomountServiceAccountToken:  ptr.Bool(false),
+			AutomountServiceAccountToken:  ptr.Bool(b.Spec().AutomountServiceAccountToken),
 			ServiceAccountName:            b.ServiceAccountName(),
 		},
 	}
@@ -357,7 +359,6 @@ func (b StatefulSetBuilder) dbArgs() []string {
 	aa := []string{
 		"/cockroach/cockroach.sh",
 		"start",
-		"--join=" + b.joinStr(),
 		fmt.Sprintf("--advertise-host=$(POD_NAME).%s.%s",
 			b.Cluster.DiscoveryServiceName(), b.Cluster.Namespace()),
 		b.Cluster.SecureMode(),
@@ -385,7 +386,20 @@ func (b StatefulSetBuilder) dbArgs() []string {
 		aa = append(aa, "--max-sql-memory $(expr $MEMORY_LIMIT_MIB / 4)MiB")
 	}
 
-	return append(aa, b.Spec().AdditionalArgs...)
+	aa = append(aa, b.Spec().AdditionalArgs...)
+
+	needsDefaultJoin := true
+	for _, f := range b.Spec().AdditionalArgs {
+		if strings.Contains(f, "--join") {
+			needsDefaultJoin = false
+			break
+		}
+	}
+
+	if needsDefaultJoin {
+		aa = append(aa, "--join="+b.joinStr())
+	}
+	return aa
 }
 
 func (b StatefulSetBuilder) joinStr() string {

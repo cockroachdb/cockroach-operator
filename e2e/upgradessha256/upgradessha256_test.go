@@ -56,7 +56,7 @@ func TestUpgradesMinorVersion(t *testing.T) {
 
 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
 		WithCockroachDBVersion("v20.2.8").
-		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
+		WithPVDataStore("1Gi")
 
 	steps := testutil.Steps{
 		{
@@ -114,7 +114,7 @@ func TestUpgradesMajorVersion20to21(t *testing.T) {
 	os.Setenv("RELATED_IMAGE_COCKROACH_v20_2_10", "cockroachdb/cockroach@sha256:a1ef571ff3b47b395084d2f29abbc7706be36a826a618a794697d90a03615ada")
 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
 		WithCockroachDBVersion("v20.2.10").
-		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
+		WithPVDataStore("1Gi")
 
 	steps := testutil.Steps{
 		{
@@ -168,7 +168,7 @@ func TestUpgradesMajorVersion20_1To20_2(t *testing.T) {
 
 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
 		WithCockroachDBVersion("v20.1.16").
-		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
+		WithPVDataStore("1Gi")
 
 	steps := testutil.Steps{
 		{

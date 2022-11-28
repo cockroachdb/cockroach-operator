@@ -125,7 +125,6 @@ func (r *clusterRestart) Act(ctx context.Context, cluster *resource.Cluster, log
 		log.Error(err, "failed reseting the restart cluster field")
 	}
 	log.V(DEBUGLEVEL).Info("completed cluster restart")
-	CancelLoop(ctx, log)
 	return nil
 }
 

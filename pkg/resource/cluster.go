@@ -289,10 +289,18 @@ func (cluster Cluster) GetImagePullSecret() *string {
 }
 
 func (cluster Cluster) NodeTLSSecretName() string {
+	if cluster.Spec().NodeTLSSecret != "" {
+		return cluster.Spec().NodeTLSSecret
+	}
+
 	return fmt.Sprintf("%s-node", cluster.Name())
 }
 
 func (cluster Cluster) ClientTLSSecretName() string {
+	if cluster.Spec().ClientTLSSecret != "" {
+		return cluster.Spec().ClientTLSSecret
+	}
+
 	return fmt.Sprintf("%s-root", cluster.Name())
 }
 func (cluster Cluster) CASecretName() string {
@@ -311,15 +319,6 @@ func (cluster Cluster) SecureMode() string {
 	return "--insecure"
 }
 
-func (cluster Cluster) IsFresh(fetcher Fetcher) (bool, error) {
-	actual := ClusterPlaceholder(cluster.Name())
-	if err := fetcher.Fetch(actual); err != nil {
-		return false, errors.Wrapf(err, "failed to fetch cluster resource")
-	}
-
-	return cluster.cr.ResourceVersion == actual.ResourceVersion, nil
-}
-
 func (cluster Cluster) LoggingConfiguration(fetcher Fetcher) (string, error) {
 	if cluster.Spec().LogConfigMap != "" {
 		cm := &corev1.ConfigMap{
@@ -334,6 +333,9 @@ func (cluster Cluster) LoggingConfiguration(fetcher Fetcher) (string, error) {
 
 		if val, ok := cm.Data["logging.yaml"]; ok {
 			return `"` + val + `"`, nil
+		} else {
+			return "", errors.Newf(
+				"`logging.yaml` entry not found in configMap %s", cluster.Spec().LogConfigMap)
 		}
 	}
 

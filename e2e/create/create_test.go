@@ -63,7 +63,7 @@ func TestCreateInsecureCluster(t *testing.T) {
 
 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).
 		WithImage(e2e.MajorVersion).WithClusterLogging("logging-configmap").
-		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
+		WithPVDataStore("1Gi")
 
 	steps := testutil.Steps{
 		{
@@ -103,7 +103,7 @@ func TestCreatesSecureCluster(t *testing.T) {
 
 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
 		WithImage(e2e.MajorVersion).
-		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
+		WithPVDataStore("1Gi")
 
 	steps := testutil.Steps{
 		{
@@ -159,7 +159,7 @@ func TestCreateSecureClusterWithInvalidVersion(t *testing.T) {
 
 					builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
 						WithImage(testcase.imageVersion).
-						WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
+						WithPVDataStore("1Gi")
 					if testcase.cockroachVersion != "" {
 						os.Setenv(relatedImageEnvName, e2e.NonExistentVersion)
 						builder = builder.WithCockroachDBVersion(testcase.cockroachVersion)
@@ -219,7 +219,7 @@ func TestCreateSecureClusterWithNonCRDBImage(t *testing.T) {
 
 					builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
 						WithImage(testcase.imageVersion).
-						WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
+						WithPVDataStore("1Gi")
 
 					if testcase.cockroachVersion != "" {
 						os.Setenv(relatedImageEnvName, e2e.InvalidImage)
@@ -265,7 +265,7 @@ func TestCreateSecureClusterWithCRDBVersionSet(t *testing.T) {
 				sb.StartManager(subT, controller.InitClusterReconcilerWithLogger(testLog))
 
 				builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
-					WithPVDataStore("1Gi", "standard" /* default storage class in KIND */).
+					WithPVDataStore("1Gi").
 					WithCockroachDBVersion(crdbVersion).WithImageObject(nil)
 
 				require.NoError(subT, sb.Create(builder.Cr()))

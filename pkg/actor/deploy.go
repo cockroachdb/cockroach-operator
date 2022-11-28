@@ -81,7 +81,6 @@ func (d deploy) Act(ctx context.Context, cluster *resource.Cluster, log logr.Log
 
 		if changed {
 			log.Info("created/updated a resource, stopping request processing", "resource", b.ResourceName())
-			CancelLoop(ctx, log)
 			return nil
 		}
 	}

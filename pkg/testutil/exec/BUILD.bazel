@@ -5,9 +5,7 @@ go_library(
     srcs = ["exec.go"],
     importpath = "github.com/cockroachdb/cockroach-operator/pkg/testutil/exec",
     visibility = ["//visibility:public"],
-    deps = [
-        "@io_k8s_sigs_kubetest2//pkg/process:go_default_library",
-    ],
+    deps = ["@io_k8s_sigs_kubetest2//pkg/process:go_default_library"],
 )
 
 filegroup(

@@ -157,6 +157,12 @@ CrdbVersions:
 - image: cockroachdb/cockroach:v21.1.17
   redhatImage: registry.connect.redhat.com/cockroachdb/cockroach@sha256:0f66894081dbf518fc8819286dc0bbfe0c92ed6cb8206c939ca9e25e4ce88d11
   tag: v21.1.17
+- image: cockroachdb/cockroach:v21.1.18
+  redhatImage: registry.connect.redhat.com/cockroachdb/cockroach@sha256:0ba090381ee0ccaee4037901bad191e2d7d02ae092361f00d5e8208f858cbd0c
+  tag: v21.1.18
+- image: cockroachdb/cockroach:v21.1.19
+  redhatImage: registry.connect.redhat.com/cockroachdb/cockroach@sha256:62db19fa1b5aadaf45d5ca9a685d24835bb9a5c97c9e35fcb7fdfd6a74bccd92
+  tag: v21.1.19
 - image: cockroachdb/cockroach:v21.2.0
   redhatImage: registry.connect.redhat.com/cockroachdb/cockroach@sha256:e5814748c5ab229a1dea5662a007063c0df06fbbfcfe041fd9a6df9ef67e07cc
   tag: v21.2.0
@@ -181,3 +187,51 @@ CrdbVersions:
 - image: cockroachdb/cockroach:v21.2.8
   redhatImage: registry.connect.redhat.com/cockroachdb/cockroach@sha256:32fdca575c334822e4356aab36a7ed97b685c065925fe85f1b8ba8425c57159b
   tag: v21.2.8
+- image: cockroachdb/cockroach:v21.2.9
+  redhatImage: registry.connect.redhat.com/cockroachdb/cockroach@sha256:2af60025ecb3bb933b61328be4c2b2bfd0e7d26f53b72430629208505e45c6d2
+  tag: v21.2.9
+- image: cockroachdb/cockroach:v21.2.10
+  redhatImage: registry.connect.redhat.com/cockroachdb/cockroach@sha256:7daaf1368ab2c25694cdea0a598e1de59247b04a4b4b4b8348ed6edbaa194f9d
+  tag: v21.2.10
+- image: cockroachdb/cockroach:v21.2.11
+  redhatImage: registry.connect.redhat.com/cockroachdb/cockroach@sha256:2b5c028f293c6f394e58a5495cb3dbfbedc215d0d03778d0217e045586d55a46
+  tag: v21.2.11
+- image: cockroachdb/cockroach:v21.2.12
+  redhatImage: registry.connect.redhat.com/cockroachdb/cockroach@sha256:ce3d94a3fbdcde5858beb3c265987759971d991c397c6486e19904bd4706f44d
+  tag: v21.2.12
+- image: cockroachdb/cockroach:v21.2.13
+  redhatImage: registry.connect.redhat.com/cockroachdb/cockroach@sha256:9097e135159f46396ef4649f724d61bb5b9113c488f989d404586fbb7486fd85
+  tag: v21.2.13
+- image: cockroachdb/cockroach:v21.2.14
+  redhatImage: registry.connect.redhat.com/cockroachdb/cockroach@sha256:28ae9661b38a72decf413c6a6c3758e61098debf5162197c27a12a070c7a096d
+  tag: v21.2.14
+- image: cockroachdb/cockroach:v21.2.15
+  redhatImage: registry.connect.redhat.com/cockroachdb/cockroach@sha256:a6f1c43486d044fed9f59406118f429c8037b389bd8c8d7a1c7aeb89ed2661f7
+  tag: v21.2.15
+- image: cockroachdb/cockroach:v21.2.16
+  redhatImage: registry.connect.redhat.com/cockroachdb/cockroach@sha256:08496b84b3cc691909227be17e67bcd6f4d5185a93712f44d8a0985bd2c5fcd7
+  tag: v21.2.16
+- image: cockroachdb/cockroach:v22.1.0
+  redhatImage: registry.connect.redhat.com/cockroachdb/cockroach@sha256:5a54d564e08baefc2786f4b742b2507d31984664cd00333406aa7a3aa5b9c913
+  tag: v22.1.0
+- image: cockroachdb/cockroach:v22.1.1
+  redhatImage: registry.connect.redhat.com/cockroachdb/cockroach@sha256:e23af8f9d32c3f80a52d79ceb4b359dda1d75ba0dd4cb8ed4b66ac2f4e40c69b
+  tag: v22.1.1
+- image: cockroachdb/cockroach:v22.1.2
+  redhatImage: registry.connect.redhat.com/cockroachdb/cockroach@sha256:266165ab87b19a05d6796e8b15ff0eba632d6ac96e6393400464c6136dd500ec
+  tag: v22.1.2
+- image: cockroachdb/cockroach:v22.1.3
+  redhatImage: registry.connect.redhat.com/cockroachdb/cockroach@sha256:65923c37fecda2d3174212fa9d9a6f34241d065389336ea69a7be99ba16cedc2
+  tag: v22.1.3
+- image: cockroachdb/cockroach:v22.1.4
+  redhatImage: registry.connect.redhat.com/cockroachdb/cockroach@sha256:7bd75aa918355e77cd671c3e11ee807861378e96245245f4fdf243cba5749f9a
+  tag: v22.1.4
+- image: cockroachdb/cockroach:v22.1.5
+  redhatImage: registry.connect.redhat.com/cockroachdb/cockroach@sha256:a4f932c3e9ff3aeb70ba1f7a92aa4642bd14cbb7d37d04ff750ed517b916cdb9
+  tag: v22.1.5
+- image: cockroachdb/cockroach:v22.1.7
+  redhatImage: registry.connect.redhat.com/cockroachdb/cockroach@sha256:da367cf0ac52045002e1c186f8e6964267ad87d5c25f9e72fd2c9b9a98a32702
+  tag: v22.1.7
+- image: cockroachdb/cockroach:v22.1.8
+  redhatImage: registry.connect.redhat.com/cockroachdb/cockroach@sha256:f6bb15b36d64eebb6e4c1db5a5466e108b271d53383c58e0b6c78cec214756a9
+  tag: v22.1.8

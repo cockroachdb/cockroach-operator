@@ -2,7 +2,10 @@ load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
 
 go_library(
     name = "go_default_library",
-    srcs = ["verify_k8s_running.go"],
+    srcs = [
+        "cluster_checker.go",
+        "verify_k8s_running.go",
+    ],
     importpath = "github.com/cockroachdb/cockroach-operator/hack/k8s",
     visibility = ["//visibility:private"],
     deps = [

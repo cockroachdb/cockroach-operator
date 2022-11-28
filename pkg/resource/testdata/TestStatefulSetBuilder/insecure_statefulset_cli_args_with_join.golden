@@ -1,0 +1,131 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  annotations:
+    crdb.io/containerimage: ""
+    crdb.io/version: ""
+    key: test-value
+  creationTimestamp: null
+  name: test-cluster
+spec:
+  podManagementPolicy: Parallel
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: database
+      app.kubernetes.io/instance: test-cluster
+      app.kubernetes.io/name: cockroachdb
+  serviceName: test-cluster
+  template:
+    metadata:
+      annotations:
+        key: test-value
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/component: database
+        app.kubernetes.io/instance: test-cluster
+        app.kubernetes.io/name: cockroachdb
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app.kubernetes.io/instance
+                  operator: In
+                  values:
+                  - test-cluster
+              topologyKey: kubernetes.io/hostname
+            weight: 100
+      automountServiceAccountToken: false
+      containers:
+      - command:
+        - /bin/bash
+        - -ecx
+        - 'exec /cockroach/cockroach.sh start --advertise-host=$(POD_NAME).test-cluster.test-ns
+          --insecure --http-port=8080 --sql-addr=:26257 --listen-addr=:26258 --log="{sinks:
+          {stderr: {channels: [OPS, HEALTH], redact: true}}}" --cache=30% --max-sql-memory=2GB
+          --join=test-cluster-1.new-test-cluster.new-test-ns:26258'
+        env:
+        - name: COCKROACH_CHANNEL
+          value: kubernetes-operator-gke
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: GOMAXPROCS
+          valueFrom:
+            resourceFieldRef:
+              divisor: "1"
+              resource: limits.cpu
+        - name: MEMORY_LIMIT_MIB
+          valueFrom:
+            resourceFieldRef:
+              divisor: 1Mi
+              resource: limits.memory
+        image: cockroachdb/cockroach:v21.1.0
+        imagePullPolicy: IfNotPresent
+        lifecycle:
+          preStop:
+            exec:
+              command:
+              - sh
+              - -c
+              - /cockroach/cockroach node drain --insecure || exit 0
+        name: db
+        ports:
+        - containerPort: 26258
+          name: grpc
+          protocol: TCP
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        - containerPort: 26257
+          name: sql
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 2
+          httpGet:
+            path: /health?ready=1
+            port: http
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        resources: {}
+        volumeMounts:
+        - mountPath: /cockroach/cockroach-data/
+          name: datadir
+      securityContext:
+        fsGroup: 1000581000
+        runAsUser: 1000581000
+      serviceAccountName: test-cluster-sa
+      terminationGracePeriodSeconds: 300
+      tolerations:
+      - effect: NoSchedule
+        key: key
+        operator: Exists
+      volumes:
+      - name: datadir
+        persistentVolumeClaim:
+          claimName: ""
+  updateStrategy:
+    rollingUpdate: {}
+  volumeClaimTemplates:
+  - metadata:
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/component: database
+        app.kubernetes.io/instance: test-cluster
+        app.kubernetes.io/name: cockroachdb
+      name: datadir
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1Gi
+      volumeMode: Filesystem
+    status: {}
+status:
+  replicas: 0

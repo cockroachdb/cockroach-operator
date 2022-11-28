@@ -5,7 +5,6 @@ go_library(
     srcs = [
         "actor.go",
         "cluster_restart.go",
-        "context.go",
         "decommission.go",
         "deploy.go",
         "director.go",

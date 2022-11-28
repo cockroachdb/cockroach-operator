@@ -64,7 +64,7 @@ func NewHealthChecker(cluster *resource.Cluster, clientset kubernetes.Interface,
 	}
 }
 
-// Probe will check the ranges_underreplicated metric  for value 0 on all pods after the resart of a
+// Probe will check the ranges_underreplicated metric  for value 0 on all pods after the restart of a
 // pod, before continue the rolling update of the next pod
 func (hc *HealthCheckerImpl) Probe(ctx context.Context, l logr.Logger, logSuffix string, nodeID int) error {
 	l.V(int(zapcore.DebugLevel)).Info("Health check probe", "label", logSuffix, "nodeID", nodeID)

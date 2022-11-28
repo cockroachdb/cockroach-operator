@@ -4,7 +4,7 @@ metadata:
   annotations:
     crdb.io/containerimage: ""
     crdb.io/version: ""
-    key: "test-value"
+    key: test-value
   creationTimestamp: null
   name: test-cluster
 spec:
@@ -18,13 +18,13 @@ spec:
   serviceName: test-cluster
   template:
     metadata:
+      annotations:
+        key: test-value
       creationTimestamp: null
       labels:
         app.kubernetes.io/component: database
         app.kubernetes.io/instance: test-cluster
         app.kubernetes.io/name: cockroachdb
-      annotations:
-        key: "test-value"
     spec:
       affinity:
         podAntiAffinity:
@@ -38,16 +38,15 @@ spec:
                   - test-cluster
               topologyKey: kubernetes.io/hostname
             weight: 100
-      tolerations:
-        - key: "key"
-          operator: "Exists"
-          effect: "NoSchedule"
       automountServiceAccountToken: false
       containers:
       - command:
         - /bin/bash
         - -ecx
-        - "exec /cockroach/cockroach.sh start --join=test-cluster-0.test-cluster.test-ns:26258 --advertise-host=$(POD_NAME).test-cluster.test-ns --insecure --http-port=8080 --sql-addr=:26257 --listen-addr=:26258 --log=\"{sinks: {stderr: {channels: [OPS, HEALTH], redact: true}}}\" --cache=30% --max-sql-memory=2GB --temp-dir=/tmp"
+        - 'exec /cockroach/cockroach.sh start --advertise-host=$(POD_NAME).test-cluster.test-ns
+          --insecure --http-port=8080 --sql-addr=:26257 --listen-addr=:26258 --log="{sinks:
+          {stderr: {channels: [OPS, HEALTH], redact: true}}}" --cache=30% --max-sql-memory=2GB
+          --temp-dir=/tmp --join=test-cluster-0.test-cluster.test-ns:26258'
         env:
         - name: COCKROACH_CHANNEL
           value: kubernetes-operator-gke
@@ -101,7 +100,11 @@ spec:
         fsGroup: 1000581000
         runAsUser: 1000581000
       serviceAccountName: test-cluster-sa
-      terminationGracePeriodSeconds: 60
+      terminationGracePeriodSeconds: 300
+      tolerations:
+      - effect: NoSchedule
+        key: key
+        operator: Exists
       volumes:
       - name: datadir
         persistentVolumeClaim:
@@ -111,11 +114,11 @@ spec:
   volumeClaimTemplates:
   - metadata:
       creationTimestamp: null
-      name: datadir
       labels:
         app.kubernetes.io/component: database
         app.kubernetes.io/instance: test-cluster
         app.kubernetes.io/name: cockroachdb
+      name: datadir
     spec:
       accessModes:
       - ReadWriteOnce

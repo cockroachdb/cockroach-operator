@@ -19,7 +19,6 @@ package actor
 import (
 	"context"
 	"fmt"
-	"github.com/go-logr/logr"
 	"time"
 
 	"github.com/cenkalti/backoff"
@@ -27,6 +26,7 @@ import (
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	"github.com/cockroachdb/errors"
+	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -140,8 +140,6 @@ func (rp *resizePVC) Act(ctx context.Context, cluster *resource.Cluster, log log
 		}*/
 
 	log.Info("PVC resize completed")
-	CancelLoop(ctx, log)
-
 	return nil
 }
 
