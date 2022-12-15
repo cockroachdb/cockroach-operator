@@ -17,7 +17,6 @@ limitations under the License.
 package util
 
 import (
-	"io/ioutil"
 	"os"
 )
 
@@ -25,7 +24,7 @@ import (
 // the directory name and also a function for removing the directory.
 // The funcation is often deferred for directory removal.
 func CreateTempDir(baseDirectory string) (string, func()) {
-	tmpDir, err := ioutil.TempDir("", baseDirectory)
+	tmpDir, err := os.MkdirTemp("", baseDirectory)
 	if err != nil {
 		panic(err)
 	}

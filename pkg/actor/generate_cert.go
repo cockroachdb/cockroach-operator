@@ -21,7 +21,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"time"
 
@@ -191,7 +191,7 @@ func (rc *generateCert) generateCA(ctx context.Context, log logr.Logger, cluster
 	// if the secret is ready then don't update the secret
 	// the Actor should have already generated the secret
 	if secret.ReadyCA() {
-		if err := ioutil.WriteFile(rc.CAKey, secret.CAKey(), 0600); err != nil {
+		if err := os.WriteFile(rc.CAKey, secret.CAKey(), 0600); err != nil {
 			return errors.Wrap(err, "failed to write CA key")
 		}
 		log.V(DEBUGLEVEL).Info("not updating ca key as it exists")
@@ -210,7 +210,7 @@ func (rc *generateCert) generateCA(ctx context.Context, log logr.Logger, cluster
 		return err
 	}
 	// Read the ca key into memory
-	cakey, err := ioutil.ReadFile(rc.CAKey)
+	cakey, err := os.ReadFile(rc.CAKey)
 	if err != nil {
 		return errors.Wrap(err, "unable to read ca.key")
 	}
@@ -259,7 +259,7 @@ func (rc *generateCert) generateNodeCert(ctx context.Context, log logr.Logger, c
 	if secret.Ready() {
 		if regenerateCert {
 			log.V(DEBUGLEVEL).Info("regenerating node certificate because of change in SQLHost")
-			if err = ioutil.WriteFile(filepath.Join(rc.CertsDir, "ca.crt"), secret.CA(), 0644); err != nil {
+			if err = os.WriteFile(filepath.Join(rc.CertsDir, "ca.crt"), secret.CA(), 0644); err != nil {
 				return "", errors.Wrap(err, "failed to write CA cert")
 			}
 		} else {
@@ -300,17 +300,17 @@ func (rc *generateCert) generateNodeCert(ctx context.Context, log logr.Logger, c
 	}
 
 	// Read the node certificates into memory
-	ca, err := ioutil.ReadFile(filepath.Join(rc.CertsDir, "ca.crt"))
+	ca, err := os.ReadFile(filepath.Join(rc.CertsDir, "ca.crt"))
 	if err != nil {
 		return "", errors.Wrap(err, "unable to read ca.crt")
 	}
 
-	pemCert, err := ioutil.ReadFile(filepath.Join(rc.CertsDir, "node.crt"))
+	pemCert, err := os.ReadFile(filepath.Join(rc.CertsDir, "node.crt"))
 	if err != nil {
 		return "", errors.Wrap(err, "unable to read node.crt")
 	}
 
-	pemKey, err := ioutil.ReadFile(filepath.Join(rc.CertsDir, "node.key"))
+	pemKey, err := os.ReadFile(filepath.Join(rc.CertsDir, "node.key"))
 	if err != nil {
 		return "", errors.Wrap(err, "unable to ready node.key")
 	}
@@ -368,17 +368,17 @@ func (rc *generateCert) generateClientCert(ctx context.Context, log logr.Logger,
 	}
 
 	// Load the certificates into memory
-	ca, err := ioutil.ReadFile(filepath.Join(rc.CertsDir, "ca.crt"))
+	ca, err := os.ReadFile(filepath.Join(rc.CertsDir, "ca.crt"))
 	if err != nil {
 		return errors.Wrap(err, "unable to read ca.crt")
 	}
 
-	pemCert, err := ioutil.ReadFile(filepath.Join(rc.CertsDir, "client.root.crt"))
+	pemCert, err := os.ReadFile(filepath.Join(rc.CertsDir, "client.root.crt"))
 	if err != nil {
 		return errors.Wrap(err, "unable to read client.root.crt")
 	}
 
-	pemKey, err := ioutil.ReadFile(filepath.Join(rc.CertsDir, "client.root.key"))
+	pemKey, err := os.ReadFile(filepath.Join(rc.CertsDir, "client.root.key"))
 	if err != nil {
 		return errors.Wrap(err, "unable to read client.root.key")
 	}

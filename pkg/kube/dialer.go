@@ -20,7 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
 	"net/http"
 	"strings"
@@ -160,7 +160,7 @@ func (k *PodDialer) Dial(network, addr string) (net.Conn, error) {
 
 	errorChan := make(chan error)
 	go func() {
-		message, err := ioutil.ReadAll(errStream)
+		message, err := io.ReadAll(errStream)
 		if err != nil {
 			errorChan <- err
 		}

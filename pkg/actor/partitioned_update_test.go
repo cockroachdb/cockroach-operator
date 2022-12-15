@@ -17,7 +17,6 @@ limitations under the License.
 package actor
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -31,7 +30,7 @@ func TestDeployedInCluster(t *testing.T) {
 		t.Fatal("we should not be running inside of k8s")
 	}
 
-	file, err := ioutil.TempFile("/tmp", "foo")
+	file, err := os.CreateTemp("/tmp", "foo")
 	if err != nil {
 		t.Fatal(err)
 	}

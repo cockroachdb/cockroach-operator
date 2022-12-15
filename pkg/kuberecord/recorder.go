@@ -22,7 +22,7 @@ import (
 	"bytes"
 	"crypto/sha1"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"path/filepath"
 	"sync"
@@ -184,13 +184,13 @@ func (f *kubeRecorder) RoundTrip(r *http.Request) (*http.Response, error) {
 
 	var err error
 	if r.Body != nil {
-		body, err = ioutil.ReadAll(r.Body)
+		body, err = io.ReadAll(r.Body)
 		if err != nil {
 			return nil, err
 		}
 
 		// Reset the body to something usable
-		r.Body = ioutil.NopCloser(bytes.NewBuffer(body))
+		r.Body = io.NopCloser(bytes.NewBuffer(body))
 
 		if _, err := hasher.Write(body); err != nil {
 			// "It never returns an error."

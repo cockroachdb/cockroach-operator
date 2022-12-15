@@ -18,7 +18,7 @@ package testutil
 
 import (
 	"io"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -47,12 +47,12 @@ func ReadOrUpdateGoldenFile(t *testing.T, content string, update bool) string {
 
 	gf := filepath.Join("testdata", filepath.FromSlash(t.Name())+".golden")
 	if update {
-		if err := ioutil.WriteFile(gf, []byte(content), 0644); err != nil {
+		if err := os.WriteFile(gf, []byte(content), 0644); err != nil {
 			t.Fatalf("failed to update golden file %s: %v", gf, err)
 		}
 	}
 
-	g, err := ioutil.ReadFile(gf)
+	g, err := os.ReadFile(gf)
 	if err != nil {
 		t.Fatalf("failed to read goldenfile %s: %v", gf, err)
 	}

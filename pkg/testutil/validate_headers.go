@@ -20,7 +20,6 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -165,7 +164,7 @@ func (v ValidateHeaders) readGlob(glob string, regex *regexp.Regexp) (filesPtr *
 }
 
 func (v ValidateHeaders) hasValidHeader(filename string) (bool, error) {
-	content, err := ioutil.ReadFile(filename)
+	content, err := os.ReadFile(filename)
 	if err != nil {
 		return false, err
 	}

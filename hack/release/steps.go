@@ -18,7 +18,6 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"regexp"
@@ -94,7 +93,7 @@ func EnsureUniqueVersion(fn CmdFn) Step {
 func UpdateVersion() Step {
 	return StepFn(func(version string) error {
 		// setting the mode to 0644 to match the existing permissions: r/w for current user, read-only for everyone else.
-		return ioutil.WriteFile("version.txt", []byte(version), 0644)
+		return os.WriteFile("version.txt", []byte(version), 0644)
 	})
 }
 
@@ -149,6 +148,6 @@ func UpdateChangelog(fn FileFn) Step {
 		newUnreleased = append(newUnreleased, append([]byte("\n\n"), latestRelease...)...)
 		data = bytes.Replace(data, prevUnreleased, newUnreleased, 1)
 
-		return ioutil.WriteFile(fileName, data, 0644)
+		return os.WriteFile(fileName, data, 0644)
 	})
 }
