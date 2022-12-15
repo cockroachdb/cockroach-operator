@@ -162,6 +162,17 @@ func (cluster Cluster) PublicServiceName() string {
 	return fmt.Sprintf("%s-public", cluster.Name())
 }
 
+// PublicServiceAddress is the FQDN of the public service.
+// E.g. <name>-public.namespace.svc.cluster.local
+func (cluster Cluster) PublicServiceAddress() string {
+	return fmt.Sprintf(
+		"%s.%s.%s",
+		cluster.PublicServiceName(),
+		cluster.Namespace(),
+		cluster.Domain(),
+	)
+}
+
 func (cluster Cluster) ServiceAccountName() string {
 	return fmt.Sprintf("%s-sa", cluster.Name())
 }
