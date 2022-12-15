@@ -17,7 +17,6 @@ limitations under the License.
 package testutil_test
 
 import (
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -84,12 +83,11 @@ package testutil
 func writeFile(data string, dir string, fileName string) error {
 	content := []byte(data)
 	tmpfn := filepath.Join(dir, fileName)
-	return ioutil.WriteFile(tmpfn, content, 0666)
+	return os.WriteFile(tmpfn, content, 0666)
 }
 
 func TestValidate(t *testing.T) {
-
-	dir, err := ioutil.TempDir("", "validate-headers-test")
+	dir, err := os.MkdirTemp("", "validate-headers-test")
 	if err != nil {
 		t.Fatal(err)
 	}

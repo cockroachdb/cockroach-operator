@@ -18,7 +18,6 @@ package main
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -84,12 +83,12 @@ func writeWebhookSecrets(cert security.Certificate, dir string) error {
 	// r/w for current user only
 	mode := os.FileMode(0600)
 
-	if err := ioutil.WriteFile(filepath.Join(dir, "tls.crt"), cert.Certificate(), mode); err != nil {
+	if err := os.WriteFile(filepath.Join(dir, "tls.crt"), cert.Certificate(), mode); err != nil {
 		return errors.Wrap(err, "failed to write TLS certificate")
 	}
 
 	return errors.Wrap(
-		ioutil.WriteFile(filepath.Join(dir, "tls.key"), cert.PrivateKey(), mode),
+		os.WriteFile(filepath.Join(dir, "tls.key"), cert.PrivateKey(), mode),
 		"failed to write TLS private key",
 	)
 }

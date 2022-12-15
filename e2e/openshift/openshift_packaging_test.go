@@ -27,7 +27,6 @@ import (
 	"text/template"
 	"time"
 
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -248,7 +247,7 @@ func writeFile(t *testing.T, b []byte) string {
 	fileName := fmt.Sprintf("%s-test.yaml", randSeq(10))
 	fileName = filepath.Join(t.TempDir(), fileName)
 
-	if err := ioutil.WriteFile(fileName, b, 0644); err != nil {
+	if err := os.WriteFile(fileName, b, 0644); err != nil {
 		t.Fatal("Failed to write to temporary file", err)
 	}
 

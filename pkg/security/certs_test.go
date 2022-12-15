@@ -17,7 +17,6 @@ limitations under the License.
 package security_test
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -38,7 +37,7 @@ func TestMain(m *testing.M) {
 
 // tempDir is like testutils.TempDir but avoids a circular import.
 func tempDir(t *testing.T) (string, func()) {
-	certsDir, err := ioutil.TempDir("", "certs_test")
+	certsDir, err := os.MkdirTemp("", "certs_test")
 	if err != nil {
 		t.Fatal(err)
 	}
