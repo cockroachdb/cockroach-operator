@@ -275,7 +275,7 @@ func (rc *generateCert) generateNodeCert(ctx context.Context, log logr.Logger, c
 		"127.0.0.1",
 		cluster.PublicServiceName(),
 		fmt.Sprintf("%s.%s", cluster.PublicServiceName(), cluster.Namespace()),
-		fmt.Sprintf("%s.%s.%s", cluster.PublicServiceName(), cluster.Namespace(), cluster.Domain()),
+		cluster.PublicServiceAddress(),
 		fmt.Sprintf("*.%s", cluster.DiscoveryServiceName()),
 		fmt.Sprintf("*.%s.%s", cluster.DiscoveryServiceName(), cluster.Namespace()),
 		fmt.Sprintf("*.%s.%s.%s", cluster.DiscoveryServiceName(), cluster.Namespace(), cluster.Domain()),
