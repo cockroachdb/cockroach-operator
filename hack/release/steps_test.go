@@ -1,5 +1,5 @@
 /*
-Copyright 2022 The Cockroach Authors
+Copyright 2023 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package main_test
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"testing"
@@ -96,7 +95,7 @@ func TestEnsureUniqueVersion(t *testing.T) {
 func TestUpdateVersion(t *testing.T) {
 	require.NoError(t, UpdateVersion().Apply("1.2.3"))
 
-	v, err := ioutil.ReadFile("version.txt")
+	v, err := os.ReadFile("version.txt")
 	require.NoError(t, err)
 	require.Equal(t, "1.2.3", string(v))
 
@@ -162,7 +161,7 @@ func TestUpdateChangelog(t *testing.T) {
 	err := UpdateChangelog(func(_ string) ([]byte, error) { return []byte(input), nil }).Apply("1.1.0")
 	require.NoError(t, err)
 
-	data, err := ioutil.ReadFile("CHANGELOG.md")
+	data, err := os.ReadFile("CHANGELOG.md")
 	require.NoError(t, err)
 	require.Equal(t, string(data), expected)
 }

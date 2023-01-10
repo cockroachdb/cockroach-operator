@@ -1,5 +1,5 @@
 /*
-Copyright 2022 The Cockroach Authors
+Copyright 2023 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import (
 	"github.com/cockroachdb/cockroach-operator/pkg/actor"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	"github.com/cockroachdb/cockroach-operator/pkg/util"
+	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
 	"github.com/lithammer/shortuuid/v3"
 	"go.uber.org/zap/zapcore"
@@ -36,6 +37,7 @@ import (
 	policy "k8s.io/api/policy/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -60,13 +62,14 @@ type ClusterReconciler struct {
 // +kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core,resources=services/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=core,resources=services/finalizers,verbs=get;list;watch
-// +kubebuilder:rbac:groups=core,resources=configmaps,verbs=get
+// +kubebuilder:rbac:groups=core,resources=configmaps,verbs=get;list;watch
 // +kubebuilder:rbac:groups=core,resources=configmaps/status,verbs=get
 // +kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch;create;update;patch
-// +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list
+// +kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;delete;deletecollection
 // +kubebuilder:rbac:groups=core,resources=pods/exec,verbs=create
 // +kubebuilder:rbac:groups=core,resources=pods/log,verbs=get
 // +kubebuilder:rbac:groups=core,resources=nodes,verbs=get;list
+// +kubebuilder:rbac:groups=core,resources=persistentvolumeclaims,verbs=list;update
 // +kubebuilder:rbac:groups=core,resources=serviceaccounts,verbs=get;list;create;watch
 // +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=roles,verbs=get;list;create;watch
 // +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=get;list;create;watch
@@ -114,12 +117,13 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req reconcile.Request
 	}
 
 	cluster := resource.NewCluster(cr)
+	cluster.Fetcher = fetcher
 	// on first run we need to save the status and exit to pass Openshift CI
 	// we added a state called Starting for field ClusterStatus to accomplish this
 	if cluster.Status().ClusterStatus == "" {
 		cluster.SetClusterStatusOnFirstReconcile()
-		if err := r.Client.Status().Update(ctx, cluster.Unwrap()); err != nil {
-			log.Error(err, "failed to update cluster status on action")
+		if err := r.updateClusterStatus(ctx, log, &cluster); err != nil {
+			log.Error(err, "failed to update cluster status")
 			return requeueIfError(err)
 		}
 		return requeueImmediately()
@@ -129,8 +133,8 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req reconcile.Request
 	if cluster.True(api.CrdbVersionChecked) {
 		if cluster.GetCockroachDBImageName() != cluster.Status().CrdbContainerImage {
 			cluster.SetFalse(api.CrdbVersionChecked)
-			if err := r.Client.Status().Update(ctx, cluster.Unwrap()); err != nil {
-				log.Error(err, "failed to update cluster status on action")
+			if err := r.updateClusterStatus(ctx, log, &cluster); err != nil {
+				log.Error(err, "failed to update cluster status")
 				return requeueIfError(err)
 			}
 			return requeueImmediately()
@@ -145,73 +149,65 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req reconcile.Request
 		return noRequeue()
 	}
 
-	// Save context cancellation function for actors to call if needed
-	ctx = actor.ContextWithCancelFn(ctx, cancel)
-
 	log.Info(fmt.Sprintf("Running action with name: %s", actorToExecute.GetActionType()))
 	if err := actorToExecute.Act(ctx, &cluster, log); err != nil {
 		// Save the error on the Status for each action
 		log.Info("Error on action", "Action", actorToExecute.GetActionType(), "err", err.Error())
 		cluster.SetActionFailed(actorToExecute.GetActionType(), err.Error())
+
 		defer func(ctx context.Context, cluster *resource.Cluster) {
-			if err := r.Client.Status().Update(ctx, cluster.Unwrap()); err != nil {
+			if err := r.updateClusterStatus(ctx, log, cluster); err != nil {
 				log.Error(err, "failed to update cluster status")
 			}
 		}(ctx, &cluster)
+
 		// Short pause
-		if notReadyErr, ok := err.(actor.NotReadyErr); ok {
+		var notReadyErr actor.NotReadyErr
+		if errors.As(err, &notReadyErr) {
 			log.V(int(zapcore.DebugLevel)).Info("requeueing", "reason", notReadyErr.Error(), "Action", actorToExecute.GetActionType())
 			return requeueAfter(5*time.Second, nil)
 		}
 
 		// Long pause
-		if cantRecoverErr, ok := err.(actor.PermanentErr); ok {
+		var cantRecoverErr actor.PermanentErr
+		if errors.As(err, &cantRecoverErr) {
 			log.Error(cantRecoverErr, "can't proceed with reconcile", "Action", actorToExecute.GetActionType())
 			return noRequeue()
 		}
 
 		// No requeue until the user makes changes
-		if validationError, ok := err.(actor.ValidationError); ok {
-			log.Error(validationError, "can't proceed with reconcile")
+		var validationErr actor.ValidationError
+		if errors.As(err, &validationErr) {
+			log.Error(validationErr, "can't proceed with reconcile")
 			return noRequeue()
 		}
 
 		log.Error(err, "action failed")
 		return requeueIfError(err)
 	}
+
 	// reset errors on each run  if there was an error,
 	// this is to cover the not ready case
 	if cluster.Failed(actorToExecute.GetActionType()) {
 		cluster.SetActionFinished(actorToExecute.GetActionType())
 	}
 
-	// Stop processing and wait for Kubernetes scheduler to call us again as the actor
-	// modified actorToExecute resource owned by the controller
-	if cancelled(ctx) {
-		log.V(int(zapcore.InfoLevel)).Info("request was interrupted")
-		return noRequeue()
-	}
-
-	// Check if the resource has been updated while the controller worked on it
-	fresh, err := cluster.IsFresh(fetcher)
-	if err != nil {
-		return requeueIfError(err)
-	}
-
-	// If the resource was updated, it is needed to start all over again
-	// to ensure that the latest state was reconciled
-	if !fresh {
-		log.V(int(zapcore.DebugLevel)).Info("cluster resources is not up to date")
-		return requeueImmediately()
-	}
-	cluster.SetClusterStatus()
-	if err := r.Client.Status().Update(ctx, cluster.Unwrap()); err != nil {
+	if err := r.updateClusterStatus(ctx, log, &cluster); err != nil {
 		log.Error(err, "failed to update cluster status")
 		return requeueIfError(err)
 	}
 
 	log.V(int(zapcore.InfoLevel)).Info("reconciliation completed")
 	return noRequeue()
+}
+
+// updateClusterStatus preprocesses a cluster's Status and then persists it to
+// the Kubernetes API. updateClusterStatus will retry on conflict errors.
+func (r *ClusterReconciler) updateClusterStatus(ctx context.Context, log logr.Logger, cluster *resource.Cluster) error {
+	cluster.SetClusterStatus()
+	return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		return r.Client.Status().Update(ctx, cluster.Unwrap())
+	})
 }
 
 // SetupWithManager registers the controller with the controller.Manager from controller-runtime
@@ -250,14 +246,5 @@ func InitClusterReconcilerWithLogger(l logr.Logger) func(ctrl.Manager) error {
 			Scheme:   mgr.GetScheme(),
 			Director: actor.NewDirector(mgr.GetScheme(), mgr.GetClient(), mgr.GetConfig(), clientset),
 		}).SetupWithManager(mgr)
-	}
-}
-
-func cancelled(ctx context.Context) bool {
-	select {
-	case <-ctx.Done():
-		return true
-	default:
-		return false
 	}
 }

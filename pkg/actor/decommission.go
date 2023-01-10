@@ -1,5 +1,5 @@
 /*
-Copyright 2022 The Cockroach Authors
+Copyright 2023 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package actor
 import (
 	"context"
 	"fmt"
+
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/clustersql"
 	"github.com/cockroachdb/cockroach-operator/pkg/database"
@@ -82,7 +83,7 @@ func (d decommission) Act(ctx context.Context, cluster *resource.Cluster, log lo
 	// If we are running inside of k8s we will not find this file.
 	runningInsideK8s := inK8s("/var/run/secrets/kubernetes.io/serviceaccount/token")
 
-	serviceName := cluster.PublicServiceName()
+	serviceName := cluster.PublicServiceAddress()
 	if runningInsideK8s {
 		log.V(DEBUGLEVEL).Info("operator is running inside of kubernetes, connecting to service for db connection")
 	} else {
@@ -143,12 +144,10 @@ func (d decommission) Act(ctx context.Context, cluster *resource.Cluster, log lo
 		/// now check if the decommissionStaleErr and update status
 		log.Error(err, "decommission failed")
 		cluster.SetFalse(api.DecommissionCondition)
-		CancelLoop(ctx, log)
 		return err
 	}
 	// TO DO @alina we will need to save the status foreach action
 	cluster.SetTrue(api.DecommissionCondition)
 	log.V(DEBUGLEVEL).Info("decommission completed", "cond", ss.Status.Conditions)
-	CancelLoop(ctx, log)
 	return nil
 }

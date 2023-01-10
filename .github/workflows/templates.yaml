@@ -1,4 +1,4 @@
-# Copyright 2022 The Cockroach Authors
+# Copyright 2023 The Cockroach Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -29,15 +29,13 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      matrix:
-        bazel: ["4.0.0"]
     steps:
-      - uses: actions/checkout@v2
-
-      - name: Setup Bazel
-        uses: abhinavsingh/setup-bazel@v3
+      - uses: actions/checkout@v3
+      - name: Mount bazel cache
+        uses: actions/cache@v3
         with:
-          version: ${{ matrix.bazel }}
+          path: "~/.cache/bazel"
+          key: bazel
 
       - name: Tests
         run: |

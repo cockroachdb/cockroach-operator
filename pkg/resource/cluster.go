@@ -1,5 +1,5 @@
 /*
-Copyright 2022 The Cockroach Authors
+Copyright 2023 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -22,11 +22,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Masterminds/semver/v3"
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/clusterstatus"
 	"github.com/cockroachdb/cockroach-operator/pkg/condition"
 	"github.com/cockroachdb/errors"
 	"github.com/gosimple/slug"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
@@ -160,6 +162,17 @@ func (cluster Cluster) PublicServiceName() string {
 	return fmt.Sprintf("%s-public", cluster.Name())
 }
 
+// PublicServiceAddress is the FQDN of the public service.
+// E.g. <name>-public.namespace.svc.cluster.local
+func (cluster Cluster) PublicServiceAddress() string {
+	return fmt.Sprintf(
+		"%s.%s.%s",
+		cluster.PublicServiceName(),
+		cluster.Namespace(),
+		cluster.Domain(),
+	)
+}
+
 func (cluster Cluster) ServiceAccountName() string {
 	return fmt.Sprintf("%s-sa", cluster.Name())
 }
@@ -272,11 +285,33 @@ func (cluster Cluster) GetCockroachDBImageName() string {
 	return cluster.Spec().Image.Name
 }
 
+func (cluster Cluster) GetImagePullPolicy() corev1.PullPolicy {
+	if cluster.Spec().Image == nil || cluster.Spec().Image.PullPolicyName == nil {
+		return corev1.PullIfNotPresent
+	}
+	return *cluster.Spec().Image.PullPolicyName
+}
+
+func (cluster Cluster) GetImagePullSecret() *string {
+	if cluster.Spec().Image == nil {
+		return nil
+	}
+	return cluster.Spec().Image.PullSecret
+}
+
 func (cluster Cluster) NodeTLSSecretName() string {
+	if cluster.Spec().NodeTLSSecret != "" {
+		return cluster.Spec().NodeTLSSecret
+	}
+
 	return fmt.Sprintf("%s-node", cluster.Name())
 }
 
 func (cluster Cluster) ClientTLSSecretName() string {
+	if cluster.Spec().ClientTLSSecret != "" {
+		return cluster.Spec().ClientTLSSecret
+	}
+
 	return fmt.Sprintf("%s-root", cluster.Name())
 }
 func (cluster Cluster) CASecretName() string {
@@ -295,13 +330,48 @@ func (cluster Cluster) SecureMode() string {
 	return "--insecure"
 }
 
-func (cluster Cluster) IsFresh(fetcher Fetcher) (bool, error) {
-	actual := ClusterPlaceholder(cluster.Name())
-	if err := fetcher.Fetch(actual); err != nil {
-		return false, errors.Wrapf(err, "failed to fetch cluster resource")
+func (cluster Cluster) LoggingConfiguration(fetcher Fetcher) (string, error) {
+	if cluster.Spec().LogConfigMap != "" {
+		cm := &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: cluster.Spec().LogConfigMap,
+			},
+		}
+		err := fetcher.Fetch(cm)
+		if err != nil {
+			return "", err
+		}
+
+		if val, ok := cm.Data["logging.yaml"]; ok {
+			return `"` + val + `"`, nil
+		} else {
+			return "", errors.Newf(
+				"`logging.yaml` entry not found in configMap %s", cluster.Spec().LogConfigMap)
+		}
 	}
 
-	return cluster.cr.ResourceVersion == actual.ResourceVersion, nil
+	return "\"{sinks: {stderr: {channels: [OPS, HEALTH], redact: true}}}\"", nil
+}
+
+func (cluster Cluster) IsLoggingAPIEnabled() bool {
+	var version string
+	if cluster.Spec().CockroachDBVersion != "" {
+		version = cluster.Spec().CockroachDBVersion
+	} else if cluster.Spec().Image != nil && cluster.Spec().Image.Name != "" {
+		version = strings.Split(cluster.Spec().Image.Name, ":")[1]
+	} else {
+		return false
+	}
+
+	// No need to handle the error as the version provided is constant
+	c, _ := semver.NewConstraint(">= v21.1")
+
+	v, err := semver.NewVersion(version)
+	if err != nil {
+		return false
+	}
+
+	return c.Check(v)
 }
 
 // TODO add error handling to ensure that env variables are set correctly and

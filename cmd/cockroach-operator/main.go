@@ -1,5 +1,5 @@
 /*
-Copyright 2022 The Cockroach Authors
+Copyright 2023 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -34,8 +34,9 @@ import (
 )
 
 const (
-	certDir              = "/tmp/k8s-webhook-server/serving-certs"
-	watchNamespaceEnvVar = "WATCH_NAMESPACE"
+	certDir                 = "/tmp/k8s-webhook-server/serving-certs"
+	defaultLeaderElectionID = "crdb-operator.cockroachlabs.com"
+	watchNamespaceEnvVar    = "WATCH_NAMESPACE"
 )
 
 var (
@@ -49,7 +50,7 @@ func init() {
 }
 
 func main() {
-	var metricsAddr, featureGatesString string
+	var metricsAddr, featureGatesString, leaderElectionID string
 	var enableLeaderElection, skipWebhookConfig bool
 
 	// use zap logging cli options
@@ -58,6 +59,7 @@ func main() {
 
 	flag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&featureGatesString, "feature-gates", "", "Feature gate to enable, format is a command separated list enabling features, for instance RunAsNonRoot=false")
+	flag.StringVar(&leaderElectionID, "leader-election-id", defaultLeaderElectionID, "The ID to use for leader election")
 	flag.BoolVar(&enableLeaderElection, "enable-leader-election", false,
 		"Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
 	flag.BoolVar(&skipWebhookConfig, "skip-webhook-config", false,
@@ -90,6 +92,7 @@ func main() {
 		Namespace:          watchNamespace,
 		MetricsBindAddress: metricsAddr,
 		LeaderElection:     enableLeaderElection,
+		LeaderElectionID:   leaderElectionID,
 		Port:               9443,
 		CertDir:            certDir,
 	}

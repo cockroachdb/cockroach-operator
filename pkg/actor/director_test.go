@@ -1,5 +1,5 @@
 /*
-Copyright 2022 The Cockroach Authors
+Copyright 2023 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@ package actor_test
 import (
 	"context"
 
+	"testing"
+
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/actor"
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
@@ -37,7 +39,6 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"testing"
 )
 
 // This constructs a mock cluster that behaves as if it were a real cluster in a steady state.
@@ -53,7 +54,7 @@ func createTestDirectorAndStableCluster(t *testing.T) (*resource.Cluster, actor.
 	cluster := testutil.NewBuilder("cockroachdb").
 		Namespaced("default").
 		WithUID("cockroachdb-uid").
-		WithPVDataStore(storage, "standard" /* default storage class in KIND */).
+		WithPVDataStore(storage).
 		WithNodeCount(numNodes).
 		WithClusterAnnotations(clusterAnnotations).
 		Cluster()

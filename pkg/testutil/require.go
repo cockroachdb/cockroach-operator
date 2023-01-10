@@ -1,5 +1,5 @@
 /*
-Copyright 2022 The Cockroach Authors
+Copyright 2023 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -563,6 +563,24 @@ func RequireNumberOfPVCs(t *testing.T, ctx context.Context, sb testenv.DiffingSa
 	require.Equal(t, quantity, boundPVCCount)
 }
 
+// HasNumPVCs returns true when the number of bound PVCs is equal to the supplied
+// quantity. If an error occurs, it returns false.
+func HasNumPVCs(ctx context.Context, sb testenv.DiffingSandbox, b ClusterBuilder, quantity int) bool {
+	pvcList, err := fetchPVCs(ctx, sb, b)
+	if err != nil {
+		return false
+	}
+
+	boundPVCCount := 0
+	for _, pvc := range pvcList.Items {
+		if pvc.Status.Phase == corev1.ClaimBound {
+			boundPVCCount = boundPVCCount + 1
+		}
+	}
+
+	return boundPVCCount == quantity
+}
+
 func fetchPVCs(ctx context.Context, sb testenv.DiffingSandbox, b ClusterBuilder) (*corev1.PersistentVolumeClaimList, error) {
 	cluster := b.Cluster()
 	var pvcList *corev1.PersistentVolumeClaimList
@@ -603,7 +621,9 @@ func RequireClusterInImagePullBackoff(t *testing.T, sb testenv.DiffingSandbox, b
 		"app.kubernetes.io/instance": clusterName,
 	}
 
-	wErr := wait.Poll(10*time.Second, 500*time.Second, func() (bool, error) {
+	// Timeout must be greater than 2 minutes, the max backoff time for the
+	// version checker job.
+	wErr := wait.Poll(10*time.Second, 3 * time.Minute, func() (bool, error) {
 		if err := sb.List(jobList, jobLabel); err != nil {
 			return false, err
 		}
@@ -640,7 +660,7 @@ func RequireClusterInFailedState(t *testing.T, sb testenv.DiffingSandbox, b Clus
 		},
 	}
 
-	wErr := wait.Poll(10*time.Second, 500*time.Second, func() (bool, error) {
+	wErr := wait.Poll(10*time.Second, 2 * time.Minute, func() (bool, error) {
 		if err := sb.Get(&crdbCluster); err != nil {
 			return false, err
 		}
@@ -653,4 +673,19 @@ func RequireClusterInFailedState(t *testing.T, sb testenv.DiffingSandbox, b Clus
 	})
 
 	require.NoError(t, wErr)
+}
+
+func RequireLoggingConfigMap(t *testing.T, sb testenv.DiffingSandbox, name string, logConfig string) {
+	var loggingConfigMap = corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: sb.Namespace,
+		},
+		Data: map[string]string{
+			"logging.yaml": logConfig,
+		},
+	}
+
+	err := sb.Create(&loggingConfigMap)
+	require.NoError(t, err)
 }

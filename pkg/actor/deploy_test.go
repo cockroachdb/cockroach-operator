@@ -1,5 +1,5 @@
 /*
-Copyright 2022 The Cockroach Authors
+Copyright 2023 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -69,7 +69,7 @@ func TestDeploysNotInitalizedClusterAfterVersionChecker(t *testing.T) {
 	cluster := testutil.NewBuilder("cockroachdb").
 		Namespaced("default").
 		WithUID("cockroachdb-uid").
-		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */).
+		WithPVDataStore("1Gi").
 		WithNodeCount(1).Cluster()
 	cluster.SetTrue(api.CrdbVersionChecked)
 
@@ -81,7 +81,7 @@ func TestDeploysNotInitalizedClusterAfterVersionChecker(t *testing.T) {
 	// 3 is the number of resources we expect to be created. The action should be repeated as it is
 	// restarted on successful creation or update
 	for i := 0; i < 3; i++ {
-		assert.NoError(t, deploy.Act(actor.ContextWithCancelFn(context.TODO(), func() {}), cluster, testLog))
+		assert.NoError(t, deploy.Act(context.Background(), cluster, testLog))
 	}
 
 	assert.Equal(t, expected, actual)

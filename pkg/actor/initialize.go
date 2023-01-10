@@ -1,5 +1,5 @@
 /*
-Copyright 2022 The Cockroach Authors
+Copyright 2023 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -131,6 +131,7 @@ func (init initialize) Act(ctx context.Context, cluster *resource.Cluster, log l
 
 		// Set the CrdbInitialized condition in the cluster status to true
 		refreshedCluster := resource.NewCluster(newcr)
+		refreshedCluster.Fetcher = fetcher
 		refreshedCluster.SetTrue(api.CrdbInitializedCondition)
 
 		// Actually attempt to update the CrdbClusterStatus object. If the update runs into a conflict for any reason

@@ -1,5 +1,5 @@
 /*
-Copyright 2022 The Cockroach Authors
+Copyright 2023 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os/exec"
 	"strings"
 	"time"
 
@@ -59,6 +60,30 @@ func (v *versionChecker) GetActionType() api.ActionType {
 }
 
 func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster, log logr.Logger) error {
+	log.V(DEBUGLEVEL).Info("starting to check the logging config provided")
+	//we refresh the resource to make sure we use the latest version
+	fetcher := resource.NewKubeFetcher(ctx, cluster.Namespace(), v.client)
+
+	if cluster.IsLoggingAPIEnabled() {
+		if logConfig, err := cluster.LoggingConfiguration(fetcher); err == nil {
+			log.V(DEBUGLEVEL).Info(fmt.Sprintf("Log configuration for the cockroach cluster: %s", logConfig))
+			var stderr bytes.Buffer
+			cmd := exec.Command("bash", "-c", fmt.Sprintf("cockroach debug check-log-config --log=%s", logConfig))
+			cmd.Stderr = &stderr
+			cErr := cmd.Run()
+			if cErr != nil || stderr.String() != "" {
+				log.Error(cErr, "The cockroachdb logging API is set to value that is not supported by the operator, See the default logging configuration here (https://www.cockroachlabs.com/docs/stable/configure-logs.html#default-logging-configuration) ")
+				return errors.New(stderr.String())
+			} else {
+				log.V(DEBUGLEVEL).Info("Validated the logging config")
+			}
+		} else {
+			vErr := ValidationError{Err: err}
+			log.Error(vErr, "The cockroachdb logging API value is set to a value that is not supported by the operator")
+			return err
+		}
+	}
+
 	log.V(DEBUGLEVEL).Info("starting to check the crdb version of the container provided")
 
 	r := resource.NewManagedKubeResource(ctx, v.client, cluster, kube.AnnotatingPersister)
@@ -111,8 +136,9 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster, log
 
 	if changed {
 		log.V(int(zapcore.DebugLevel)).Info("created/updated job, stopping request processing")
-		CancelLoop(ctx, log)
-		return nil
+		// Return a non error error here to prevent the controller from
+		// clearing any previously set Status fields.
+		return NotReadyErr{errors.New("job changed")}
 	}
 
 	log.V(int(zapcore.DebugLevel)).Info("version checker", "job", jobName)
@@ -120,47 +146,21 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster, log
 		Namespace: cluster.Namespace(),
 		Name:      jobName,
 	}
+
 	job := &kbatch.Job{}
-
 	if err := v.client.Get(ctx, key, job); err != nil {
-		err := WaitUntilJobPodIsRunning(ctx, v.clientset, job, log)
-		if err != nil {
-			log.Error(err, "job pod is not running; deleting job")
-			if dErr := deleteJob(ctx, cluster, v.clientset, job); dErr != nil {
-				// Log the job deletion error, but return the underlying error that prompted deletion.
-				log.Error(dErr, "failed to delete the job")
-			}
-			return err
-		}
+		log.Error(err, "failed getting Job '%s'", jobName)
+		return err
 	}
 
-	// We have hit an edge case were sometimes the job selector is nil, the following block is extra code
-	// that tries to list the jobs and then get the job again, which probably will reconcile
-	// the API.  We also removed setting the job selector as well.
-	if job.Spec.Selector == nil {
-		log.V(int(zapcore.DebugLevel)).Info("Job or Job Selector returned as nil, attempting to get it again.")
-
-		// The job is nil or the selector is nil, we are doing a list, which
-		// should reconcile the API and we we do another get the job should have
-		// the selector.
-		jobs, err := v.clientset.BatchV1().Jobs(job.Namespace).List(ctx, metav1.ListOptions{})
-		if err != nil {
-			log.Error(err, "unable to list jobs")
-			return err
-		}
-
-		if jobs == nil || len(jobs.Items) == 0 {
-			err := errors.New("unable to find any jobs")
-			log.Error(err, err.Error())
-			return err
-		}
-
-		if err := v.client.Get(ctx, key, job); err != nil {
-			log.Error(err, "unable to get job")
-			return err
-		}
-	}
-
+	// Left over insanity check just in case there's a missed edge case.
+	// WaitUntilJobPodIsRunning will panic with a nil dereference if passed an
+	// empty Job. There was previously an incorrect error check which would
+	// always panic if the above .Get failed leading to some strange flakiness
+	// in test. An extremely defensive block (See #607) was added as an attempt
+	// to mitigate this panic (assumedly). It's been removed but this final
+	// check is leftover just in case this after the fact correction was
+	// misinformed.
 	if job.Spec.Selector == nil {
 		err := errors.New("job selector is nil")
 		log.Error(err, err.Error())
@@ -174,7 +174,7 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster, log
 			// We need to stop requeueing until further changes on the CR
 			image := cluster.GetCockroachDBImageName()
 			if errBackoff := IsContainerStatusImagePullBackoff(ctx, v.clientset, job, log, image); errBackoff != nil {
-				err := InvalidContainerVersionError{Err: errBackoff}
+				err := PermanentErr{Err: errBackoff}
 				return LogError("job image incorrect", err, log)
 			} else if dErr := deleteJob(ctx, cluster, v.clientset, job); dErr != nil {
 				// Log the job deletion error, but return the underlying error that prompted deletion.
@@ -208,6 +208,7 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster, log
 				}
 			}
 		}
+
 		podName := tmpPod.Name
 
 		req := v.clientset.CoreV1().Pods(job.Namespace).GetLogs(podName, &podLogOpts)
@@ -272,6 +273,7 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster, log
 		}
 
 		refreshedCluster := resource.NewCluster(cr)
+		refreshedCluster.Fetcher = fetcher
 		refreshedCluster.SetClusterVersion(calVersion)
 		refreshedCluster.SetAnnotationVersion(calVersion)
 		refreshedCluster.SetCrdbContainerImage(containerImage)
@@ -312,6 +314,7 @@ func (v *versionChecker) completeVersionChecker(
 	}
 
 	refreshedCluster := resource.NewCluster(cr)
+	refreshedCluster.Fetcher = fetcher
 	// save the status of the cluster
 	refreshedCluster.SetTrue(api.CrdbVersionChecked)
 	refreshedCluster.SetClusterVersion(version)
@@ -322,7 +325,6 @@ func (v *versionChecker) completeVersionChecker(
 	}
 	log.V(int(zapcore.DebugLevel)).Info("completed version checker", "calVersion", version,
 		"containerImage", imageName)
-	CancelLoop(ctx, log)
 	return nil
 }
 

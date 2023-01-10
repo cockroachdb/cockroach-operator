@@ -1,4 +1,4 @@
-# Copyright 2022 The Cockroach Authors
+# Copyright 2023 The Cockroach Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -128,6 +128,8 @@ rules:
   - configmaps
   verbs:
   - get
+  - list
+  - watch
 - apiGroups:
   - ""
   resources:
@@ -144,8 +146,17 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - persistentvolumeclaims
+  verbs:
+  - list
+  - update
+- apiGroups:
+  - ""
+  resources:
   - pods
   verbs:
+  - delete
+  - deletecollection
   - get
   - list
 - apiGroups:

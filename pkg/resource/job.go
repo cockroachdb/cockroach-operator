@@ -1,5 +1,5 @@
 /*
-Copyright 2022 The Cockroach Authors
+Copyright 2023 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -63,11 +63,13 @@ func (b JobBuilder) Build(obj client.Object) error {
 
 	// we recreate spec from ground only if we do not find the container job
 	if dbContainer, err := kube.FindContainer(JobContainerName, &job.Spec.Template.Spec); err != nil {
+		backoffLimit := int32(2)
 		job.Spec = kbatch.JobSpec{
 			// This field is alpha-level and is only honored by servers that enable the TTLAfterFinished feature.
 			// see https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#job-v1-batch
 			TTLSecondsAfterFinished: ptr.Int32(300),
 			Template:                b.buildPodTemplate(),
+			BackoffLimit:            &backoffLimit,
 		}
 	} else {
 		//if job with the container already exists we update the image only
@@ -114,7 +116,7 @@ func (b JobBuilder) buildPodTemplate() corev1.PodTemplateSpec {
 		pod.Spec.TopologySpreadConstraints = b.Spec().TopologySpreadConstraints
 	}
 
-	secret := b.Spec().Image.PullSecret
+	secret := b.GetImagePullSecret()
 	if secret != nil {
 		local := corev1.LocalObjectReference{
 			Name: *secret,
@@ -138,7 +140,7 @@ func (b JobBuilder) MakeContainers() []corev1.Container {
 		{
 			Name:            JobContainerName,
 			Image:           b.GetCockroachDBImageName(),
-			ImagePullPolicy: *b.Spec().Image.PullPolicyName,
+			ImagePullPolicy: b.GetImagePullPolicy(),
 			Resources: corev1.ResourceRequirements{
 				Limits: corev1.ResourceList{
 					corev1.ResourceCPU:    apiresource.MustParse("300m"),
@@ -150,7 +152,7 @@ func (b JobBuilder) MakeContainers() []corev1.Container {
 				},
 			},
 			Command: []string{"/bin/bash"},
-			Args:    []string{"-c", fmt.Sprintf("%s; sleep 150", GetTagVersionCommand)},
+			Args:    []string{"-c", fmt.Sprintf("set -eo pipefail; %s; sleep 150", GetTagVersionCommand)},
 		},
 	}
 }

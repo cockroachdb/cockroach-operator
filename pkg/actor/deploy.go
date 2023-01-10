@@ -1,5 +1,5 @@
 /*
-Copyright 2022 The Cockroach Authors
+Copyright 2023 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -81,7 +81,6 @@ func (d deploy) Act(ctx context.Context, cluster *resource.Cluster, log logr.Log
 
 		if changed {
 			log.Info("created/updated a resource, stopping request processing", "resource", b.ResourceName())
-			CancelLoop(ctx, log)
 			return nil
 		}
 	}

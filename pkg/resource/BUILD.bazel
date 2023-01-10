@@ -32,6 +32,7 @@ go_library(
         "@com_github_cockroachdb_errors//:go_default_library",
         "@com_github_go_logr_logr//:go_default_library",
         "@com_github_gosimple_slug//:go_default_library",
+        "@com_github_masterminds_semver_v3//:go_default_library",
         "@io_k8s_api//admissionregistration/v1:go_default_library",
         "@io_k8s_api//apps/v1:go_default_library",
         "@io_k8s_api//batch/v1:go_default_library",
@@ -57,6 +58,7 @@ go_test(
     name = "go_default_test",
     srcs = [
         "certificate_test.go",
+        "cluster_test.go",
         "discovery_service_test.go",
         "pod_distruption_budget_test.go",
         "public_service_test.go",

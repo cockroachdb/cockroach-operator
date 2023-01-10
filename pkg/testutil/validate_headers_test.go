@@ -1,5 +1,5 @@
 /*
-Copyright 2022 The Cockroach Authors
+Copyright 2023 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ limitations under the License.
 package testutil_test
 
 import (
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -26,7 +25,7 @@ import (
 	. "github.com/cockroachdb/cockroach-operator/pkg/testutil"
 )
 
-const GOOD_MAKEFILE = `# Copyright 2022 The Cockroach Authors
+const GOOD_MAKEFILE = `# Copyright 2023 The Cockroach Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -45,7 +44,7 @@ target:
 `
 const GOOD_GOFILE = `// +build
 /*
-Copyright 2022 The Cockroach Authors
+Copyright 2023 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -63,7 +62,7 @@ limitations under the License.
 package testutil
 `
 const BAD_GOFILE = `/*
-Copyright 2022 The Wrong Authors
+Copyright 2023 The Wrong Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -84,12 +83,11 @@ package testutil
 func writeFile(data string, dir string, fileName string) error {
 	content := []byte(data)
 	tmpfn := filepath.Join(dir, fileName)
-	return ioutil.WriteFile(tmpfn, content, 0666)
+	return os.WriteFile(tmpfn, content, 0666)
 }
 
 func TestValidate(t *testing.T) {
-
-	dir, err := ioutil.TempDir("", "validate-headers-test")
+	dir, err := os.MkdirTemp("", "validate-headers-test")
 	if err != nil {
 		t.Fatal(err)
 	}

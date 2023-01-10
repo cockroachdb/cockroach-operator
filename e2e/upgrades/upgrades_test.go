@@ -1,5 +1,5 @@
 /*
-Copyright 2022 The Cockroach Authors
+Copyright 2023 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,11 +17,11 @@ limitations under the License.
 package upgrades
 
 import (
-	"flag"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"testing"
-	"time"
 
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/cockroachdb/cockroach-operator/e2e"
 	"github.com/cockroachdb/cockroach-operator/pkg/controller"
 	"github.com/cockroachdb/cockroach-operator/pkg/testutil"
 	testenv "github.com/cockroachdb/cockroach-operator/pkg/testutil/env"
@@ -30,18 +30,6 @@ import (
 	"go.uber.org/zap/zaptest"
 )
 
-// We cannot do this since we are creatin the RBAC components now
-// for openshift.  We need to create those only once.
-var parallel = *flag.Bool("parallel", false, "run tests in parallel")
-
-// TODO move these into a common file
-var MinorVersion1 string = "cockroachdb/cockroach:v20.2.8"
-var MinorVersion2 string = "cockroachdb/cockroach:v20.2.9"
-var MajorVersion string = "cockroachdb/cockroach:v21.1.0"
-var NonExistentVersion string = "cockroachdb/cockroach-non-existent:v21.1.999"
-var SkipFeatureVersion string = "cockroachdb/cockroach:v20.1.0"
-var invalidImage string = "nginx:latest"
-
 // TestUpgradesMinorVersion tests a minor version bump
 func TestUpgradesMinorVersion(t *testing.T) {
 
@@ -49,9 +37,6 @@ func TestUpgradesMinorVersion(t *testing.T) {
 	// partition update
 	// Going from v20.2.8 to v20.2.9
 
-	if parallel {
-		t.Parallel()
-	}
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
 	}
@@ -66,15 +51,15 @@ func TestUpgradesMinorVersion(t *testing.T) {
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
 
 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
-		WithImage(MinorVersion1).
-		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
+		WithImage(e2e.MinorVersion1).
+		WithPVDataStore("1Gi")
 
 	steps := testutil.Steps{
 		{
 			Name: "creates a 3-node secure cluster",
 			Test: func(t *testing.T) {
 				require.NoError(t, sb.Create(builder.Cr()))
-				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
+				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, e2e.CreateClusterTimeout)
 			},
 		},
 		{
@@ -84,10 +69,10 @@ func TestUpgradesMinorVersion(t *testing.T) {
 				require.NoError(t, sb.Get(current))
 
 				updated := current.DeepCopy()
-				updated.Spec.Image.Name = MinorVersion2
+				updated.Spec.Image.Name = e2e.MinorVersion2
 				require.NoError(t, sb.Patch(updated, client.MergeFrom(current)))
 
-				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
+				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, e2e.CreateClusterTimeout)
 				testutil.RequireDbContainersToUseImage(t, sb, updated)
 				t.Log("Done with upgrade")
 			},
@@ -103,9 +88,6 @@ func TestUpgradesMajorVersion20to21(t *testing.T) {
 	// We are doing a major version upgrade here
 	// 20 to 21
 
-	if parallel {
-		t.Parallel()
-	}
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
 	}
@@ -120,8 +102,8 @@ func TestUpgradesMajorVersion20to21(t *testing.T) {
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
 
 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
-		WithImage(MinorVersion2).
-		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
+		WithImage(e2e.MinorVersion2).
+		WithPVDataStore("1Gi")
 
 	steps := testutil.Steps{
 		{
@@ -129,7 +111,7 @@ func TestUpgradesMajorVersion20to21(t *testing.T) {
 			Test: func(t *testing.T) {
 				require.NoError(t, sb.Create(builder.Cr()))
 
-				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
+				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, e2e.CreateClusterTimeout)
 			},
 		},
 		{
@@ -139,10 +121,10 @@ func TestUpgradesMajorVersion20to21(t *testing.T) {
 				require.NoError(t, sb.Get(current))
 
 				updated := current.DeepCopy()
-				updated.Spec.Image.Name = MajorVersion
+				updated.Spec.Image.Name = e2e.MajorVersion
 				require.NoError(t, sb.Patch(updated, client.MergeFrom(current)))
 
-				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
+				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, e2e.CreateClusterTimeout)
 				testutil.RequireDbContainersToUseImage(t, sb, updated)
 				t.Log("Done with major upgrade")
 			},
@@ -155,9 +137,6 @@ func TestUpgradesMajorVersion20to21(t *testing.T) {
 // TestUpgradesMajorVersion20_1To20_2 is another major version upgrade
 func TestUpgradesMajorVersion20_1To20_2(t *testing.T) {
 
-	if parallel {
-		t.Parallel()
-	}
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
 	}
@@ -173,15 +152,14 @@ func TestUpgradesMajorVersion20_1To20_2(t *testing.T) {
 
 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
 		WithImage("cockroachdb/cockroach:v20.1.16").
-		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
+		WithPVDataStore("1Gi")
 
 	steps := testutil.Steps{
 		{
 			Name: "creates a 3-node secure cluster",
 			Test: func(t *testing.T) {
 				require.NoError(t, sb.Create(builder.Cr()))
-
-				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
+				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, e2e.CreateClusterTimeout)
 			},
 		},
 		{
@@ -195,7 +173,7 @@ func TestUpgradesMajorVersion20_1To20_2(t *testing.T) {
 				require.NoError(t, sb.Patch(updated, client.MergeFrom(current)))
 				// we wait 10 min because we will be waiting 3 min for each pod because
 				// v20.1.16 does not have curl installed
-				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
+				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, e2e.CreateClusterTimeout)
 				testutil.RequireDbContainersToUseImage(t, sb, updated)
 				t.Log("Done with major upgrade")
 			},
@@ -213,9 +191,6 @@ func TestUpgradesMinorVersionThenRollback(t *testing.T) {
 	// partition update
 	// Going from v20.2.8 to v20.2.9
 
-	if parallel {
-		t.Parallel()
-	}
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
 	}
@@ -229,16 +204,19 @@ func TestUpgradesMinorVersionThenRollback(t *testing.T) {
 	sb := testenv.NewDiffingSandbox(t, env)
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
 
-	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
-		WithImage(MinorVersion1).
-		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
+	builder := testutil.NewBuilder("crdb").
+		WithAutomountServiceAccountToken(true).
+		WithNodeCount(3).
+		WithTLS().
+		WithImage(e2e.MinorVersion1).
+		WithPVDataStore("1Gi")
 
 	steps := testutil.Steps{
 		{
 			Name: "creates a 3-node secure cluster",
 			Test: func(t *testing.T) {
 				require.NoError(t, sb.Create(builder.Cr()))
-				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
+				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, e2e.CreateClusterTimeout)
 			},
 		},
 		{
@@ -248,10 +226,10 @@ func TestUpgradesMinorVersionThenRollback(t *testing.T) {
 				require.NoError(t, sb.Get(current))
 
 				updated := current.DeepCopy()
-				updated.Spec.Image.Name = MinorVersion2
+				updated.Spec.Image.Name = e2e.MinorVersion2
 				require.NoError(t, sb.Patch(updated, client.MergeFrom(current)))
 
-				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
+				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, e2e.CreateClusterTimeout)
 				testutil.RequireDbContainersToUseImage(t, sb, updated)
 				t.Log("Done with upgrade")
 			},
@@ -263,10 +241,10 @@ func TestUpgradesMinorVersionThenRollback(t *testing.T) {
 				require.NoError(t, sb.Get(current))
 
 				updated := current.DeepCopy()
-				updated.Spec.Image.Name = MinorVersion1
+				updated.Spec.Image.Name = e2e.MinorVersion1
 				require.NoError(t, sb.Patch(updated, client.MergeFrom(current)))
 
-				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
+				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, e2e.CreateClusterTimeout)
 				testutil.RequireDbContainersToUseImage(t, sb, updated)
 				t.Log("Done with downgrade")
 			},
@@ -281,9 +259,6 @@ func TestUpgradeWithInvalidVersion(t *testing.T) {
 	// We are testing an upgrade with invalid version
 	// Upgrade is going to fail.
 
-	if parallel {
-		t.Parallel()
-	}
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
 	}
@@ -298,15 +273,15 @@ func TestUpgradeWithInvalidVersion(t *testing.T) {
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
 
 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
-		WithImage(MinorVersion1).
-		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
+		WithImage(e2e.MinorVersion1).
+		WithPVDataStore("1Gi")
 
 	steps := testutil.Steps{
 		{
 			Name: "creates a 3-node secure cluster",
 			Test: func(t *testing.T) {
 				require.NoError(t, sb.Create(builder.Cr()))
-				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
+				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, e2e.CreateClusterTimeout)
 			},
 		},
 		{
@@ -315,7 +290,7 @@ func TestUpgradeWithInvalidVersion(t *testing.T) {
 				current := builder.Cr()
 				require.NoError(t, sb.Get(current))
 
-				current.Spec.Image.Name = NonExistentVersion
+				current.Spec.Image.Name = e2e.NonExistentVersion
 				require.NoError(t, sb.Update(current))
 
 				testutil.RequireClusterInImagePullBackoff(t, sb, builder)
@@ -334,9 +309,6 @@ func TestUpgradeWithInvalidImage(t *testing.T) {
 	// We are testing an upgrade with invalid image
 	// Upgrade is going to fail.
 
-	if parallel {
-		t.Parallel()
-	}
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
 	}
@@ -351,15 +323,15 @@ func TestUpgradeWithInvalidImage(t *testing.T) {
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
 
 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
-		WithImage(MinorVersion1).
-		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
+		WithImage(e2e.MinorVersion1).
+		WithPVDataStore("1Gi")
 
 	steps := testutil.Steps{
 		{
 			Name: "creates a 3-node secure cluster",
 			Test: func(t *testing.T) {
 				require.NoError(t, sb.Create(builder.Cr()))
-				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
+				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, e2e.CreateClusterTimeout)
 			},
 		},
 		{
@@ -368,7 +340,7 @@ func TestUpgradeWithInvalidImage(t *testing.T) {
 				current := builder.Cr()
 				require.NoError(t, sb.Get(current))
 
-				current.Spec.Image.Name = invalidImage
+				current.Spec.Image.Name = e2e.InvalidImage
 				require.NoError(t, sb.Update(current))
 
 				testutil.RequireClusterInImagePullBackoff(t, sb, builder)
@@ -387,9 +359,6 @@ func TestUpgradeWithMajorVersionExcludingMajorFeature(t *testing.T) {
 	// We are testing a major version Upgrade with skipping feature
 	// Upgrade is going to fail due to non-support of skipping major versions.
 
-	if parallel {
-		t.Parallel()
-	}
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
 	}
@@ -404,15 +373,15 @@ func TestUpgradeWithMajorVersionExcludingMajorFeature(t *testing.T) {
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
 
 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
-		WithImage(SkipFeatureVersion).
-		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
+		WithImage(e2e.SkipFeatureVersion).
+		WithPVDataStore("1Gi")
 
 	steps := testutil.Steps{
 		{
 			Name: "creates a 1-node secure cluster",
 			Test: func(t *testing.T) {
 				require.NoError(t, sb.Create(builder.Cr()))
-				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
+				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, e2e.CreateClusterTimeout)
 			},
 		},
 		{
@@ -421,7 +390,7 @@ func TestUpgradeWithMajorVersionExcludingMajorFeature(t *testing.T) {
 				current := builder.Cr()
 				require.NoError(t, sb.Get(current))
 
-				current.Spec.Image.Name = MajorVersion
+				current.Spec.Image.Name = e2e.MajorVersion
 				require.NoError(t, sb.Update(current))
 
 				testutil.RequireClusterInFailedState(t, sb, builder)

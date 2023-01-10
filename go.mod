@@ -25,6 +25,7 @@ require (
 	k8s.io/apimachinery v0.20.2
 	k8s.io/client-go v9.0.0+incompatible
 	k8s.io/code-generator v0.20.2
+	k8s.io/klog v1.0.0
 	k8s.io/klog/v2 v2.4.0
 	k8s.io/kube-openapi v0.0.0-20201113171705-d219536bb9fd
 	sigs.k8s.io/controller-runtime v0.8.2
@@ -53,7 +54,7 @@ require (
 	github.com/go-openapi/spec v0.19.6 // indirect
 	github.com/go-openapi/swag v0.19.7 // indirect
 	github.com/gobuffalo/flect v0.2.2 // indirect
-	github.com/gogo/protobuf v1.3.1 // indirect
+	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
 	github.com/golang/protobuf v1.5.0 // indirect
 	github.com/google/gofuzz v1.1.0 // indirect
@@ -109,7 +110,6 @@ require (
 	k8s.io/apiextensions-apiserver v0.20.2 // indirect
 	k8s.io/component-base v0.20.2 // indirect
 	k8s.io/gengo v0.0.0-20201113003025-83324d819ded // indirect
-	k8s.io/klog v1.0.0 // indirect
 	k8s.io/utils v0.0.0-20210111153108-fddb29f9d009 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.0.2 // indirect
 )

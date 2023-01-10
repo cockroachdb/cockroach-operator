@@ -1,4 +1,4 @@
-# Copyright 2022 The Cockroach Authors
+# Copyright 2023 The Cockroach Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -31,14 +31,14 @@ jobs:
     strategy:
       matrix:
         # supported Kubenetes versions
-        NODE_VERSION: [1.18.19, 1.19.11, 1.20.7, 1.21.2, 1.22.1]
+        NODE_VERSION: [1.19.16, 1.20.15, 1.21.9, 1.22.6, 1.23.3]
     steps:
-      - uses: actions/checkout@v2
-
-      - name: Setup Bazel
-        uses: abhinavsingh/setup-bazel@v3
+      - uses: actions/checkout@v3
+      - name: Mount bazel cache
+        uses: actions/cache@v3
         with:
-          version: 4.2.1
+          path: "~/.cache/bazel"
+          key: bazel
 
       - name: Bank Workload
         env:

@@ -1,5 +1,5 @@
 /*
-Copyright 2022 The Cockroach Authors
+Copyright 2023 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,18 +18,16 @@ package controller_test
 
 import (
 	"context"
-	"errors"
 	"testing"
 	"time"
-
-	"github.com/go-logr/logr"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/actor"
 	"github.com/cockroachdb/cockroach-operator/pkg/controller"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	"github.com/cockroachdb/cockroach-operator/pkg/testutil"
+	"github.com/cockroachdb/errors"
+	"github.com/go-logr/logr"
 	"github.com/go-logr/zapr"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -43,14 +41,10 @@ import (
 )
 
 type fakeActor struct {
-	cancelCtx bool
-	err       error
+	err error
 }
 
 func (a *fakeActor) Act(ctx context.Context, _ *resource.Cluster, logger logr.Logger) error {
-	if a.cancelCtx {
-		actor.CancelLoop(ctx, log.NullLogger{})
-	}
 	return a.err
 }
 func (a *fakeActor) GetActionType() api.ActionType {
@@ -95,20 +89,6 @@ func TestReconcile(t *testing.T) {
 		want    ctrl.Result
 		wantErr string
 	}{
-		// {
-		// 	name: "reconcile action fails",
-		// 	action: fakeActor{
-		// 		err: errors.New("failed to reconcile resource"),
-		// 	},
-		// 	want:    ctrl.Result{Requeue: false},
-		// 	wantErr: "failed to reconcile resource",
-		// },
-		// {
-		// 	name:    "reconcile action updates owned resource successfully",
-		// 	action:  fakeActor{},
-		// 	want:    ctrl.Result{Requeue: false},
-		// 	wantErr: "",
-		// },
 		{
 			name:    "on first reconcile we update and requeue",
 			action:  fakeActor{},
@@ -116,9 +96,25 @@ func TestReconcile(t *testing.T) {
 			wantErr: "",
 		},
 		{
-			name: "reconcile action cancels the context",
+			name: "reconcile action fails genericly",
 			action: fakeActor{
-				cancelCtx: true,
+				err: errors.New("failed to reconcile resource"),
+			},
+			want:    ctrl.Result{},
+			wantErr: "failed to reconcile resource",
+		},
+		{
+			name: "reconcile action permanently fails",
+			action: fakeActor{
+				err: errors.Wrap(actor.PermanentErr{Err: errors.New("foo")}, "bar"),
+			},
+			want:    ctrl.Result{Requeue: false},
+			wantErr: "",
+		},
+		{
+			name: "reconcile action validation fails",
+			action: fakeActor{
+				err: actor.ValidationError{Err: errors.New("bar")},
 			},
 			want:    ctrl.Result{Requeue: false},
 			wantErr: "",

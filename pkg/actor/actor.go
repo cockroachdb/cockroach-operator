@@ -1,5 +1,5 @@
 /*
-Copyright 2022 The Cockroach Authors
+Copyright 2023 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -49,15 +49,6 @@ type PermanentErr struct {
 }
 
 func (e PermanentErr) Error() string {
-	return e.Err.Error()
-}
-
-//InvalidContainerVersionError error used to stop requeue the request on failure
-type InvalidContainerVersionError struct {
-	Err error
-}
-
-func (e InvalidContainerVersionError) Error() string {
 	return e.Err.Error()
 }
 

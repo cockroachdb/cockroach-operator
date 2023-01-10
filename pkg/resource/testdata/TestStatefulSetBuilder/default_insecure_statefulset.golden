@@ -28,7 +28,10 @@ spec:
       - command:
         - /bin/bash
         - -ecx
-        - exec /cockroach/cockroach.sh start --join=test-cluster-0.test-cluster.test-ns:26258 --advertise-host=$(POD_NAME).test-cluster.test-ns --logtostderr=INFO --insecure --http-port=8080 --sql-addr=:26257 --listen-addr=:26258 --cache $(expr $MEMORY_LIMIT_MIB / 4)MiB --max-sql-memory $(expr $MEMORY_LIMIT_MIB / 4)MiB
+        - 'exec /cockroach/cockroach.sh start --advertise-host=$(POD_NAME).test-cluster.test-ns
+          --insecure --http-port=8080 --sql-addr=:26257 --listen-addr=:26258 --log="{sinks:
+          {stderr: {channels: [OPS, HEALTH], redact: true}}}" --cache $(expr $MEMORY_LIMIT_MIB
+          / 4)MiB --max-sql-memory $(expr $MEMORY_LIMIT_MIB / 4)MiB --join=test-cluster-0.test-cluster.test-ns:26258'
         env:
         - name: COCKROACH_CHANNEL
           value: kubernetes-operator-gke
@@ -46,7 +49,7 @@ spec:
             resourceFieldRef:
               divisor: 1Mi
               resource: limits.memory
-        image: cockroachdb/cockroach:v20.2.7
+        image: cockroachdb/cockroach:v21.1.0
         imagePullPolicy: IfNotPresent
         lifecycle:
           preStop:
@@ -82,7 +85,7 @@ spec:
         fsGroup: 1000581000
         runAsUser: 1000581000
       serviceAccountName: test-cluster-sa
-      terminationGracePeriodSeconds: 60
+      terminationGracePeriodSeconds: 300
       volumes:
       - name: datadir
         persistentVolumeClaim:
@@ -92,11 +95,11 @@ spec:
   volumeClaimTemplates:
   - metadata:
       creationTimestamp: null
-      name: datadir
       labels:
         app.kubernetes.io/component: database
         app.kubernetes.io/instance: test-cluster
         app.kubernetes.io/name: cockroachdb
+      name: datadir
     spec:
       accessModes:
       - ReadWriteOnce

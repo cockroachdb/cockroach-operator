@@ -5,11 +5,59 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-# [Unreleased](https://github.com/cockroachdb/cockroach-operator/compare/v2.5.1...master)
+# [Unreleased](https://github.com/cockroachdb/cockroach-operator/compare/v2.9.0...master)
+
+# [v2.9.0](https://github.com/cockroachdb/cockroach-operator/compare/v2.8.0...v2.9.0)
+
+## Fixed
+
+* Install init container certs with 600 permissions
+* Ensure operator can connect to DBs in all namespaces
+
+# [v2.8.0](https://github.com/cockroachdb/cockroach-operator/compare/v2.7.0...v2.8.0)
+
+## Added
+
+* `AutomountServiceAccountToken` field for cluster spec to allow mounting the default service account token.
+
+## Fixed
+
+* Delete the CancelLoop function, fixing a cluster status update bug
+* Correctly detect failed version checker Pods
+* retry cluster status updates, reducing test flakes
+
+# [v2.7.0](https://github.com/cockroachdb/cockroach-operator/compare/v2.6.0...v2.7.0)
+
+## Fixed
+
+* Grant operator deletecollection permissions to fix fullcluster restart flow
+* Grant operator list and update permissions on pvcs to fix pvc resize flow
+* Bump TerminationGracePeriodSeconds from 1m to 5m
+* Prefer user added --join flags over default when explicitly passed
+
+# [v2.6.0](https://github.com/cockroachdb/cockroach-operator/compare/v2.5.3...v2.6.0)
+
+## Added
+
+* Custom logging configuration can be used through the configmap when `spec.logConfigMap` is provided.
+
+# [v2.5.3](https://github.com/cockroachdb/cockroach-operator/compare/v2.5.2...v2.5.3)
+
+## Fixed
+
+* Fix nil-pointer errors when `spec.Image` is not provided.
+* Update gogo/protobuf to address CVE-2021-3121
+
+# [v2.5.2](https://github.com/cockroachdb/cockroach-operator/compare/v2.5.1...v2.5.2)
+
+## Fixed
+
+* #863 - Add flag for `leader-election-id` to enable leader election support
 
 ## Changed
 
 * Image digests now calculated when generating templates, rather than when creating bundles
+* Use [bazelisk](https://github.com/bazelbuild/bazelisk) for CI workflows
 
 # [v2.5.1](https://github.com/cockroachdb/cockroach-operator/compare/v2.5.0...v2.5.1)
 

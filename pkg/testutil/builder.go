@@ -1,5 +1,5 @@
 /*
-Copyright 2022 The Cockroach Authors
+Copyright 2023 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -51,6 +51,11 @@ func (b ClusterBuilder) Namespaced(namespace string) ClusterBuilder {
 	return b
 }
 
+func (b ClusterBuilder) WithAutomountServiceAccountToken(mount bool) ClusterBuilder {
+	b.cluster.Spec.AutomountServiceAccountToken = mount
+	return b
+}
+
 func (b ClusterBuilder) WithUID(uid string) ClusterBuilder {
 	b.cluster.ObjectMeta.UID = amtypes.UID(uid)
 	return b
@@ -61,7 +66,7 @@ func (b ClusterBuilder) WithNodeCount(c int32) ClusterBuilder {
 	return b
 }
 
-func (b ClusterBuilder) WithPVDataStore(size, storageClass string) ClusterBuilder {
+func (b ClusterBuilder) WithPVDataStore(size string) ClusterBuilder {
 	quantity, _ := apiresource.ParseQuantity(size)
 
 	volumeMode := corev1.PersistentVolumeFilesystem
@@ -74,8 +79,7 @@ func (b ClusterBuilder) WithPVDataStore(size, storageClass string) ClusterBuilde
 						corev1.ResourceStorage: quantity,
 					},
 				},
-				StorageClassName: &storageClass,
-				VolumeMode:       &volumeMode,
+				VolumeMode: &volumeMode,
 			},
 		},
 	}
@@ -93,6 +97,11 @@ func (b ClusterBuilder) WithTLS() ClusterBuilder {
 	return b
 }
 
+func (b ClusterBuilder) WithClientTLS(secret string) ClusterBuilder {
+	b.cluster.Spec.ClientTLSSecret = secret
+	return b
+}
+
 func (b ClusterBuilder) WithNodeTLS(secret string) ClusterBuilder {
 	b.cluster.Spec.NodeTLSSecret = secret
 	return b
@@ -104,6 +113,11 @@ func (b ClusterBuilder) WithImage(image string) ClusterBuilder {
 }
 func (b ClusterBuilder) WithCockroachDBVersion(version string) ClusterBuilder {
 	b.cluster.Spec.CockroachDBVersion = version
+	return b
+}
+
+func (b ClusterBuilder) WithImageObject(image *api.PodImage) ClusterBuilder {
+	b.cluster.Spec.Image = image
 	return b
 }
 
@@ -119,6 +133,11 @@ func (b ClusterBuilder) WithLabels(labels map[string]string) ClusterBuilder {
 
 func (b ClusterBuilder) WithClusterAnnotations(annotations map[string]string) ClusterBuilder {
 	b.cluster.Annotations = annotations
+	return b
+}
+
+func (b ClusterBuilder) WithClusterLogging(logConfigMap string) ClusterBuilder {
+	b.cluster.Spec.LogConfigMap = logConfigMap
 	return b
 }
 

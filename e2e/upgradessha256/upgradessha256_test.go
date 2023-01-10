@@ -1,5 +1,5 @@
 /*
-Copyright 2022 The Cockroach Authors
+Copyright 2023 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,12 +17,12 @@ limitations under the License.
 package upgradessha256
 
 import (
-	"flag"
 	"os"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"testing"
-	"time"
 
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/cockroachdb/cockroach-operator/e2e"
 	"github.com/cockroachdb/cockroach-operator/pkg/controller"
 	"github.com/cockroachdb/cockroach-operator/pkg/testutil"
 	testenv "github.com/cockroachdb/cockroach-operator/pkg/testutil/env"
@@ -31,11 +31,6 @@ import (
 	"go.uber.org/zap/zaptest"
 )
 
-// TODO parallel seems to be buggy.  Not certain why, but we need to figure out if running with the operator
-// deployed in the cluster helps
-// We may have a threadsafe problem where one test starts messing with another test
-var parallel = *flag.Bool("parallel", false, "run tests in parallel")
-
 // TestUpgradesMinorVersion tests a minor version bump
 func TestUpgradesMinorVersion(t *testing.T) {
 
@@ -43,9 +38,6 @@ func TestUpgradesMinorVersion(t *testing.T) {
 	// partition update
 	// Going from v20.2.8 to v20.2.9
 
-	if parallel {
-		t.Parallel()
-	}
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
 	}
@@ -64,14 +56,14 @@ func TestUpgradesMinorVersion(t *testing.T) {
 
 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
 		WithCockroachDBVersion("v20.2.8").
-		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
+		WithPVDataStore("1Gi")
 
 	steps := testutil.Steps{
 		{
 			Name: "creates a 3-nodes secure cluster",
 			Test: func(t *testing.T) {
 				require.NoError(t, sb.Create(builder.Cr()))
-				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
+				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, e2e.CreateClusterTimeout)
 			},
 		},
 		{
@@ -84,7 +76,7 @@ func TestUpgradesMinorVersion(t *testing.T) {
 				updated.Spec.CockroachDBVersion = "v20.2.9"
 				require.NoError(t, sb.Patch(updated, client.MergeFrom(current)))
 
-				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
+				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, e2e.CreateClusterTimeout)
 				testutil.RequireDbContainersToUseImage(t, sb, updated)
 				t.Log("Done with upgrade")
 			},
@@ -105,9 +97,6 @@ func TestUpgradesMajorVersion20to21(t *testing.T) {
 	// Going from v20.2.10 to v21.1.0 using related images in sha256 image format
 	// and cockroachDBVersion field.
 
-	if parallel {
-		t.Parallel()
-	}
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
 	}
@@ -125,14 +114,14 @@ func TestUpgradesMajorVersion20to21(t *testing.T) {
 	os.Setenv("RELATED_IMAGE_COCKROACH_v20_2_10", "cockroachdb/cockroach@sha256:a1ef571ff3b47b395084d2f29abbc7706be36a826a618a794697d90a03615ada")
 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
 		WithCockroachDBVersion("v20.2.10").
-		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
+		WithPVDataStore("1Gi")
 
 	steps := testutil.Steps{
 		{
 			Name: "creates a 3-nodes secure cluster",
 			Test: func(t *testing.T) {
 				require.NoError(t, sb.Create(builder.Cr()))
-				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
+				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, e2e.CreateClusterTimeout)
 			},
 		},
 		{
@@ -145,7 +134,7 @@ func TestUpgradesMajorVersion20to21(t *testing.T) {
 				updated.Spec.CockroachDBVersion = "v21.1.1"
 				require.NoError(t, sb.Patch(updated, client.MergeFrom(current)))
 
-				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
+				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, e2e.CreateClusterTimeout)
 				testutil.RequireDbContainersToUseImage(t, sb, updated)
 				t.Log("Done with upgrade")
 			},
@@ -161,9 +150,6 @@ func TestUpgradesMajorVersion20to21(t *testing.T) {
 // TestUpgradesMajorVersion20_1To20_2 is another major version upgrade
 func TestUpgradesMajorVersion20_1To20_2(t *testing.T) {
 
-	if parallel {
-		t.Parallel()
-	}
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
 	}
@@ -182,7 +168,7 @@ func TestUpgradesMajorVersion20_1To20_2(t *testing.T) {
 
 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
 		WithCockroachDBVersion("v20.1.16").
-		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
+		WithPVDataStore("1Gi")
 
 	steps := testutil.Steps{
 		{
@@ -190,7 +176,7 @@ func TestUpgradesMajorVersion20_1To20_2(t *testing.T) {
 			Test: func(t *testing.T) {
 				require.NoError(t, sb.Create(builder.Cr()))
 
-				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
+				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, e2e.CreateClusterTimeout)
 			},
 		},
 		{
@@ -203,7 +189,7 @@ func TestUpgradesMajorVersion20_1To20_2(t *testing.T) {
 				updated.Spec.CockroachDBVersion = "v20.2.10"
 				require.NoError(t, sb.Patch(updated, client.MergeFrom(current)))
 
-				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
+				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, e2e.CreateClusterTimeout)
 				testutil.RequireDbContainersToUseImage(t, sb, updated)
 				t.Log("Done with major upgrade")
 			},

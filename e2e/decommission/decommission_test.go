@@ -1,5 +1,5 @@
 /*
-Copyright 2022 The Cockroach Authors
+Copyright 2023 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,10 +18,10 @@ package decommission
 
 import (
 	"context"
-	"flag"
 	"testing"
 	"time"
 
+	"github.com/cockroachdb/cockroach-operator/e2e"
 	"github.com/cockroachdb/cockroach-operator/pkg/controller"
 	"github.com/cockroachdb/cockroach-operator/pkg/testutil"
 	testenv "github.com/cockroachdb/cockroach-operator/pkg/testutil/env"
@@ -31,11 +31,6 @@ import (
 	"go.uber.org/zap/zaptest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
-
-// TODO parallel seems to be buggy.  Not certain why, but we need to figure out if running with the operator
-// deployed in the cluster helps
-// We may have a threadsafe problem where one test starts messing with another test
-var parallel = *flag.Bool("parallel", false, "run tests in parallel")
 
 // TODO once prune pvc feature gate is set to "true" by default, we can
 // remove this test.
@@ -53,10 +48,6 @@ func TestDecommissionFunctionalityWithPrune(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
 	}
-	// Does not seem to like running in parallel
-	if parallel {
-		t.Parallel()
-	}
 	testLog := zapr.NewLogger(zaptest.NewLogger(t))
 
 	e := testenv.CreateActiveEnvForTest()
@@ -70,15 +61,15 @@ func TestDecommissionFunctionalityWithPrune(t *testing.T) {
 		Namespaced(sb.Namespace).
 		WithNodeCount(4).
 		WithTLS().
-		WithImage("cockroachdb/cockroach:v20.2.5").
-		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
+		WithImage(e2e.MajorVersion).
+		WithPVDataStore("1Gi")
 
 	testutil.Steps{
 		{
 			Name: "creates a 4-node secure cluster and tests db",
 			Test: func(t *testing.T) {
 				require.NoError(t, sb.Create(builder.Cr()))
-				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
+				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, e2e.CreateClusterTimeout)
 				testutil.RequireNumberOfPVCs(t, context.TODO(), sb, builder, 4)
 			},
 		},
@@ -92,11 +83,15 @@ func TestDecommissionFunctionalityWithPrune(t *testing.T) {
 				updated.Spec.Nodes = 3
 				require.NoError(t, sb.Patch(updated, client.MergeFrom(current)))
 
-				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
+				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, e2e.CreateClusterTimeout)
 				testutil.RequireDecommissionNode(t, sb, builder, 3)
 				testutil.RequireDatabaseToFunction(t, sb, builder)
 				t.Log("Done with decommission")
-				testutil.RequireNumberOfPVCs(t, context.TODO(), sb, builder, 3)
+
+				// Give some time for the PVCs to be cleaned up.
+				require.Eventually(t, func() bool {
+					return testutil.HasNumPVCs(context.TODO(), sb, builder, 3)
+				}, 1*time.Minute, 3*time.Second)
 			},
 		},
 	}.Run(t)
@@ -115,10 +110,6 @@ func TestDecommissionFunctionality(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
 	}
-	// Does not seem to like running in parallel
-	if parallel {
-		t.Parallel()
-	}
 	testLog := zapr.NewLogger(zaptest.NewLogger(t))
 
 	e := testenv.CreateActiveEnvForTest()
@@ -132,15 +123,15 @@ func TestDecommissionFunctionality(t *testing.T) {
 		Namespaced(sb.Namespace).
 		WithNodeCount(4).
 		WithTLS().
-		WithImage("cockroachdb/cockroach:v20.2.5").
-		WithPVDataStore("1Gi", "standard" /* default storage class in KIND */)
+		WithImage(e2e.MajorVersion).
+		WithPVDataStore("1Gi")
 
 	testutil.Steps{
 		{
 			Name: "creates a 4-node secure cluster and tests db",
 			Test: func(t *testing.T) {
 				require.NoError(t, sb.Create(builder.Cr()))
-				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
+				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, e2e.CreateClusterTimeout)
 				testutil.RequireNumberOfPVCs(t, context.TODO(), sb, builder, 4)
 			},
 		},
@@ -154,7 +145,7 @@ func TestDecommissionFunctionality(t *testing.T) {
 				updated.Spec.Nodes = 3
 				require.NoError(t, sb.Patch(updated, client.MergeFrom(current)))
 
-				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, 500*time.Second)
+				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, e2e.CreateClusterTimeout)
 				testutil.RequireDecommissionNode(t, sb, builder, 3)
 				testutil.RequireDatabaseToFunction(t, sb, builder)
 				t.Log("Done with decommission")
