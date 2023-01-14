@@ -32,7 +32,7 @@ import (
 	"go.uber.org/zap/zaptest"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/api/policy/v1beta1"
+	policyv1 "k8s.io/api/policy/v1"
 	apiresource "k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -115,7 +115,7 @@ func createTestDirectorAndStableCluster(t *testing.T) (*resource.Cluster, actor.
 			},
 		},
 	}
-	podDisruptionBudget := &v1beta1.PodDisruptionBudget{
+	podDisruptionBudget := &policyv1.PodDisruptionBudget{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "cockroachdb",
 			Namespace: "default",
