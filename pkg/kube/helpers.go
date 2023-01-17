@@ -31,6 +31,7 @@ import (
 	"go.uber.org/zap/zapcore"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	policyv1 "k8s.io/api/policy/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -45,7 +46,7 @@ import (
 const LastAppliedAnnotation = "crdb.io/last-applied"
 
 var annotator = patch.NewAnnotator(LastAppliedAnnotation)
-var patchMaker = patch.NewPatchMaker(annotator)
+var patchMaker = patch.NewPatchMaker(annotator, &patch.K8sStrategicMergePatcher{}, &patch.BaseJSONMergePatcher{})
 
 func ExecInPod(scheme *runtime.Scheme, config *rest.Config, namespace string, name string, container string, cmd []string) (string, string, error) {
 	tty := false
@@ -197,6 +198,8 @@ func ObjectChanged(current, updated runtime.Object) (bool, error) {
 	switch updated.(type) {
 	case *appsv1.StatefulSet:
 		opts = append(opts, patch.IgnoreVolumeClaimTemplateTypeMetaAndStatus())
+	case *policyv1.PodDisruptionBudget:
+		opts = append(opts, patch.IgnorePDBSelector())
 	}
 
 	patchResult, err := patchMaker.Calculate(current, updated, opts...)
