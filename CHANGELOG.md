@@ -7,6 +7,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 # [Unreleased](https://github.com/cockroachdb/cockroach-operator/compare/v2.9.0...master)
 
+## Added
+
+* Upgrade the underlying k8s dependencies from 1.20 to 1.21 to support operator installation on k8s 1.25+.
+
 # [v2.9.0](https://github.com/cockroachdb/cockroach-operator/compare/v2.8.0...v2.9.0)
 
 ## Fixed
