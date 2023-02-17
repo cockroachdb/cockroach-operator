@@ -19,7 +19,7 @@ kind: CrdbCluster
 metadata:
   name: crdb-tls-example
 spec:
-  cockroachDBVersion: v22.2.4
+  cockroachDBVersion: v22.2.5
   dataStore:
     pvc:
       spec:
