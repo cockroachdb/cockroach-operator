@@ -84,9 +84,6 @@ generate_bundle() {
 
   mv "${dir}/metadata/annotations.yaml.new" "${dir}/metadata/annotations.yaml"
 
-  # add supported openshift versions
-  echo "  com.redhat.openshift.versions: 4.7-4.10" >> "${dir}/metadata/annotations.yaml"
-
   # Update CSV with correct images, and timestamps
   adapt_csv "${dir}" "${img}"
 
