@@ -5,7 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-# [Unreleased](https://github.com/cockroachdb/cockroach-operator/compare/v2.7.0...master)
+# [Unreleased](https://github.com/cockroachdb/cockroach-operator/compare/v2.10.0...master)
+
+# [v2.10.0](https://github.com/cockroachdb/cockroach-operator/compare/v2.9.0...v2.10.0)
+
+## Added
+
+* Upgrade the underlying k8s dependencies from 1.20 to 1.21 to support operator installation on k8s 1.25+.
+
+# [v2.9.0](https://github.com/cockroachdb/cockroach-operator/compare/v2.8.0...v2.9.0)
+
+## Fixed
+
+* Install init container certs with 600 permissions
+* Ensure operator can connect to DBs in all namespaces
+
+# [v2.8.0](https://github.com/cockroachdb/cockroach-operator/compare/v2.7.0...v2.8.0)
+
+## Added
+
+* `AutomountServiceAccountToken` field for cluster spec to allow mounting the default service account token.
 
 ## Fixed
 

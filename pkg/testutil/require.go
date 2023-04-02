@@ -1,5 +1,5 @@
 /*
-Copyright 2022 The Cockroach Authors
+Copyright 2023 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -623,7 +623,7 @@ func RequireClusterInImagePullBackoff(t *testing.T, sb testenv.DiffingSandbox, b
 
 	// Timeout must be greater than 2 minutes, the max backoff time for the
 	// version checker job.
-	wErr := wait.Poll(10*time.Second, 3 * time.Minute, func() (bool, error) {
+	wErr := wait.Poll(10*time.Second, 3*time.Minute, func() (bool, error) {
 		if err := sb.List(jobList, jobLabel); err != nil {
 			return false, err
 		}
@@ -660,7 +660,7 @@ func RequireClusterInFailedState(t *testing.T, sb testenv.DiffingSandbox, b Clus
 		},
 	}
 
-	wErr := wait.Poll(10*time.Second, 2 * time.Minute, func() (bool, error) {
+	wErr := wait.Poll(10*time.Second, 2*time.Minute, func() (bool, error) {
 		if err := sb.Get(&crdbCluster); err != nil {
 			return false, err
 		}

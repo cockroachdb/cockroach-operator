@@ -199,14 +199,14 @@ def install_k3d():
 def install_golangci_lint():
     http_archive(
         name = "golangci_lint_darwin",
-        sha256 = "d4bd25b9814eeaa2134197dd2c7671bb791eae786d42010d9d788af20dee4bfa",
-        urls = ["https://github.com/golangci/golangci-lint/releases/download/v1.42.0/golangci-lint-1.42.0-darwin-amd64.tar.gz"],
+        sha256 = "0f615fb8c364f6e4a213f2ed2ff7aa1fc2b208addf29511e89c03534067bbf57",
+        urls = ["https://github.com/golangci/golangci-lint/releases/download/v1.50.1/golangci-lint-1.50.1-darwin-amd64.tar.gz"],
         build_file_content =
          """
 filegroup(
      name = "file",
      srcs = [
-        "golangci-lint-1.42.0-darwin-amd64/golangci-lint",
+        "golangci-lint-1.50.1-darwin-amd64/golangci-lint",
      ],
      visibility = ["//visibility:public"],
 )
@@ -215,14 +215,14 @@ filegroup(
 
     http_archive(
             name = "golangci_lint_m1",
-            sha256 = "f649893bf2b1d24b2632b5e109884a15f3bf25cfdad46b34fb8fd13a016098fd",
-            urls = ["https://github.com/golangci/golangci-lint/releases/download/v1.42.1/golangci-lint-1.42.1-darwin-arm64.tar.gz"],
+            sha256 = "0f615fb8c364f6e4a213f2ed2ff7aa1fc2b208addf29511e89c03534067bbf57",
+            urls = ["https://github.com/golangci/golangci-lint/releases/download/v1.50.1/golangci-lint-1.50.1-darwin-arm64.tar.gz"],
             build_file_content =
              """
 filegroup(
     name = "file",
     srcs = [
-       "golangci-lint-1.42.1-darwin-arm64/golangci-lint",
+       "golangci-lint-1.50.1-darwin-arm64/golangci-lint",
     ],
     visibility = ["//visibility:public"],
 )
@@ -231,14 +231,14 @@ filegroup(
 
     http_archive(
         name = "golangci_lint_linux",
-        sha256 = "6937f62f8e2329e94822dc11c10b871ace5557ae1fcc4ee2f9980cd6aecbc159",
-        urls = ["https://github.com/golangci/golangci-lint/releases/download/v1.42.0/golangci-lint-1.42.0-linux-amd64.tar.gz"],
+        sha256 = "4ba1dc9dbdf05b7bdc6f0e04bdfe6f63aa70576f51817be1b2540bbce017b69a",
+        urls = ["https://github.com/golangci/golangci-lint/releases/download/v1.50.1/golangci-lint-1.50.1-linux-amd64.tar.gz"],
         build_file_content =
          """
 filegroup(
      name = "file",
      srcs = [
-        "golangci-lint-1.42.0-linux-amd64/golangci-lint",
+        "golangci-lint-1.50.1-linux-amd64/golangci-lint",
      ],
      visibility = ["//visibility:public"],
 )
@@ -268,17 +268,17 @@ filegroup(
 def install_kubetest2():
     # install kubetest2 binary
     http_file(
-       name = "kubetest2_darwin",
-       executable = 1,
-       sha256 = "5b20aadd05eca47dead180a7c8296d75e81c184aabf182d4a41ef96597db543d",
-       urls = ["https://storage.googleapis.com/crdb-bazel-artifacts/osx/kubetest2"],
+        name = "kubetest2_darwin",
+        executable = 1,
+        sha256 = "9fab82888e5c955778a8c49fdd2b9d2216be1a58f70615977fb92f678383e688",
+        urls = ["https://storage.googleapis.com/cockroach-operator-bazel-artifacts/kubetest2_darwin_amd64_v1/kubetest2"],
     )
 
     http_file(
         name = "kubetest2_linux",
         executable = 1,
-        sha256 = "7f0b05654fa43ca1c607db297b5f3a775f65eea90355bb6b10137a7fffff5e1a",
-        urls = ["https://storage.googleapis.com/crdb-bazel-artifacts/linux/kubetest2"],
+        sha256 = "f9306a103dc222d51753e788550bd77c05a910a957a7eb4901ccb7f78256f7b8",
+        urls = ["https://storage.googleapis.com/cockroach-operator-bazel-artifacts/kubetest2_linux_amd64_v1/kubetest2"],
     )
 
 ## Fetch kubetest2-gke binary used during e2e tests
@@ -286,34 +286,35 @@ def install_kubetest2_gke():
     # install kubetest2-gke binary
     # TODO osx support
     http_file(
-       name = "kubetest2_gke_darwin",
-       executable = 1,
-       sha256 = "a1cbe02f61931dbe6c8d1662442f42cb538c81e4ec8cdd40f548f0e05cbd55a7",
-       urls = ["https://storage.googleapis.com/crdb-bazel-artifacts/osx/kubetest2-gke"],
+        name = "kubetest2_gke_darwin",
+        executable = 1,
+        sha256 = "12d0b7cc9eb2ab2befe781f08672f2707631debd852f2805bed1565699e44a6e",
+        urls = ["https://storage.googleapis.com/cockroach-operator-bazel-artifacts/kubetest2-gke_darwin_amd64_v1/kubetest2-gke"],
     )
 
     http_file(
         name = "kubetest2_gke_linux",
         executable = 1,
-        sha256 = "9ac658234efc7f59968888662dd2d21908587789f6b812392ac5b6766b17c0b4",
-        urls = ["https://storage.googleapis.com/crdb-bazel-artifacts/linux/kubetest2-gke"],
+        sha256 = "2b294abe037243e8bf71fcef6f02d93ee69abadfd0034681237478fa69474097",
+        urls = ["https://storage.googleapis.com/cockroach-operator-bazel-artifacts/kubetest2-gke_linux_amd64_v1/kubetest2-gke"],
     )
+
 ## Fetch kubetest2-tester-exe binary used during e2e tests
 def install_kubetest2_exe():
     # install kubetest2-exe binary
     # TODO osx support
     http_file(
-       name = "kubetest2_exe_darwin",
-       executable = 1,
-       sha256 = "818690cb55590440e163b18dd139c8a8714df9480f869bafe19eb344047cf37c",
-       urls = ["https://storage.googleapis.com/crdb-bazel-artifacts/osx/kubetest2-tester-exec"],
+        name = "kubetest2_exe_darwin",
+        executable = 1,
+        sha256 = "15a6c8ff2e6b3962954553eacc9aeefb40ac81f67c326144db2ad94d58756357",
+        urls = ["https://storage.googleapis.com/cockroach-operator-bazel-artifacts/kubetest2-tester-exec_darwin_amd64_v1/kubetest2-tester-exec"],
     )
 
     http_file(
         name = "kubetest2_exe_linux",
         executable = 1,
-        sha256 = "4483f40f48b98e8a6aa41f58bfdf1f2787066a4e1ad1343e4281892aa1326736",
-        urls = ["https://storage.googleapis.com/crdb-bazel-artifacts/linux/kubetest2-tester-exec"],
+        sha256 = "b96c9b651c6a4449adfa41d6760ec1b34ec02230b5debd850976ced3926d80db",
+        urls = ["https://storage.googleapis.com/cockroach-operator-bazel-artifacts/kubetest2-tester-exec_linux_amd64_v1/kubetest2-tester-exec"],
     )
 
 ## Fetch operator-sdk used on generating csv

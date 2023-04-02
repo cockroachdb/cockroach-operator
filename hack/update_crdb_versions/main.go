@@ -1,5 +1,5 @@
 /*
-Copyright 2022 The Cockroach Authors
+Copyright 2023 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -68,7 +67,7 @@ var (
 
 func main() {
 	path := filepath.Join(os.Getenv("BUILD_WORKSPACE_DIRECTORY"), versionsFile)
-	if err := ioutil.WriteFile(path, []byte(fileHeader), 0644); err != nil {
+	if err := os.WriteFile(path, []byte(fileHeader), 0644); err != nil {
 		panic(err)
 	}
 

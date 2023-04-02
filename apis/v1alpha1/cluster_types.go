@@ -1,5 +1,5 @@
 /*
-Copyright 2022 The Cockroach Authors
+Copyright 2023 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -139,6 +139,12 @@ type CrdbClusterSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Cockroach Database Logging configuration config map"
 	// +optional
 	LogConfigMap string `json:"logConfigMap,omitempty"`
+	// (Optional) AutomountServiceAccountToken determines whether or not the stateful set pods should
+	// automount the service account token. This is the default behavior in Kubernetes. For backward
+	// compatibility reasons, this value defaults to `false` here.
+	// Default: false
+	// +optional
+	AutomountServiceAccountToken bool `json:"automountServiceAccountToken,omitempty"`
 }
 
 // +k8s:openapi-gen=true

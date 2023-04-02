@@ -1,5 +1,5 @@
 /*
-Copyright 2022 The Cockroach Authors
+Copyright 2023 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ package deployer
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -82,7 +81,7 @@ func (d *deployer) Up() error {
 		}
 	}
 
-	pullSecretContent, err := ioutil.ReadFile(d.PullSecret)
+	pullSecretContent, err := os.ReadFile(d.PullSecret)
 	if err != nil {
 		klog.Fatalf("unable to read pull secret file '%s': %v", d.PullSecret, err)
 		return err
@@ -110,7 +109,7 @@ func (d *deployer) Up() error {
 
 	installConfigFile := filepath.Join(baseDir, "install-config.yaml")
 
-	if err := ioutil.WriteFile(installConfigFile, b, 0644); err != nil {
+	if err := os.WriteFile(installConfigFile, b, 0644); err != nil {
 		klog.Fatalf("unable to write openshift install file %v", err)
 		return err
 	}

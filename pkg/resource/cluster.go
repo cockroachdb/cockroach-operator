@@ -1,5 +1,5 @@
 /*
-Copyright 2022 The Cockroach Authors
+Copyright 2023 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -160,6 +160,17 @@ func (cluster Cluster) RoleBindingName() string {
 
 func (cluster Cluster) PublicServiceName() string {
 	return fmt.Sprintf("%s-public", cluster.Name())
+}
+
+// PublicServiceAddress is the FQDN of the public service.
+// E.g. <name>-public.namespace.svc.cluster.local
+func (cluster Cluster) PublicServiceAddress() string {
+	return fmt.Sprintf(
+		"%s.%s.%s",
+		cluster.PublicServiceName(),
+		cluster.Namespace(),
+		cluster.Domain(),
+	)
 }
 
 func (cluster Cluster) ServiceAccountName() string {

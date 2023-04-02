@@ -19,6 +19,7 @@ metadata:
   name: test-cluster
   namespace: test-ns
 spec:
+  automountServiceAccountToken: true
   dataStore:
     pvc:
       spec:
@@ -32,30 +33,11 @@ spec:
   httpPort: 8080
   image:
     name: cockroachdb/cockroach:v21.1.0
-  cache: 30%
-  maxSQLMemory: 2GB
-  additionalArgs:
-    - --join=test-cluster-1.new-test-cluster.new-test-ns:26258
   nodes: 1
+  tlsEnabled: true
   topology:
     zones:
       - locality: ""
-  affinity:
-    podAntiAffinity:
-      preferredDuringSchedulingIgnoredDuringExecution:
-        - weight: 100
-          podAffinityTerm:
-            labelSelector:
-              matchExpressions:
-                - key: app.kubernetes.io/instance
-                  operator: In
-                  values:
-                    - test-cluster
-            topologyKey: kubernetes.io/hostname
-  tolerations:
-    - key: "key"
-      operator: "Exists"
-      effect: "NoSchedule"
-  additionalAnnotations:
-    key: "test-value"
+  additionalLabels:
+    car: koenigsegg
 status: {}

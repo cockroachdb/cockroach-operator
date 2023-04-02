@@ -1,5 +1,5 @@
 /*
-Copyright 2022 The Cockroach Authors
+Copyright 2023 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -98,7 +97,7 @@ func main() {
 		outputFile := filepath.Join(*repoRoot, f.output)
 		log.Printf("generating `%s` from `%s`", outputFile, tplFile)
 		name := filepath.Base(outputFile)
-		tplContents, err := ioutil.ReadFile(tplFile)
+		tplContents, err := os.ReadFile(tplFile)
 		if err != nil {
 			log.Fatalf("Cannot read template file `%s`: %s", tplFile, err)
 		}
@@ -170,7 +169,7 @@ func generateFile(name string, tplText string, output io.Writer, data templateDa
 // verifyYamlLoads tries to open a YAML file and parses its content in order to
 // verify that the generated file doesn't have any syntax errors
 func verifyYamlLoads(fName string) error {
-	contents, err := ioutil.ReadFile(fName)
+	contents, err := os.ReadFile(fName)
 	if err != nil {
 		return fmt.Errorf("cannot read file `%s`: %w", fName, err)
 	}

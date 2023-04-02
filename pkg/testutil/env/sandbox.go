@@ -1,5 +1,5 @@
 /*
-Copyright 2022 The Cockroach Authors
+Copyright 2023 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import (
 	"sort"
 	"strings"
 	"testing"
+	"time"
 
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
@@ -46,11 +47,13 @@ const (
 
 func NewSandbox(t *testing.T, env *ActiveEnv) Sandbox {
 	ns := DefaultNsName + rand.String(6)
+	td := time.Duration(0)
 
 	mgr, err := ctrl.NewManager(env.k8s.Cfg, ctrl.Options{
-		Scheme:             env.scheme,
-		Namespace:          ns,
-		MetricsBindAddress: "0", // disable metrics serving
+		Scheme:                  env.scheme,
+		Namespace:               ns,
+		MetricsBindAddress:      "0", // disable metrics serving
+		GracefulShutdownTimeout: &td,
 	})
 	require.NoError(t, err)
 

@@ -1,5 +1,5 @@
 /*
-Copyright 2022 The Cockroach Authors
+Copyright 2023 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -204,7 +204,10 @@ func TestUpgradesMinorVersionThenRollback(t *testing.T) {
 	sb := testenv.NewDiffingSandbox(t, env)
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
 
-	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
+	builder := testutil.NewBuilder("crdb").
+		WithAutomountServiceAccountToken(true).
+		WithNodeCount(3).
+		WithTLS().
 		WithImage(e2e.MinorVersion1).
 		WithPVDataStore("1Gi")
 

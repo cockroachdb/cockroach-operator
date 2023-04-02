@@ -1,5 +1,5 @@
 /*
-Copyright 2022 The Cockroach Authors
+Copyright 2023 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -31,11 +31,10 @@ import (
 // and fails if the two interfaces do not match.
 // This func removes all metadata calico annotations.
 func AssertDiff(t *testing.T, expected interface{}, actual interface{}) {
-
-	if actual, ok := actual.(string); ok {
+	if casted, ok := actual.(string); ok {
 		decode, encode := Yamlizers(t, InitScheme(t))
 		var newSlice []string
-		actualSlice := strings.Split(actual, "---")
+		actualSlice := strings.Split(casted, "---")
 
 		for _, str := range actualSlice {
 			// we are getting zero length string because the string starts with ---

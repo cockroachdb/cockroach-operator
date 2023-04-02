@@ -1,5 +1,5 @@
 /*
-Copyright 2022 The Cockroach Authors
+Copyright 2023 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ limitations under the License.
 package actor
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -31,7 +30,7 @@ func TestDeployedInCluster(t *testing.T) {
 		t.Fatal("we should not be running inside of k8s")
 	}
 
-	file, err := ioutil.TempFile("/tmp", "foo")
+	file, err := os.CreateTemp("/tmp", "foo")
 	if err != nil {
 		t.Fatal(err)
 	}

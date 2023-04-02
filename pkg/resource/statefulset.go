@@ -1,5 +1,5 @@
 /*
-Copyright 2022 The Cockroach Authors
+Copyright 2023 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ const (
 	dataDirMountPath = "/cockroach/cockroach-data/"
 
 	certsDirName = "certs"
-	certCpCmd    = ">- cp -p /cockroach/cockroach-certs-prestage/..data/* /cockroach/cockroach-certs/ && chmod 700 /cockroach/cockroach-certs/*.key && chown 1000581000:1000581000 /cockroach/cockroach-certs/*.key"
+	certCpCmd    = ">- cp -p /cockroach/cockroach-certs-prestage/..data/* /cockroach/cockroach-certs/ && chmod 600 /cockroach/cockroach-certs/*.key && chown 1000581000:1000581000 /cockroach/cockroach-certs/*.key"
 	emptyDirName = "emptydir"
 
 	// DbContainerName is the name of the container definition in the pod spec
@@ -211,7 +211,7 @@ func (b StatefulSetBuilder) makePodTemplate() corev1.PodTemplateSpec {
 			},
 			TerminationGracePeriodSeconds: ptr.Int64(terminationGracePeriodSecs),
 			Containers:                    b.MakeContainers(),
-			AutomountServiceAccountToken:  ptr.Bool(false),
+			AutomountServiceAccountToken:  ptr.Bool(b.Spec().AutomountServiceAccountToken),
 			ServiceAccountName:            b.ServiceAccountName(),
 		},
 	}

@@ -1,5 +1,5 @@
 /*
-Copyright 2022 The Cockroach Authors
+Copyright 2023 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ limitations under the License.
 package util
 
 import (
-	"io/ioutil"
 	"os"
 )
 
@@ -25,7 +24,7 @@ import (
 // the directory name and also a function for removing the directory.
 // The funcation is often deferred for directory removal.
 func CreateTempDir(baseDirectory string) (string, func()) {
-	tmpDir, err := ioutil.TempDir("", baseDirectory)
+	tmpDir, err := os.MkdirTemp("", baseDirectory)
 	if err != nil {
 		panic(err)
 	}
