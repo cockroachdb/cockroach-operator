@@ -70,17 +70,17 @@ generate_bundle() {
 
   # Generate the new package bundle
   kustomize build config/manifests | operator-sdk generate bundle -q \
-    --version "${version}" \
-    ${opts} \
-    --output-dir "${dir}"
+  --version "${version}" \
+  ${opts} \
+  --output-dir "${dir}"
 
   # Ensure package name is correct for the specific bundle and that the CSV name matches the package name. Also removing
   # the testing annotations since these are handled automatically upstream.
   sed \
-    -e "s/package.v1: cockroach-operator/package.v1: ${pkg}/g" \
-    -e "/\s*# Annotations for testing/d" \
-    -e "/\s*operators.operatorframework.io.test/d" \
-    "${dir}/metadata/annotations.yaml" > "${dir}/metadata/annotations.yaml.new"
+  -e "s/package.v1: cockroach-operator/package.v1: ${pkg}/g" \
+  -e "/\s*# Annotations for testing/d" \
+  -e "/\s*operators.operatorframework.io.test/d" \
+  "${dir}/metadata/annotations.yaml" > "${dir}/metadata/annotations.yaml.new"
 
   mv "${dir}/metadata/annotations.yaml.new" "${dir}/metadata/annotations.yaml"
 
@@ -89,9 +89,9 @@ generate_bundle() {
 
   # move the dockerfile into the bundle directory and make it valid
   sed \
-    -e "/\s*tests\/scorecard/d" \
-    -e "s+${dir}/++g" \
-    bundle.Dockerfile > "${dir}/Dockerfile"
+  -e "/\s*tests\/scorecard/d" \
+  -e "s+${dir}/++g" \
+  bundle.Dockerfile > "${dir}/Dockerfile"
 
   rm bundle.Dockerfile
 	rm "${dir}/manifests/cockroach-operator-webhook-service_v1_service.yaml"
@@ -108,9 +108,9 @@ adapt_csv() {
 
   # replace RH_COCKROACH_OP_IMAGE_PLACEHOLDER with the proper image and CREATED_AT_PLACEHOLDER with the current time
   sed \
-    -e "s+RH_COCKROACH_OP_IMAGE_PLACEHOLDER+${img}+g" \
-    -e "s+CREATED_AT_PLACEHOLDER+"$(date +"%FT%H:%M:%SZ")"+g" \
-    "${csv}" > "${csv}.new"
+  -e "s+RH_COCKROACH_OP_IMAGE_PLACEHOLDER+${img}+g" \
+  -e "s+CREATED_AT_PLACEHOLDER+"$(date +"%FT%H:%M:%SZ")"+g" \
+  "${csv}" > "${csv}.new"
 
   mv "${csv}.new" "${csv}"
 }
@@ -122,7 +122,7 @@ patch_marketplace_csv() {
 
   local csv="${1}/cockroachdb-certified-rhmp/manifests/${2}.clusterserviceversion.yaml"
   sed "s+  annotations:+  annotations:\n${rhmp_annotations}+" \
-    "${csv}" > "${csv}.new"
+  "${csv}" > "${csv}.new"
   mv "${csv}.new" "${csv}"
 }
 

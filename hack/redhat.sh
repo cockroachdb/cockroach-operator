@@ -43,7 +43,7 @@ main() {
 
   case "${1:-}" in
     operator)
-			publish_operator_image
+      publish_operator_image
       preflight_operator;;
     bundle)
 			publish_bundle_image "${REGISTRY}/${BUNDLE_IMAGE}" "bundle/cockroachdb-certified"
@@ -65,15 +65,15 @@ main() {
 publish_operator_image() {
   echo "Publishing operator image to local repo..."
   APP_VERSION="v${VERSION}" \
-    DOCKER_REGISTRY="${REGISTRY}" \
-    DOCKER_IMAGE_REPOSITORY="${IMAGE%:*}" \
-    bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 //:push_operator_image
+  DOCKER_REGISTRY="${REGISTRY}" \
+  DOCKER_IMAGE_REPOSITORY="${IMAGE%:*}" \
+  bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 //:push_operator_image
 }
 
 preflight_operator() {
   echo "Running preflight checks on operator image..."
   preflight check container "${REGISTRY}/${IMAGE}" \
-    --docker-config "${HOME}/.docker/config.json"
+  --docker-config "${HOME}/.docker/config.json"
 }
 
 publish_bundle_image() {
@@ -93,9 +93,9 @@ publish_bundle_index() {
 
   echo "Publishing ${index_img}..."
   opm index add \
-    --container-tool docker \
-    --bundles "${bundle_img}" \
-    --tag "${index_img}"
+  --container-tool docker \
+  --bundles "${bundle_img}" \
+  --tag "${index_img}"
 }
 
 preflight_bundle() {
@@ -103,7 +103,7 @@ preflight_bundle() {
 	local index_img="${2}"
 
   echo "Running preflight checks on bundle image..."
-	echo "  IMAGE: ${bundle_img}"
+	echo "IMAGE: ${bundle_img}"
 
 	PFLT_INDEXIMAGE="${index_img}" preflight check operator "${bundle_img}"
 }
