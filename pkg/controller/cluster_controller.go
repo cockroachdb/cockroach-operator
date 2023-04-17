@@ -118,11 +118,12 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req reconcile.Request
 
 	cluster := resource.NewCluster(cr)
 	cluster.Fetcher = fetcher
+	cleanClusterObj := cluster.Unwrap()
 	// on first run we need to save the status and exit to pass Openshift CI
 	// we added a state called Starting for field ClusterStatus to accomplish this
 	if cluster.Status().ClusterStatus == "" {
 		cluster.SetClusterStatusOnFirstReconcile()
-		if err := r.updateClusterStatus(ctx, log, &cluster); err != nil {
+		if err := r.updateClusterStatus(ctx, log, &cluster, cleanClusterObj); err != nil {
 			log.Error(err, "failed to update cluster status")
 			return requeueIfError(err)
 		}
@@ -133,7 +134,7 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req reconcile.Request
 	if cluster.True(api.CrdbVersionChecked) {
 		if cluster.GetCockroachDBImageName() != cluster.Status().CrdbContainerImage {
 			cluster.SetFalse(api.CrdbVersionChecked)
-			if err := r.updateClusterStatus(ctx, log, &cluster); err != nil {
+			if err := r.updateClusterStatus(ctx, log, &cluster, cleanClusterObj); err != nil {
 				log.Error(err, "failed to update cluster status")
 				return requeueIfError(err)
 			}
@@ -156,7 +157,7 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req reconcile.Request
 		cluster.SetActionFailed(actorToExecute.GetActionType(), err.Error())
 
 		defer func(ctx context.Context, cluster *resource.Cluster) {
-			if err := r.updateClusterStatus(ctx, log, cluster); err != nil {
+			if err := r.updateClusterStatus(ctx, log, cluster, cleanClusterObj); err != nil {
 				log.Error(err, "failed to update cluster status")
 			}
 		}(ctx, &cluster)
@@ -192,7 +193,7 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req reconcile.Request
 		cluster.SetActionFinished(actorToExecute.GetActionType())
 	}
 
-	if err := r.updateClusterStatus(ctx, log, &cluster); err != nil {
+	if err := r.updateClusterStatus(ctx, log, &cluster, cleanClusterObj); err != nil {
 		log.Error(err, "failed to update cluster status")
 		return requeueIfError(err)
 	}
@@ -203,10 +204,11 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req reconcile.Request
 
 // updateClusterStatus preprocesses a cluster's Status and then persists it to
 // the Kubernetes API. updateClusterStatus will retry on conflict errors.
-func (r *ClusterReconciler) updateClusterStatus(ctx context.Context, log logr.Logger, cluster *resource.Cluster) error {
+func (r *ClusterReconciler) updateClusterStatus(ctx context.Context, log logr.Logger, cluster *resource.Cluster,
+	cleanObj *api.CrdbCluster) error {
 	cluster.SetClusterStatus()
 	return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		return r.Client.Status().Update(ctx, cluster.Unwrap())
+		return r.Client.Status().Patch(ctx, cluster.Unwrap(), client.MergeFrom(cleanObj))
 	})
 }
 
