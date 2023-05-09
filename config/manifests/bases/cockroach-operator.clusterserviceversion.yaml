@@ -364,3 +364,5 @@ spec:
     image: registry.connect.redhat.com/cockroachdb/cockroach@sha256:d14f77f70aea0422a906510c1ac2652ff76e131ed705cb002f80e13e887b0cd9
   - name: RELATED_IMAGE_COCKROACH_v22_2_8
     image: registry.connect.redhat.com/cockroachdb/cockroach@sha256:1e5d85f5db10fa79d09263db90daa44549bcc3b025e9f3f98cf0d4e51766394b
+  - name: RELATED_IMAGE_COCKROACH_v22_2_9
+    image: registry.connect.redhat.com/cockroachdb/cockroach@sha256:9ab968e4ca62f23bf9848e5475ef4076df7318a8560f63d5b2090a32af6fe4e2
