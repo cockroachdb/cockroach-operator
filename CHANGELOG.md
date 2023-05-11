@@ -7,6 +7,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 # [Unreleased](https://github.com/cockroachdb/cockroach-operator/compare/v2.10.0...master)
 
+* Bug fix to return correct error message if value passed for `whenUnsatisfiable` under `topologySpreadConstraints` field is invalid.
+
 # [v2.10.0](https://github.com/cockroachdb/cockroach-operator/compare/v2.9.0...v2.10.0)
 
 ## Added
