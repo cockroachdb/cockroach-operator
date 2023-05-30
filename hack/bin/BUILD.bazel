@@ -133,6 +133,7 @@ genrule(
     srcs = select({
         ":darwin": ["@k3d_darwin//file"],
         ":k8": ["@k3d_linux//file"],
+        ":m1": ["@k3d_m1//file"],
     }),
     outs = ["k3d"],
     cmd = "cp $(SRCS) $@",
