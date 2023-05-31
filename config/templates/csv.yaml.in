@@ -178,6 +178,7 @@ spec:
   - email: support@cockroachlabs.com
     name: Cockroach Labs Support
   maturity: stable
+  minKubeVersion: 1.18.0
   provider:
     name: Cockroach Labs
   version: 0.0.0

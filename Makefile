@@ -210,6 +210,12 @@ test/e2e/testrunner-openshift-packaging: test/openshift-package
 		--action_env=APP_VERSION=$(APP_VERSION) \
 		--action_env=DOCKER_REGISTRY=$(DOCKER_REGISTRY)
 
+# Run preflight checks for OpenShift. This expects a running OpenShift cluster.
+# Eg. make test/preflight-<operator|bundle|marketplace>
+test/preflight-%: CONTAINER=$*
+test/preflight-%: release/generate-bundle
+	@bazel run //hack:redhat-preflight -- $(CONTAINER)
+
 #
 # Different dev targets
 #
@@ -267,6 +273,7 @@ dev/up: dev/down
 
 .PHONY: dev/down
 dev/down:
+	@bazel build //hack/bin:k3d
 	@hack/dev.sh down
 #
 # Targets that allow to install the operator on an existing cluster
@@ -332,7 +339,7 @@ release/image:
 # RedHat OpenShift targets
 #
 
-#RED HAT IMAGE BUNDLE
+#REDHAT IMAGE BUNDLE
 RH_BUNDLE_REGISTRY?=registry.connect.redhat.com/cockroachdb
 RH_BUNDLE_IMAGE_REPOSITORY?=cockroachdb-operator-bundle
 RH_BUNDLE_VERSION?=$(VERSION)
@@ -356,3 +363,16 @@ PKG_MAN_OPTS ?= "$(PKG_CHANNELS) $(PKG_DEFAULT_CHANNEL)"
 .PHONY: release/generate-bundle
 release/generate-bundle:
 	bazel run //hack:bundle -- $(RH_BUNDLE_VERSION) $(RH_OPERATOR_IMAGE) $(PKG_MAN_OPTS) $(RH_COCKROACH_DATABASE_IMAGE)
+
+.PHONY: release/publish-operator
+publish-operator:
+	./build/release/teamcity-publish-release.sh
+
+.PHONY: release/publish-operator-openshift
+publish-operator-openshift:
+	./build/release/teamcity-publish-openshift.sh
+
+.PHONY: release/publish-openshift-bundle
+release/publish-openshift-bundle:
+	./build/release/teamcity-publish-openshift-bundle.sh
+
