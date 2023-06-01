@@ -94,7 +94,6 @@ generate_bundle() {
   bundle.Dockerfile > "${dir}/Dockerfile"
 
   rm bundle.Dockerfile
-	rm "${dir}/manifests/cockroach-operator-webhook-service_v1_service.yaml"
 }
 
 adapt_csv() {
