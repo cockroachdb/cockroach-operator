@@ -233,9 +233,10 @@ var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
 // randSeq returns a string of n letters
 func randSeq(n int) string {
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	b := make([]rune, n)
 	for i := range b {
-		b[i] = letters[rand.Intn(len(letters))]
+		b[i] = letters[r.Intn(len(letters))]
 	}
 	return string(b)
 }
@@ -243,7 +244,6 @@ func randSeq(n int) string {
 // wriiteFile writes out b byte array to a random file in the
 // os.TempDir and returns the name of that file.
 func writeFile(t *testing.T, b []byte) string {
-	rand.Seed(time.Now().UnixNano())
 	fileName := fmt.Sprintf("%s-test.yaml", randSeq(10))
 	fileName = filepath.Join(t.TempDir(), fileName)
 

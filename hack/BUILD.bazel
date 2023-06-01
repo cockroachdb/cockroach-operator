@@ -129,6 +129,17 @@ sh_binary(
     ],
 )
 
+sh_binary(
+    name = "redhat-preflight",
+    srcs = ["redhat.sh"],
+    data = [
+        JQ,
+        OPM,
+        "//hack/bin:preflight",
+        "@//:all-srcs",
+    ],
+)
+
 filegroup(
     name = "package-srcs",
     srcs = glob(["**"]),

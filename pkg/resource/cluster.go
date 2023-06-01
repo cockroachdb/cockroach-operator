@@ -210,7 +210,7 @@ func (cluster Cluster) LookupSupportedVersion(version string) (string, bool) {
 	return "", false
 }
 
-//GetVersionAnnotation  gets the current version of the cluster  retrieved by version checker action
+// GetVersionAnnotation  gets the current version of the cluster  retrieved by version checker action
 func (cluster Cluster) GetVersionAnnotation() string {
 	return cluster.getAnnotation(CrdbVersionAnnotation)
 }

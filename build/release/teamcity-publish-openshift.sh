@@ -17,41 +17,37 @@ set -euxo pipefail
 
 source "$(dirname "${0}")/teamcity-support.sh"
 
+RH_PROJECT_ID="5e6027425c5456060d5f6084"
+RH_REGISTRY="scan.connect.redhat.com"
+RH_OPERATOR_IMG="${RH_REGISTRY}/ospid-cf721588-ad8a-4618-938c-5191c5e10ae4/cockroachdb-operator:${TAG}"
 
-tc_start_block "Variable Setup"
-VERSION="v"$(cat version.txt)
-# Matching the version name regex from within the cockroach code except
-# for the `metadata` part at the end because Docker tags don't support
-# `+` in the tag name.
-# https://github.com/cockroachdb/cockroach/blob/4c6864b44b9044874488cfedee3a31e6b23a6790/pkg/util/version/version.go#L75
-image_tag="$(echo "${VERSION}" | grep -E -o '^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[-.0-9A-Za-z]+)?$')"
-#                                         ^major           ^minor           ^patch         ^preRelease
-
-if [[ -z "$image_tag" ]] ; then
-    echo "Invalid VERSION \"${VERSION}\". Must be of the format \"vMAJOR.MINOR.PATCH(-PRERELEASE)?\"."
-    exit 1
-fi
-
-rhel_registry="scan.connect.redhat.com"
-
-dh_operator_image="docker.io/cockroachdb/cockroach-operator:$image_tag"
-rh_operator_image_repository="$rhel_registry/ospid-cf721588-ad8a-4618-938c-5191c5e10ae4/cockroachdb-operator"
-
+OPERATOR_IMG="docker.io/cockroachdb/cockroach-operator:${TAG}"
 if ! [[ -z "${DRY_RUN}" ]] ; then
-  # The operator image doesn't use the "-dryrun" suffix, it's published in a
-  # separate repository.
-  dh_operator_image="docker.io/cockroachdb/cockroach-operator-misc:$image_tag"
-  image_tag="${image_tag}-dryrun"
+  OPERATOR_IMG="docker.io/cockroachdb/cockroach-operator-misc:${TAG}-dryrun"
 fi
-tc_end_block "Variable Setup"
 
+main() {
+  docker_login "${RH_REGISTRY}" "${OPERATOR_REDHAT_REGISTRY_USER}" "${OPERATOR_REDHAT_REGISTRY_KEY}"
 
-tc_start_block "Make and push docker images"
-configure_docker_creds
-docker_login "$rhel_registry" "$OPERATOR_REDHAT_REGISTRY_USER" "$OPERATOR_REDHAT_REGISTRY_KEY"
+  publish_to_redhat
+  run_preflight
+}
 
-docker pull "$dh_operator_image"
-docker tag "$dh_operator_image" "$rh_operator_image_repository:$image_tag"
-docker push "$rh_operator_image_repository:$image_tag"
+publish_to_redhat() {
+  tc_start_block "Tag and release docker image"
+  docker pull "${OPERATOR_IMG}"
+  docker tag "${OPERATOR_IMG}" "${RH_OPERATOR_IMG}"
+  docker push "${RH_OPERATOR_IMG}"
+  tc_end_block "Tag and release docker image"
+}
 
-tc_end_block "Make and push docker images"
+run_preflight() {
+  bazel build //hack/bin:preflight
+  PFLT_PYXIS_API_TOKEN="${REDHAT_API_TOKEN}" bazel-bin/hack/bin/preflight \
+    check container "${RH_OPERATOR_IMG}" \
+    --certification-project-id="${RH_PROJECT_ID}" \
+    --docker-config=/home/agent/.docker/config.json \
+    --submit
+}
+
+main "$@"

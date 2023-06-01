@@ -17,39 +17,46 @@ load("@io_bazel_rules_docker//container:container.bzl", "container_pull")
 load("@bazel_gazelle//:deps.bzl", "go_repository")
 
 # This controls the version for all openshift binaries (opm, oc, opernshift-install, etc.)
-OPENSHIFT_VERSION = "4.9.17"
+OPENSHIFT_VERSION = "4.10.18"
 OPENSHIFT_REPO = "https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/{}".format(OPENSHIFT_VERSION)
 
 # filenames and versions from ${OPENSHIFT_REPO}/sha256sum.txt
 OPENSHIFT_BINS = {
+    "preflight": {
+        # currently, preflight is only available on linux
+        "preflight_linux": {
+            "url": "https://github.com/redhat-openshift-ecosystem/openshift-preflight/releases/download/1.2.1/preflight-linux-amd64",
+            "sha": "e5754a81d4baae4f4956fc0842179a3daeac4778e202450f886a9afb05d218ba",
+        },
+    },
     "oc": {
         "oc_darwin": {
             "url": "{}/openshift-client-mac-{}.tar.gz".format(OPENSHIFT_REPO, OPENSHIFT_VERSION),
-            "sha": "2b06b400ab929275b55d3dbb8d7c54b9f1dd17df0b50247b8fc24b9efc8b1566",
+            "sha": "285c307491d8ffd19c065a942515fda78e53f95289d4b4985aa4c92439f7f339",
         },
         "oc_linux": {
             "url": "{}/openshift-client-linux-{}.tar.gz".format(OPENSHIFT_REPO, OPENSHIFT_VERSION),
-            "sha": "390268a64029f2aea7492f493034b75d4979f676f98762dbbf33eb0da5b294db",
+            "sha": "101bc7e11604b829157b3b314de3760eec857e55f51eeca978825307ff61c190",
         },
     },
     "openshift-install": {
         "openshift_darwin": {
             "url": "{}/openshift-install-mac-{}.tar.gz".format(OPENSHIFT_REPO, OPENSHIFT_VERSION),
-            "sha": "0c51934bfff15f8a8bf666bb9b15c894994afd87d838ffc5579e998f56110738",
+            "sha": "3a36acb92a6759d964a1af62512c747e075a2937a6368203d0598d804db10da2",
          },
         "openshift_linux": {
             "url": "{}/openshift-install-linux-{}.tar.gz".format(OPENSHIFT_REPO, OPENSHIFT_VERSION),
-            "sha": "4213bf060c25a6f38f86f2245f1f28060185e8baa7431f272e726d50f0044604",
+            "sha": "27e6ccb60ce2c7dfe611e1639642277572af78a21c622a7443d5a19006b2e45b",
         },
     },
     "opm": {
         "opm_darwin": {
             "url": "{}/opm-mac-{}.tar.gz".format(OPENSHIFT_REPO, OPENSHIFT_VERSION),
-            "sha": "f6fb6205f242ffef62ac0f4db738b1c099d3302ebb98b23d94926ef2903ed5d8",
+            "sha": "36d7104b1fd29e77a880b63e3e1aa67639a48cca1fdf537411b40a0c36140dba",
          },
         "opm_linux": {
             "url": "{}/opm-linux-{}.tar.gz".format(OPENSHIFT_REPO, OPENSHIFT_VERSION),
-            "sha": "f88d3dcc18950d8cd8512e460de5addcf11e8eb8f31ae675f0dd879908843747",
+            "sha": "6d422682fd688cbebc7818247005e2baf87675efef4931d2f0a2e744dc613b88",
         },
     },
 }
@@ -71,6 +78,7 @@ def install():
     install_operator_sdk()
     install_opm()
     install_openshift()
+    install_preflight()
 
     # Install golang.org/x/build as kubernetes/repo-infra requires it for the
     # build-tar bazel target.
@@ -178,13 +186,17 @@ def install_kubectl():
 def install_k3d():
     versions = {
         "k3d_darwin": {
-            "url": "https://github.com/rancher/k3d/releases/download/v5.2.2/k3d-darwin-amd64",
+            "url": "https://github.com/k3d-io/k3d/releases/download/v5.2.2/k3d-darwin-amd64",
             "sha": "40ac312bc762611de80daff24cb66d79aaaf17bf90e5e8d61caf90e63b57542d",
         },
         "k3d_linux": {
-            "url": "https://github.com/rancher/k3d/releases/download/v5.2.2/k3d-linux-amd64",
+            "url": "https://github.com/k3d-io/k3d/releases/download/v5.2.2/k3d-linux-amd64",
             "sha": "7ddb900e6e50120b65d61568f6af007a82331bf83918608a6a7be8910792faef",
         },
+        "k3d_m1": {
+            "url": "https://github.com/k3d-io/k3d/releases/download/v5.2.2/k3d-darwin-arm64",
+            "sha": "d0149ecb9b3fb831d617a0a880d8235722a70b9131f45f1389235e586050f8f9",
+        }
     }
 
     for k, v in versions.items():
@@ -199,14 +211,14 @@ def install_k3d():
 def install_golangci_lint():
     http_archive(
         name = "golangci_lint_darwin",
-        sha256 = "0f615fb8c364f6e4a213f2ed2ff7aa1fc2b208addf29511e89c03534067bbf57",
-        urls = ["https://github.com/golangci/golangci-lint/releases/download/v1.50.1/golangci-lint-1.50.1-darwin-amd64.tar.gz"],
+        sha256 = "fba08acc4027f69f07cef48fbff70b8a7ecdfaa1c2aba9ad3fb31d60d9f5d4bc",
+        urls = ["https://github.com/golangci/golangci-lint/releases/download/v1.51.1/golangci-lint-1.51.1-darwin-amd64.tar.gz"],
         build_file_content =
          """
 filegroup(
      name = "file",
      srcs = [
-        "golangci-lint-1.50.1-darwin-amd64/golangci-lint",
+        "golangci-lint-1.51.1-darwin-amd64/golangci-lint",
      ],
      visibility = ["//visibility:public"],
 )
@@ -215,14 +227,14 @@ filegroup(
 
     http_archive(
             name = "golangci_lint_m1",
-            sha256 = "0f615fb8c364f6e4a213f2ed2ff7aa1fc2b208addf29511e89c03534067bbf57",
-            urls = ["https://github.com/golangci/golangci-lint/releases/download/v1.50.1/golangci-lint-1.50.1-darwin-arm64.tar.gz"],
+            sha256 = "75b8f0ff3a4e68147156be4161a49d4576f1be37a0b506473f8c482140c1e7f2",
+            urls = ["https://github.com/golangci/golangci-lint/releases/download/v1.51.1/golangci-lint-1.51.1-darwin-arm64.tar.gz"],
             build_file_content =
              """
 filegroup(
     name = "file",
     srcs = [
-       "golangci-lint-1.50.1-darwin-arm64/golangci-lint",
+       "golangci-lint-1.51.1-darwin-arm64/golangci-lint",
     ],
     visibility = ["//visibility:public"],
 )
@@ -231,14 +243,14 @@ filegroup(
 
     http_archive(
         name = "golangci_lint_linux",
-        sha256 = "4ba1dc9dbdf05b7bdc6f0e04bdfe6f63aa70576f51817be1b2540bbce017b69a",
-        urls = ["https://github.com/golangci/golangci-lint/releases/download/v1.50.1/golangci-lint-1.50.1-linux-amd64.tar.gz"],
+        sha256 = "17aeb26c76820c22efa0e1838b0ab93e90cfedef43fbfc9a2f33f27eb9e5e070",
+        urls = ["https://github.com/golangci/golangci-lint/releases/download/v1.51.1/golangci-lint-1.51.1-linux-amd64.tar.gz"],
         build_file_content =
          """
 filegroup(
      name = "file",
      srcs = [
-        "golangci-lint-1.50.1-linux-amd64/golangci-lint",
+        "golangci-lint-1.51.1-linux-amd64/golangci-lint",
      ],
      visibility = ["//visibility:public"],
 )
@@ -389,12 +401,18 @@ def install_opm():
     versions = OPENSHIFT_BINS["opm"]
 
     for k, v in versions.items():
-      http_file(
-         name = k,
-         executable = 1,
-         sha256 = v["sha"],
-         urls = [v["url"]],
-      )
+      http_archive(
+          name = k,
+          sha256 = v["sha"],
+          urls = [v["url"]],
+          build_file_content = """
+filegroup(
+    name = "file",
+    srcs = ["opm"],
+    visibility = ["//visibility:public"],
+)
+"""
+			)
 
 ## Fetch openshift-installer
 def install_openshift():
@@ -413,6 +431,17 @@ filegroup(
 )
 """
       )
+
+def install_preflight():
+    versions = OPENSHIFT_BINS["preflight"]
+
+    for k, v in versions.items():
+        http_file(
+            name = k,
+            executable = 1,
+            sha256 = v["sha"],
+            urls = [v["url"]]
+        )
 
 ## Fetch crdb used in our container
 def install_crdb():
