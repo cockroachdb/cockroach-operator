@@ -34,6 +34,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 * Correctly detect failed version checker Pods
 * retry cluster status updates, reducing test flakes
 
+## Changed
+* Cluster domain for cert generation is now autodetected by running a DNS query
+
 # [v2.7.0](https://github.com/cockroachdb/cockroach-operator/compare/v2.6.0...v2.7.0)
 
 ## Fixed

@@ -4,6 +4,7 @@ go_library(
     name = "go_default_library",
     srcs = [
         "api_kind_checker.go",
+        "cluster_domain.go",
         "tmp_dir.go",
     ],
     importpath = "github.com/cockroachdb/cockroach-operator/pkg/util",
