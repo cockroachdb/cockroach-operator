@@ -37,6 +37,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 * Correctly detect failed version checker Pods
 * retry cluster status updates, reducing test flakes
 
+## Changed
+* Update validation webhook to reject changes to cluster spec's AdditionalLabels field
+
 # [v2.7.0](https://github.com/cockroachdb/cockroach-operator/compare/v2.6.0...v2.7.0)
 
 ## Fixed
