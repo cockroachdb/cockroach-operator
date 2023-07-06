@@ -319,3 +319,6 @@ CrdbVersions:
 - image: cockroachdb/cockroach:v23.1.4
   redhatImage: registry.connect.redhat.com/cockroachdb/cockroach@sha256:42c9930d6861f6a2147ed6e01827eddd730279966763ec68868567a19cc164ab
   tag: v23.1.4
+- image: cockroachdb/cockroach:v23.1.5
+  redhatImage: registry.connect.redhat.com/cockroachdb/cockroach@sha256:acbfee4492327a720fe7da76929a86192d8af2442bbb76f0a089f6a81a890be3
+  tag: v23.1.5
