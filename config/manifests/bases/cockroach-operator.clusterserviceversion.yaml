@@ -185,6 +185,10 @@ spec:
   relatedImages:
   - name: RELATED_IMAGE_COCKROACH_v20_1_4
     image: registry.connect.redhat.com/cockroachdb/cockroach@sha256:288ae92ebdfc848540ff80ef682b74e50809e9742cafce22b028112326d66b65
+  - name: RELATED_IMAGE_COCKROACH_v20_1_4
+    image: registry.connect.redhat.com/cockroachdb/cockroach@sha256:288ae92ebdfc848540ff80ef682b74e50809e9742cafce22b028112326d66b65
+  - name: RELATED_IMAGE_COCKROACH_v20_1_5
+    image: registry.connect.redhat.com/cockroachdb/cockroach@sha256:87dcdbdc07904b217880e70484582c9d87dde7e4071e01cf9e2e6da43111190e
   - name: RELATED_IMAGE_COCKROACH_v20_1_5
     image: registry.connect.redhat.com/cockroachdb/cockroach@sha256:87dcdbdc07904b217880e70484582c9d87dde7e4071e01cf9e2e6da43111190e
   - name: RELATED_IMAGE_COCKROACH_v20_1_8
