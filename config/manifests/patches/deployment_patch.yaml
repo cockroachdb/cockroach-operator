@@ -249,4 +249,6 @@ spec:
               value: registry.connect.redhat.com/cockroachdb/cockroach@sha256:3bf017b2b2506724500f5e29017d1b956825dd0f61a7c0049b0ff084c3554b5b
             - name: RELATED_IMAGE_COCKROACH_v23_1_8
               value: registry.connect.redhat.com/cockroachdb/cockroach@sha256:2d89398f03736f8ffaa82b10fed0f19fba166d3d2145b26f25cb71f3c39acf07
+            - name: RELATED_IMAGE_COCKROACH_v23_1_9
+              value: registry.connect.redhat.com/cockroachdb/cockroach@sha256:3f587e7b9f5a611013af2608e2151ed782859a52501b00adbc95739c56a8ff1e
           image: RH_COCKROACH_OP_IMAGE_PLACEHOLDER
