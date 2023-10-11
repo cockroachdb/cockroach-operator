@@ -62,6 +62,7 @@ func NewDirector(scheme *runtime.Scheme, cl client.Client, config *rest.Config, 
 		api.DeployAction:            newDeploy(scheme, cl, kd, clientset),
 		api.InitializeAction:        newInitialize(scheme, cl, config, clientset),
 		api.ExposeIngressAction:     newExposeIngress(scheme, cl, config, clientset),
+		api.ScaleStatusAction:       newScaleStatus(scheme, cl, config, clientset),
 	}
 	return &clusterDirector{
 		actors:     actors,
@@ -135,6 +136,10 @@ func (cd *clusterDirector) GetActorToExecute(ctx context.Context, cluster *resou
 		return nil, err
 	} else if processIngress {
 		return cd.actors[api.ExposeIngressAction], nil
+	}
+
+	if cd.needsScaleStatus(cluster, ss) {
+		return cd.actors[api.ScaleStatusAction], nil
 	}
 
 	return nil, nil
@@ -363,6 +368,16 @@ func (cd *clusterDirector) needsInitialization(cluster *resource.Cluster) bool {
 		return false
 	}
 	return true
+}
+
+func (cd *clusterDirector) needsScaleStatus(cluster *resource.Cluster, ss *appsv1.StatefulSet) bool {
+	replicas := cluster.Status().Replicas
+	selector := cluster.Status().Selector
+
+	status := &ss.Status
+	appliedselector := metav1.FormatLabelSelector(ss.Spec.Selector)
+
+	return replicas != status.Replicas || selector != appliedselector
 }
 
 func (cd *clusterDirector) processIngress(ctx context.Context, cluster *resource.Cluster) (bool, error) {

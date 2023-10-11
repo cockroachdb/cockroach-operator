@@ -16,7 +16,7 @@ limitations under the License.
 
 package v1alpha1
 
-//ActionType type alias
+// ActionType type alias
 type ActionType string
 
 // All possible action types
@@ -32,4 +32,5 @@ const (
 	SetupRBACAction         ActionType = "SetupRBAC"
 	UnknownAction           ActionType = "Unknown"
 	ExposeIngressAction     ActionType = "ExposeIngressAction"
+	ScaleStatusAction       ActionType = "ScaleStatus"
 )

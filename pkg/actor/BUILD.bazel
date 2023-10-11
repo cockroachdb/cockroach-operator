@@ -15,6 +15,7 @@ go_library(
         "resize_pvc.go",
         "setup_rbac.go",
         "validate_version.go",
+        "scale_status.go",
     ],
     importpath = "github.com/cockroachdb/cockroach-operator/pkg/actor",
     visibility = ["//visibility:public"],

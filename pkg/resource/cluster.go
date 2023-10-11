@@ -96,6 +96,13 @@ func (cluster Cluster) SetClusterStatus() {
 func (cluster Cluster) SetClusterVersion(version string) {
 	cluster.cr.Status.Version = version
 }
+func (cluster Cluster) SetClusterNodes(nodes int32) {
+	cluster.cr.Status.Replicas = nodes
+}
+func (cluster Cluster) SetClusterSelector(selector string) {
+	cluster.cr.Status.Selector = selector
+}
+
 func (cluster Cluster) SetSQLHost(host string) {
 	cluster.cr.Status.SQLHost = host
 }

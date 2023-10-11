@@ -169,6 +169,17 @@ type CrdbClusterStatus struct {
 	// OperatorStatus represent the status of the operator(Failed, Starting, Running or Other)
 	// +operator-sdk:csv:customresourcedefinitions:type=status, displayName="OperatorStatus"
 	ClusterStatus string `json:"clusterStatus,omitempty"`
+	// OperatorStatus represent the subresource scale
+	// +operator-sdk:csv:customresourcedefinitions:type=status, displayName="SubresourceScale"
+	// The total number non-terminated pods targeted by this
+	// OpenTelemetryCollector's deployment or statefulSet.
+	// +optional
+	Replicas int32 `json:"replicas,omitempty"`
+
+	// The selector used to match the OpenTelemetryCollector's
+	// deployment or statefulSet pods.
+	// +optional
+	Selector string `json:"selector,omitempty"`
 }
 
 // +k8s:openapi-gen=true
@@ -212,6 +223,7 @@ type ClusterAction struct {
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:categories=all;cockroachdb,shortName=crdb
 // +kubebuilder:subresource:status
+// +kubebuilder:subresource:scale:statusReplicasPath=.spec.nodes,statusReplicasPath=.status.replicas,labelSelectorPath=.status.selector
 // +operator-sdk:csv:customresourcedefinitions:displayName="CockroachDB Operator"
 // +k8s:openapi-gen=true
 

@@ -1572,6 +1572,10 @@ spec:
                 type: array
               crdbcontainerimage:
                 description: CrdbContainerImage is the container that will be installed
+                type: string 
+              replicas:
+                type: integer
+              selector:  
                 type: string
               operatorActions:
                 items:
@@ -1611,6 +1615,10 @@ spec:
     storage: true
     subresources:
       status: {}
+      scale:
+        specReplicasPath: .spec.nodes
+        statusReplicasPath: .status.replicas
+        labelSelectorPath: .status.selector
 status:
   acceptedNames:
     kind: ""
