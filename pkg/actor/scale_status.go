@@ -54,12 +54,5 @@ func (sss *scaleStatus) Act(ctx context.Context, cluster *resource.Cluster, log 
 	cluster.SetClusterNodes(status.CurrentReplicas)
 	cluster.SetClusterSelector(metav1.FormatLabelSelector(statefulSet.Spec.Selector))
 
-	// log.Info("started scale status now")
-
-	// if err := sss.client.Status().Update(ctx, cluster.Unwrap()); err != nil {
-	// 	log.Error(err, "failed saving cluster status on replicas and selector")
-	// 	return err
-	// }
-
 	return nil
 }
