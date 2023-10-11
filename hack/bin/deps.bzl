@@ -53,10 +53,12 @@ OPENSHIFT_BINS = {
         "opm_darwin": {
             "url": "{}/opm-mac-{}.tar.gz".format(OPENSHIFT_REPO, OPENSHIFT_VERSION),
             "sha": "36d7104b1fd29e77a880b63e3e1aa67639a48cca1fdf537411b40a0c36140dba",
+            "src": "darwin-amd64-opm",
          },
         "opm_linux": {
             "url": "{}/opm-linux-{}.tar.gz".format(OPENSHIFT_REPO, OPENSHIFT_VERSION),
             "sha": "6d422682fd688cbebc7818247005e2baf87675efef4931d2f0a2e744dc613b88",
+            "src": "opm",
         },
     },
 }
@@ -408,10 +410,10 @@ def install_opm():
           build_file_content = """
 filegroup(
     name = "file",
-    srcs = ["opm"],
+    srcs = ["{src}"],
     visibility = ["//visibility:public"],
 )
-"""
+""".format(src=v["src"])
 			)
 
 ## Fetch openshift-installer

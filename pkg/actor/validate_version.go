@@ -54,7 +54,7 @@ type versionChecker struct {
 	action
 }
 
-//GetActionType returns api.VersionCheckerAction action used to set the cluster status errors
+// GetActionType returns api.VersionCheckerAction action used to set the cluster status errors
 func (v *versionChecker) GetActionType() api.ActionType {
 	return api.VersionCheckerAction
 }
@@ -126,12 +126,14 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster, log
 		Owner:  owner,
 		Scheme: v.scheme,
 	}).Reconcile()
-	if err != nil && kube.IgnoreNotFound(err) == nil {
-		err := errors.Wrap(err, "failed to reconcile job not found")
-		log.Error(err, "failed to reconcile job")
+	if err != nil {
+		if kube.IgnoreNotFound(err) == nil {
+			err := errors.Wrap(err, "failed to reconcile job not found")
+			log.Error(err, "failed to reconcile job")
+			return err
+		}
+		log.Error(err, "failed to reconcile job only err: ", err.Error())
 		return err
-	} else if err != nil {
-		log.Error(err, "failed to reconcile job only err")
 	}
 
 	if changed {

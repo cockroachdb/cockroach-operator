@@ -18,6 +18,8 @@ package v1alpha1
 
 import (
 	"fmt"
+	"reflect"
+
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	kerrors "k8s.io/apimachinery/pkg/util/errors"
@@ -51,7 +53,7 @@ func (r *CrdbCluster) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).For(r).Complete()
 }
 
-//+kubebuilder:webhook:path=/mutate-crdb-cockroachlabs-com-v1alpha1-crdbcluster,mutating=true,failurePolicy=fail,groups=crdb.cockroachlabs.com,resources=crdbclusters,verbs=create;update,versions=v1alpha1,name=mcrdbcluster.kb.io,sideEffects=None,admissionReviewVersions=v1
+// +kubebuilder:webhook:path=/mutate-crdb-cockroachlabs-com-v1alpha1-crdbcluster,mutating=true,failurePolicy=fail,groups=crdb.cockroachlabs.com,resources=crdbclusters,verbs=create;update,versions=v1alpha1,name=mcrdbcluster.kb.io,sideEffects=None,admissionReviewVersions=v1
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type.
 func (r *CrdbCluster) Default() {
@@ -79,7 +81,7 @@ func (r *CrdbCluster) Default() {
 	}
 }
 
-//+kubebuilder:webhook:path=/validate-crdb-cockroachlabs-com-v1alpha1-crdbcluster,mutating=false,failurePolicy=fail,groups=crdb.cockroachlabs.com,resources=crdbclusters,verbs=create;update,versions=v1alpha1,name=vcrdbcluster.kb.io,sideEffects=None,admissionReviewVersions=v1
+// +kubebuilder:webhook:path=/validate-crdb-cockroachlabs-com-v1alpha1-crdbcluster,mutating=false,failurePolicy=fail,groups=crdb.cockroachlabs.com,resources=crdbclusters,verbs=create;update,versions=v1alpha1,name=vcrdbcluster.kb.io,sideEffects=None,admissionReviewVersions=v1
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
 func (r *CrdbCluster) ValidateCreate() error {
@@ -110,6 +112,18 @@ func (r *CrdbCluster) ValidateCreate() error {
 func (r *CrdbCluster) ValidateUpdate(old runtime.Object) error {
 	webhookLog.Info("validate update", "name", r.Name)
 	var errors []error
+
+	oldCluster, ok := old.(*CrdbCluster)
+	if !ok {
+		webhookLog.Info(fmt.Sprintf("unexpected old cluster type %T", old))
+	} else {
+		// Validate if labels changed.
+		// k8s does not support changing selector/labels on sts:
+		//  https://github.com/kubernetes/kubernetes/issues/90519.
+		if !reflect.DeepEqual(oldCluster.Spec.AdditionalLabels, r.Spec.AdditionalLabels) {
+			errors = append(errors, fmt.Errorf("mutating additionalLabels field is not supported"))
+		}
+	}
 
 	if r.Spec.Ingress != nil {
 		if err := r.ValidateIngress(); err != nil {
