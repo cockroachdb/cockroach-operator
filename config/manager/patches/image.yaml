@@ -256,3 +256,5 @@ spec:
               value: cockroachdb/cockroach:v23.1.11
             - name: RELATED_IMAGE_COCKROACH_v23_1_12
               value: cockroachdb/cockroach:v23.1.12
+            - name: RELATED_IMAGE_COCKROACH_v23_1_13
+              value: cockroachdb/cockroach:v23.1.13
