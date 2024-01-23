@@ -23,7 +23,7 @@ spec:
   serviceAccountName: cockroachdb-sa
   containers:
   - name: cockroachdb-client-secure
-    image: cockroachdb/cockroach:v23.1.13
+    image: cockroachdb/cockroach:v23.1.14
     imagePullPolicy: IfNotPresent
     volumeMounts:
     - name: client-certs
