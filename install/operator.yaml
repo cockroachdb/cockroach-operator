@@ -578,6 +578,16 @@ spec:
           value: cockroachdb/cockroach:v22.2.12
         - name: RELATED_IMAGE_COCKROACH_v22_2_14
           value: cockroachdb/cockroach:v22.2.14
+        - name: RELATED_IMAGE_COCKROACH_v22_2_15
+          value: cockroachdb/cockroach:v22.2.15
+        - name: RELATED_IMAGE_COCKROACH_v22_2_16
+          value: cockroachdb/cockroach:v22.2.16
+        - name: RELATED_IMAGE_COCKROACH_v22_2_17
+          value: cockroachdb/cockroach:v22.2.17
+        - name: RELATED_IMAGE_COCKROACH_v22_2_18
+          value: cockroachdb/cockroach:v22.2.18
+        - name: RELATED_IMAGE_COCKROACH_v22_2_19
+          value: cockroachdb/cockroach:v22.2.19
         - name: RELATED_IMAGE_COCKROACH_v23_1_0
           value: cockroachdb/cockroach:v23.1.0
         - name: RELATED_IMAGE_COCKROACH_v23_1_1
@@ -602,6 +612,22 @@ spec:
           value: cockroachdb/cockroach:v23.1.10
         - name: RELATED_IMAGE_COCKROACH_v23_1_11
           value: cockroachdb/cockroach:v23.1.11
+        - name: RELATED_IMAGE_COCKROACH_v23_1_12
+          value: cockroachdb/cockroach:v23.1.12
+        - name: RELATED_IMAGE_COCKROACH_v23_1_13
+          value: cockroachdb/cockroach:v23.1.13
+        - name: RELATED_IMAGE_COCKROACH_v23_1_14
+          value: cockroachdb/cockroach:v23.1.14
+        - name: RELATED_IMAGE_COCKROACH_v23_1_15
+          value: cockroachdb/cockroach:v23.1.15
+        - name: RELATED_IMAGE_COCKROACH_v23_1_16
+          value: cockroachdb/cockroach:v23.1.16
+        - name: RELATED_IMAGE_COCKROACH_v23_2_0
+          value: cockroachdb/cockroach:v23.2.0
+        - name: RELATED_IMAGE_COCKROACH_v23_2_1
+          value: cockroachdb/cockroach:v23.2.1
+        - name: RELATED_IMAGE_COCKROACH_v23_2_2
+          value: cockroachdb/cockroach:v23.2.2
         - name: OPERATOR_NAME
           value: cockroachdb
         - name: POD_NAME
