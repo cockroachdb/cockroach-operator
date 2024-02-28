@@ -31,13 +31,17 @@ jobs:
         with:
           path: "~/.cache/bazel"
           key: bazel
-      - name: Update CRDB versions
-        uses: technote-space/create-pr-action@v2
+      - name: Update CRDB version
+        run: make release/gen-templates
+      - name: Create PR
+        uses: peter-evans/create-pull-request@v5
         with:
-          EXECUTE_COMMANDS: |
-            make release/gen-templates
-          COMMIT_MESSAGE: 'Update CRDB versions'
-          COMMIT_NAME: 'GitHub Actions'
-          COMMIT_EMAIL: 'dev-inf+github-cockroach-dev-inf@cockroachlabs.com'
-          PR_BRANCH_NAME: 'crdb-update-${PR_ID}'
-          PR_TITLE: 'Update CRDB versions'
+          base: "master"
+          branch: 'crdb-version-update'
+          title: "Update CRDB versions"
+          author: "CRL Release bot <teamcity@cockroachlabs.com>"
+          body: |
+            Update supported CRDB versions.
+          commit-message: |
+            Update supported CRDB versions.
+          delete-branch: true
