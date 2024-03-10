@@ -93,8 +93,8 @@ func (b JobBuilder) buildPodTemplate() corev1.PodTemplateSpec {
 		},
 		Spec: corev1.PodSpec{
 			SecurityContext: &corev1.PodSecurityContext{
-				RunAsUser: ptr.Int64(1000581000),
-				FSGroup:   ptr.Int64(1000581000),
+				RunAsUser: ptr.Int64(2000),
+				FSGroup:   ptr.Int64(2000),
 			},
 			TerminationGracePeriodSeconds: ptr.Int64(60),
 			Containers:                    b.MakeContainers(),
