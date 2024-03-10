@@ -43,7 +43,7 @@ const (
 	dataDirMountPath = "/cockroach/cockroach-data/"
 
 	certsDirName = "certs"
-	certCpCmd    = ">- cp -p /cockroach/cockroach-certs-prestage/..data/* /cockroach/cockroach-certs/ && chmod 600 /cockroach/cockroach-certs/*.key && chown 1000581000:1000581000 /cockroach/cockroach-certs/*.key"
+	certCpCmd    = ">- cp -p /cockroach/cockroach-certs-prestage/..data/* /cockroach/cockroach-certs/ && chmod 600 /cockroach/cockroach-certs/*.key && chown 2000:2000 /cockroach/cockroach-certs/*.key"
 	emptyDirName = "emptydir"
 
 	// DbContainerName is the name of the container definition in the pod spec
@@ -206,8 +206,8 @@ func (b StatefulSetBuilder) makePodTemplate() corev1.PodTemplateSpec {
 		},
 		Spec: corev1.PodSpec{
 			SecurityContext: &corev1.PodSecurityContext{
-				RunAsUser: ptr.Int64(1000581000),
-				FSGroup:   ptr.Int64(1000581000),
+				RunAsUser: ptr.Int64(2000),
+				FSGroup:   ptr.Int64(2000),
 			},
 			TerminationGracePeriodSeconds: ptr.Int64(terminationGracePeriodSecs),
 			Containers:                    b.MakeContainers(),
