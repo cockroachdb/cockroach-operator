@@ -1,5 +1,5 @@
 /*
-Copyright 2023 The Cockroach Authors
+Copyright 2024 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -24,12 +24,12 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-//PVCPruner interface
+// PVCPruner interface
 type PVCPruner interface {
 	Prune(ctx context.Context) error
 }
 
-//Scaler interface
+// Scaler interface
 type Scaler struct {
 	Logger    logr.Logger
 	CRDB      ClusterScaler

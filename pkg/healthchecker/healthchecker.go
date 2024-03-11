@@ -1,5 +1,5 @@
 /*
-Copyright 2023 The Cockroach Authors
+Copyright 2024 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -43,19 +43,19 @@ import (
 
 const underreplicatedmetric = "ranges_underreplicated{store="
 
-//HealthChecker interface
+// HealthChecker interface
 type HealthChecker interface { // for testing
 	Probe(ctx context.Context, l logr.Logger, logSuffix string, partition int) error
 }
 
-//HealthCheckerImpl struct
+// HealthCheckerImpl struct
 type HealthCheckerImpl struct {
 	clientset kubernetes.Interface
 	cluster   *resource.Cluster
 	config    *rest.Config
 }
 
-//NewHealthChecker ctor
+// NewHealthChecker ctor
 func NewHealthChecker(cluster *resource.Cluster, clientset kubernetes.Interface, config *rest.Config) *HealthCheckerImpl {
 	return &HealthCheckerImpl{
 		clientset: clientset,
@@ -100,8 +100,8 @@ func (hc *HealthCheckerImpl) Probe(ctx context.Context, l logr.Logger, logSuffix
 	return nil
 }
 
-//waitUntilUnderReplicatedMetricIsZero will check _status/vars on all cockroachdb pods looking for pairs like
-//ranges_underreplicated{store="1"} 0 and wait if any are non-zero until all are 0.
+// waitUntilUnderReplicatedMetricIsZero will check _status/vars on all cockroachdb pods looking for pairs like
+// ranges_underreplicated{store="1"} 0 and wait if any are non-zero until all are 0.
 func (hc *HealthCheckerImpl) waitUntilUnderReplicatedMetricIsZero(ctx context.Context, l logr.Logger, logSuffix, stsname, stsnamespace string, replicas int32) error {
 	f := func() error {
 		return hc.checkUnderReplicatedMetricAllPods(ctx, l, logSuffix, stsname, stsnamespace, replicas)
@@ -115,8 +115,8 @@ func (hc *HealthCheckerImpl) waitUntilUnderReplicatedMetricIsZero(ctx context.Co
 	return nil
 }
 
-//checkUnderReplicatedMetric will make an http get call to _status/vars on a specific pod looking for pairs like
-//ranges_underreplicated{store="1"} 0
+// checkUnderReplicatedMetric will make an http get call to _status/vars on a specific pod looking for pairs like
+// ranges_underreplicated{store="1"} 0
 func (hc *HealthCheckerImpl) checkUnderReplicatedMetric(ctx context.Context, l logr.Logger, logSuffix, podname, stsname, stsnamespace string, partition int32) error {
 	l.V(int(zapcore.DebugLevel)).Info("checkUnderReplicatedMetric", "label", logSuffix, "podname", podname, "partition", partition)
 	port := strconv.FormatInt(int64(*hc.cluster.Spec().HTTPPort), 10)
@@ -200,8 +200,8 @@ func findLine(r io.Reader) (string, error) {
 	return "", nil
 }
 
-//checkUnderReplicatedMetric will check _status/vars on all cockroachdb pods looking for pairs like
-//ranges_underreplicated{store="1"} 0
+// checkUnderReplicatedMetric will check _status/vars on all cockroachdb pods looking for pairs like
+// ranges_underreplicated{store="1"} 0
 func (hc *HealthCheckerImpl) checkUnderReplicatedMetricAllPods(ctx context.Context, l logr.Logger, logSuffix, stsname, stsnamespace string, replicas int32) error {
 	l.V(int(zapcore.DebugLevel)).Info("checkUnderReplicatedMetric", "label", logSuffix, "replicas", replicas)
 	for partition := replicas - 1; partition >= 0; partition-- {
@@ -214,7 +214,7 @@ func (hc *HealthCheckerImpl) checkUnderReplicatedMetricAllPods(ctx context.Conte
 	return nil
 }
 
-//extractMetric gets the value of the ranges_underreplicated metric for the specific store
+// extractMetric gets the value of the ranges_underreplicated metric for the specific store
 func extractMetric(l logr.Logger, output, underepmetric string, partition int32) (int, error) {
 	l.V(int(zapcore.DebugLevel)).Info("extractMetric", "output", output, "underepmetric", underepmetric, "partition", partition)
 	if output == "" {

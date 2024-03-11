@@ -1,5 +1,5 @@
 /*
-Copyright 2023 The Cockroach Authors
+Copyright 2024 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -53,7 +53,7 @@ type clusterRestart struct {
 	action
 }
 
-//GetActionType returns api.ClusterRestartAction action used to set the cluster status errors
+// GetActionType returns api.ClusterRestartAction action used to set the cluster status errors
 func (r *clusterRestart) GetActionType() api.ActionType {
 	return api.ClusterRestartAction
 }
@@ -183,9 +183,9 @@ func (r *clusterRestart) rollingSts(ctx context.Context, sts *appsv1.StatefulSet
 	return nil
 }
 
-//fullClusterRestart will delete all the pods of the sts
-//to force the reload of the certificateon the POD
-//used on the CA cert rotation
+// fullClusterRestart will delete all the pods of the sts
+// to force the reload of the certificateon the POD
+// used on the CA cert rotation
 func (r *clusterRestart) fullClusterRestart(ctx context.Context, sts *appsv1.StatefulSet, l logr.Logger, clientset kubernetes.Interface) error {
 
 	timeNow := metav1.Now()

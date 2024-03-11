@@ -1,5 +1,5 @@
 /*
-Copyright 2023 The Cockroach Authors
+Copyright 2024 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ import (
 var DEBUGLEVEL = int(zapcore.DebugLevel)
 var WARNLEVEL = int(zapcore.WarnLevel)
 
-//NotReadyErr strut
+// NotReadyErr strut
 type NotReadyErr struct {
 	Err error
 }
@@ -43,7 +43,7 @@ func (e NotReadyErr) Error() string {
 	return e.Err.Error()
 }
 
-//PermanentErr struct
+// PermanentErr struct
 type PermanentErr struct {
 	Err error
 }
@@ -52,7 +52,7 @@ func (e PermanentErr) Error() string {
 	return e.Err.Error()
 }
 
-//ValidationError error used to stop requeue the request on failure
+// ValidationError error used to stop requeue the request on failure
 type ValidationError struct {
 	Err error
 }

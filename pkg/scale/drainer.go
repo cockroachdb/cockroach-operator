@@ -1,5 +1,5 @@
 /*
-Copyright 2023 The Cockroach Authors
+Copyright 2024 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ var (
 	ErrDecommissioningStalled = errors.New("decommissioning has stalled")
 )
 
-//Drainer interface
+// Drainer interface
 type Drainer interface {
 	Decommission(ctx context.Context, replica uint, gRPCPort int32) error
 }
@@ -59,7 +59,7 @@ type CockroachNodeDrainer struct {
 	RangeRelocationTimeout time.Duration
 }
 
-//NewCockroachNodeDrainer ctor
+// NewCockroachNodeDrainer ctor
 func NewCockroachNodeDrainer(logger logr.Logger, namespace, ssname string, config *rest.Config, clientset kubernetes.Interface, secure bool, rangeRelocation time.Duration) Drainer {
 	return &CockroachNodeDrainer{
 		Secure:                 secure,

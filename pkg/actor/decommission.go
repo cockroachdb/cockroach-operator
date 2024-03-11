@@ -1,5 +1,5 @@
 /*
-Copyright 2023 The Cockroach Authors
+Copyright 2024 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ type decommission struct {
 	action
 }
 
-//GetActionType returns  api.DecommissionAction used to set the cluster status errors
+// GetActionType returns  api.DecommissionAction used to set the cluster status errors
 func (d decommission) GetActionType() api.ActionType {
 	return api.DecommissionAction
 }

@@ -1,5 +1,5 @@
 /*
-Copyright 2023 The Cockroach Authors
+Copyright 2024 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -24,12 +24,12 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-//GarbageCollectionConfig struct
+// GarbageCollectionConfig struct
 type GarbageCollectionConfig struct {
 	TTLSeconds uint `yaml:"ttlseconds"`
 }
 
-//ZoneConfig struct
+// ZoneConfig struct
 type ZoneConfig struct {
 	RangeMinBytes     uint64                  `yaml:"range_min_bytes"`
 	RangeMaxBytes     uint64                  `yaml:"range_max_bytes"`
@@ -37,7 +37,7 @@ type ZoneConfig struct {
 	GarbageCollection GarbageCollectionConfig `yaml:"gc"`
 }
 
-//Scan func
+// Scan func
 func (c *ZoneConfig) Scan(value interface{}) error {
 	bytes, ok := value.(string)
 	if !ok {
@@ -46,13 +46,13 @@ func (c *ZoneConfig) Scan(value interface{}) error {
 	return yaml.Unmarshal([]byte(bytes), c)
 }
 
-//Zone struct
+// Zone struct
 type Zone struct {
 	Target string
 	Config ZoneConfig
 }
 
-//ZoneConfigs func
+// ZoneConfigs func
 func ZoneConfigs(ctx context.Context, db *sql.DB) ([]Zone, error) {
 	// TODO (chrisseto): Will we ever need additional fields??
 	rows, err := db.QueryContext(ctx, `SELECT target, full_config_yaml FROM crdb_internal.zones`)

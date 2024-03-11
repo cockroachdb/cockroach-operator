@@ -213,14 +213,14 @@ def install_k3d():
 def install_golangci_lint():
     http_archive(
         name = "golangci_lint_darwin",
-        sha256 = "fba08acc4027f69f07cef48fbff70b8a7ecdfaa1c2aba9ad3fb31d60d9f5d4bc",
-        urls = ["https://github.com/golangci/golangci-lint/releases/download/v1.51.1/golangci-lint-1.51.1-darwin-amd64.tar.gz"],
+        sha256 = "15c4d19a2c85a04f67779047dbb9467ba176c71fff762a0d514a21bb75e4b42c",
+        urls = ["https://github.com/golangci/golangci-lint/releases/download/v1.56.2/golangci-lint-1.56.2-darwin-amd64.tar.gz"],
         build_file_content =
          """
 filegroup(
      name = "file",
      srcs = [
-        "golangci-lint-1.51.1-darwin-amd64/golangci-lint",
+        "golangci-lint-1.56.2-darwin-amd64/golangci-lint",
      ],
      visibility = ["//visibility:public"],
 )
@@ -229,14 +229,14 @@ filegroup(
 
     http_archive(
             name = "golangci_lint_m1",
-            sha256 = "75b8f0ff3a4e68147156be4161a49d4576f1be37a0b506473f8c482140c1e7f2",
-            urls = ["https://github.com/golangci/golangci-lint/releases/download/v1.51.1/golangci-lint-1.51.1-darwin-arm64.tar.gz"],
+            sha256 = "5f9ecda712c7ae08fbf872336fae3db866720e5865903d4c53903184b2a2c2dc",
+            urls = ["https://github.com/golangci/golangci-lint/releases/download/v1.56.2/golangci-lint-1.56.2-darwin-arm64.tar.gz"],
             build_file_content =
              """
 filegroup(
     name = "file",
     srcs = [
-       "golangci-lint-1.51.1-darwin-arm64/golangci-lint",
+       "golangci-lint-1.56.2-darwin-arm64/golangci-lint",
     ],
     visibility = ["//visibility:public"],
 )
@@ -245,14 +245,14 @@ filegroup(
 
     http_archive(
         name = "golangci_lint_linux",
-        sha256 = "17aeb26c76820c22efa0e1838b0ab93e90cfedef43fbfc9a2f33f27eb9e5e070",
-        urls = ["https://github.com/golangci/golangci-lint/releases/download/v1.51.1/golangci-lint-1.51.1-linux-amd64.tar.gz"],
+        sha256 = "e1c313fb5fc85a33890fdee5dbb1777d1f5829c84d655a47a55688f3aad5e501",
+        urls = ["https://github.com/golangci/golangci-lint/releases/download/v1.56.2/golangci-lint-1.56.2-linux-amd64.tar.gz"],
         build_file_content =
          """
 filegroup(
      name = "file",
      srcs = [
-        "golangci-lint-1.51.1-linux-amd64/golangci-lint",
+        "golangci-lint-1.56.2-linux-amd64/golangci-lint",
      ],
      visibility = ["//visibility:public"],
 )

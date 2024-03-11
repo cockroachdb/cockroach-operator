@@ -1,5 +1,5 @@
 /*
-Copyright 2023 The Cockroach Authors
+Copyright 2024 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -236,7 +236,7 @@ func IsPodReadyConditionTrue(status corev1.PodStatus) bool {
 	return condition != nil && condition.Status == corev1.ConditionTrue
 }
 
-//IsImagePullBackOff  returns true if a container status has the waiting state with reason ImagePullBackOff
+// IsImagePullBackOff  returns true if a container status has the waiting state with reason ImagePullBackOff
 func IsImagePullBackOff(pod *corev1.Pod, image string) bool {
 	_, containerStatus := GetContainerStatus(&pod.Status, image)
 	if containerStatus != nil && !containerStatus.Ready && containerStatus.State.Waiting != nil &&
