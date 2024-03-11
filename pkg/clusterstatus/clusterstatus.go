@@ -1,5 +1,5 @@
 /*
-Copyright 2023 The Cockroach Authors
+Copyright 2024 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -90,9 +90,9 @@ func SetActionFailed(atype api.ActionType, message string, status *api.CrdbClust
 	status.ClusterStatus = api.ActionStatus(api.Failed).String()
 }
 
-//ResetActionType will delete the actiontype from the slice of operation action
-//this is used to reset if previously an error was thrown and now the action is ok
-//TO DO: each action has it's own states to follow on status
+// ResetActionType will delete the actiontype from the slice of operation action
+// this is used to reset if previously an error was thrown and now the action is ok
+// TO DO: each action has it's own states to follow on status
 func ResetActionType(atype api.ActionType, status *api.CrdbClusterStatus) {
 	pos := pos(atype, status.OperatorActions)
 	if pos >= 0 {

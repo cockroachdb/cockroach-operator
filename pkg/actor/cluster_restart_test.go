@@ -1,5 +1,5 @@
 /*
-Copyright 2023 The Cockroach Authors
+Copyright 2024 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -35,7 +35,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-//HealthCheckerTes struct
+// HealthCheckerTes struct
 type HealthCheckerTest struct{}
 
 func (hc *HealthCheckerTest) Probe(ctx context.Context, l logr.Logger, logSuffix string, partition int) error {

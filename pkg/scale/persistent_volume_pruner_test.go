@@ -1,5 +1,5 @@
 /*
-Copyright 2023 The Cockroach Authors
+Copyright 2024 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -257,7 +257,7 @@ func TestPersistentVolumePruner_Prune(t *testing.T) {
 	}
 }
 
-//NewFakeLogger ctor
+// NewFakeLogger ctor
 func NewFakeLogger(t *testing.T) logr.Logger {
 	return log.TestLogger{T: t}
 }

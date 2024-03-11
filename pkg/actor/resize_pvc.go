@@ -1,5 +1,5 @@
 /*
-Copyright 2023 The Cockroach Authors
+Copyright 2024 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -36,7 +36,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-//  backoffFactory is a replacable global for backoff creation. It may be
+//	backoffFactory is a replacable global for backoff creation. It may be
+//
 // replaced with shorter times to allow testing of Wait___ functions without
 // waiting the entire default period
 var backoffFactory = defaultBackoffFactory
@@ -59,7 +60,7 @@ type resizePVC struct {
 	action
 }
 
-//GetActionType returns api.RequestCertAction action used to set the cluster status errors
+// GetActionType returns api.RequestCertAction action used to set the cluster status errors
 func (rp *resizePVC) GetActionType() api.ActionType {
 	return api.ResizePVCAction
 }
