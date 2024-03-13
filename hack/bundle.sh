@@ -75,8 +75,10 @@ generate_bundle() {
   --output-dir "${dir}"
 
   # Ensure package name is correct for the specific bundle and that the CSV name matches the package name. Also removing
-  # the testing annotations since these are handled automatically upstream.
+  # the testing annotations since these are handled automatically upstream. Also add openshift version annotation
+  local openshift_version_annotation="  com.redhat.openshift.versions: v4.8"
   sed \
+  -e "s+annotations:+annotations:\n  # Minimum Openshift version annotation\n${openshift_version_annotation}+" \
   -e "s/package.v1: cockroach-operator/package.v1: ${pkg}/g" \
   -e "/\s*# Annotations for testing/d" \
   -e "/\s*operators.operatorframework.io.test/d" \
