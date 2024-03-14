@@ -19,6 +19,7 @@ package main
 import (
 	"flag"
 	"os"
+	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"strings"
 
 	crdbv1alpha1 "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
@@ -88,13 +89,15 @@ func main() {
 	watchNamespace := os.Getenv(watchNamespaceEnvVar)
 
 	mgrOpts := ctrl.Options{
-		Scheme:             scheme,
-		Namespace:          watchNamespace,
-		MetricsBindAddress: metricsAddr,
-		LeaderElection:     enableLeaderElection,
-		LeaderElectionID:   leaderElectionID,
-		Port:               9443,
-		CertDir:            certDir,
+		Scheme:                scheme,
+		Namespace:             watchNamespace,
+		MetricsBindAddress:    metricsAddr,
+		LeaderElection:        enableLeaderElection,
+		LeaderElectionID:      leaderElectionID,
+		LivenessEndpointName:  "live",
+		ReadinessEndpointName: "ready",
+		Port:                  9443,
+		CertDir:               certDir,
 	}
 
 	if strings.Contains(watchNamespace, ",") {
@@ -106,6 +109,20 @@ func main() {
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), mgrOpts)
 	if err != nil {
 		setupLog.Error(err, "unable to create manager")
+		os.Exit(1)
+	}
+
+	// Add readiness probe
+	err = mgr.AddReadyzCheck("ready-ping", healthz.Ping)
+	if err != nil {
+		setupLog.Error(err, "unable add a readiness check")
+		os.Exit(1)
+	}
+
+	// Add liveness probe
+	err = mgr.AddHealthzCheck("live-ping", healthz.Ping)
+	if err != nil {
+		setupLog.Error(err, "unable add a health check")
 		os.Exit(1)
 	}
 
