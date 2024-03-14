@@ -26,6 +26,7 @@ import (
 
 	"github.com/banzaicloud/k8s-objectmatcher/patch"
 	"github.com/cenkalti/backoff"
+	"github.com/cockroachdb/cockroach-operator/pkg/ptr"
 	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
 	"go.uber.org/zap/zapcore"
@@ -140,6 +141,12 @@ var AnnotatingPersister PersistFn = func(ctx context.Context, cl client.Client, 
 	})
 }
 
+var RecreatingPersister PersistFn = func(ctx context.Context, cl client.Client, obj client.Object, f MutateFn) (upserted bool, err error) {
+	return ReCreateAnnotated(ctx, cl, obj, func() error {
+		return f()
+	})
+}
+
 // MutateFn is a function which mutates the existing object into it's desired state.
 type MutateFn func() error
 
@@ -184,6 +191,49 @@ func CreateOrUpdateAnnotated(ctx context.Context, c client.Client, obj client.Ob
 	}
 
 	if err := c.Update(ctx, obj); err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
+
+func ReCreateAnnotated(ctx context.Context, c client.Client, obj client.Object, f MutateFn) (upserted bool, err error) {
+	key := client.ObjectKeyFromObject(obj)
+
+	if err := c.Get(ctx, key, obj); err == nil {
+		existing := obj.DeepCopyObject()
+		if err := mutate(f, key, obj); err != nil {
+			return false, err
+		}
+
+		changed, err := ObjectChanged(existing, obj)
+		if err != nil {
+			return false, err
+		}
+		if !changed {
+			return false, nil
+		}
+
+		dp := metav1.DeletePropagationForeground
+		if err := c.Delete(ctx, existing.(client.Object), &client.DeleteOptions{GracePeriodSeconds: ptr.Int64(0),
+			PropagationPolicy: &dp}); err != nil {
+			return false, err
+		}
+
+		return false, nil
+	} else if err != nil && !apierrors.IsNotFound(err) {
+		return false, err
+	}
+
+	if err := mutate(f, key, obj); err != nil {
+		return false, err
+	}
+
+	if err := annotator.SetLastAppliedAnnotation(obj); err != nil {
+		return false, err
+	}
+
+	if err := c.Create(ctx, obj); err != nil {
 		return false, err
 	}
 
