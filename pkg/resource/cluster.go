@@ -314,6 +314,14 @@ func (cluster Cluster) ClientTLSSecretName() string {
 
 	return fmt.Sprintf("%s-root", cluster.Name())
 }
+
+func (cluster Cluster) EncryptionKeySecretName() string {
+	if cluster.Spec().EncryptionStoreKeySecret != "" {
+		return cluster.Spec().EncryptionStoreKeySecret
+	}
+	return "store-encryption-key"
+}
+
 func (cluster Cluster) CASecretName() string {
 	return fmt.Sprintf("%s-ca", cluster.Name())
 }
