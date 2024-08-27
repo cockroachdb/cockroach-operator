@@ -397,6 +397,12 @@ CrdbVersions:
 - image: cockroachdb/cockroach:v23.1.23
   redhatImage: registry.connect.redhat.com/cockroachdb/cockroach@sha256:1d78c2e0709214f96794564f13386861f4b541e55b5bd316ad495cf104f7d40b
   tag: v23.1.23
+- image: cockroachdb/cockroach:v23.1.24
+  redhatImage: registry.connect.redhat.com/cockroachdb/cockroach@sha256:46d9287ef11e3b21a36abfa31a26da3b93040bb6163b9223972a5dd1930fecff
+  tag: v23.1.24
+- image: cockroachdb/cockroach:v23.1.25
+  redhatImage: registry.connect.redhat.com/cockroachdb/cockroach@sha256:29abb169ffefe36f6d69edd438a7135ee23059cedab8f87ad3b2d52361b96b35
+  tag: v23.1.25
 - image: cockroachdb/cockroach:v23.2.0
   redhatImage: registry.connect.redhat.com/cockroachdb/cockroach@sha256:56109e57ee0379cf48644bcf8226a9238e01139cacc5499002c99f973f121911
   tag: v23.2.0
@@ -421,6 +427,9 @@ CrdbVersions:
 - image: cockroachdb/cockroach:v23.2.8
   redhatImage: registry.connect.redhat.com/cockroachdb/cockroach@sha256:6408f89b0a88ec154f7ee98c314be574971c4c9aaf906b473d10124d822889be
   tag: v23.2.8
+- image: cockroachdb/cockroach:v23.2.9
+  redhatImage: registry.connect.redhat.com/cockroachdb/cockroach@sha256:7ad12df8e258b03c4099d375d02d272bd774bf188d108901d5cf6cb865e57ef3
+  tag: v23.2.9
 - image: cockroachdb/cockroach:v24.1.0
   redhatImage: registry.connect.redhat.com/cockroachdb/cockroach@sha256:5240f9f591263569fad7ee934e81fa8a1617de3c25da94ddd59ee5b2b3407f90
   tag: v24.1.0
@@ -430,3 +439,9 @@ CrdbVersions:
 - image: cockroachdb/cockroach:v24.1.2
   redhatImage: registry.connect.redhat.com/cockroachdb/cockroach@sha256:87db6e079b96fb392d98ef5fc7063836bff10717efd75061016ce688be0ba38e
   tag: v24.1.2
+- image: cockroachdb/cockroach:v24.1.3
+  redhatImage: registry.connect.redhat.com/cockroachdb/cockroach@sha256:61e602b0e3582bf00460eb9328808ccf66e3ff1b1f6df07ee6c5c76a91846876
+  tag: v24.1.3
+- image: cockroachdb/cockroach:v24.2.0
+  redhatImage: registry.connect.redhat.com/cockroachdb/cockroach@sha256:fd499d4a83a56b5c8dfa6de70d96dd2bcb9c053a705ad274f4b9a845818fb827
+  tag: v24.2.0
