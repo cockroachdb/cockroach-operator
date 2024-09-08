@@ -1,7 +1,7 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
 load("@io_bazel_rules_docker//container:container.bzl", "container_image")
 load("@io_bazel_rules_docker//go:image.bzl", "go_image")
-load("@bazel_tools//tools/build_defs/pkg:pkg.bzl", "pkg_tar")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
 load("@io_bazel_rules_docker//docker/util:run.bzl", "container_run_and_commit_layer")
 
 go_library(
@@ -55,6 +55,7 @@ container_run_and_commit_layer(
 
 container_image(
     name = "ubi_base_image",
+    architecture = "amd64",
     # References container_pull from WORKSPACE
     base = "@redhat_ubi_minimal//image",
     labels = {
