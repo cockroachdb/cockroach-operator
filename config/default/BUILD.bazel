@@ -32,7 +32,7 @@ k8s_deploy(
     name = "image",
     images = {
         # when running locally, use the image from the local codebase
-        "cockroachdb/cockroach-operator:$(APP_VERSION)": "//cmd/cockroach-operator:operator_image",
+        "cockroach-operator:$(APP_VERSION)": "//cmd/cockroach-operator:operator_image",
     },
     resolver_args = ["--allow_unused_images"],
     template = ":manifest",

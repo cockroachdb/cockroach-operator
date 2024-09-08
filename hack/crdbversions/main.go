@@ -59,6 +59,7 @@ type crdbVersion struct {
 type templateData struct {
 	CrdbVersions            []crdbVersion
 	LatestStableCrdbVersion string
+	OperatorImage           string
 	OperatorVersion         string
 	GeneratedWarning        string
 	Year                    string
@@ -68,6 +69,7 @@ func main() {
 	log.SetFlags(0)
 	crdbVersionsFile := flag.String("crdb-versions", "", "YAML file with CRDB versions")
 	operatorVersion := flag.String("operator-version", "", "Current operator version")
+	operatorImage := flag.String("operator-image", "cockroachdb/cockroach-operator", "Current operator image")
 	repoRoot := flag.String("repo-root", "", "Git repository root")
 	flag.Parse()
 
@@ -87,7 +89,7 @@ func main() {
 		log.Fatalf("Cannot read versions file: %s", err)
 	}
 
-	data, err := generateTemplateData(vs, *operatorVersion)
+	data, err := generateTemplateData(vs, *operatorVersion, *operatorImage)
 	if err != nil {
 		log.Fatalf("Cannot generate template data: %s", err)
 	}
@@ -139,10 +141,11 @@ func readCrdbVersions(r io.Reader) ([]crdbVersion, error) {
 	return versions.CrdbVersions, nil
 }
 
-func generateTemplateData(crdbVersions []crdbVersion, operatorVersion string) (templateData, error) {
+func generateTemplateData(crdbVersions []crdbVersion, operatorVersion, operatorImage string) (templateData, error) {
 	var data templateData
 	data.Year = fmt.Sprint(time.Now().Year())
 	data.OperatorVersion = operatorVersion
+	data.OperatorImage = operatorImage
 	data.CrdbVersions = crdbVersions
 
 	latestStable := crdbVersions[len(crdbVersions)-1].Tag

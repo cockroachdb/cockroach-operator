@@ -44,6 +44,13 @@ since there's no need to set up a remote GKE/OpenShift cluster.
 
 **make dev/up**
 
+Pre-requisite: The command sets up a k3d registry, and to push an image to it, the registry name must resolve to 
+localhost or 127.0.0.1. Please add the following line to your /etc/hosts file:
+
+```shell
+127.0.0.1 registry.localhost
+```
+
 This command will get everything set up for you to begin testing out the operator. Specifically it will:
 
 * Start a k3d cluster named test (context=k3d-test) with a managed docker registry
@@ -55,6 +62,18 @@ This command will get everything set up for you to begin testing out the operato
 **make dev/down**
 
 Tears down the k3d cluster.
+
+[Existing Cluster & Repo]:
+
+export DEV_REGISTRY="Your_Registry"
+**make k8s/apply**
+
+This command will deploy the operator to an existing cluster. It will build the operator image and push it to the DEV_REGISTRY.
+This newly built image will be used to deploy the operator.
+
+**make k8s/delete**
+
+Tears down the cockroach operator deployment applied on the cluster.
 
 ## Testing CR Database
 
@@ -71,6 +90,9 @@ SELECT * FROM bank.accounts;
 
 ## Developer Install Instructions
 
+Pre-requisite: 
+1. Install kustomize
+
 These instructions are for developers only. If you want to try the alpha please use the instructions in the next
 section.
 
@@ -79,13 +101,18 @@ Install the operator
 ```console
 $ git clone https://github.com/cockroachdb/cockroach-operator.git
 $ export CLUSTER=test
+$ export APP_VERSION=v$(cat version.txt)
+$ export DEV_REGISTRY=us.gcr.io/$(gcloud config get-value project)
 # create a gke cluster
 $ ./hack/create-gke-cluster.sh -c $CLUSTER
 
-$ DEV_REGISTRY=us.gcr.io/$(gcloud config get-value project) \
+$ bazel run //hack/crdbversions:crdbversions -- -operator-image ${DEV_REGISTRY}/cockroach-operator \
+-operator-version ${APP_VERSION} -crdb-versions $(PWD)/crdb-versions.yaml -repo-root $(PWD)
+ 
+$ DEV_REGISTRY=${DEV_REGISTRY} \
 K8S_CLUSTER=$(kubectl config view --minify -o=jsonpath='{.contexts[0].context.cluster}') \
 bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
-                 //manifests:install_operator.apply
+                 --define APP_VERSION=${APP_VERSION} //config/default:install.apply
 ```
 
 There are various examples that can be installed. The files are located in the examples directory.
