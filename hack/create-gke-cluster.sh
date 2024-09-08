@@ -29,6 +29,8 @@ CLUSTER_NAME=""
 # TODO maybe set default zone?
 ZONE=""
 
+REGION=""
+
 # shellcheck disable=SC1090
 source "$ROOT"/common.sh
 # shellcheck disable=SC1090
@@ -39,7 +41,7 @@ enable-service compute.googleapis.com
 enable-service container.googleapis.com
 
 GKE_VERSION=$(gcloud container get-server-config \
-  --format="value(validMasterVersions[0])")
+  --format="value(validMasterVersions[0])" --region=$REGION)
 
 # Get a comma separated list of zones from the default region
 ZONESINREGION=""

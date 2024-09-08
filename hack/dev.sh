@@ -22,6 +22,7 @@ CLUSTER_NAME="dev"
 NODE_IMAGE="rancher/k3s:v1.23.3-k3s1"
 REGISTRY_NAME="registry.localhost"
 REGISTRY_PORT=5000
+DEV_REGISTRY="${REGISTRY_NAME}:${REGISTRY_PORT}"
 
 main() {
   case "${1:-}" in
@@ -45,8 +46,10 @@ install_operator() {
   # Can't seem to figure out how to leverage the stamp variables here. So for
   # now I've added a defined make variable which can be used for substitution
   # in //config/default/BUILD.bazel.
+  # ${REGISTRY_NAME} must be mapped to localhost or 127.0.0.1 to push the image to the k3d registry.
+  bazel run //hack/crdbversions:crdbversions -- -operator-image ${DEV_REGISTRY}/cockroach-operator -operator-version ${APP_VERSION} -crdb-versions $(PWD)/crdb-versions.yaml -repo-root $(PWD)
   K8S_CLUSTER="k3d-${CLUSTER_NAME}" \
-    DEV_REGISTRY="${REGISTRY_NAME}:${REGISTRY_PORT}" \
+    DEV_REGISTRY="${DEV_REGISTRY}" \
     bazel run \
     --stamp \
     --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
