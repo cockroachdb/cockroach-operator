@@ -495,6 +495,8 @@ spec:
     name: RELATED_IMAGE_COCKROACH_v24_2_0
   - image: registry.connect.redhat.com/cockroachdb/cockroach@sha256:08cec123813304ab03bd66d72a09949667a874a42320bedafda391ebcdb2e56c
     name: RELATED_IMAGE_COCKROACH_v24_2_2
+  - image: registry.connect.redhat.com/cockroachdb/cockroach@sha256:acc083f7dde1fbc557d858d03fc26b68b2056997fc1a457e4695650214d5b303
+    name: RELATED_IMAGE_COCKROACH_v24_2_3
   - image: RH_COCKROACH_OP_IMAGE_PLACEHOLDER
     name: RELATED_IMAGE_COCKROACH_OPERATOR
   version: 0.0.0
