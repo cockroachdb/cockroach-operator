@@ -248,4 +248,22 @@ func TestRangeMoveDuration(t *testing.T) {
 			require.Contains(t, err.Error(), fmt.Sprintf("failed to parse %s as uint64", tt.badKey))
 		}
 	})
+
+	t.Run("returns value when recovery rate setting not found", func(t *testing.T) {
+		mock.
+			ExpectQuery("SHOW CLUSTER SETTING " + "kv.snapshot_rebalance.max_rate").
+			WillReturnRows(sqlmock.NewRows([]string{"name"}).AddRow("1MB"))
+
+		// Recovery rate setting not found, so returns an error
+		mock.
+			ExpectQuery("SHOW CLUSTER SETTING " + "kv.snapshot_recovery.max_rate").
+			WillReturnError(errors.New("boom"))
+
+		d, err := RangeMoveDuration(ctx, db,
+			Zone{Target: "zone-1", Config: ZoneConfig{RangeMaxBytes: 2500000}},
+			Zone{Target: "zone-2", Config: ZoneConfig{RangeMaxBytes: 3750000}},
+		)
+		require.NoError(t, err)
+		require.Equal(t, time.Duration(3)*time.Second, d)
+	})
 }
