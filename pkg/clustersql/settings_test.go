@@ -199,7 +199,6 @@ func TestRangeMoveDuration(t *testing.T) {
 		// make it easier to stub previous values when validating them in a loop.
 		tests := []string{
 			"kv.snapshot_rebalance.max_rate",
-			"kv.snapshot_recovery.max_rate",
 		}
 
 		for i, tt := range tests {
