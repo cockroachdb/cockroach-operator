@@ -24,7 +24,7 @@ spec:
     spec:
       containers:
         - name: cockroach-operator
-          image: cockroachdb/cockroach-operator:{{.OperatorVersion}}
+          image: {{.OperatorImage}}:{{.OperatorVersion}}
           env:
 {{- range .CrdbVersions}}
             {{- /*
