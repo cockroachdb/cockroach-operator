@@ -80,7 +80,9 @@ func RangeMoveDuration(ctx context.Context, db *sql.DB, zones ...Zone) (time.Dur
 
 	recoveryRate, err := GetClusterSetting(ctx, db, "kv.snapshot_recovery.max_rate")
 	if err != nil {
-		return 0, errors.Wrap(err, "failed to get kv.snapshot_recovery.max_rate")
+		// This setting has been removed in 24.1, so if an error is returned set it to a default
+		// huge number
+		recoveryRate = "10TB"
 	}
 
 	rebalanceBytes, err := humanize.ParseBytes(rebalanceRate)

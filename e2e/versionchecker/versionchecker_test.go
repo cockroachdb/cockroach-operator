@@ -93,7 +93,7 @@ func TestLoggingAPIValidCheck(t *testing.T) {
 	testutil.RequireLoggingConfigMap(t, sb, "logging-configmap", string(logJson))
 
 	builder := testutil.NewBuilder("crdb").Namespaced(sb.Namespace).WithNodeCount(3).WithTLS().
-		WithImage("cockroachdb/cockroach:v21.1.0").
+		WithImage("cockroachdb/cockroach:v24.2.2").
 		WithPVDataStore("32Mi").
 		WithClusterLogging("logging-configmap")
 
