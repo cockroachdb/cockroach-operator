@@ -65,7 +65,7 @@ func TestGenerateTemplateData(t *testing.T) {
 		crdbVersions = append(crdbVersions, crdbVersion{Tag: r})
 	}
 
-	data, err := generateTemplateData(crdbVersions, "2.0.1")
+	data, err := generateTemplateData(crdbVersions, "2.0.1", "cockroachdb/cockroach-operator")
 	require.NoError(t, err)
 	require.Len(t, data.CrdbVersions, len(crdbVersions))
 	require.Equal(t, "1.2.3", data.LatestStableCrdbVersion)
