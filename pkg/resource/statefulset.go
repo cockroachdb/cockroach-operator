@@ -362,7 +362,7 @@ func (b StatefulSetBuilder) dbArgs() []string {
 		fmt.Sprintf("--advertise-host=$(POD_NAME).%s.%s",
 			b.Cluster.DiscoveryServiceName(), b.Cluster.Namespace()),
 		b.Cluster.SecureMode(),
-		"--http-port=" + fmt.Sprint(*b.Spec().HTTPPort),
+		"--http-addr=:" + fmt.Sprint(*b.Spec().HTTPPort),
 		"--sql-addr=:" + fmt.Sprint(*b.Spec().SQLPort),
 		"--listen-addr=:" + fmt.Sprint(*b.Spec().GRPCPort),
 	}

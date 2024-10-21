@@ -195,7 +195,7 @@ func (d *CockroachNodeDrainer) makeDrainStatusChecker(id uint) func(ctx context.
 
 func (d *CockroachNodeDrainer) executeDrainCmd(ctx context.Context, id uint, gRPCPort int32) error {
 	cmd := []string{
-		"./cockroach", "node", "decommission", fmt.Sprintf("%d", id), "--wait=none", fmt.Sprintf("--port=%d", gRPCPort),
+		"./cockroach", "node", "decommission", fmt.Sprintf("%d", id), "--wait=none", fmt.Sprintf("--host=:%d", gRPCPort),
 	}
 
 	if d.Secure {
@@ -215,7 +215,7 @@ func (d *CockroachNodeDrainer) executeDrainCmd(ctx context.Context, id uint, gRP
 // a node which will transition it from `decommissioning` to `decommissioned`. This should be executed
 // after it's confirmed that there are 0 replicas on the node.
 func (d *CockroachNodeDrainer) markNodeAsDecommissioned(ctx context.Context, id uint, gRPCPort int32) error {
-	cmd := []string{"./cockroach", "node", "decommission", fmt.Sprintf("%d", id), fmt.Sprintf("--port=%d", gRPCPort)}
+	cmd := []string{"./cockroach", "node", "decommission", fmt.Sprintf("%d", id), fmt.Sprintf("--host=:%d", gRPCPort)}
 
 	if d.Secure {
 		cmd = append(cmd, "--certs-dir=cockroach-certs")
