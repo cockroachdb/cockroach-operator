@@ -59,7 +59,7 @@ test/pkg:
 # takes a bit of time.
 .PHONY: test/verify
 test/verify:
-	bazel test //hack/...
+	bazel test --test_timeout=1200 //hack/...
 
 .PHONY: test/lint
 test/lint:

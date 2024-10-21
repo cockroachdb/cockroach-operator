@@ -1084,12 +1084,12 @@ spec:
                     type: boolean
                 type: object
               grpcPort:
-                description: '(Optional) The database port (`--port` CLI parameter
+                description: '(Optional) The database port (`--listen-addr` CLI parameter
                   when starting the service) Default: 26258'
                 format: int32
                 type: integer
               httpPort:
-                description: '(Optional) The web UI port (`--http-port` CLI parameter
+                description: '(Optional) The web UI port (`--http-addr` CLI parameter
                   when starting the service) Default: 8080'
                 format: int32
                 type: integer

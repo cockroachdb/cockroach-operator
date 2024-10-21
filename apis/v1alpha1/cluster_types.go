@@ -40,11 +40,11 @@ type CrdbClusterSpec struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Cockroach Database Image"
 	// +optional
 	Image *PodImage `json:"image,omitempty"`
-	// (Optional) The database port (`--port` CLI parameter when starting the service)
+	// (Optional) The database port (`--listen-addr` CLI parameter when starting the service)
 	// Default: 26258
 	// +optional
 	GRPCPort *int32 `json:"grpcPort,omitempty"`
-	// (Optional) The web UI port (`--http-port` CLI parameter when starting the service)
+	// (Optional) The web UI port (`--http-addr` CLI parameter when starting the service)
 	// Default: 8080
 	// +optional
 	HTTPPort *int32 `json:"httpPort,omitempty"`
