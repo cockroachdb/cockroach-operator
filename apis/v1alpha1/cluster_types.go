@@ -43,15 +43,31 @@ type CrdbClusterSpec struct {
 	// (Optional) The database port (`--listen-addr` CLI parameter when starting the service)
 	// Default: 26258
 	// +optional
+	// Deprecated: Use ListenAddr instead of GRPCPort
 	GRPCPort *int32 `json:"grpcPort,omitempty"`
+	// (Optional) The database port (`--listen-addr` CLI parameter when starting the service)
+	// Default: ":26258"
+	// +optional
+	ListenAddr *string `json:"listenAddr,omitempty"`
 	// (Optional) The web UI port (`--http-addr` CLI parameter when starting the service)
 	// Default: 8080
 	// +optional
+	// Deprecated: Use HTTPAddr instead of HTTPPort
 	HTTPPort *int32 `json:"httpPort,omitempty"`
+	// (Optional) The IP address/hostname and port on which to listen for DB Console HTTP requests.
+	// (`--http-addr` CLI parameter when starting the service)
+	// Default: ":8080"
+	// +optional
+	HTTPAddr *string `json:"httpAddr,omitempty"`
 	// (Optional) The SQL Port number
 	// Default: 26257
 	// +optional
+	// Deprecated: Use SQLAddr instead of SQLPort
 	SQLPort *int32 `json:"sqlPort,omitempty"`
+	// (Optional) The IP address/hostname and port on which to listen for SQL connections from clients.
+	// Default: ":26257"
+	// +optional
+	SQLAddr *string `json:"sqlAddr,omitempty"`
 	// (Optional) TLSEnabled determines if TLS is enabled for your CockroachDB Cluster
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="TLS Enabled",xDescriptors="urn:alm:descriptor:com.tectonic.ui:booleanSwitch"
 	// +optional

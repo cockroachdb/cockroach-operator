@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"github.com/go-logr/logr"
 	"k8s.io/client-go/util/retry"
-	"strconv"
 	"strings"
 
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
@@ -92,12 +91,12 @@ func (init initialize) Act(ctx context.Context, cluster *resource.Cluster, log l
 
 	log.V(DEBUGLEVEL).Info("Pod is ready")
 
-	port := strconv.FormatInt(int64(*cluster.Spec().GRPCPort), 10)
+	listenAddr := cluster.GetListenAddr()
 	cmd := []string{
 		"/cockroach/cockroach.sh",
 		"init",
 		cluster.SecureMode(),
-		"--host=localhost:" + port,
+		"--host=" + listenAddr,
 	}
 
 	log.V(DEBUGLEVEL).Info(fmt.Sprintf("Executing init in pod %s with phase %s", podName, phase))

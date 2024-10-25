@@ -140,6 +140,7 @@ func (up *partitionedUpdate) Act(ctx context.Context, cluster *resource.Cluster,
 
 	// The connection needs to use the discovery service name because of the
 	// hostnames in the SSL certificates
+	sqlPort := cluster.GetSQLPort()
 	conn := &database.DBConnection{
 		Ctx:              ctx,
 		Client:           up.client,
@@ -147,7 +148,7 @@ func (up *partitionedUpdate) Act(ctx context.Context, cluster *resource.Cluster,
 		ServiceName:      serviceName,
 		Namespace:        cluster.Namespace(),
 		DatabaseName:     "system", // TODO we need to use variable instead of string
-		Port:             cluster.Spec().SQLPort,
+		Port:             &sqlPort,
 		RunningInsideK8s: runningInsideK8s,
 	}
 

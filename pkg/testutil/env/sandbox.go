@@ -19,7 +19,9 @@ package env
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"fmt"
+	"net"
 	"sort"
 	"strings"
 	"testing"
@@ -35,9 +37,11 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/rand"
+	"k8s.io/apimachinery/pkg/util/wait"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/yaml"
 )
 
@@ -49,13 +53,24 @@ func NewSandbox(t *testing.T, env *ActiveEnv) Sandbox {
 	ns := DefaultNsName + rand.String(6)
 	td := time.Duration(0)
 
+	webhookInstallOptions := &env.env.WebhookInstallOptions
+
 	mgr, err := ctrl.NewManager(env.k8s.Cfg, ctrl.Options{
 		Scheme:                  env.scheme,
 		Namespace:               ns,
 		MetricsBindAddress:      "0", // disable metrics serving
 		GracefulShutdownTimeout: &td,
+		WebhookServer: &webhook.Server{
+			Host:     webhookInstallOptions.LocalServingHost,
+			Port:     webhookInstallOptions.LocalServingPort,
+			CertDir:  webhookInstallOptions.LocalServingCertDir,
+			CertName: "tls.crt",
+			KeyName:  "tls.key",
+		},
 	})
 	require.NoError(t, err)
+
+	require.NoError(t, (&api.CrdbCluster{}).SetupWebhookWithManager(mgr))
 
 	s := Sandbox{
 		env:       env,
@@ -146,6 +161,19 @@ func (s Sandbox) Cleanup() {
 func (s Sandbox) StartManager(t *testing.T, maker func(ctrl.Manager) error) {
 	require.NoError(t, maker(s.Mgr))
 	t.Cleanup(startCtrlMgr(t, s.Mgr))
+
+	// wait for the webhook server to get ready
+	dialer := &net.Dialer{Timeout: time.Second}
+	addrPort := fmt.Sprintf("%s:%d", s.Mgr.GetWebhookServer().Host, s.Mgr.GetWebhookServer().Port)
+	retryBackOff := wait.Backoff{Steps: 60, Duration: 1 * time.Second, Factor: 1.0, Jitter: 0.1}
+	require.NoError(t, wait.ExponentialBackoff(retryBackOff, func() (done bool, err error) {
+		conn, err := tls.DialWithDialer(dialer, "tcp", addrPort, &tls.Config{InsecureSkipVerify: true})
+		if err != nil {
+			return false, err
+		}
+		_ = conn.Close()
+		return true, nil
+	}))
 }
 
 func createNamespace(s Sandbox) error {

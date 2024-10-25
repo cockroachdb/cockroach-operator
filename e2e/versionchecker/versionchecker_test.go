@@ -62,6 +62,9 @@ func TestVersionCheckerJobPodPending(t *testing.T) {
 					corev1.ResourceMemory: apiresource.MustParse("1000T"),
 				},
 			})
+
+	// This defaulting is done by webhook mutation config, but in tests we are doing it manually.
+	builder.Cr().Default()
 	steps := testutil.Steps{
 		{
 			Name: "start an unschedulable job",
@@ -96,6 +99,9 @@ func TestLoggingAPIValidCheck(t *testing.T) {
 		WithImage("cockroachdb/cockroach:v24.2.2").
 		WithPVDataStore("32Mi").
 		WithClusterLogging("logging-configmap")
+
+	// This defaulting is done by webhook mutation config, but in tests we are doing it manually.
+	builder.Cr().Default()
 
 	steps := testutil.Steps{
 		{

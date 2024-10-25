@@ -57,7 +57,7 @@ func TestReconcile(t *testing.T) {
 		{
 			name: "updates object when its spec is different",
 			cluster: testutil.NewBuilder("test-cluster").Namespaced("default").
-				WithUID("test-cluster-uid").WithHTTPPort(8443).Cluster(),
+				WithUID("test-cluster-uid").WithHTTPAddr(":8443").Cluster(),
 			existingObjs: []runtime.Object{makeTestService()},
 			wantUpserted: true,
 			expected:     modifyHTTPPort(8443, makeTestService()),

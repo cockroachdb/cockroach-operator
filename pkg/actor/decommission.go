@@ -93,6 +93,7 @@ func (d decommission) Act(ctx context.Context, cluster *resource.Cluster, log lo
 
 	// The connection needs to use the discovery service name because of the
 	// hostnames in the SSL certificates
+	sqlPort := cluster.GetSQLPort()
 	conn := &database.DBConnection{
 		Ctx:              ctx,
 		Client:           d.client,
@@ -100,7 +101,7 @@ func (d decommission) Act(ctx context.Context, cluster *resource.Cluster, log lo
 		ServiceName:      serviceName,
 		Namespace:        cluster.Namespace(),
 		DatabaseName:     "system", // TODO we need to use variable instead of string
-		Port:             cluster.Spec().SQLPort,
+		Port:             &sqlPort,
 		RunningInsideK8s: runningInsideK8s,
 	}
 
@@ -140,7 +141,7 @@ func (d decommission) Act(ctx context.Context, cluster *resource.Cluster, log lo
 		Drainer:   drainer,
 		PVCPruner: &pvcPruner,
 	}
-	if err := scaler.EnsureScale(ctx, nodes, *cluster.Spec().GRPCPort, utilfeature.DefaultMutableFeatureGate.Enabled(features.AutoPrunePVC)); err != nil {
+	if err := scaler.EnsureScale(ctx, nodes, *cluster.Spec().ListenAddr, utilfeature.DefaultMutableFeatureGate.Enabled(features.AutoPrunePVC)); err != nil {
 		/// now check if the decommissionStaleErr and update status
 		log.Error(err, "decommission failed")
 		cluster.SetFalse(api.DecommissionCondition)

@@ -67,9 +67,9 @@ func (b DiscoveryServiceBuilder) Build(obj client.Object) error {
 		ClusterIP:                "None",
 		PublishNotReadyAddresses: true,
 		Ports: []corev1.ServicePort{
-			{Name: "grpc", Port: *b.Cluster.Spec().GRPCPort},
-			{Name: "http", Port: *b.Cluster.Spec().HTTPPort},
-			{Name: "sql", Port: *b.Cluster.Spec().SQLPort},
+			{Name: "grpc", Port: b.Cluster.GetGRPCPort()},
+			{Name: "http", Port: b.Cluster.GetHTTPPort()},
+			{Name: "sql", Port: b.Cluster.GetSQLPort()},
 		},
 		Selector: b.Selector,
 	}
@@ -89,6 +89,6 @@ func (b *DiscoveryServiceBuilder) monitoringAnnotations() map[string]string {
 	return map[string]string{
 		"prometheus.io/scrape": "true",
 		"prometheus.io/path":   "_status/vars",
-		"prometheus.io/port":   fmt.Sprint(*(b.Cluster.Spec().HTTPPort)),
+		"prometheus.io/port":   fmt.Sprint(b.Cluster.GetHTTPPort()),
 	}
 }

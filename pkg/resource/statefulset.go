@@ -292,17 +292,17 @@ func (b StatefulSetBuilder) MakeContainers() []corev1.Container {
 			Ports: []corev1.ContainerPort{
 				{
 					Name:          grpcPortName,
-					ContainerPort: *b.Spec().GRPCPort,
+					ContainerPort: b.GetGRPCPort(),
 					Protocol:      corev1.ProtocolTCP,
 				},
 				{
 					Name:          httpPortName,
-					ContainerPort: *b.Spec().HTTPPort,
+					ContainerPort: b.GetHTTPPort(),
 					Protocol:      corev1.ProtocolTCP,
 				},
 				{
 					Name:          sqlPortName,
-					ContainerPort: *b.Spec().SQLPort,
+					ContainerPort: b.GetSQLPort(),
 					Protocol:      corev1.ProtocolTCP,
 				},
 			},
@@ -362,10 +362,20 @@ func (b StatefulSetBuilder) dbArgs() []string {
 		fmt.Sprintf("--advertise-host=$(POD_NAME).%s.%s",
 			b.Cluster.DiscoveryServiceName(), b.Cluster.Namespace()),
 		b.Cluster.SecureMode(),
-		"--http-addr=:" + fmt.Sprint(*b.Spec().HTTPPort),
-		"--sql-addr=:" + fmt.Sprint(*b.Spec().SQLPort),
-		"--listen-addr=:" + fmt.Sprint(*b.Spec().GRPCPort),
 	}
+
+	// In order to not trigger the rolling update of the statefulset, we need to keep the order
+	// of the arguments same as the previous version of the operator which is
+	// --http-port, --sql-addr and --listen-addr.
+	if b.Spec().HTTPPort != nil {
+		fmt.Printf("HTTP PORT: %d\n", *b.Spec().HTTPPort)
+		aa = append(aa, "--http-port="+fmt.Sprint(*b.Spec().HTTPPort))
+	} else if b.Spec().HTTPAddr != nil {
+		fmt.Printf("HTTP ADDR: %s", *b.Spec().HTTPAddr)
+		aa = append(aa, "--http-addr="+fmt.Sprint(*b.Spec().HTTPAddr))
+	}
+
+	aa = append(aa, "--sql-addr="+fmt.Sprint(b.GetSQLAddr()), "--listen-addr="+fmt.Sprint(b.GetListenAddr()))
 
 	if b.Cluster.IsLoggingAPIEnabled() {
 		logConfig, _ := b.Cluster.LoggingConfiguration(b.Cluster.Fetcher)
@@ -407,7 +417,7 @@ func (b StatefulSetBuilder) joinStr() string {
 
 	for i := 0; i < int(b.Spec().Nodes) && i < 3; i++ {
 		seeds = append(seeds, fmt.Sprintf("%s-%d.%s.%s:%d", b.Cluster.StatefulSetName(), i,
-			b.Cluster.DiscoveryServiceName(), b.Cluster.Namespace(), *b.Cluster.Spec().GRPCPort))
+			b.Cluster.DiscoveryServiceName(), b.Cluster.Namespace(), b.Cluster.GetGRPCPort()))
 	}
 
 	return strings.Join(seeds, ",")
