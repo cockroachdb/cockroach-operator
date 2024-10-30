@@ -25,8 +25,8 @@ OPENSHIFT_BINS = {
     "preflight": {
         # currently, preflight is only available on linux
         "preflight_linux": {
-            "url": "https://github.com/redhat-openshift-ecosystem/openshift-preflight/releases/download/1.9.1/preflight-linux-amd64",
-            "sha": "626f0899d2551063a141b86e5c7559bc1f9e0079ecc4585e951ac5e5df28f13a",
+            "url": "https://github.com/redhat-openshift-ecosystem/openshift-preflight/releases/download/1.10.2/preflight-linux-amd64",
+            "sha": "776d04669304d3185c40522bed9a6dc1aa9cd80014a203fe01552b98bfa9554b",
         },
     },
     "oc": {
@@ -336,11 +336,11 @@ def install_operator_sdk():
     versions = {
         "operator_sdk_darwin": {
             "file": "operator-sdk_darwin_amd64",
-            "sha": "5fc30d04a31736449adb5c9b0b44e78ebeaa5cf968cc7afcbdf533135b72e31a",
+            "sha": "ca3e4028cd62f21f4ed988907b884be530098e7c40523e89046dd8c5b0178eb9",
         },
         "operator_sdk_linux": {
             "file": "operator-sdk_linux_amd64",
-            "sha": "d2065f1f7a0d03643ad71e396776dac0ee809ef33195e0f542773b377bab1b2a",
+            "sha": "20da1fcba9ef70b1e23283ae820a2c3387b529f04ce09cf318597b33f5d59a52",
         },
     }
 
@@ -348,8 +348,8 @@ def install_operator_sdk():
       http_file(
          name = k,
          executable = 1,
-         sha256 = v["sha"],
-         urls = ["https://github.com/operator-framework/operator-sdk/releases/download/v1.15.0/{}".format(v["file"])],
+         sha256 = v["sha"], 
+         urls = ["https://github.com/operator-framework/operator-sdk/releases/download/v1.37.0/{}".format(v["file"])],
       )
 
 def install_kustomize():
