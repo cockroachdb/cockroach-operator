@@ -38,6 +38,8 @@ genrule(
     visibility = ["//visibility:public"],
 )
 
+# fetch preflight has only linux supported binary and only used for releasing the operator to openshift
+# Hence, fetching same binary for all platforms to allow bazel sync on other platform.
 genrule(
     name = "fetch_preflight",
     srcs = select({
@@ -77,8 +79,8 @@ genrule(
 genrule(
     name = "io_kubernetes_kube-apiserver",
     srcs = select({
-        ":m1": ["@kube-apiserver_linux_amd64//file"],
-        ":darwin": ["@kube-apiserver_linux_amd64//file"],
+        ":m1": ["@kube-apiserver_darwin_arm64//file"],
+        ":darwin": ["@kube-apiserver_darwin_amd64//file"],
         ":k8": ["@kube-apiserver_linux_amd64//file"],
     }),
     outs = ["kube-apiserver"],

@@ -59,7 +59,7 @@ test/pkg:
 # takes a bit of time.
 .PHONY: test/verify
 test/verify:
-	bazel test //hack/...
+	bazel test --test_output=all //hack/...
 
 .PHONY: test/lint
 test/lint:
@@ -94,7 +94,7 @@ test/e2e-short:
 test/e2e/testrunner-k3d-%: PACKAGE=$*
 test/e2e/testrunner-k3d-%:
 	bazel run //hack/k8s:k8s -- -type k3d
-	bazel test --stamp //e2e/$(PACKAGE)/... --test_arg=-test.v --test_arg=-test.parallel=4 --test_arg=parallel=true
+	bazel test --test_output=all --stamp //e2e/$(PACKAGE)/... --test_arg=-test.v --test_arg=-test.parallel=4 --test_arg=parallel=true
 
 # Use this target to run e2e tests using a k3d k8s cluster.
 # This target uses k3d to start a k8s cluster  and runs the e2e tests

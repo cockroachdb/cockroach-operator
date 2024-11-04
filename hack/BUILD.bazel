@@ -106,7 +106,7 @@ sh_test(
     args = [
         "run",
         "--config .golangci.yaml",
-        "--timeout 5m",
+        "--timeout 10m",
     ],
     data = ["@//:all-srcs"],
     env = {

@@ -126,10 +126,17 @@ def install_misc():
 # Install dependencies used by the controller-runtime integration test framework
 def install_integration_test_dependencies():
     http_file(
+        name = "kube-apiserver_darwin_arm64",
+        executable = 1,
+        sha256 = "b575b687097b4662b7eb2ea5453e4b381994ddf34b85ca4bb8e4f16c5f86bedb",
+        urls = ["https://storage.googleapis.com/cockroach-operator-testing-assets/kube-apiserver-1.24.2_darwin_arm64"],
+    )
+
+    http_file(
         name = "kube-apiserver_darwin_amd64",
         executable = 1,
-        sha256 = "a874d479f183f9e4c19a5c69b44955fabd2e250b467d2d9f0641ae91a82ddbea",
-        urls = ["https://storage.googleapis.com/cert-manager-testing-assets/kube-apiserver-1.17.3_darwin_amd64"],
+        sha256 = "800eedc293bcc72eb962df3e8006d7106790ca583a4ea5c107453bab3bf859b4",
+        urls = ["https://storage.googleapis.com/cockroach-operator-testing-assets/kube-apiserver-1.24.2_darwin_amd64"],
     )
 
     http_file(
