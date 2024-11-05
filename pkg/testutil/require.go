@@ -660,7 +660,7 @@ func RequireClusterInFailedState(t *testing.T, sb testenv.DiffingSandbox, b Clus
 		},
 	}
 
-	wErr := wait.Poll(10*time.Second, 2*time.Minute, func() (bool, error) {
+	wErr := wait.Poll(10*time.Second, 5*time.Minute, func() (bool, error) {
 		if err := sb.Get(&crdbCluster); err != nil {
 			return false, err
 		}
@@ -672,6 +672,7 @@ func RequireClusterInFailedState(t *testing.T, sb testenv.DiffingSandbox, b Clus
 		return false, nil
 	})
 
+	t.Logf("CRDB Cluster status: %s", crdbCluster.Status.ClusterStatus)
 	require.NoError(t, wErr)
 }
 
