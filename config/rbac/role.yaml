@@ -150,6 +150,7 @@ rules:
   verbs:
   - list
   - update
+  - delete
 - apiGroups:
   - ""
   resources:
