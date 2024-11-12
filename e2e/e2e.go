@@ -28,10 +28,14 @@ var (
 
 // Some common values used in e2e test suites.
 const (
-	MinorVersion1      = "cockroachdb/cockroach:v24.1.0"
-	MinorVersion2      = "cockroachdb/cockroach:v24.1.2"
-	MajorVersion       = "cockroachdb/cockroach:v24.2.2"
-	NonExistentVersion = "cockroachdb/cockroach-non-existent:v21.1.999"
-	SkipFeatureVersion = "cockroachdb/cockroach:v20.1.0"
-	InvalidImage       = "nginx:latest"
+	MinorVersion1        = "cockroachdb/cockroach:v24.1.0"
+	MinorVersion2        = "cockroachdb/cockroach:v24.1.2"
+	MajorVersion         = "cockroachdb/cockroach:v24.2.2"
+	NonExistentVersion   = "cockroachdb/cockroach-non-existent:v21.1.999"
+	SkipFeatureVersion   = "cockroachdb/cockroach:v20.1.0"
+	InvalidImage         = "nginx:latest"
+	DefaultCPULimit      = "800m"
+	DefaultMemoryLimit   = "3Gi"
+	DefaultCPURequest    = "500m"
+	DefaultMemoryRequest = "1Gi"
 )

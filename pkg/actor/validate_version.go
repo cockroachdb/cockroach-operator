@@ -116,7 +116,7 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster, log
 	cluster.SetCrdbContainerImage(containerImage)
 	cluster.SetAnnotationContainerImage(containerImage)
 	jobName := cluster.JobName()
-	changed, err := (resource.Reconciler{
+	_, err := (resource.Reconciler{
 		ManagedResource: r,
 		Builder: resource.JobBuilder{
 			Cluster:  cluster,
@@ -132,15 +132,8 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster, log
 			log.Error(err, "failed to reconcile job")
 			return err
 		}
-		log.Error(err, "failed to reconcile job only err: ", err.Error())
+		log.Error(err, "failed to reconcile job only error")
 		return err
-	}
-
-	if changed {
-		log.V(int(zapcore.DebugLevel)).Info("created/updated job, stopping request processing")
-		// Return a non error error here to prevent the controller from
-		// clearing any previously set Status fields.
-		return NotReadyErr{errors.New("job changed")}
 	}
 
 	log.V(int(zapcore.DebugLevel)).Info("version checker", "job", jobName)
@@ -184,11 +177,15 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster, log
 			}
 			return errors.Wrapf(err, "failed to check the version of the crdb")
 		}
+
+		// Tail only last two lines as one line contains version info and one line has newline character. It is much faster.
+		podLines := int64(2)
 		podLogOpts := corev1.PodLogOptions{
 			Container: resource.JobContainerName,
+			TailLines: &podLines,
 		}
-		//get pod for the job we created
 
+		//get pod for the job we created
 		pods, err := v.clientset.CoreV1().Pods(job.Namespace).List(ctx, metav1.ListOptions{
 			LabelSelector: labels.Set(job.Spec.Selector.MatchLabels).AsSelector().String(),
 		})
@@ -231,11 +228,12 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster, log
 		}
 		output := buf.String()
 
+		log.Info("Logs of version checker pod", "log", output)
 		// This is the value from Build Tag taken from the container
 		calVersion = strings.Replace(output, "\n", "", -1)
-		// if no image is retrieved we exit
+		// if no logs are found we will retry later to fetch the logs
 		if calVersion == "" {
-			err := PermanentErr{Err: errors.New("failed to check the version of the cluster")}
+			err := NotReadyErr{Err: errors.New("failed to check the version of the cluster")}
 			log.Error(err, "crdb version not found")
 			return err
 		}
@@ -366,7 +364,8 @@ func IsJobPodRunning(
 	}
 	pod := pods.Items[0]
 	if !kube.IsPodReady(&pod) {
-		return LogError("job pod is not ready yet waiting longer", nil, l)
+		pErr := fmt.Errorf("pod %s is not ready, and in %s phase", pod.Name, pod.Status.Phase)
+		return LogError("job pod is not ready yet waiting longer", pErr, l)
 	}
 	l.V(int(zapcore.DebugLevel)).Info("job pod is ready")
 	return nil
@@ -406,7 +405,7 @@ func WaitUntilJobPodIsRunning(ctx context.Context, clientset kubernetes.Interfac
 		return IsJobPodRunning(ctx, clientset, job, l)
 	}
 	b := backoff.NewExponentialBackOff()
-	b.MaxElapsedTime = 120 * time.Second
+	b.MaxElapsedTime = 180 * time.Second
 	b.MaxInterval = 10 * time.Second
 	if err := backoff.Retry(f, b); err != nil {
 		return errors.Wrapf(err, "pod is not running for job: %s", job.Name)

@@ -161,9 +161,9 @@ rules:
   resources:
   - persistentvolumeclaims
   verbs:
+  - delete
   - list
   - update
-  - delete
 - apiGroups:
   - ""
   resources:
