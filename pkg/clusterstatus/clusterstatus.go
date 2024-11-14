@@ -31,25 +31,19 @@ func SetClusterStatusOnFirstReconcile(status *api.CrdbClusterStatus) {
 	status.ClusterStatus = api.ActionStatus(api.Starting).String()
 }
 
-// TODO: Do we need to check for all OperatorActions or for just the 0th element in SetClusterStatus func
-// nolint
+// SetClusterStatus will set the status of the cluster based on the status of the operator actions
+// operatorActions are not always appended, rather any particular action type is replaced if its status changes.
+// The status of the cluster is set to the status of the last operator action based on lastTransitionTime.
 func SetClusterStatus(status *api.CrdbClusterStatus) {
 	InitOperatorActionsIfNeeded(status, metav1.Now())
-	for _, a := range status.OperatorActions {
-		if a.Status == api.ActionStatus(api.Failed).String() {
-			status.ClusterStatus = api.ActionStatus(api.Failed).String()
-			return
+	for i := range status.OperatorActions {
+		if i == 0 || status.OperatorActions[i-1].LastTransitionTime.Before(&status.OperatorActions[i].LastTransitionTime) {
+			status.ClusterStatus = status.OperatorActions[i].Status
 		}
-
-		if a.Status == api.ActionStatus(api.Unknown).String() {
-			status.ClusterStatus = api.ActionStatus(api.Unknown).String()
-			return
-		}
-
-		status.ClusterStatus = api.ActionStatus(api.Finished).String()
-		return
 	}
-	status.ClusterStatus = api.ActionStatus(api.Finished).String()
+	if status.ClusterStatus == "" {
+		status.ClusterStatus = api.ActionStatus(api.Starting).String()
+	}
 }
 
 func InitOperatorActionsIfNeeded(status *api.CrdbClusterStatus, now metav1.Time) {

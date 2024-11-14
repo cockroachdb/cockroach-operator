@@ -232,7 +232,7 @@ func (b StatefulSetBuilder) makePodTemplate() corev1.PodTemplateSpec {
 		pod.Spec.TopologySpreadConstraints = b.Spec().TopologySpreadConstraints
 	}
 
-	if b.Spec().NodeSelector != nil && len(b.Spec().NodeSelector) > 0 {
+	if len(b.Spec().NodeSelector) > 0 {
 		pod.Spec.NodeSelector = b.Spec().NodeSelector
 	}
 

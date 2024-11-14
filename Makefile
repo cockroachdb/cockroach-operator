@@ -59,7 +59,7 @@ test/pkg:
 # takes a bit of time.
 .PHONY: test/verify
 test/verify:
-	bazel test //hack/...
+	bazel test --test_output=all //hack/...
 
 .PHONY: test/lint
 test/lint:
@@ -94,7 +94,7 @@ test/e2e-short:
 test/e2e/testrunner-k3d-%: PACKAGE=$*
 test/e2e/testrunner-k3d-%:
 	bazel run //hack/k8s:k8s -- -type k3d
-	bazel test --stamp //e2e/$(PACKAGE)/... --test_arg=-test.v --test_arg=-test.parallel=4 --test_arg=parallel=true
+	bazel test --test_output=all --stamp //e2e/$(PACKAGE)/... --test_arg=-test.v --test_arg=-test.parallel=4 --test_arg=parallel=true
 
 # Use this target to run e2e tests using a k3d k8s cluster.
 # This target uses k3d to start a k8s cluster  and runs the e2e tests
@@ -221,7 +221,7 @@ test/preflight-%: release/generate-bundle
 #
 .PHONY: dev/build
 dev/build: dev/syncdeps
-	bazel build //...
+	bazel build //... --define APP_VERSION=$(APP_VERSION)
 
 .PHONY: dev/fmt
 dev/fmt:
@@ -280,7 +280,6 @@ dev/down:
 #
 .PHONY: k8s/apply
 k8s/apply:
-	K8S_CLUSTER=gke_$(GCP_PROJECT)_$(GCP_ZONE)_$(CLUSTER_NAME) \
 	DEV_REGISTRY=$(DEV_REGISTRY) \
 	bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
 		//config/default:install.apply \
@@ -288,9 +287,8 @@ k8s/apply:
 
 .PHONY: k8s/delete
 k8s/delete:
-	K8S_CLUSTER=gke_$(GCP_PROJECT)_$(GCP_ZONE)_$(CLUSTER_NAME) \
 	DEV_REGISTRY=$(DEV_REGISTRY) \
-	bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
+	bazel run --stamp --incompatible_use_cc_configure_from_rules_cc \
 		//config/default:install.delete \
 		--define APP_VERSION=$(APP_VERSION)
 

@@ -62,7 +62,7 @@ func (b JobBuilder) Build(obj client.Object) error {
 	job.Annotations = b.Spec().AdditionalAnnotations
 
 	// we recreate spec from ground only if we do not find the container job
-	if dbContainer, err := kube.FindContainer(JobContainerName, &job.Spec.Template.Spec); err != nil {
+	if _, err := kube.FindContainer(JobContainerName, &job.Spec.Template.Spec); err != nil {
 		backoffLimit := int32(2)
 		job.Spec = kbatch.JobSpec{
 			// This field is alpha-level and is only honored by servers that enable the TTLAfterFinished feature.
@@ -71,9 +71,6 @@ func (b JobBuilder) Build(obj client.Object) error {
 			Template:                b.buildPodTemplate(),
 			BackoffLimit:            &backoffLimit,
 		}
-	} else {
-		//if job with the container already exists we update the image only
-		dbContainer.Image = b.GetCockroachDBImageName()
 	}
 
 	return nil

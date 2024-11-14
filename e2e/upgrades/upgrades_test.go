@@ -28,6 +28,21 @@ import (
 	"github.com/go-logr/zapr"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap/zaptest"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+)
+
+var (
+	resRequirements = corev1.ResourceRequirements{
+		Limits: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse(e2e.DefaultCPULimit),
+			corev1.ResourceMemory: resource.MustParse(e2e.DefaultMemoryLimit),
+		},
+		Requests: corev1.ResourceList{
+			corev1.ResourceCPU:    resource.MustParse(e2e.DefaultCPURequest),
+			corev1.ResourceMemory: resource.MustParse(e2e.DefaultMemoryRequest),
+		},
+	}
 )
 
 // TestUpgradesMinorVersion tests a minor version bump
@@ -52,7 +67,7 @@ func TestUpgradesMinorVersion(t *testing.T) {
 
 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
 		WithImage(e2e.MinorVersion1).
-		WithPVDataStore("1Gi")
+		WithPVDataStore("1Gi").WithResources(resRequirements)
 
 	steps := testutil.Steps{
 		{
@@ -103,7 +118,7 @@ func TestUpgradesMajorVersion20to21(t *testing.T) {
 
 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
 		WithImage(e2e.MinorVersion2).
-		WithPVDataStore("1Gi")
+		WithPVDataStore("1Gi").WithResources(resRequirements)
 
 	steps := testutil.Steps{
 		{
@@ -152,7 +167,7 @@ func TestUpgradesMajorVersion20_1To20_2(t *testing.T) {
 
 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
 		WithImage("cockroachdb/cockroach:v20.1.16").
-		WithPVDataStore("1Gi")
+		WithPVDataStore("1Gi").WithResources(resRequirements)
 
 	steps := testutil.Steps{
 		{
@@ -209,7 +224,8 @@ func TestUpgradesMinorVersionThenRollback(t *testing.T) {
 		WithNodeCount(3).
 		WithTLS().
 		WithImage(e2e.MinorVersion1).
-		WithPVDataStore("1Gi")
+		WithPVDataStore("1Gi").
+		WithResources(resRequirements)
 
 	steps := testutil.Steps{
 		{
@@ -274,7 +290,8 @@ func TestUpgradeWithInvalidVersion(t *testing.T) {
 
 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
 		WithImage(e2e.MinorVersion1).
-		WithPVDataStore("1Gi")
+		WithPVDataStore("1Gi").
+		WithResources(resRequirements)
 
 	steps := testutil.Steps{
 		{
@@ -324,7 +341,8 @@ func TestUpgradeWithInvalidImage(t *testing.T) {
 
 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
 		WithImage(e2e.MinorVersion1).
-		WithPVDataStore("1Gi")
+		WithPVDataStore("1Gi").
+		WithResources(resRequirements)
 
 	steps := testutil.Steps{
 		{
@@ -374,7 +392,7 @@ func TestUpgradeWithMajorVersionExcludingMajorFeature(t *testing.T) {
 
 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
 		WithImage(e2e.SkipFeatureVersion).
-		WithPVDataStore("1Gi")
+		WithPVDataStore("1Gi").WithResources(resRequirements)
 
 	steps := testutil.Steps{
 		{

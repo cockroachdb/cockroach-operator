@@ -126,17 +126,24 @@ def install_misc():
 # Install dependencies used by the controller-runtime integration test framework
 def install_integration_test_dependencies():
     http_file(
+        name = "kube-apiserver_darwin_arm64",
+        executable = 1,
+        sha256 = "b575b687097b4662b7eb2ea5453e4b381994ddf34b85ca4bb8e4f16c5f86bedb",
+        urls = ["https://storage.googleapis.com/cockroach-operator-testing-assets/kube-apiserver-1.24.2_darwin_arm64"],
+    )
+
+    http_file(
         name = "kube-apiserver_darwin_amd64",
         executable = 1,
-        sha256 = "a874d479f183f9e4c19a5c69b44955fabd2e250b467d2d9f0641ae91a82ddbea",
-        urls = ["https://storage.googleapis.com/cert-manager-testing-assets/kube-apiserver-1.17.3_darwin_amd64"],
+        sha256 = "800eedc293bcc72eb962df3e8006d7106790ca583a4ea5c107453bab3bf859b4",
+        urls = ["https://storage.googleapis.com/cockroach-operator-testing-assets/kube-apiserver-1.24.2_darwin_amd64"],
     )
 
     http_file(
         name = "kube-apiserver_linux_amd64",
         executable = 1,
-        sha256 = "b4505b838b27b170531afbdef5e7bfaacf83da665f21b0e3269d1775b0defb7a",
-        urls = ["https://storage.googleapis.com/kubernetes-release/release/v1.17.3/bin/linux/amd64/kube-apiserver"],
+        sha256 = "a70a704835450130f8feeac9d42617d527e269c25a5aa92590e54533c2d4f776",
+        urls = ["https://storage.googleapis.com/cockroach-operator-testing-assets/kube-apiserver-1.24.2_linux_amd64"],
     )
 
     http_archive(
@@ -213,14 +220,14 @@ def install_k3d():
 def install_golangci_lint():
     http_archive(
         name = "golangci_lint_darwin",
-        sha256 = "15c4d19a2c85a04f67779047dbb9467ba176c71fff762a0d514a21bb75e4b42c",
-        urls = ["https://github.com/golangci/golangci-lint/releases/download/v1.56.2/golangci-lint-1.56.2-darwin-amd64.tar.gz"],
+        sha256 = "5c280ef3284f80c54fd90d73dc39ca276953949da1db03eb9dd0fbf868cc6e55",
+        urls = ["https://github.com/golangci/golangci-lint/releases/download/v1.61.0/golangci-lint-1.61.0-darwin-amd64.tar.gz"],
         build_file_content =
          """
 filegroup(
      name = "file",
      srcs = [
-        "golangci-lint-1.56.2-darwin-amd64/golangci-lint",
+        "golangci-lint-1.61.0-darwin-amd64/golangci-lint",
      ],
      visibility = ["//visibility:public"],
 )
@@ -229,14 +236,14 @@ filegroup(
 
     http_archive(
             name = "golangci_lint_m1",
-            sha256 = "5f9ecda712c7ae08fbf872336fae3db866720e5865903d4c53903184b2a2c2dc",
-            urls = ["https://github.com/golangci/golangci-lint/releases/download/v1.56.2/golangci-lint-1.56.2-darwin-arm64.tar.gz"],
+            sha256 = "544334890701e4e04a6e574bc010bea8945205c08c44cced73745a6378012d36",
+            urls = ["https://github.com/golangci/golangci-lint/releases/download/v1.61.0/golangci-lint-1.61.0-darwin-arm64.tar.gz"],
             build_file_content =
              """
 filegroup(
     name = "file",
     srcs = [
-       "golangci-lint-1.56.2-darwin-arm64/golangci-lint",
+       "golangci-lint-1.61.0-darwin-arm64/golangci-lint",
     ],
     visibility = ["//visibility:public"],
 )
@@ -245,14 +252,14 @@ filegroup(
 
     http_archive(
         name = "golangci_lint_linux",
-        sha256 = "e1c313fb5fc85a33890fdee5dbb1777d1f5829c84d655a47a55688f3aad5e501",
-        urls = ["https://github.com/golangci/golangci-lint/releases/download/v1.56.2/golangci-lint-1.56.2-linux-amd64.tar.gz"],
+        sha256 = "77cb0af99379d9a21d5dc8c38364d060e864a01bd2f3e30b5e8cc550c3a54111",
+        urls = ["https://github.com/golangci/golangci-lint/releases/download/v1.61.0/golangci-lint-1.61.0-linux-amd64.tar.gz"],
         build_file_content =
          """
 filegroup(
      name = "file",
      srcs = [
-        "golangci-lint-1.56.2-linux-amd64/golangci-lint",
+        "golangci-lint-1.61.0-linux-amd64/golangci-lint",
      ],
      visibility = ["//visibility:public"],
 )
