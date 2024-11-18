@@ -647,6 +647,8 @@ spec:
           value: cockroachdb/cockroach:v24.2.3
         - name: RELATED_IMAGE_COCKROACH_v24_2_4
           value: cockroachdb/cockroach:v24.2.4
+        - name: RELATED_IMAGE_COCKROACH_v24_2_5
+          value: cockroachdb/cockroach:v24.2.5
         - name: OPERATOR_NAME
           value: cockroachdb
         - name: POD_NAME
