@@ -40,9 +40,9 @@ spec:
       memory: 8Gi
   tlsEnabled: true
 # You can set either a version of the db or a specific image name
-# cockroachDBVersion: v24.2.5
+# cockroachDBVersion: v24.2.4
   image:
-    name: cockroachdb/cockroach:v24.2.5
+    name: cockroachdb/cockroach:v24.2.4
   # nodes refers to the number of crdb pods that are created
   # via the statefulset
   nodes: 3
