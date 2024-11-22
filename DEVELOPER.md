@@ -143,7 +143,7 @@ The examples directory contains various examples, for example you can run `kubec
 First you need to create a new Kubernetes Custom Resource, in this example we will use the example/example.yaml file.
 
 ```bash
-kubectl create -f example/example.yaml
+kubectl create -f examples/example.yaml
 ```
 
 When the database is up and running run the following command to get the first pod that is creasted.
