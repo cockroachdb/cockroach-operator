@@ -141,7 +141,7 @@ func (b JobBuilder) MakeContainers() []corev1.Container {
 			Resources: corev1.ResourceRequirements{
 				Limits: corev1.ResourceList{
 					corev1.ResourceCPU:    apiresource.MustParse("300m"),
-					corev1.ResourceMemory: apiresource.MustParse("256Mi"),
+					corev1.ResourceMemory: apiresource.MustParse("512Mi"),
 				},
 				Requests: corev1.ResourceList{
 					corev1.ResourceCPU:    apiresource.MustParse("300m"),
