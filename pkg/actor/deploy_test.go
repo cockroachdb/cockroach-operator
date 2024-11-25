@@ -66,11 +66,14 @@ func TestDeploysNotInitalizedClusterAfterVersionChecker(t *testing.T) {
 			return false, nil
 		})
 
-	cluster := testutil.NewBuilder("cockroachdb").
+	builder := testutil.NewBuilder("cockroachdb").
 		Namespaced("default").
 		WithUID("cockroachdb-uid").
 		WithPVDataStore("1Gi").
-		WithNodeCount(1).Cluster()
+		WithNodeCount(1)
+	builder.Cr().Default()
+
+	cluster := builder.Cluster()
 	cluster.SetTrue(api.CrdbVersionChecked)
 
 	mock := kube.MockKubernetesDistribution()

@@ -44,7 +44,7 @@ var (
 
 // Drainer interface
 type Drainer interface {
-	Decommission(ctx context.Context, replica uint, gRPCPort int32) error
+	Decommission(ctx context.Context, replica uint, listenAddr string) error
 }
 
 // CockroachNodeDrainer does decommissioning of nodes in the CockroachDB cluster
@@ -75,7 +75,7 @@ func NewCockroachNodeDrainer(logger logr.Logger, namespace, ssname string, confi
 }
 
 // Decommission commands the node to start training process and watches for it to complete or fail after timeout
-func (d *CockroachNodeDrainer) Decommission(ctx context.Context, replica uint, gRPCPort int32) error {
+func (d *CockroachNodeDrainer) Decommission(ctx context.Context, replica uint, listenAddr string) error {
 	lastNodeID, err := d.findNodeID(ctx, replica, d.Executor.StatefulSet)
 	if err != nil {
 		return err
@@ -83,7 +83,7 @@ func (d *CockroachNodeDrainer) Decommission(ctx context.Context, replica uint, g
 
 	d.Logger.V(int(zapcore.InfoLevel)).Info("draining node", "NodeID", lastNodeID)
 
-	if err := d.executeDrainCmd(ctx, lastNodeID, gRPCPort); err != nil {
+	if err := d.executeDrainCmd(ctx, lastNodeID, listenAddr); err != nil {
 		return err
 	}
 
@@ -103,7 +103,7 @@ func (d *CockroachNodeDrainer) Decommission(ctx context.Context, replica uint, g
 
 		// Node has finished draining successfully
 		if replicas == 0 {
-			return d.markNodeAsDecommissioned(ctx, lastNodeID, gRPCPort)
+			return d.markNodeAsDecommissioned(ctx, lastNodeID, listenAddr)
 		}
 
 		// If no replicas have been moved within our timeout, assume that the KV allocator
@@ -193,9 +193,9 @@ func (d *CockroachNodeDrainer) makeDrainStatusChecker(id uint) func(ctx context.
 	}
 }
 
-func (d *CockroachNodeDrainer) executeDrainCmd(ctx context.Context, id uint, gRPCPort int32) error {
+func (d *CockroachNodeDrainer) executeDrainCmd(ctx context.Context, id uint, listenAddr string) error {
 	cmd := []string{
-		"./cockroach", "node", "decommission", fmt.Sprintf("%d", id), "--wait=none", fmt.Sprintf("--port=%d", gRPCPort),
+		"./cockroach", "node", "decommission", fmt.Sprintf("%d", id), "--wait=none", fmt.Sprintf("--host=%s", listenAddr),
 	}
 
 	if d.Secure {
@@ -214,8 +214,8 @@ func (d *CockroachNodeDrainer) executeDrainCmd(ctx context.Context, id uint, gRP
 // markNodeAsDecommissioned sets a node as `decommissioned`. This is the final step in decommissioning
 // a node which will transition it from `decommissioning` to `decommissioned`. This should be executed
 // after it's confirmed that there are 0 replicas on the node.
-func (d *CockroachNodeDrainer) markNodeAsDecommissioned(ctx context.Context, id uint, gRPCPort int32) error {
-	cmd := []string{"./cockroach", "node", "decommission", fmt.Sprintf("%d", id), fmt.Sprintf("--port=%d", gRPCPort)}
+func (d *CockroachNodeDrainer) markNodeAsDecommissioned(ctx context.Context, id uint, listenAddr string) error {
+	cmd := []string{"./cockroach", "node", "decommission", fmt.Sprintf("%d", id), fmt.Sprintf("--host=%s", listenAddr)}
 
 	if d.Secure {
 		cmd = append(cmd, "--certs-dir=cockroach-certs")
