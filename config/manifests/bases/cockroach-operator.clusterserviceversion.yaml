@@ -405,6 +405,8 @@ spec:
     name: RELATED_IMAGE_COCKROACH_v23_1_28
   - image: registry.connect.redhat.com/cockroachdb/cockroach@sha256:91f7e59f9e35a0395756eafed906963c535e886125294d671d930ce959a8f511
     name: RELATED_IMAGE_COCKROACH_v23_1_29
+  - image: registry.connect.redhat.com/cockroachdb/cockroach@sha256:6a2ee8d62c586eb74ebbef6bef256e06e1ba5cb51c1ae55b1654adafc2ca8859
+    name: RELATED_IMAGE_COCKROACH_v23_1_30
   - image: registry.connect.redhat.com/cockroachdb/cockroach@sha256:56109e57ee0379cf48644bcf8226a9238e01139cacc5499002c99f973f121911
     name: RELATED_IMAGE_COCKROACH_v23_2_0
   - image: registry.connect.redhat.com/cockroachdb/cockroach@sha256:4e5f7df1dc1e1db398c36d590431e7e5782897b209972d8e9e4671971c10d1b6
@@ -437,6 +439,8 @@ spec:
     name: RELATED_IMAGE_COCKROACH_v23_2_15
   - image: registry.connect.redhat.com/cockroachdb/cockroach@sha256:cf7d3bea47638b763b312c7c11ca034a7ac62d993d75a13edceec74799b97e52
     name: RELATED_IMAGE_COCKROACH_v23_2_16
+  - image: registry.connect.redhat.com/cockroachdb/cockroach@sha256:b77b80eed7ce149d2a3f228e5f188e76d73f32bc50ecde20bba9cfa7bdc4714c
+    name: RELATED_IMAGE_COCKROACH_v23_2_17
   - image: registry.connect.redhat.com/cockroachdb/cockroach@sha256:5240f9f591263569fad7ee934e81fa8a1617de3c25da94ddd59ee5b2b3407f90
     name: RELATED_IMAGE_COCKROACH_v24_1_0
   - image: registry.connect.redhat.com/cockroachdb/cockroach@sha256:1374cbdc4ecf38e4b4226328f532e830b8932b34d9449bf2fbb36e60d0310521
@@ -453,6 +457,8 @@ spec:
     name: RELATED_IMAGE_COCKROACH_v24_1_6
   - image: registry.connect.redhat.com/cockroachdb/cockroach@sha256:468b0a40a33be1dd5a2a89ce745d7e9012bc7371f2f01cc0f8f12c0ac887db43
     name: RELATED_IMAGE_COCKROACH_v24_1_7
+  - image: registry.connect.redhat.com/cockroachdb/cockroach@sha256:1f6b1ec92251397dbcf7ed4a82f1f05619d64676aae2717f4eff1c33e4c2c27a
+    name: RELATED_IMAGE_COCKROACH_v24_1_8
   - image: registry.connect.redhat.com/cockroachdb/cockroach@sha256:cad60044ad6573bd80b65e892a9ec0510dbe4fcbbfc6b51010ecf419f56f1024
     name: RELATED_IMAGE_COCKROACH_v24_2_0
   - image: registry.connect.redhat.com/cockroachdb/cockroach@sha256:08cec123813304ab03bd66d72a09949667a874a42320bedafda391ebcdb2e56c
@@ -463,8 +469,12 @@ spec:
     name: RELATED_IMAGE_COCKROACH_v24_2_4
   - image: registry.connect.redhat.com/cockroachdb/cockroach@sha256:d4f753151af4c3d3f5a1df9014461316249a6d0621b8fba5c4430307b3355251
     name: RELATED_IMAGE_COCKROACH_v24_2_5
+  - image: registry.connect.redhat.com/cockroachdb/cockroach@sha256:5d6901b6b6fd6594d42bfc1842d050c7cffcb0867a5591a67469f0f860b1f21b
+    name: RELATED_IMAGE_COCKROACH_v24_2_6
   - image: registry.connect.redhat.com/cockroachdb/cockroach@sha256:b06bd7f3802e8fa2af14bb0b07804cad4cc0fbbc97da18d09a9106bf074ed6d8
     name: RELATED_IMAGE_COCKROACH_v24_3_0
+  - image: registry.connect.redhat.com/cockroachdb/cockroach@sha256:740ba10f1ef0a6c5fa6ad31ab18855fc75f8e024ce4c23b0676c5a9c5b62cd75
+    name: RELATED_IMAGE_COCKROACH_v24_3_1
   - image: RH_COCKROACH_OP_IMAGE_PLACEHOLDER
     name: RELATED_IMAGE_COCKROACH_OPERATOR
   version: 0.0.0
