@@ -56,6 +56,10 @@ func TestPVCResize(t *testing.T) {
 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
 		WithImage(e2e.MajorVersion).
 		WithPVDataStore("1Gi")
+
+	// This defaulting is done by webhook mutation config, but in tests we are doing it manually.
+	builder.Cr().Default()
+
 	steps := testutil.Steps{
 		{
 			Name: "creates a 3-node secure cluster db",

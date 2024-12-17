@@ -26,12 +26,12 @@ import (
 )
 
 type ClusterBuilder struct {
-	cluster api.CrdbCluster
+	cluster *api.CrdbCluster
 }
 
 func NewBuilder(name string) ClusterBuilder {
 	b := ClusterBuilder{
-		cluster: api.CrdbCluster{
+		cluster: &api.CrdbCluster{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:        name,
 				Labels:      make(map[string]string),
@@ -87,8 +87,8 @@ func (b ClusterBuilder) WithPVDataStore(size string) ClusterBuilder {
 	return b
 }
 
-func (b ClusterBuilder) WithHTTPPort(port int32) ClusterBuilder {
-	b.cluster.Spec.HTTPPort = &port
+func (b ClusterBuilder) WithHTTPAddr(httpAddr string) ClusterBuilder {
+	b.cluster.Spec.HTTPAddr = &httpAddr
 	return b
 }
 

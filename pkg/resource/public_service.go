@@ -54,9 +54,9 @@ func (b PublicServiceBuilder) Build(obj client.Object) error {
 		service.Spec = corev1.ServiceSpec{
 			Type: corev1.ServiceTypeClusterIP,
 			Ports: []corev1.ServicePort{
-				{Name: "grpc", Port: *b.Cluster.Spec().GRPCPort},
-				{Name: "http", Port: *b.Cluster.Spec().HTTPPort},
-				{Name: "sql", Port: *b.Cluster.Spec().SQLPort},
+				{Name: "grpc", Port: b.Cluster.GetGRPCPort()},
+				{Name: "http", Port: b.Cluster.GetHTTPPort()},
+				{Name: "sql", Port: b.Cluster.GetSQLPort()},
 			},
 		}
 	}

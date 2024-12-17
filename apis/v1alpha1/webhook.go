@@ -29,12 +29,12 @@ import (
 )
 
 var (
-	// DefaultGRPCPort is the default port used for GRPC communication
-	DefaultGRPCPort int32 = 26258
-	// DefaultSQLPort is the default port used for SQL connections
-	DefaultSQLPort int32 = 26257
-	// DefaultHTTPPort is the default port for the Web UI
-	DefaultHTTPPort int32 = 8080
+	// DefaultGRPCAddr is the default grpc address used for GRPC communication
+	DefaultGRPCAddr string = ":26258"
+	// DefaultSQLAddr is the default sql address used for SQL connections
+	DefaultSQLAddr string = ":26257"
+	// DefaultHTTPAddr is the default http address for the Web UI
+	DefaultHTTPAddr string = ":8080"
 	// DefaultMaxUnavailable is the default max unavailable nodes during a rollout
 	DefaultMaxUnavailable int32 = 1
 )
@@ -59,16 +59,28 @@ func (r *CrdbCluster) SetupWebhookWithManager(mgr ctrl.Manager) error {
 func (r *CrdbCluster) Default() {
 	webhookLog.Info("default", "name", r.Name)
 
-	if r.Spec.GRPCPort == nil {
-		r.Spec.GRPCPort = &DefaultGRPCPort
+	if r.Spec.GRPCPort == nil && r.Spec.ListenAddr == nil {
+		r.Spec.ListenAddr = &DefaultGRPCAddr
+	} else if r.Spec.GRPCPort != nil && r.Spec.ListenAddr == nil {
+		listenAddr := fmt.Sprintf(":%d", *r.Spec.GRPCPort)
+		r.Spec.ListenAddr = &listenAddr
+		r.Spec.GRPCPort = nil
 	}
 
-	if r.Spec.SQLPort == nil {
-		r.Spec.SQLPort = &DefaultSQLPort
+	if r.Spec.SQLPort == nil && r.Spec.SQLAddr == nil {
+		r.Spec.SQLAddr = &DefaultSQLAddr
+	} else if r.Spec.SQLPort != nil && r.Spec.SQLAddr == nil {
+		sqlAddr := fmt.Sprintf(":%d", *r.Spec.SQLPort)
+		r.Spec.SQLAddr = &sqlAddr
+		r.Spec.SQLPort = nil
 	}
 
-	if r.Spec.HTTPPort == nil {
-		r.Spec.HTTPPort = &DefaultHTTPPort
+	if r.Spec.HTTPPort == nil && r.Spec.HTTPAddr == nil {
+		r.Spec.HTTPAddr = &DefaultHTTPAddr
+	} else if r.Spec.HTTPPort != nil && r.Spec.HTTPAddr == nil {
+		httpAddr := fmt.Sprintf(":%d", *r.Spec.HTTPPort)
+		r.Spec.HTTPAddr = &httpAddr
+		r.Spec.HTTPPort = nil
 	}
 
 	if r.Spec.MaxUnavailable == nil && r.Spec.MinAvailable == nil {

@@ -36,9 +36,9 @@ func TestCrdbClusterDefault(t *testing.T) {
 	maxUnavailable := int32(1)
 	policy := v1.PullIfNotPresent
 	expected := CrdbClusterSpec{
-		GRPCPort:       &DefaultGRPCPort,
-		HTTPPort:       &DefaultHTTPPort,
-		SQLPort:        &DefaultSQLPort,
+		ListenAddr:     &DefaultGRPCAddr,
+		SQLAddr:        &DefaultSQLAddr,
+		HTTPAddr:       &DefaultHTTPAddr,
 		MaxUnavailable: &maxUnavailable,
 		Image:          &PodImage{PullPolicyName: &policy},
 	}
