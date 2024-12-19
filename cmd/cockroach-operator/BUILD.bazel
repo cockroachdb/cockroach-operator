@@ -1,8 +1,25 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
-load("@io_bazel_rules_docker//container:container.bzl", "container_image")
-load("@io_bazel_rules_docker//go:image.bzl", "go_image")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_image_index")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
-load("@io_bazel_rules_docker//docker/util:run.bzl", "container_run_and_commit_layer")
+load("@aspect_bazel_lib//lib:expand_template.bzl", "expand_template")
+
+expand_template(
+    name = "labels",
+    out = "labels.txt",
+    stamp_substitutions = {
+        "APP_VERSION": "{{STABLE_DOCKER_TAG}}",
+        "NUMBER_COMMITS_ON_BRANCH": "{{NUMBER_COMMITS_ON_BRANCH}}",
+    },
+    template = [
+        "name=CockroachDB Operator",
+        "vendor=Cockroach Labs",
+        "release=NUMBER_COMMITS_ON_BRANCH",
+        "version=APP_VERSION",
+        "summary=CockroachDB is a distributed SQL database",
+        "description=CockroachDB is a PostgreSQL wire-compatible distributed SQL database",
+        "maintainer=Cockroach Labs",
+    ],
+)
 
 go_library(
     name = "go_default_library",
@@ -31,8 +48,20 @@ go_library(
 )
 
 go_binary(
-    name = "cockroach-operator",
+    name = "cockroach-operator-linux-amd64",
+    out = "cockroach-operator",
     embed = [":go_default_library"],
+    goarch = "amd64",
+    goos = "linux",
+    visibility = ["//visibility:public"],
+)
+
+go_binary(
+    name = "cockroach-operator-linux-arm64",
+    out = "cockroach-operator",
+    embed = [":go_default_library"],
+    goarch = "arm64",
+    goos = "linux",
     visibility = ["//visibility:public"],
 )
 
@@ -43,67 +72,48 @@ pkg_tar(
     package_dir = "/licenses",
 )
 
-container_run_and_commit_layer(
-    name = "ubi_update",
-    commands = [
-        "microdnf install yum",
-        "yum -v -y update --all",
-        "microdnf clean all && rm -rf /var/cache/yum",
+oci_image_index(
+    name = "index",
+    images = [
+        ":cockroach_image_linux_amd64",
+        ":cockroach_image_linux_arm64",
     ],
-    image = "@redhat_ubi_minimal//image",
+    visibility = ["//visibility:public"],
 )
 
-container_image(
-    name = "ubi_base_image",
-    architecture = "amd64",
+oci_image(
+    name = "cockroach_image_linux_amd64",
     # References container_pull from WORKSPACE
-    base = "@redhat_ubi_minimal//image",
-    labels = {
-        "name": "CockroachDB Operator",
-        "vendor": "Cockroach Labs",
-        "release": "{NUMBER_COMMITS_ON_BRANCH}",
-        "version": "{STABLE_DOCKER_TAG}",
-        "summary": "CockroachDB is a distributed SQL database",
-        "description": "CockroachDB is a PostgreSQL wire-compatible distributed SQL database",
-    },
-    layers = [
-        ":ubi_update",
-    ],
-    stamp = True,
+    base = "@redhat_ubi_minimal_linux_amd64",
+    labels = ":labels",
     tars = [
         ":licenses",
+        "//cmd/cockroach-operator/linux-amd64:cockroach-linux-amd64-tar",
+        ":operator_image_linux_amd64",
     ],
 )
 
-#  fetch_crdb downloads the cockroach binary
-genrule(
-    name = "fetch_crdb_container",
-    srcs = ["@crdb_linux//:file"],
-    outs = ["cockroach"],
-    cmd = "cp $(SRCS) $@",
+oci_image(
+    name = "cockroach_image_linux_arm64",
+    # References container_pull from WORKSPACE
+    base = "@redhat_ubi_minimal_linux_arm64",
+    labels = ":labels",
+    tars = [
+        ":licenses",
+        "//cmd/cockroach-operator/linux-arm64:cockroach-linux-arm64-tar",
+        ":operator_image_linux_arm64",
+    ],
+)
+
+pkg_tar(
+    name = "operator_image_linux_amd64",
+    srcs = [":cockroach-operator-linux-amd64"],
     visibility = ["//visibility:public"],
 )
 
 pkg_tar(
-    name = "cockroach-tar",
-    srcs = [":fetch_crdb_container"],
-    mode = "0755",
-    package_dir = "/usr/local/bin",
-)
-
-# include cockroach in an image
-container_image(
-    name = "cockroach_image",
-    base = ":ubi_base_image",
-    tars = [
-        ":cockroach-tar",
-    ],
-)
-
-go_image(
-    name = "operator_image",
-    base = ":cockroach_image",  # include the cr binary
-    binary = ":cockroach-operator",
+    name = "operator_image_linux_arm64",
+    srcs = [":cockroach-operator-linux-arm64"],
     visibility = ["//visibility:public"],
 )
 
@@ -116,7 +126,11 @@ filegroup(
 
 filegroup(
     name = "all-srcs",
-    srcs = [":package-srcs"],
+    srcs = [
+        ":package-srcs",
+        "//cmd/cockroach-operator/linux-amd64:all-srcs",
+        "//cmd/cockroach-operator/linux-arm64:all-srcs",
+    ],
     tags = ["automanaged"],
     visibility = ["//visibility:public"],
 )

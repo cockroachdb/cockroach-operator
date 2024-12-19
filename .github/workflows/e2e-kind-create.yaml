@@ -26,7 +26,7 @@ on:
 
 jobs:
   e2e-kind-create:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest 
     strategy:
       fail-fast: false
     steps:

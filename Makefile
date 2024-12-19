@@ -330,7 +330,7 @@ release/image:
 	DOCKER_REGISTRY=$(DOCKER_REGISTRY) \
 	DOCKER_IMAGE_REPOSITORY=$(DOCKER_IMAGE_REPOSITORY) \
 	APP_VERSION=$(APP_VERSION) \
-	bazel run --stamp --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
+	bazel run --stamp \
 		//:push_operator_image
 
 #
