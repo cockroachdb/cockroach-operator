@@ -384,6 +384,8 @@ spec:
       - args:
         - -zap-log-level
         - info
+        command:
+        - ./cockroach-operator
         env:
         - name: RELATED_IMAGE_COCKROACH_v21_1_0
           value: cockroachdb/cockroach:v21.1.0
