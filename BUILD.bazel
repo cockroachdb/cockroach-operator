@@ -2,7 +2,8 @@
 # gazelle:proto disable_global
 # gazelle:exclude docs/generated/reference/generate/json_swagger
 
-load("@io_bazel_rules_docker//container:container.bzl", "container_push")
+load("@bazel_skylib//rules:native_binary.bzl", "native_binary")
+load("@aspect_bazel_lib//lib:expand_template.bzl", "expand_template")
 
 # export WORKSPACE so workspace_binary rules can be used outside the root
 exports_files([
@@ -14,16 +15,23 @@ exports_files([
 
 # TODO
 load("@bazel_gazelle//:def.bzl", "gazelle")
+load("@rules_oci//oci:defs.bzl", "oci_push")
 
 gazelle(name = "gazelle")
 
-container_push(
+expand_template(
+    name = "tags",
+    stamp_substitutions = {
+        "APP_VERSION": "{{STABLE_DOCKER_TAG}}",
+    },
+    template = ["APP_VERSION"],
+)
+
+oci_push(
     name = "push_operator_image",
-    format = "Docker",
-    image = "//cmd/cockroach-operator:operator_image",
-    registry = "{STABLE_DOCKER_REGISTRY}",
-    repository = "{STABLE_IMAGE_REPOSITORY}",
-    tag = "{STABLE_DOCKER_TAG}",
+    image = "//cmd/cockroach-operator:index",
+    remote_tags = ":tags",
+    repository = "${DOCKER_REGISTRY}/${DOCKER_IMAGE_REPOSITORY}",
 )
 
 filegroup(

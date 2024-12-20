@@ -1,0 +1,31 @@
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
+
+genrule(
+    name = "fetch_linux_arm64_crdb_container",
+    srcs = ["@crdb_linux_arm64//:file"],
+    outs = ["cockroach"],
+    cmd = "cp $(SRCS) $@",
+    visibility = ["//visibility:public"],
+)
+
+pkg_tar(
+    name = "cockroach-linux-arm64-tar",
+    srcs = [":fetch_linux_arm64_crdb_container"],
+    mode = "0755",
+    package_dir = "/usr/local/bin",
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "package-srcs",
+    srcs = glob(["**"]),
+    tags = ["automanaged"],
+    visibility = ["//visibility:private"],
+)
+
+filegroup(
+    name = "all-srcs",
+    srcs = [":package-srcs"],
+    tags = ["automanaged"],
+    visibility = ["//visibility:public"],
+)

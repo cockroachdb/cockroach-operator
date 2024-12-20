@@ -233,7 +233,7 @@ genrule(
     srcs = select({
         ":m1": ["@crdb_darwin//:file"],
         ":darwin": ["@crdb_darwin//:file"],
-        ":k8": ["@crdb_linux//:file"],
+        ":k8": ["@crdb_linux_amd64//:file"],
     }),
     outs = ["cockroach"],
     cmd = "cp $(SRCS) $@",
