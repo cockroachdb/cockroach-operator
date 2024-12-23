@@ -33,6 +33,8 @@ spec:
         - name: cockroach-operator
           image: cockroachdb/cockroach-operator:latest
           imagePullPolicy: IfNotPresent
+          command:
+            - ./cockroach-operator
           args:
             - -zap-log-level
             - info
