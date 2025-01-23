@@ -1,5 +1,5 @@
 /*
-Copyright 2024 The Cockroach Authors
+Copyright 2025 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import (
 	. "github.com/cockroachdb/cockroach-operator/pkg/testutil"
 )
 
-const GOOD_MAKEFILE = `# Copyright 2024 The Cockroach Authors
+const GOOD_MAKEFILE = `# Copyright 2025 The Cockroach Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ target:
 `
 const GOOD_GOFILE = `// +build
 /*
-Copyright 2024 The Cockroach Authors
+Copyright 2025 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -62,7 +62,7 @@ limitations under the License.
 package testutil
 `
 const BAD_GOFILE = `/*
-Copyright 2024 The Wrong Authors
+Copyright 2025 The Wrong Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
