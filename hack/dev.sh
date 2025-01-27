@@ -49,12 +49,15 @@ install_operator() {
   # ${REGISTRY_NAME} must be mapped to localhost or 127.0.0.1 to push the image to the k3d registry.
   bazel run //hack/crdbversions:crdbversions -- -operator-image ${DEV_REGISTRY}/cockroach-operator -operator-version ${APP_VERSION} -crdb-versions $(PWD)/crdb-versions.yaml -repo-root $(PWD)
   K8S_CLUSTER="k3d-${CLUSTER_NAME}" \
-    DEV_REGISTRY="${DEV_REGISTRY}" \
+    DOCKER_REGISTRY="${DEV_REGISTRY}" \
+    DOCKER_IMAGE_REPOSITORY="cockroach-operator" \
+    APP_VERSION="${APP_VERSION}" \
     bazel run \
     --stamp \
-    --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
-    --define APP_VERSION=${APP_VERSION} \
-    //config/default:install.apply
+    //:push_operator_image
+    bazel run \
+        --stamp \
+    //config/default:apply_k8s_app
 }
 
 wait_for_ready() {

@@ -11,8 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-load("@k8s_deploy//:defaults.bzl", "k8s_deploy")
-load("@io_bazel_rules_k8s//k8s:objects.bzl", "k8s_objects")
 load("//hack/build:kustomize.bzl", "kustomization")
 
 # Builds the whole enchilada including the crds, rbac sa(s)/roles/bindings, manager
@@ -28,21 +26,18 @@ kustomization(
     ],
 )
 
-k8s_deploy(
-    name = "image",
-    images = {
-        # when running locally, use the image from the local codebase
-        "cockroach-operator:$(APP_VERSION)": "//cmd/cockroach-operator:operator_image",
-    },
-    resolver_args = ["--allow_unused_images"],
-    template = ":manifest",
+filegroup(
+    name = "apply_k8s_script",
+    srcs = ["apply_k8s.sh"],  # List the shell script here
+    visibility = ["//visibility:public"],  # Make it accessible to other packages
 )
 
-k8s_objects(
-    name = "install",
-    objects = [
-        ":image",
-    ],
+# Use a shell script to apply the manifest via kubectl
+sh_binary(
+    name = "apply_k8s_app",
+    srcs = ["apply_k8s.sh"],
+    args = ["$(location :manifest)"],
+    data = [":manifest"],
     visibility = ["//visibility:public"],
 )
 
