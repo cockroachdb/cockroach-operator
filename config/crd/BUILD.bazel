@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("@k8s_deploy//:defaults.bzl", "k8s_deploy")
 load("//hack/build:kustomize.bzl", "kustomization")
 
 kustomization(
@@ -20,9 +19,12 @@ kustomization(
     srcs = [":all-srcs"],
 )
 
-k8s_deploy(
-    name = "crd",
-    template = ":manifest",
+# Use a shell script to apply the manifest via kubectl
+sh_binary(
+    name = "apply_k8s_crd",
+    srcs = ["//config/default:apply_k8s_script"],
+    args = ["$(location :manifest)"],
+    data = [":manifest"],
     visibility = ["//visibility:public"],
 )
 

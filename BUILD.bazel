@@ -32,6 +32,7 @@ oci_push(
     image = "//cmd/cockroach-operator:index",
     remote_tags = ":tags",
     repository = "${DOCKER_REGISTRY}/${DOCKER_IMAGE_REPOSITORY}",
+    visibility = ["//visibility:public"],
 )
 
 filegroup(

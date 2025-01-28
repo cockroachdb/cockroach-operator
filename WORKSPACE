@@ -129,42 +129,6 @@ load("@rules_pkg//:deps.bzl", "rules_pkg_dependencies")
 
 rules_pkg_dependencies()
 
-################################
-# Load rules_k8s and configure #
-################################
-http_archive(
-    name = "io_bazel_rules_k8s",
-    sha256 = "ce5b9bc0926681e2e7f2147b49096f143e6cbc783e71bc1d4f36ca76b00e6f4a",
-    strip_prefix = "rules_k8s-0.7",
-    urls = ["https://github.com/bazelbuild/rules_k8s/archive/refs/tags/v0.7.tar.gz"],
-)
-
-load("@io_bazel_rules_k8s//k8s:k8s.bzl", "k8s_repositories")
-
-k8s_repositories()
-
-load("@io_bazel_rules_k8s//k8s:k8s.bzl", "k8s_defaults")
-
-#############################################################
-# Setting up the defaults for rules k8s.  The varible values
-# are replaced by hack/build/print-workspace-status.sh
-# Using environment variables that are prefixed with the word
-# 'STAMP_' causes the rules_k8s files to rebuild when the
-# --stamp and evn values change.
-#############################################################
-k8s_defaults(
-    # This becomes the name of the @repository and the rule
-    # you will import in your BUILD files.
-    name = "k8s_deploy",
-    # This is the name of the cluster as it appears in:
-    #   kubectl config view --minify -o=jsonpath='{.contexts[0].context.cluster}'
-    # You are able to override the default cluster by setting the env variable K8S_CLUSTER
-    cluster = "{STABLE_CLUSTER}",
-    # You are able to override the default registry by setting the env variable DEV_REGISTRY
-    image_chroot = "{STABLE_IMAGE_REGISTRY}",
-    kind = "deployment",
-)
-
 ###################################################
 # Load kubernetes repo-infra for tools like kazel #
 ###################################################
