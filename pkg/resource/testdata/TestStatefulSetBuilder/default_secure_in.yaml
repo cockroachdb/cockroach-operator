@@ -19,6 +19,7 @@ metadata:
   name: test-cluster
   namespace: test-ns
 spec:
+  terminationGracePeriodSecs: 5
   dataStore:
     pvc:
       spec:

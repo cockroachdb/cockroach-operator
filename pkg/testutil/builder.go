@@ -56,6 +56,11 @@ func (b ClusterBuilder) WithAutomountServiceAccountToken(mount bool) ClusterBuil
 	return b
 }
 
+func (b ClusterBuilder) WithTerminationGracePeriodSeconds(s int32) ClusterBuilder {
+	b.cluster.Spec.TerminationGracePeriodSecs = s
+	return b
+}
+
 func (b ClusterBuilder) WithUID(uid string) ClusterBuilder {
 	b.cluster.ObjectMeta.UID = amtypes.UID(uid)
 	return b

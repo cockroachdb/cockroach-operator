@@ -21,7 +21,7 @@ APP_VERSION="${APP_VERSION:-v$(cat version.txt)}"
 CLUSTER_NAME="dev"
 NODE_IMAGE="rancher/k3s:v1.23.3-k3s1"
 REGISTRY_NAME="registry.localhost"
-REGISTRY_PORT=5000
+REGISTRY_PORT=5002
 DEV_REGISTRY="${REGISTRY_NAME}:${REGISTRY_PORT}"
 
 main() {

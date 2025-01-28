@@ -330,6 +330,13 @@ func (cluster Cluster) SecureMode() string {
 	return "--insecure"
 }
 
+func (cluster Cluster) GetTerminationGracePeriod() int32 {
+	if cluster.Spec().TerminationGracePeriodSecs == 0 {
+		return terminationGracePeriodSecs
+	}
+	return cluster.Spec().TerminationGracePeriodSecs
+}
+
 func (cluster Cluster) LoggingConfiguration(fetcher Fetcher) (string, error) {
 	if cluster.Spec().LogConfigMap != "" {
 		cm := &corev1.ConfigMap{
