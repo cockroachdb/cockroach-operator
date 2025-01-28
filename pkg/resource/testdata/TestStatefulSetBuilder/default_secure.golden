@@ -26,7 +26,7 @@ spec:
         car: koenigsegg
     spec:
       automountServiceAccountToken: false
-      terminationGracePeriodSecs: 5
+      terminationGracePeriodSecs: 300
       containers:
       - command:
         - /bin/bash

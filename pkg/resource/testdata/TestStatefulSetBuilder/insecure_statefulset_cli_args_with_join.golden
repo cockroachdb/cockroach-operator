@@ -39,7 +39,7 @@ spec:
               topologyKey: kubernetes.io/hostname
             weight: 100
       automountServiceAccountToken: false
-      terminationGracePeriodSecs: 5
+      terminationGracePeriodSecs: 300
       containers:
       - command:
         - /bin/bash

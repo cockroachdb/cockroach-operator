@@ -58,5 +58,5 @@ spec:
       effect: "NoSchedule"
   additionalAnnotations:
     key: "test-value"
-  terminationGracePeriodSecs: 5
+  terminationGracePeriodSecs: 300
 status: {}
