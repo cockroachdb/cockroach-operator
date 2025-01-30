@@ -1,7 +1,7 @@
+load("@aspect_bazel_lib//lib:expand_template.bzl", "expand_template")
 load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
 load("@rules_oci//oci:defs.bzl", "oci_image", "oci_image_index")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
-load("@aspect_bazel_lib//lib:expand_template.bzl", "expand_template")
 
 expand_template(
     name = "labels",
@@ -49,7 +49,7 @@ go_library(
 
 go_binary(
     name = "cockroach-operator-linux-amd64",
-    out = "cockroach-operator",
+    out = "cockroach-operator-amd64",
     embed = [":go_default_library"],
     goarch = "amd64",
     goos = "linux",
@@ -58,7 +58,7 @@ go_binary(
 
 go_binary(
     name = "cockroach-operator-linux-arm64",
-    out = "cockroach-operator",
+    out = "cockroach-operator-arm64",
     embed = [":go_default_library"],
     goarch = "arm64",
     goos = "linux",

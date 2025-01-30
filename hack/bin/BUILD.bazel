@@ -1,6 +1,6 @@
-package(default_visibility = ["//visibility:public"])
-
 load("@io_k8s_repo_infra//defs:run_in_workspace.bzl", "workspace_binary")
+
+package(default_visibility = ["//visibility:public"])
 
 genrule(
     name = "fetch_jq",
