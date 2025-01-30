@@ -2,8 +2,12 @@
 # gazelle:proto disable_global
 # gazelle:exclude docs/generated/reference/generate/json_swagger
 
-load("@bazel_skylib//rules:native_binary.bzl", "native_binary")
 load("@aspect_bazel_lib//lib:expand_template.bzl", "expand_template")
+
+# TODO
+load("@bazel_gazelle//:def.bzl", "gazelle")
+load("@bazel_skylib//rules:native_binary.bzl", "native_binary")
+load("@rules_oci//oci:defs.bzl", "oci_push")
 
 # export WORKSPACE so workspace_binary rules can be used outside the root
 exports_files([
@@ -12,10 +16,6 @@ exports_files([
     "go.mod",
     "go.sum",
 ])
-
-# TODO
-load("@bazel_gazelle//:def.bzl", "gazelle")
-load("@rules_oci//oci:defs.bzl", "oci_push")
 
 gazelle(name = "gazelle")
 
