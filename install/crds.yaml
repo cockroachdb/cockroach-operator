@@ -1391,6 +1391,12 @@ spec:
                 description: '(Optional) The SQL Port number Default: 26257'
                 format: int32
                 type: integer
+              terminationGracePeriodSecs:
+                description: '(Optional) The grace period in seconds prior to the
+                  container being forcibly terminated when marked for deletion or
+                  restarted. Default : 300'
+                format: int64
+                type: integer
               tlsEnabled:
                 description: (Optional) TLSEnabled determines if TLS is enabled for
                   your CockroachDB Cluster

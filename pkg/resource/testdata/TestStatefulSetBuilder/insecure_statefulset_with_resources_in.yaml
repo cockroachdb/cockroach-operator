@@ -41,4 +41,5 @@ spec:
   topology:
     zones:
       - locality: ""
+  terminationGracePeriodSecs: 300
 status: {}

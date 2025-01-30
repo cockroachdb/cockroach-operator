@@ -221,6 +221,7 @@ func TestUpgradesMinorVersionThenRollback(t *testing.T) {
 
 	builder := testutil.NewBuilder("crdb").
 		WithAutomountServiceAccountToken(true).
+		WithTerminationGracePeriodSeconds(5).
 		WithNodeCount(3).
 		WithTLS().
 		WithImage(e2e.MinorVersion1).
