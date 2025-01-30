@@ -24,7 +24,7 @@ spec:
         - ReadWriteOnce
         resources:
           requests:
-            storage: 1Gi
+            storage: 60Gi
         volumeMode: Filesystem
   image:
     name: cockroachdb/cockroach:v19.2.6

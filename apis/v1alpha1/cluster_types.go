@@ -145,8 +145,8 @@ type CrdbClusterSpec struct {
 	// Default: false
 	// +optional
 	AutomountServiceAccountToken bool `json:"automountServiceAccountToken,omitempty"`
-	// (Optional) Amount of grace time prior to the container being forcibly terminated
-	// when marked for deletion or restarted
+	// (Optional) The grace period in seconds prior to the container being forcibly terminated
+	// when marked for deletion or restarted.
 	// Default : 300
 	// +optional
 	TerminationGracePeriodSecs int64 `json:"terminationGracePeriodSecs,omitempty"`
