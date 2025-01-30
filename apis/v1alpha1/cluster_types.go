@@ -149,7 +149,7 @@ type CrdbClusterSpec struct {
 	// when marked for deletion or restarted
 	// Default : 300
 	// +optional
-	TerminationGracePeriodSecs int32 `json:"terminationGracePeriodSecs,omitempty"`
+	TerminationGracePeriodSecs int64 `json:"terminationGracePeriodSecs,omitempty"`
 }
 
 // +k8s:openapi-gen=true

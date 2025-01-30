@@ -330,7 +330,7 @@ func (cluster Cluster) SecureMode() string {
 	return "--insecure"
 }
 
-func (cluster Cluster) GetTerminationGracePeriod() int32 {
+func (cluster Cluster) GetTerminationGracePeriod() int64 {
 	if cluster.Spec().TerminationGracePeriodSecs == 0 {
 		return terminationGracePeriodSecs
 	}

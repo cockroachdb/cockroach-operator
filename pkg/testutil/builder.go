@@ -56,7 +56,7 @@ func (b ClusterBuilder) WithAutomountServiceAccountToken(mount bool) ClusterBuil
 	return b
 }
 
-func (b ClusterBuilder) WithTerminationGracePeriodSeconds(s int32) ClusterBuilder {
+func (b ClusterBuilder) WithTerminationGracePeriodSeconds(s int64) ClusterBuilder {
 	b.cluster.Spec.TerminationGracePeriodSecs = s
 	return b
 }
