@@ -58,7 +58,7 @@ go_binary(
 
 go_binary(
     name = "cockroach-operator-linux-arm64",
-    out = "cockroach-operator-arm64",
+    out = "cockroach-operator",
     embed = [":go_default_library"],
     goarch = "arm64",
     goos = "linux",
