@@ -1,10 +1,20 @@
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
+load("@io_bazel_rules_go//go:def.bzl", "go_binary")
 
 genrule(
     name = "fetch_linux_arm64_crdb_container",
     srcs = ["@crdb_linux_arm64//:file"],
     outs = ["cockroach"],
     cmd = "cp $(SRCS) $@",
+    visibility = ["//visibility:public"],
+)
+
+go_binary(
+    name = "cockroach-operator-linux-arm64",
+    out = "cockroach-operator",
+    embed = ["//cmd/cockroach-operator:go_default_library"],
+    goarch = "arm64",
+    goos = "linux",
     visibility = ["//visibility:public"],
 )
 

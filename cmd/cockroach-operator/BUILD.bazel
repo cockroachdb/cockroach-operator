@@ -1,5 +1,5 @@
 load("@aspect_bazel_lib//lib:expand_template.bzl", "expand_template")
-load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+load("@io_bazel_rules_go//go:def.bzl","go_library")
 load("@rules_oci//oci:defs.bzl", "oci_image", "oci_image_index")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
 
@@ -28,7 +28,7 @@ go_library(
         "prep_webhooks.go",
     ],
     importpath = "github.com/cockroachdb/cockroach-operator/cmd/cockroach-operator",
-    visibility = ["//visibility:private"],
+    visibility = ["//visibility:public"],
     deps = [
         "//apis/v1alpha1:go_default_library",
         "//pkg/controller:go_default_library",
@@ -45,24 +45,6 @@ go_library(
         "@io_k8s_sigs_controller_runtime//pkg/cache:go_default_library",
         "@io_k8s_sigs_controller_runtime//pkg/log/zap:go_default_library",
     ],
-)
-
-go_binary(
-    name = "cockroach-operator-linux-amd64",
-    out = "cockroach-operator-amd64",
-    embed = [":go_default_library"],
-    goarch = "amd64",
-    goos = "linux",
-    visibility = ["//visibility:public"],
-)
-
-go_binary(
-    name = "cockroach-operator-linux-arm64",
-    out = "cockroach-operator",
-    embed = [":go_default_library"],
-    goarch = "arm64",
-    goos = "linux",
-    visibility = ["//visibility:public"],
 )
 
 pkg_tar(
@@ -107,13 +89,13 @@ oci_image(
 
 pkg_tar(
     name = "operator_image_linux_amd64",
-    srcs = [":cockroach-operator-linux-amd64"],
+    srcs = ["//cmd/cockroach-operator/linux-amd64:cockroach-operator-linux-amd64"],
     visibility = ["//visibility:public"],
 )
 
 pkg_tar(
     name = "operator_image_linux_arm64",
-    srcs = [":cockroach-operator-linux-arm64"],
+    srcs = ["//cmd/cockroach-operator/linux-arm64:cockroach-operator-linux-arm64"],
     visibility = ["//visibility:public"],
 )
 
