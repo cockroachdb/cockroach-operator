@@ -57,12 +57,14 @@ load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies")
 
 go_rules_dependencies()
 
+# gazelle:repository_macro hack/build/repos.bzl%_go_dependencies
+go_dependencies()
+
 go_register_toolchains(version = "1.17")
 
 gazelle_dependencies()
 
-# gazelle:repository_macro hack/build/repos.bzl%_go_dependencies
-go_dependencies()
+
 
 ################################
 # begin rules_oci dependencies #

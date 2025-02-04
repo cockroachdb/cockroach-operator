@@ -20,6 +20,7 @@ metadata:
   namespace: test-ns
 spec:
   automountServiceAccountToken: true
+  terminationGracePeriodSecs: 300
   dataStore:
     pvc:
       spec:
