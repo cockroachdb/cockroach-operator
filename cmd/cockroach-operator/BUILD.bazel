@@ -73,6 +73,7 @@ oci_image(
         "//cmd/cockroach-operator/linux-amd64:cockroach-linux-amd64-tar",
         ":operator_image_linux_amd64",
     ],
+    entrypoint = ["./cockroach-operator"],
 )
 
 oci_image(
@@ -85,6 +86,7 @@ oci_image(
         "//cmd/cockroach-operator/linux-arm64:cockroach-linux-arm64-tar",
         ":operator_image_linux_arm64",
     ],
+    entrypoint = ["./cockroach-operator"],
 )
 
 pkg_tar(
