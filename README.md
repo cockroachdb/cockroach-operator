@@ -1,6 +1,6 @@
 # CockroachDB Kubernetes Operator
 
-The CockroachDB Kubernetes Operator deploys CockroachDB on a Kubernetes cluster. You can use the Operator to manage the configuration of a running CockroachDB cluster, including:
+The CockroachDB Kubernetes Operator deploys CockroachDB on a Kubernetes cluster. You can use the Operator to manage the configuration of a running CockroachDB cluster, including.
 
 - Authenticating certificates
 - Configuring resource requests and limits
