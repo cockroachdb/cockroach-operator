@@ -58,6 +58,8 @@ func TestUpgradesMinorVersion(t *testing.T) {
 		WithCockroachDBVersion("v20.2.8").
 		WithPVDataStore("1Gi")
 
+	// This defaulting is done by webhook mutation config, but in tests we are doing it manually.
+	builder.Cr().Default()
 	steps := testutil.Steps{
 		{
 			Name: "creates a 3-nodes secure cluster",
@@ -116,6 +118,9 @@ func TestUpgradesMajorVersion20to21(t *testing.T) {
 		WithCockroachDBVersion("v20.2.10").
 		WithPVDataStore("1Gi")
 
+	// This defaulting is done by webhook mutation config, but in tests we are doing it manually.
+	builder.Cr().Default()
+
 	steps := testutil.Steps{
 		{
 			Name: "creates a 3-nodes secure cluster",
@@ -169,6 +174,9 @@ func TestUpgradesMajorVersion20_1To20_2(t *testing.T) {
 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
 		WithCockroachDBVersion("v20.1.16").
 		WithPVDataStore("1Gi")
+
+	// This defaulting is done by webhook mutation config, but in tests we are doing it manually.
+	builder.Cr().Default()
 
 	steps := testutil.Steps{
 		{
