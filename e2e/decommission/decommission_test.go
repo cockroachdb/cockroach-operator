@@ -64,6 +64,9 @@ func TestDecommissionFunctionalityWithPrune(t *testing.T) {
 		WithImage(e2e.MajorVersion).
 		WithPVDataStore("1Gi")
 
+	// This defaulting is done by webhook mutation config, but in tests we are doing it manually.
+	builder.Cr().Default()
+
 	testutil.Steps{
 		{
 			Name: "creates a 4-node secure cluster and tests db",
@@ -125,6 +128,9 @@ func TestDecommissionFunctionality(t *testing.T) {
 		WithTLS().
 		WithImage(e2e.MajorVersion).
 		WithPVDataStore("1Gi")
+
+	// This defaulting is done by webhook mutation config, but in tests we are doing it manually.
+	builder.Cr().Default()
 
 	testutil.Steps{
 		{
