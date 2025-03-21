@@ -391,6 +391,9 @@ CrdbVersions:
 - image: cockroachdb/cockroach:v23.2.20
   redhatImage: registry.connect.redhat.com/cockroachdb/cockroach@sha256:58de9d0b2ce005c7ad3e99152100e59b7677398557028a7a59e56e669fabb81c
   tag: v23.2.20
+- image: cockroachdb/cockroach:v23.2.21
+  redhatImage: registry.connect.redhat.com/cockroachdb/cockroach@sha256:bed27f3f2c2d7627d1af4500d7ea0302da5c3fd3d875a6480fb6d98da481312e
+  tag: v23.2.21
 - image: cockroachdb/cockroach:v24.1.0
   redhatImage: registry.connect.redhat.com/cockroachdb/cockroach@sha256:5240f9f591263569fad7ee934e81fa8a1617de3c25da94ddd59ee5b2b3407f90
   tag: v24.1.0
@@ -430,6 +433,9 @@ CrdbVersions:
 - image: cockroachdb/cockroach:v24.1.13
   redhatImage: registry.connect.redhat.com/cockroachdb/cockroach@sha256:2171e1c75d0c665fe33e1ea334e605604c51de6dbc22d88a3a0ac604259c448f
   tag: v24.1.13
+- image: cockroachdb/cockroach:v24.1.14
+  redhatImage: registry.connect.redhat.com/cockroachdb/cockroach@sha256:4b56c0311af14220a466aa11f25fd10fa38280825539bd02215c945bbafb861c
+  tag: v24.1.14
 - image: cockroachdb/cockroach:v24.2.0
   redhatImage: registry.connect.redhat.com/cockroachdb/cockroach@sha256:cad60044ad6573bd80b65e892a9ec0510dbe4fcbbfc6b51010ecf419f56f1024
   tag: v24.2.0
@@ -475,6 +481,18 @@ CrdbVersions:
 - image: cockroachdb/cockroach:v24.3.6
   redhatImage: registry.connect.redhat.com/cockroachdb/cockroach@sha256:8a70ba12f610ac0e62066e417a0833bc1d01e91ac99d0dd794a2c0cd2a350164
   tag: v24.3.6
+- image: cockroachdb/cockroach:v24.3.7
+  redhatImage: registry.connect.redhat.com/cockroachdb/cockroach@sha256:4d8e804b35b73d7978c112748aea2d2bb68f65081b90bca62c39f2b6e2989378
+  tag: v24.3.7
+- image: cockroachdb/cockroach:v24.3.8
+  redhatImage: registry.connect.redhat.com/cockroachdb/cockroach@sha256:35ede65457d845e8c063ad7d9515d3a69f98e0751424ecbac484963678a0b1b5
+  tag: v24.3.8
 - image: cockroachdb/cockroach:v25.1.0
   redhatImage: registry.connect.redhat.com/cockroachdb/cockroach@sha256:8e8c081c231b5b15eca483ceec16ea9190ba73aae6e421865162446eb584519a
   tag: v25.1.0
+- image: cockroachdb/cockroach:v25.1.1
+  redhatImage: registry.connect.redhat.com/cockroachdb/cockroach@sha256:fd6c9b8ca82ff4f2d0fe29166d1fc9bca6439cb40907be60f4d8f1b9735de2f7
+  tag: v25.1.1
+- image: cockroachdb/cockroach:v25.1.2
+  redhatImage: registry.connect.redhat.com/cockroachdb/cockroach@sha256:f3c54375613f964ab618e6aa92eb30d8f176f9e29c76926392805d933eb38595
+  tag: v25.1.2
