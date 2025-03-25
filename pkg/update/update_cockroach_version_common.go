@@ -19,6 +19,8 @@ package update
 import (
 	"errors"
 	"fmt"
+	"strconv"
+	"strings"
 	"time"
 
 	semver "github.com/Masterminds/semver/v3"
@@ -134,10 +136,111 @@ func isPatch(wantVersion *semver.Version, currentVersion *semver.Version) bool {
 	return currentVersion.Major() == wantVersion.Major() && currentVersion.Minor() == wantVersion.Minor()
 }
 
+// getReleaseType returns if a release is Innovative or Regular.
+func getReleaseType(major, minor int) ReleaseType {
+	// Before 25.1, we define them explicitly
+	switch fmt.Sprintf("%d.%d", major, minor) {
+	case "24.1", "24.3":
+		return Regular
+	case "24.2":
+		return Innovative
+	}
+
+	// Post 25.1: Odd releases (1,3) are Innovative, Even (2,4) are Regular
+	if minor%2 == 1 {
+		return Innovative
+	}
+	return Regular
+}
+
+// generateReleases generates all releases up to a current year
+func generateReleases(upToYear int) []string {
+	var releases = []string{"24.1", "24.2", "24.3"}
+
+	for year := 25; year <= upToYear; year++ {
+		for quarter := 1; quarter <= 4; quarter++ {
+			releases = append(releases, fmt.Sprintf("%d.%d", year, quarter))
+		}
+	}
+
+	return releases
+}
+
+// getNextReleases returns the list of valid upgrade targets
+func getNextReleases(currentVersion string) []string {
+	var nextReleases []string
+	var found bool
+
+	releases := generateReleases(time.Now().Year() % 100)
+	for _, release := range releases {
+		year, _ := strconv.Atoi(strings.Split(release, ".")[0])
+		quarter, _ := strconv.Atoi(strings.Split(release, ".")[1])
+
+		if found {
+			nextReleases = append(nextReleases, release)
+			if getReleaseType(year, quarter) == Regular {
+				break // Stop at the next regular release
+			}
+		}
+		if release == currentVersion {
+			found = true
+		}
+	}
+
+	return nextReleases
+}
+
+// getPreviousReleases returns the list of possible rollback targets
+func getPreviousReleases(currentVersion string) []string {
+	var prevReleases []string
+	var found bool
+
+	releases := generateReleases(time.Now().Year() % 100)
+	for i := len(releases) - 1; i >= 0; i-- {
+		release := releases[i]
+		year, _ := strconv.Atoi(strings.Split(release, ".")[0])
+		quarter, _ := strconv.Atoi(strings.Split(release, ".")[1])
+		if found {
+			prevReleases = append(prevReleases, release)
+			if getReleaseType(year, quarter) == Regular {
+				break
+			}
+		}
+		if release == currentVersion {
+			found = true
+		}
+	}
+
+	return prevReleases
+}
+
 func isForwardOneMajorVersion(wantVersion *semver.Version, currentVersion *semver.Version) bool {
 	// Two cases:
 	// 19.1 to 19.2 -> same year
 	// 19.2 to 20.1 -> next year
+
+	// Since 2024, we have adopted a quarterly release cycle, with two of the four annual releases designated
+	// as innovative releases. Users have the option to skip upgrading to an innovative release.
+	if currentVersion.Major() >= 24 {
+		// Four Cases:
+		// 24.1 to 24.2 -> Same year without skipping innovative release
+		// 24.1 to 24.3 -> Same year with skipping innovative release
+		// 24.4 to 25.1 -> Next year without skipping innovative release
+		// 24.3 to 25.1 -> Next year with skipping innovative release
+		nextPossibleRelease := getNextReleases(fmt.Sprintf("%d.%d", currentVersion.Major(), currentVersion.Minor()))
+		for _, version := range nextPossibleRelease {
+			if version == fmt.Sprintf("%d.%d", wantVersion.Major(), wantVersion.Minor()) {
+				return true
+			}
+		}
+
+		// This condition allows user to upgrade one version at a time.
+		// ReleaseMap needs to be maintained if we want to skip the Innovative upgrades else this condition
+		// is enough to do forward one major version.
+		return (currentVersion.Major() == wantVersion.Major() && currentVersion.Minor()+1 == wantVersion.Minor()) ||
+			(currentVersion.Major()+1 == wantVersion.Major() && currentVersion.Minor()-3 == wantVersion.Minor())
+	}
+
 	return (currentVersion.Major() == wantVersion.Major() && currentVersion.Minor()+1 == wantVersion.Minor()) ||
 		(currentVersion.Major()+1 == wantVersion.Major() && currentVersion.Minor()-1 == wantVersion.Minor())
 }
@@ -146,6 +249,24 @@ func isBackOneMajorVersion(wantVersion *semver.Version, currentVersion *semver.V
 	// Two cases:
 	// 19.2 to 19.1 -> same year
 	// 20.1 to 19.2 -> previous year
+
+	// Since 2024, users have the option to skip rollback to an innovative release.
+	if wantVersion.Major() >= 24 {
+		// Four cases:
+		// 24.2 -> 24.1 -> Same year without skipping innovative release
+		// 24.3 -> 24.1 -> Same year with skipping innovative release
+		// 25.1 -> 24.4 -> Previous year without skipping innovative release
+		// 25.1 -> 24.3 -> Previous year with skipping innovative release
+		rollbackReleases := getPreviousReleases(fmt.Sprintf("%d.%d", currentVersion.Major(), currentVersion.Minor()))
+		for _, version := range rollbackReleases {
+			if version == fmt.Sprintf("%d.%d", wantVersion.Major(), wantVersion.Minor()) {
+				return true
+			}
+		}
+		return (currentVersion.Major() == wantVersion.Major() && currentVersion.Minor() == wantVersion.Minor()+1) ||
+			(currentVersion.Major() == wantVersion.Major()+1 && currentVersion.Minor() == wantVersion.Minor()-3)
+	}
+
 	return (currentVersion.Major() == wantVersion.Major() && currentVersion.Minor() == wantVersion.Minor()+1) ||
 		(currentVersion.Major() == wantVersion.Major()+1 && currentVersion.Minor() == wantVersion.Minor()-1)
 }
