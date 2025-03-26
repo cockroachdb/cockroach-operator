@@ -94,7 +94,7 @@ func UpdateClusterCockroachVersion(
 
 	l.V(int(zapcore.InfoLevel)).Info("starting upgrade")
 
-	if isForwardOneMajorVersion(update.WantVersion, update.CurrentVersion) {
+	if isMajorUpgradeAllowed(update.WantVersion, update.CurrentVersion) {
 		if err := setDowngradeOption(ctx, update.WantVersion, update.CurrentVersion, update.Db, l); err != nil {
 			return errors.Wrapf(err, "setting downgrade option for major roll forward failed")
 		}
@@ -206,7 +206,7 @@ func kindAndCheckPreserveDowngradeSetting(
 	if isPatch(wantVersion, currentVersion) {
 		l.V(int(zapcore.DebugLevel)).Info("patch upgrade")
 		return "PATCH", nil
-	} else if isForwardOneMajorVersion(wantVersion, currentVersion) {
+	} else if isMajorUpgradeAllowed(wantVersion, currentVersion) {
 		l.V(int(zapcore.DebugLevel)).Info("major upgrade")
 		s := "MAJOR_UPGRADE"
 		preserve, err := preserveDowngradeSetting(ctx, db)
@@ -226,7 +226,7 @@ func kindAndCheckPreserveDowngradeSetting(
 			}
 		}
 		return s, nil
-	} else if isBackOneMajorVersion(wantVersion, currentVersion) {
+	} else if isMajorRollbackAllowed(wantVersion, currentVersion) {
 		l.V(int(zapcore.DebugLevel)).Info("major rollback")
 		return CheckDowngradeSetting(ctx, wantVersion, currentVersion, db)
 	}

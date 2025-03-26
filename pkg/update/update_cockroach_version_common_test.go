@@ -17,6 +17,7 @@ limitations under the License.
 package update
 
 import (
+	"reflect"
 	"testing"
 
 	semver "github.com/Masterminds/semver/v3"
@@ -58,7 +59,7 @@ func TestIsPatch(t *testing.T) {
 
 }
 
-func TestIsForwardOneMajorVersion(t *testing.T) {
+func TestIsMajorUpgradeAllowed(t *testing.T) {
 	tests := []struct {
 		description    string
 		wantVersion    *semver.Version
@@ -95,16 +96,34 @@ func TestIsForwardOneMajorVersion(t *testing.T) {
 			semver.MustParse("19.3.5"),
 			false,
 		},
+		{
+			"is skipping innovative release same year",
+			semver.MustParse("24.3"),
+			semver.MustParse("24.1"),
+			true,
+		},
+		{
+			"is skipping innovative release next year",
+			semver.MustParse("25.2"),
+			semver.MustParse("24.3"),
+			true,
+		},
+		{
+			"is skipping innovative and regular release",
+			semver.MustParse("25.1"),
+			semver.MustParse("24.1"),
+			false,
+		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.description, func(t *testing.T) {
-			require.True(t, isForwardOneMajorVersion(test.wantVersion, test.currentVersion) == test.result, "isForwardOneMajorVersion test failed")
+			require.True(t, isMajorUpgradeAllowed(test.wantVersion, test.currentVersion) == test.result, "isMajorUpgradeAllowed test failed")
 		})
 	}
 }
 
-func TestIsBackOneMajorVersion(t *testing.T) {
+func TestIsMajorRollbackAllowed(t *testing.T) {
 	tests := []struct {
 		description    string
 		wantVersion    *semver.Version
@@ -135,11 +154,129 @@ func TestIsBackOneMajorVersion(t *testing.T) {
 			semver.MustParse("19.3.5"),
 			false,
 		},
+		{
+			"is skipping innovative release for same year",
+			semver.MustParse("24.1"),
+			semver.MustParse("24.3"),
+			true,
+		},
+		{
+			"is skipping innovative release previous year",
+			semver.MustParse("24.3"),
+			semver.MustParse("25.2"),
+			true,
+		},
+		{
+			"is skipping innovative and regular release",
+			semver.MustParse("24.1"),
+			semver.MustParse("25.1"),
+			false,
+		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.description, func(t *testing.T) {
-			require.True(t, isBackOneMajorVersion(test.wantVersion, test.currentVersion) == test.result, "isBackwardOneMajorVersion test failed")
+			require.True(t, isMajorRollbackAllowed(test.wantVersion, test.currentVersion) == test.result, "isMajorRollbackAllowed test failed")
+		})
+	}
+}
+
+func TestGetNextReleases(t *testing.T) {
+	tests := []struct {
+		description    string
+		currentVersion string
+		result         []string
+	}{
+		{
+			"returns the possible upgrade targets for 24.1",
+			"24.1",
+			[]string{"24.2", "24.3"},
+		},
+		{
+			"returns the possible upgrade targets for 24.3",
+			"24.3",
+			[]string{"25.1", "25.2"},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.description, func(t *testing.T) {
+			require.True(t, reflect.DeepEqual(getNextReleases(test.currentVersion), test.result),
+				"getNextReleases test failed")
+		})
+	}
+}
+
+func TestGetPreviousReleases(t *testing.T) {
+	tests := []struct {
+		description    string
+		currentVersion string
+		result         []string
+	}{
+		{
+			"returns the possible rollback targets for 24.3",
+			"24.3",
+			[]string{"24.2", "24.1"},
+		},
+		{
+			"returns the possible upgrade targets for 25.2",
+			"25.2",
+			[]string{"25.1", "24.3"},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.description, func(t *testing.T) {
+			require.True(t, reflect.DeepEqual(getPreviousReleases(test.currentVersion), test.result),
+				"getPreviousReleases test failed")
+		})
+	}
+}
+
+func TestGenerateReleases(t *testing.T) {
+	tests := []struct {
+		description string
+		uptoYear    int
+		result      []string
+	}{
+		{
+			"returns possible releases till 2025",
+			25,
+			[]string{"24.1", "24.2", "24.3", "25.1", "25.2", "25.3", "25.4"},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.description, func(t *testing.T) {
+			require.True(t, reflect.DeepEqual(generateReleases(test.uptoYear), test.result), "generateReleases test failed")
+		})
+	}
+}
+
+func TestGetReleaseType(t *testing.T) {
+	tests := []struct {
+		description  string
+		major, minor int
+		result       ReleaseType
+	}{
+		{
+			"returns releaseType of a 24.2",
+			24, 2,
+			Innovative,
+		},
+		{
+			"returns releaseType of a 25.1",
+			25, 1,
+			Innovative,
+		},
+		{
+			"returns releaseType of a 24.3",
+			24, 3,
+			Regular,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.description, func(t *testing.T) {
+			require.True(t, reflect.DeepEqual(getReleaseType(test.major, test.minor), test.result),
+				"getReleaseType test failed")
 		})
 	}
 }

@@ -198,6 +198,53 @@ func TestUpgradesMajorVersion20_1To20_2(t *testing.T) {
 	steps.Run(t)
 }
 
+func TestUpgradesMajorVersionSkippingInnovativeRelease24_3To25_1(t *testing.T) {
+
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
+
+	testLog := zapr.NewLogger(zaptest.NewLogger(t))
+
+	e := testenv.CreateActiveEnvForTest()
+	env := e.Start()
+	defer e.Stop()
+
+	sb := testenv.NewDiffingSandbox(t, env)
+	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
+
+	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
+		WithImage("cockroachdb/cockroach:v24.3.4").
+		WithPVDataStore("1Gi").WithResources(resRequirements)
+
+	steps := testutil.Steps{
+		{
+			Name: "creates a 3-node secure cluster",
+			Test: func(t *testing.T) {
+				require.NoError(t, sb.Create(builder.Cr()))
+				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, e2e.CreateClusterTimeout)
+			},
+		},
+		{
+			Name: "upgrades the cluster to the next major version skipping innovative release",
+			Test: func(t *testing.T) {
+				current := builder.Cr()
+				require.NoError(t, sb.Get(current))
+
+				updated := current.DeepCopy()
+				updated.Spec.Image.Name = "cockroachdb/cockroach:v25.1.0"
+				require.NoError(t, sb.Patch(updated, client.MergeFrom(current)))
+				// we wait 10 min because we will be waiting 3 min for each pod.
+				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, e2e.CreateClusterTimeout)
+				testutil.RequireDbContainersToUseImage(t, sb, updated)
+				t.Log("Done with major upgrade")
+			},
+		},
+	}
+
+	steps.Run(t)
+}
+
 // TestUpgradesMinorVersionThenRollback tests a minor version bump
 // then rollsback that upgrade
 func TestUpgradesMinorVersionThenRollback(t *testing.T) {

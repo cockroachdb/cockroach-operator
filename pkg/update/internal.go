@@ -25,6 +25,16 @@ const (
 	AdminRole   = "admin"
 )
 
+// ReleaseType represents the type of a release
+type ReleaseType int
+
+const (
+	// Regular releases are mandatory upgrades that cannot be skipped.
+	Regular ReleaseType = iota
+	// Innovative releases are optional upgrades that can be skipped.
+	Innovative
+)
+
 // internalUsers is a set of SQL users created as part of the managed service, not to be used
 // by customers. This struct is used to hide specific users in the console.
 var internalUsers = map[string]struct{}{
