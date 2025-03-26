@@ -59,7 +59,7 @@ func TestIsPatch(t *testing.T) {
 
 }
 
-func TestIsForwardOneMajorVersion(t *testing.T) {
+func TestIsMajorUpgradeAllowed(t *testing.T) {
 	tests := []struct {
 		description    string
 		wantVersion    *semver.Version
@@ -97,9 +97,15 @@ func TestIsForwardOneMajorVersion(t *testing.T) {
 			false,
 		},
 		{
-			"is skipping innovative release",
+			"is skipping innovative release same year",
 			semver.MustParse("24.3"),
 			semver.MustParse("24.1"),
+			true,
+		},
+		{
+			"is skipping innovative release next year",
+			semver.MustParse("25.2"),
+			semver.MustParse("24.3"),
 			true,
 		},
 		{
@@ -112,12 +118,12 @@ func TestIsForwardOneMajorVersion(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.description, func(t *testing.T) {
-			require.True(t, isForwardOneMajorVersion(test.wantVersion, test.currentVersion) == test.result, "isForwardOneMajorVersion test failed")
+			require.True(t, isMajorUpgradeAllowed(test.wantVersion, test.currentVersion) == test.result, "isMajorUpgradeAllowed test failed")
 		})
 	}
 }
 
-func TestIsBackOneMajorVersion(t *testing.T) {
+func TestIsMajorRollbackAllowed(t *testing.T) {
 	tests := []struct {
 		description    string
 		wantVersion    *semver.Version
@@ -149,9 +155,15 @@ func TestIsBackOneMajorVersion(t *testing.T) {
 			false,
 		},
 		{
-			"is skipping innovative release",
+			"is skipping innovative release for same year",
 			semver.MustParse("24.1"),
 			semver.MustParse("24.3"),
+			true,
+		},
+		{
+			"is skipping innovative release previous year",
+			semver.MustParse("24.3"),
+			semver.MustParse("25.2"),
 			true,
 		},
 		{
@@ -164,7 +176,7 @@ func TestIsBackOneMajorVersion(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.description, func(t *testing.T) {
-			require.True(t, isBackOneMajorVersion(test.wantVersion, test.currentVersion) == test.result, "isBackwardOneMajorVersion test failed")
+			require.True(t, isMajorRollbackAllowed(test.wantVersion, test.currentVersion) == test.result, "isMajorRollbackAllowed test failed")
 		})
 	}
 }
@@ -252,7 +264,7 @@ func TestGetReleaseType(t *testing.T) {
 		},
 		{
 			"returns releaseType of a 25.1",
-			24, 2,
+			25, 1,
 			Innovative,
 		},
 		{
