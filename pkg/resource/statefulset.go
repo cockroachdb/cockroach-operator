@@ -263,6 +263,16 @@ func (b StatefulSetBuilder) MakeInitContainers() []corev1.Container {
 				RunAsUser:                ptr.Int64(0),
 				AllowPrivilegeEscalation: ptr.Bool(false),
 			},
+			Resources: corev1.ResourceRequirements{
+				Limits: corev1.ResourceList{
+					corev1.ResourceCPU:    resource.MustParse("100m"),
+					corev1.ResourceMemory: resource.MustParse("200Mi"),
+				},
+				Requests: corev1.ResourceList{
+					corev1.ResourceCPU:    resource.MustParse("50m"),
+					corev1.ResourceMemory: resource.MustParse("100Mi"),
+				},
+			},
 		},
 	}
 }

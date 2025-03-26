@@ -98,7 +98,13 @@ spec:
         image: cockroachdb/cockroach:v21.1.0
         imagePullPolicy: IfNotPresent
         name: db-init
-        resources: {}
+        resources:
+          limits:
+            cpu: 100m
+            memory: 200Mi
+          requests:
+            cpu: 50m
+            memory: 100Mi
         securityContext:
           allowPrivilegeEscalation: false
           runAsUser: 0
