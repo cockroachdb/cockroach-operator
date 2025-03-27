@@ -45,7 +45,7 @@ spec:
         - /bin/bash
         - -ecx
         - 'exec /cockroach/cockroach.sh start --advertise-host=$(POD_NAME).test-cluster.test-ns
-          --insecure --http-port=8080 --sql-addr=:26257 --listen-addr=:26258 --log="{sinks:
+          --insecure --http-addr=:8080 --sql-addr=:26257 --listen-addr=:26258 --log="{sinks:
           {stderr: {channels: [OPS, HEALTH], redact: true}}}" --cache=30% --max-sql-memory=2GB
           --temp-dir=/tmp --join=test-cluster-0.test-cluster.test-ns:26258'
         env:
