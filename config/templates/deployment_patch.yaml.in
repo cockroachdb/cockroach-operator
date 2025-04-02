@@ -49,4 +49,6 @@ spec:
             - name: RELATED_IMAGE_COCKROACH_{{ underscore .Tag }}
               value: {{ .RedhatImage }}
 {{- end }}
+            - name: RELATED_IMAGE_COCKROACH_OPERATOR
+              value: RH_COCKROACH_OP_IMAGE_PLACEHOLDER
           image: RH_COCKROACH_OP_IMAGE_PLACEHOLDER
