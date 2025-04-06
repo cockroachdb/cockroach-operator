@@ -1,5 +1,5 @@
 /*
-Copyright 2023 The Cockroach Authors
+Copyright 2025 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ func validateSettingName(name string) error {
 	return nil
 }
 
-//GetClusterSetting func
+// GetClusterSetting func
 func GetClusterSetting(ctx context.Context, db *sql.DB, name string) (string, error) {
 	if err := validateSettingName(name); err != nil {
 		return "", err
@@ -80,7 +80,9 @@ func RangeMoveDuration(ctx context.Context, db *sql.DB, zones ...Zone) (time.Dur
 
 	recoveryRate, err := GetClusterSetting(ctx, db, "kv.snapshot_recovery.max_rate")
 	if err != nil {
-		return 0, errors.Wrap(err, "failed to get kv.snapshot_recovery.max_rate")
+		// This setting has been removed in 24.1, so if an error is returned set it to a default
+		// huge number
+		recoveryRate = "10TB"
 	}
 
 	rebalanceBytes, err := humanize.ParseBytes(rebalanceRate)

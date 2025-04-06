@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Copyright 2023 The Cockroach Authors
+# Copyright 2025 The Cockroach Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@ if [[ -z "${BUILD_WORKSPACE_DIRECTORY:-}" ]]; then
   echo 'Must be run via "make release/generate-bundle"' >&2
   exit 1
 fi
+
+openshift_versions="v4.12-v4.19"
 
 # ensure tool dependencies are on the path
 export PATH="$(pwd)/hack/bin:${PATH}"
@@ -75,8 +77,10 @@ generate_bundle() {
   --output-dir "${dir}"
 
   # Ensure package name is correct for the specific bundle and that the CSV name matches the package name. Also removing
-  # the testing annotations since these are handled automatically upstream.
+  # the testing annotations since these are handled automatically upstream. Also add openshift version annotation
+  local openshift_version_annotation="  com.redhat.openshift.versions: ${openshift_versions}"
   sed \
+  -e "s+annotations:+annotations:\n  # Minimum Openshift version annotation\n${openshift_version_annotation}+" \
   -e "s/package.v1: cockroach-operator/package.v1: ${pkg}/g" \
   -e "/\s*# Annotations for testing/d" \
   -e "/\s*operators.operatorframework.io.test/d" \

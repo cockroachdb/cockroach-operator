@@ -1,5 +1,5 @@
 /*
-Copyright 2023 The Cockroach Authors
+Copyright 2025 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -65,7 +65,7 @@ func TestGenerateTemplateData(t *testing.T) {
 		crdbVersions = append(crdbVersions, crdbVersion{Tag: r})
 	}
 
-	data, err := generateTemplateData(crdbVersions, "2.0.1")
+	data, err := generateTemplateData(crdbVersions, "2.0.1", "cockroachdb/cockroach-operator")
 	require.NoError(t, err)
 	require.Len(t, data.CrdbVersions, len(crdbVersions))
 	require.Equal(t, "1.2.3", data.LatestStableCrdbVersion)

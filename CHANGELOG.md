@@ -5,7 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-# [Unreleased](https://github.com/cockroachdb/cockroach-operator/compare/v2.11.0...master)
+# [Unreleased](https://github.com/cockroachdb/cockroach-operator/compare/v2.18.1...master)
+
+# [v2.18.1](https://github.com/cockroachdb/cockroach-operator/compare/v2.18.0...v2.18.1)
+* Added support for openshift 4.19
+
+# [v2.18.0](https://github.com/cockroachdb/cockroach-operator/compare/v2.17.0...v2.18.0)
+* Added support for skipping innovative releases post 24.x
+* Added support for QoS on init containers.
+
+# [v2.17.0](https://github.com/cockroachdb/cockroach-operator/compare/v2.16.1...v2.17.0)
+* Added support for linux/arm64 images.
+* Added support for TerminationGracePeriodSeconds in statefulset.
+* Upgraded underlying dependencies for cockroach-operator.
+
+# [v2.16.1](https://github.com/cockroachdb/cockroach-operator/compare/v2.16.0...v2.16.1)
+* Increased memory limits for the version checker job
+
+# [v2.16.0](https://github.com/cockroachdb/cockroach-operator/compare/v2.15.1...v2.16.0)
+
+# [v2.15.1](https://github.com/cockroachdb/cockroach-operator/compare/v2.15.0...v2.15.1)
+* Bug fix, removing deprecated cluster setting `kv.snapshot_recovery.max_rate` from being checked during decommission.
+
+# [v2.15.0](https://github.com/cockroachdb/cockroach-operator/compare/v2.14.0...v2.15.0)
+
+# [v2.14.0](https://github.com/cockroachdb/cockroach-operator/compare/v2.13.0...v2.14.0)
+
+# [v2.13.0](https://github.com/cockroachdb/cockroach-operator/compare/v2.12.0...v2.13.0)
+
+# [v2.12.0](https://github.com/cockroachdb/cockroach-operator/compare/v2.11.0...v2.12.0)
 
 # [v2.11.0](https://github.com/cockroachdb/cockroach-operator/compare/v2.10.0...v2.11.0)
 

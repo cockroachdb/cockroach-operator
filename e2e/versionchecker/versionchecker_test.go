@@ -1,5 +1,5 @@
 /*
-Copyright 2023 The Cockroach Authors
+Copyright 2025 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -93,7 +93,7 @@ func TestLoggingAPIValidCheck(t *testing.T) {
 	testutil.RequireLoggingConfigMap(t, sb, "logging-configmap", string(logJson))
 
 	builder := testutil.NewBuilder("crdb").Namespaced(sb.Namespace).WithNodeCount(3).WithTLS().
-		WithImage("cockroachdb/cockroach:v21.1.0").
+		WithImage("cockroachdb/cockroach:v24.2.2").
 		WithPVDataStore("32Mi").
 		WithClusterLogging("logging-configmap")
 

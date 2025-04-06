@@ -13,7 +13,6 @@
 # limitations under the License.
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file", "http_archive")
-load("@io_bazel_rules_docker//container:container.bzl", "container_pull")
 load("@bazel_gazelle//:deps.bzl", "go_repository")
 
 # This controls the version for all openshift binaries (opm, oc, opernshift-install, etc.)
@@ -25,8 +24,8 @@ OPENSHIFT_BINS = {
     "preflight": {
         # currently, preflight is only available on linux
         "preflight_linux": {
-            "url": "https://github.com/redhat-openshift-ecosystem/openshift-preflight/releases/download/1.2.1/preflight-linux-amd64",
-            "sha": "e5754a81d4baae4f4956fc0842179a3daeac4778e202450f886a9afb05d218ba",
+            "url": "https://github.com/redhat-openshift-ecosystem/openshift-preflight/releases/download/1.12.1/preflight-linux-amd64",
+            "sha": "ee92573f38929be67c7bda91dad614ac1b7d1dd81fa8bd15dfe01e385a540856",
         },
     },
     "oc": {
@@ -126,17 +125,24 @@ def install_misc():
 # Install dependencies used by the controller-runtime integration test framework
 def install_integration_test_dependencies():
     http_file(
+        name = "kube-apiserver_darwin_arm64",
+        executable = 1,
+        sha256 = "b575b687097b4662b7eb2ea5453e4b381994ddf34b85ca4bb8e4f16c5f86bedb",
+        urls = ["https://storage.googleapis.com/cockroach-operator-testing-assets/kube-apiserver-1.24.2_darwin_arm64"],
+    )
+
+    http_file(
         name = "kube-apiserver_darwin_amd64",
         executable = 1,
-        sha256 = "a874d479f183f9e4c19a5c69b44955fabd2e250b467d2d9f0641ae91a82ddbea",
-        urls = ["https://storage.googleapis.com/cert-manager-testing-assets/kube-apiserver-1.17.3_darwin_amd64"],
+        sha256 = "800eedc293bcc72eb962df3e8006d7106790ca583a4ea5c107453bab3bf859b4",
+        urls = ["https://storage.googleapis.com/cockroach-operator-testing-assets/kube-apiserver-1.24.2_darwin_amd64"],
     )
 
     http_file(
         name = "kube-apiserver_linux_amd64",
         executable = 1,
-        sha256 = "b4505b838b27b170531afbdef5e7bfaacf83da665f21b0e3269d1775b0defb7a",
-        urls = ["https://storage.googleapis.com/kubernetes-release/release/v1.17.3/bin/linux/amd64/kube-apiserver"],
+        sha256 = "a70a704835450130f8feeac9d42617d527e269c25a5aa92590e54533c2d4f776",
+        urls = ["https://storage.googleapis.com/cockroach-operator-testing-assets/kube-apiserver-1.24.2_linux_amd64"],
     )
 
     http_archive(
@@ -213,14 +219,14 @@ def install_k3d():
 def install_golangci_lint():
     http_archive(
         name = "golangci_lint_darwin",
-        sha256 = "fba08acc4027f69f07cef48fbff70b8a7ecdfaa1c2aba9ad3fb31d60d9f5d4bc",
-        urls = ["https://github.com/golangci/golangci-lint/releases/download/v1.51.1/golangci-lint-1.51.1-darwin-amd64.tar.gz"],
+        sha256 = "5c280ef3284f80c54fd90d73dc39ca276953949da1db03eb9dd0fbf868cc6e55",
+        urls = ["https://github.com/golangci/golangci-lint/releases/download/v1.61.0/golangci-lint-1.61.0-darwin-amd64.tar.gz"],
         build_file_content =
          """
 filegroup(
      name = "file",
      srcs = [
-        "golangci-lint-1.51.1-darwin-amd64/golangci-lint",
+        "golangci-lint-1.61.0-darwin-amd64/golangci-lint",
      ],
      visibility = ["//visibility:public"],
 )
@@ -229,14 +235,14 @@ filegroup(
 
     http_archive(
             name = "golangci_lint_m1",
-            sha256 = "75b8f0ff3a4e68147156be4161a49d4576f1be37a0b506473f8c482140c1e7f2",
-            urls = ["https://github.com/golangci/golangci-lint/releases/download/v1.51.1/golangci-lint-1.51.1-darwin-arm64.tar.gz"],
+            sha256 = "544334890701e4e04a6e574bc010bea8945205c08c44cced73745a6378012d36",
+            urls = ["https://github.com/golangci/golangci-lint/releases/download/v1.61.0/golangci-lint-1.61.0-darwin-arm64.tar.gz"],
             build_file_content =
              """
 filegroup(
     name = "file",
     srcs = [
-       "golangci-lint-1.51.1-darwin-arm64/golangci-lint",
+       "golangci-lint-1.61.0-darwin-arm64/golangci-lint",
     ],
     visibility = ["//visibility:public"],
 )
@@ -245,14 +251,14 @@ filegroup(
 
     http_archive(
         name = "golangci_lint_linux",
-        sha256 = "17aeb26c76820c22efa0e1838b0ab93e90cfedef43fbfc9a2f33f27eb9e5e070",
-        urls = ["https://github.com/golangci/golangci-lint/releases/download/v1.51.1/golangci-lint-1.51.1-linux-amd64.tar.gz"],
+        sha256 = "77cb0af99379d9a21d5dc8c38364d060e864a01bd2f3e30b5e8cc550c3a54111",
+        urls = ["https://github.com/golangci/golangci-lint/releases/download/v1.61.0/golangci-lint-1.61.0-linux-amd64.tar.gz"],
         build_file_content =
          """
 filegroup(
      name = "file",
      srcs = [
-        "golangci-lint-1.51.1-linux-amd64/golangci-lint",
+        "golangci-lint-1.61.0-linux-amd64/golangci-lint",
      ],
      visibility = ["//visibility:public"],
 )
@@ -336,11 +342,11 @@ def install_operator_sdk():
     versions = {
         "operator_sdk_darwin": {
             "file": "operator-sdk_darwin_amd64",
-            "sha": "5fc30d04a31736449adb5c9b0b44e78ebeaa5cf968cc7afcbdf533135b72e31a",
+            "sha": "ca3e4028cd62f21f4ed988907b884be530098e7c40523e89046dd8c5b0178eb9",
         },
         "operator_sdk_linux": {
             "file": "operator-sdk_linux_amd64",
-            "sha": "d2065f1f7a0d03643ad71e396776dac0ee809ef33195e0f542773b377bab1b2a",
+            "sha": "20da1fcba9ef70b1e23283ae820a2c3387b529f04ce09cf318597b33f5d59a52",
         },
     }
 
@@ -348,8 +354,8 @@ def install_operator_sdk():
       http_file(
          name = k,
          executable = 1,
-         sha256 = v["sha"],
-         urls = ["https://github.com/operator-framework/operator-sdk/releases/download/v1.15.0/{}".format(v["file"])],
+         sha256 = v["sha"], 
+         urls = ["https://github.com/operator-framework/operator-sdk/releases/download/v1.37.0/{}".format(v["file"])],
       )
 
 def install_kustomize():
@@ -449,13 +455,13 @@ def install_preflight():
 def install_crdb():
     http_archive(
        name = "crdb_darwin", # todo fix or remove
-       sha256 = "bbbd0a75f81d3df4acd139fdc7f0961480161454db24f25263c9276c3959db54",
-       urls = ["https://binaries.cockroachdb.com/cockroach-v21.2.0.darwin-10.9-amd64.tgz"],
+       sha256 = "79fb1669678b802ae891ec3e005efa801c0f970fec4eb6af7ac89cdb6b991b42",
+       urls = ["https://binaries.cockroachdb.com/cockroach-v22.2.19.darwin-10.9-amd64.tgz"],
        build_file_content = """
 filegroup(
     name = "file",
     srcs = [
-        "cockroach-v21.2.0.darwin-10.9-amd64/cockroach",
+        "cockroach-v22.2.19.darwin-10.9-amd64/cockroach",
     ],
     visibility = ["//visibility:public"],
 )
@@ -463,14 +469,29 @@ filegroup(
    )
 
     http_archive(
-        name = "crdb_linux",
-        sha256 = "c9fda447b9db98ade4444f5855ceb6ffe94549a20bd7cad8fdf70c398add8c02",
-        urls = ["https://binaries.cockroachdb.com/cockroach-v21.2.0.linux-amd64.tgz"],
+           name = "crdb_linux_arm64",
+           sha256 = "9fefea6e5c9715396648bb8865f55b10946b758de7997ccddb4876db56bcbb7a",
+           urls = ["https://binaries.cockroachdb.com/cockroach-v22.2.19.linux-arm64.tgz"],
+           build_file_content = """
+filegroup(
+     name = "file",
+     srcs = [
+            "cockroach-v22.2.19.linux-arm64/cockroach",
+     ],
+     visibility = ["//visibility:public"],
+)
+""",
+)
+
+    http_archive(
+        name = "crdb_linux_amd64",
+        sha256 = "3b48271a6fd62c2e5866b97ff9d5790d945a1d35ebf1815dc972d94327b4355b",
+        urls = ["https://binaries.cockroachdb.com/cockroach-v22.2.19.linux-amd64.tgz"],
         build_file_content = """
 filegroup(
     name = "file",
     srcs = [
-        "cockroach-v21.2.0.linux-amd64/cockroach",
+        "cockroach-v22.2.19.linux-amd64/cockroach",
     ],
     visibility = ["//visibility:public"],
 )

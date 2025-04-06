@@ -1,5 +1,5 @@
 /*
-Copyright 2023 The Cockroach Authors
+Copyright 2025 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -53,6 +53,11 @@ func (b ClusterBuilder) Namespaced(namespace string) ClusterBuilder {
 
 func (b ClusterBuilder) WithAutomountServiceAccountToken(mount bool) ClusterBuilder {
 	b.cluster.Spec.AutomountServiceAccountToken = mount
+	return b
+}
+
+func (b ClusterBuilder) WithTerminationGracePeriodSeconds(s int64) ClusterBuilder {
+	b.cluster.Spec.TerminationGracePeriodSecs = s
 	return b
 }
 

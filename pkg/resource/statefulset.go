@@ -1,5 +1,5 @@
 /*
-Copyright 2023 The Cockroach Authors
+Copyright 2025 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -209,7 +209,7 @@ func (b StatefulSetBuilder) makePodTemplate() corev1.PodTemplateSpec {
 				RunAsUser: ptr.Int64(1000581000),
 				FSGroup:   ptr.Int64(1000581000),
 			},
-			TerminationGracePeriodSeconds: ptr.Int64(terminationGracePeriodSecs),
+			TerminationGracePeriodSeconds: ptr.Int64(b.GetTerminationGracePeriod()),
 			Containers:                    b.MakeContainers(),
 			AutomountServiceAccountToken:  ptr.Bool(b.Spec().AutomountServiceAccountToken),
 			ServiceAccountName:            b.ServiceAccountName(),
@@ -232,7 +232,7 @@ func (b StatefulSetBuilder) makePodTemplate() corev1.PodTemplateSpec {
 		pod.Spec.TopologySpreadConstraints = b.Spec().TopologySpreadConstraints
 	}
 
-	if b.Spec().NodeSelector != nil && len(b.Spec().NodeSelector) > 0 {
+	if len(b.Spec().NodeSelector) > 0 {
 		pod.Spec.NodeSelector = b.Spec().NodeSelector
 	}
 
@@ -262,6 +262,16 @@ func (b StatefulSetBuilder) MakeInitContainers() []corev1.Container {
 			SecurityContext: &corev1.SecurityContext{
 				RunAsUser:                ptr.Int64(0),
 				AllowPrivilegeEscalation: ptr.Bool(false),
+			},
+			Resources: corev1.ResourceRequirements{
+				Limits: corev1.ResourceList{
+					corev1.ResourceCPU:    resource.MustParse("100m"),
+					corev1.ResourceMemory: resource.MustParse("200Mi"),
+				},
+				Requests: corev1.ResourceList{
+					corev1.ResourceCPU:    resource.MustParse("50m"),
+					corev1.ResourceMemory: resource.MustParse("100Mi"),
+				},
 			},
 		},
 	}
