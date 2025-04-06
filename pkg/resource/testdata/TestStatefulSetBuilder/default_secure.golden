@@ -32,7 +32,7 @@ spec:
         - /bin/bash
         - -ecx
         - 'exec /cockroach/cockroach.sh start --advertise-host=$(POD_NAME).test-cluster.test-ns
-          --certs-dir=/cockroach/cockroach-certs/ --http-port=8080 --sql-addr=:26257
+          --certs-dir=/cockroach/cockroach-certs/ --http-addr=:8080 --sql-addr=:26257
           --listen-addr=:26258 --log="{sinks: {stderr: {channels: [OPS, HEALTH], redact:
           true}}}" --cache $(expr $MEMORY_LIMIT_MIB / 4)MiB --max-sql-memory $(expr
           $MEMORY_LIMIT_MIB / 4)MiB --join=test-cluster-0.test-cluster.test-ns:26258'
