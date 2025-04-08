@@ -161,7 +161,7 @@ kubectl delete -f example.yaml
 Remove the Operator:
 
 ```
-kubectl delete -f https://raw.githubusercontent.com/cockroachdb/cockroach-operator/master/manifests/operator.yaml
+kubectl delete -f https://raw.githubusercontent.com/cockroachdb/cockroach-operator/master/install/operator.yaml
 ```
 
 > **Note:** If you want to delete the persistent volumes and free up the storage used by CockroachDB, be sure you have a backup copy of your data. Data **cannot** be recovered once the persistent volumes are deleted. For more information, see the [Kubernetes documentation](https://kubernetes.io/docs/tasks/run-application/delete-stateful-set/#persistent-volumes). 
