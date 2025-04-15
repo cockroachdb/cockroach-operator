@@ -14,18 +14,13 @@
 #
 # {{ .GeneratedWarning }}
 #
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: cockroachdb-sa
----
 
 apiVersion: v1
 kind: Pod
 metadata:
   name: cockroachdb-client-secure
 spec:
-  serviceAccountName: cockroachdb-sa
+  serviceAccountName: default
   containers:
   - name: cockroachdb-client-secure
     image: cockroachdb/cockroach:{{ .LatestStableCrdbVersion }}
