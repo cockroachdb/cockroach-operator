@@ -99,6 +99,10 @@ type CrdbClusterSpec struct {
 	// Default: ""
 	// +optional
 	CockroachDBVersion string `json:"cockroachDBVersion,omitempty"`
+	// (Optional) PriorityClassName sets the priority class of pods
+	// Default: ""
+	// +optional
+	PriorityClassName string `json:"priorityClassName,omitempty"`
 	// (Optional) PodEnvVariables is a slice of environment variables that are added to the pods
 	// Default: (empty list)
 	// +optional

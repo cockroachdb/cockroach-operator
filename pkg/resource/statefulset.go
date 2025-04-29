@@ -245,6 +245,10 @@ func (b StatefulSetBuilder) makePodTemplate() corev1.PodTemplateSpec {
 		pod.Spec.ImagePullSecrets = []corev1.LocalObjectReference{local}
 	}
 
+	if b.Spec().PriorityClassName != "" {
+		pod.Spec.PriorityClassName = b.Spec().PriorityClassName
+	}
+
 	return pod
 }
 

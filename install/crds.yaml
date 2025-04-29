@@ -916,6 +916,10 @@ spec:
                 description: '(Optional) CockroachDBVersion sets the explicit version
                   of the cockroachDB image Default: ""'
                 type: string
+              priorityClassName:
+                description: '(Optional) PriorityClassName sets the priority class of 
+                  pods Default: ""'
+                type: string
               dataStore:
                 description: Database disk storage configuration
                 properties:
