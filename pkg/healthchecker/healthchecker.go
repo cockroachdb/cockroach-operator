@@ -119,7 +119,7 @@ func (hc *HealthCheckerImpl) waitUntilUnderReplicatedMetricIsZero(ctx context.Co
 // ranges_underreplicated{store="1"} 0
 func (hc *HealthCheckerImpl) checkUnderReplicatedMetric(ctx context.Context, l logr.Logger, logSuffix, podname, stsname, stsnamespace string, partition int32) error {
 	l.V(int(zapcore.DebugLevel)).Info("checkUnderReplicatedMetric", "label", logSuffix, "podname", podname, "partition", partition)
-	port := strconv.FormatInt(int64(*hc.cluster.Spec().HTTPPort), 10)
+	port := strconv.FormatInt(int64(hc.cluster.GetHTTPPort()), 10)
 	url := fmt.Sprintf("https://%s.%s.%s:%s/_status/vars", podname, stsname, stsnamespace, port)
 
 	runningInsideK8s := inK8s("/var/run/secrets/kubernetes.io/serviceaccount/token")
