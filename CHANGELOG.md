@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 # [Unreleased](https://github.com/cockroachdb/cockroach-operator/compare/v2.18.1...master)
+* Added the priorityClassName configuration
 
 # [v2.18.1](https://github.com/cockroachdb/cockroach-operator/compare/v2.18.0...v2.18.1)
 * Added support for openshift 4.19

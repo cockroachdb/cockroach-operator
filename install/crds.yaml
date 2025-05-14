@@ -1360,6 +1360,10 @@ spec:
                   - name
                   type: object
                 type: array
+              priorityClassName:
+                description: '(Optional) PriorityClassName sets the priority class
+                  of pods Default: ""'
+                type: string
               resources:
                 description: '(Optional) Database container resource limits. Any container
                   limits can be specified. Default: (not specified)'
