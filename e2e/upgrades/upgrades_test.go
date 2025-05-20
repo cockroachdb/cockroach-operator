@@ -169,6 +169,9 @@ func TestUpgradesMajorVersion20_1To20_2(t *testing.T) {
 		WithImage("cockroachdb/cockroach:v20.1.16").
 		WithPVDataStore("1Gi").WithResources(resRequirements)
 
+	// This defaulting is done by webhook mutation config, but in tests we are doing it manually.
+	builder.Cr().Default()
+
 	steps := testutil.Steps{
 		{
 			Name: "creates a 3-node secure cluster",
@@ -275,6 +278,9 @@ func TestUpgradesMinorVersionThenRollback(t *testing.T) {
 		WithPVDataStore("1Gi").
 		WithResources(resRequirements)
 
+	// This defaulting is done by webhook mutation config, but in tests we are doing it manually.
+	builder.Cr().Default()
+
 	steps := testutil.Steps{
 		{
 			Name: "creates a 3-node secure cluster",
@@ -341,6 +347,9 @@ func TestUpgradeWithInvalidVersion(t *testing.T) {
 		WithPVDataStore("1Gi").
 		WithResources(resRequirements)
 
+	// This defaulting is done by webhook mutation config, but in tests we are doing it manually.
+	builder.Cr().Default()
+
 	steps := testutil.Steps{
 		{
 			Name: "creates a 3-node secure cluster",
@@ -392,6 +401,9 @@ func TestUpgradeWithInvalidImage(t *testing.T) {
 		WithPVDataStore("1Gi").
 		WithResources(resRequirements)
 
+	// This defaulting is done by webhook mutation config, but in tests we are doing it manually.
+	builder.Cr().Default()
+
 	steps := testutil.Steps{
 		{
 			Name: "creates a 3-node secure cluster",
@@ -441,6 +453,9 @@ func TestUpgradeWithMajorVersionExcludingMajorFeature(t *testing.T) {
 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
 		WithImage(e2e.SkipFeatureVersion).
 		WithPVDataStore("1Gi").WithResources(resRequirements)
+
+	// This defaulting is done by webhook mutation config, but in tests we are doing it manually.
+	builder.Cr().Default()
 
 	steps := testutil.Steps{
 		{
