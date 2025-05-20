@@ -744,6 +744,20 @@ spec:
         image: cockroachdb/cockroach-operator:v2.18.1
         imagePullPolicy: IfNotPresent
         name: cockroach-operator
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 9443
+            scheme: HTTPS
+          periodSeconds: 5
+          initialDelaySeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /live
+            port: 9443
+            scheme: HTTPS
+          initialDelaySeconds: 10
+          periodSeconds: 5
         resources:
           requests:
             cpu: 10m
