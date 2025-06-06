@@ -50,7 +50,7 @@ func TestUpgradesMinorVersion(t *testing.T) {
 
 	// We are testing a Minor Version Upgrade with
 	// partition update
-	// Going from v20.2.8 to v20.2.9
+	// Going from v24.1.0 to v24.1.2
 
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
@@ -97,11 +97,11 @@ func TestUpgradesMinorVersion(t *testing.T) {
 	steps.Run(t)
 }
 
-// TestUpgradesMajorVersion20to21 tests a major version upgrade
-func TestUpgradesMajorVersion20to21(t *testing.T) {
+// TestUpgradesMajorVersion24.1to24.2 tests a major version upgrade
+func TestUpgradesMajorVersion24_1to24_2(t *testing.T) {
 
 	// We are doing a major version upgrade here
-	// 20 to 21
+	// 24.1.2 to 24.2.2
 
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
@@ -149,8 +149,8 @@ func TestUpgradesMajorVersion20to21(t *testing.T) {
 	steps.Run(t)
 }
 
-// TestUpgradesMajorVersion20_1To20_2 is another major version upgrade
-func TestUpgradesMajorVersion20_1To20_2(t *testing.T) {
+// TestUpgradesMajorVersion21_2To22_1 is another major version upgrade
+func TestUpgradesMajorVersion21_2To22_1(t *testing.T) {
 
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
@@ -166,7 +166,7 @@ func TestUpgradesMajorVersion20_1To20_2(t *testing.T) {
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
 
 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
-		WithImage("cockroachdb/cockroach:v20.1.16").
+		WithImage("cockroachdb/cockroach:v21.2.16").
 		WithPVDataStore("1Gi").WithResources(resRequirements)
 
 	steps := testutil.Steps{
@@ -184,7 +184,7 @@ func TestUpgradesMajorVersion20_1To20_2(t *testing.T) {
 				require.NoError(t, sb.Get(current))
 
 				updated := current.DeepCopy()
-				updated.Spec.Image.Name = "cockroachdb/cockroach:v20.2.10"
+				updated.Spec.Image.Name = "cockroachdb/cockroach:v22.1.10"
 				require.NoError(t, sb.Patch(updated, client.MergeFrom(current)))
 				// we wait 10 min because we will be waiting 3 min for each pod because
 				// v20.1.16 does not have curl installed
@@ -251,7 +251,8 @@ func TestUpgradesMinorVersionThenRollback(t *testing.T) {
 
 	// We are testing a Minor Version Upgrade with
 	// partition update
-	// Going from v20.2.8 to v20.2.9
+	// Going from v24.1.0 to v24.1.2
+	// Then rollback to v24.1.0
 
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
