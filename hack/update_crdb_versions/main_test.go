@@ -30,6 +30,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var (
+	crdbURLPath = "/v2/cockroachdb/cockroach/tags"
+)
+
 func TestUpdateCrdbVersions(t *testing.T) {
 	images := []struct {
 		Note string
@@ -47,6 +51,17 @@ func TestUpdateCrdbVersions(t *testing.T) {
 		{Note: "ubi is not wanted", Tag: "ubi"},
 		{Note: "prerelease not suppored", Tag: "v1-alpha"},
 		{Note: "metadata not supported", Tag: "v1+snapshot"},
+	}
+
+	dockerImages := []struct {
+		Note string
+		Sha  string
+		Tag  string
+	}{
+		// These are in expected order
+		{Sha: "sha256:image1", Tag: "v1"},
+		{Sha: "sha256:image1.2", Tag: "v1.2"},
+		{Sha: "sha256:image2", Tag: "v2"},
 	}
 
 	tmpl := template.Must(template.New("rhAPI").Parse(`
@@ -67,7 +82,7 @@ func TestUpdateCrdbVersions(t *testing.T) {
 
 	var expected strings.Builder
 	expected.WriteString("CrdbVersions:\n")
-	for _, img := range images {
+	for _, img := range dockerImages {
 		if img.Sha != "" {
 			expected.WriteString(fmt.Sprintf("- image: cockroachdb/cockroach:%s\n", img.Tag))
 			expected.WriteString(fmt.Sprintf("  redhatImage: registry.connect.redhat.com/cockroachdb/cockroach@%s\n", img.Sha))
@@ -86,6 +101,23 @@ func TestUpdateCrdbVersions(t *testing.T) {
 	}))
 	defer server.Close()
 
+	dockerServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		tagName := strings.TrimPrefix(r.URL.Path, crdbURLPath+"/")
+
+		// Search for the tag
+		for _, img := range dockerImages {
+			if img.Tag == tagName {
+				w.WriteHeader(http.StatusOK)
+				fmt.Fprintf(w, `{"name":"%s"}`, tagName)
+			}
+		}
+
+		// Tag not found
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer dockerServer.Close()
+
+	BaseDockerHubURL = dockerServer.URL + crdbURLPath
 	var str strings.Builder
 	require.NoError(t, UpdateCrdbVersions(server.URL, &str))
 	require.Equal(t, expected.String(), str.String())

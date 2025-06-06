@@ -33,9 +33,11 @@ import (
 )
 
 const (
-	httpTimeoutSecs = 30
-	repo            = "registry.connect.redhat.com/cockroachdb/cockroach"
-	versionsFile    = "crdb-versions.yaml"
+	cockroachDBRegistry = "cockroachdb"
+	cockroachDBImage    = "cockroach"
+	httpTimeoutSecs     = 30
+	repo                = "registry.connect.redhat.com/cockroachdb/cockroach"
+	versionsFile        = "crdb-versions.yaml"
 
 	fileHeader = `#
 # Supported CockroachDB versions.
@@ -63,6 +65,9 @@ var (
 
 	// semVerRegex defines a Regexp for ensuring a valid (non-prerelease) version.
 	semVerRegex = regexp.MustCompile(`v?([0-9]+)(\.[0-9]+)?(\.[0-9]+)?$`)
+
+	BaseDockerHubURL = fmt.Sprintf("https://hub.docker.com/v2/namespaces/%s/repositories/%s/tags",
+		cockroachDBRegistry, cockroachDBImage)
 )
 
 func main() {
@@ -125,12 +130,11 @@ func generateOutput(resp *apiResponse) *yamlOutput {
 	for _, data := range resp.Data {
 		for _, r := range data.Repos {
 			for _, tag := range r.Tags {
-				if !isValid(tag.Name) || isUsed(usedTags, tag.Name) {
+				if !isValid(tag.Name) || isUsed(usedTags, tag.Name) || !isTagPresentOnCockroachImage(tag.Name) {
 					continue
 				}
-
 				output.CrdbVersions = append(output.CrdbVersions, version{
-					Image:       fmt.Sprintf("cockroachdb/cockroach:%s", tag.Name),
+					Image:       fmt.Sprintf("%s/%s:%s", cockroachDBRegistry, cockroachDBImage, tag.Name),
 					RedhatImage: fmt.Sprintf("%s@%s", repo, data.Digest),
 					Tag:         tag.Name,
 				})
@@ -164,6 +168,21 @@ func isUsed(usedTags map[string]bool, tag string) bool {
 	}
 	usedTags[tag] = true
 	return false
+}
+
+// isTagPresentOnCockroachImage returns true if the given tag is present on the cockroachdb/cockroach image.
+func isTagPresentOnCockroachImage(tag string) bool {
+	dockerHubURL := fmt.Sprintf("%s/%s", BaseDockerHubURL, tag)
+	client := http.Client{Timeout: httpTimeoutSecs * time.Second}
+
+	r, err := client.Get(dockerHubURL)
+	if err != nil {
+		fmt.Println("error fetching image from Docker Hub:", err)
+		return false
+	}
+	defer r.Body.Close()
+
+	return r.StatusCode == http.StatusOK
 }
 
 // apiResponse encapsulates the response from the RH Catalog API.
