@@ -17,6 +17,7 @@ limitations under the License.
 package resource
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
@@ -48,7 +49,7 @@ const (
 
 func NewCluster(original *api.CrdbCluster) Cluster {
 	cr := original.DeepCopy()
-	cr.Default()
+	_ = cr.Default(context.Background(), cr)
 
 	timeNow := metav1.Now()
 	condition.InitConditionsIfNeeded(&cr.Status, timeNow)

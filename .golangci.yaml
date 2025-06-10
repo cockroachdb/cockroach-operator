@@ -13,4 +13,4 @@
 # limitations under the License.
 linters-settings:
   staticcheck:
-    go: "1.17"
+    go: "1.24"

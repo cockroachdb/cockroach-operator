@@ -48,7 +48,7 @@ const LastAppliedAnnotation = "crdb.io/last-applied"
 var annotator = patch.NewAnnotator(LastAppliedAnnotation)
 var patchMaker = patch.NewPatchMaker(annotator, &patch.K8sStrategicMergePatcher{}, &patch.BaseJSONMergePatcher{})
 
-func ExecInPod(scheme *runtime.Scheme, config *rest.Config, namespace string, name string, container string, cmd []string) (string, string, error) {
+func ExecInPod(ctx context.Context, scheme *runtime.Scheme, config *rest.Config, namespace string, name string, container string, cmd []string) (string, string, error) {
 	tty := false
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
@@ -77,7 +77,7 @@ func ExecInPod(scheme *runtime.Scheme, config *rest.Config, namespace string, na
 	}
 
 	var stdout, stderr bytes.Buffer
-	err = exec.Stream(remotecommand.StreamOptions{
+	err = exec.StreamWithContext(ctx, remotecommand.StreamOptions{
 		Stdin:  nil,
 		Stdout: &stdout,
 		Stderr: &stderr,

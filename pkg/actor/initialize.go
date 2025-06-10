@@ -101,7 +101,7 @@ func (init initialize) Act(ctx context.Context, cluster *resource.Cluster, log l
 	}
 
 	log.V(DEBUGLEVEL).Info(fmt.Sprintf("Executing init in pod %s with phase %s", podName, phase))
-	_, stderr, err := kube.ExecInPod(init.scheme, init.config, cluster.Namespace(),
+	_, stderr, err := kube.ExecInPod(ctx, init.scheme, init.config, cluster.Namespace(),
 		fmt.Sprintf("%s-0", stsName), resource.DbContainerName, cmd)
 	log.V(DEBUGLEVEL).Info("Executed init in pod")
 

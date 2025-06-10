@@ -244,7 +244,7 @@ dev/update-codegen:
 .PHONY: dev/update-crds
 dev/update-crds:
 	@bazel run //hack/bin:controller-gen \
-		crd:trivialVersions=true \
+		crd \
 		rbac:roleName=role \
 		webhook \
 		paths=./... \

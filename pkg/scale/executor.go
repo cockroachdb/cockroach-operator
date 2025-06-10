@@ -107,7 +107,7 @@ func (e Executor) Exec(ctx context.Context, o ExecutorOptions) error {
 		return errors.Wrapf(err, "failed to initialize SPDY executor")
 	}
 
-	return exec.Stream(remotecommand.StreamOptions{
+	return exec.StreamWithContext(ctx, remotecommand.StreamOptions{
 		Stdin:  o.Stdin,
 		Stdout: o.Stdout,
 		Stderr: o.Stderr,

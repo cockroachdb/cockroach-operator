@@ -259,5 +259,5 @@ func TestPersistentVolumePruner_Prune(t *testing.T) {
 
 // NewFakeLogger ctor
 func NewFakeLogger(t *testing.T) logr.Logger {
-	return log.TestLogger{T: t}
+	return log.NewTestLogger(t)
 }

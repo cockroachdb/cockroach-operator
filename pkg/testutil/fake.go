@@ -149,7 +149,7 @@ func (c *FakeClient) AddReactor(verb string, resource string, reaction ReactionF
 	c.ReactionChain = append(c.ReactionChain, &simpleReactor{verb, resource, reaction})
 }
 
-func (c *FakeClient) Get(ctx context.Context, key client.ObjectKey, obj client.Object) error {
+func (c *FakeClient) Get(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
 	gvr, err := getGVRFromObject(c.scheme, obj)
 	if err != nil {
 		return errors.Wrapf(err, "failed to find GVR of object %s", key.String())
@@ -161,7 +161,15 @@ func (c *FakeClient) Get(ctx context.Context, key client.ObjectKey, obj client.O
 		return err
 	}
 
-	return c.client.Get(ctx, key, obj)
+	gvk := obj.GetObjectKind().GroupVersionKind()
+
+	err = c.client.Get(ctx, key, obj)
+	if err != nil {
+		return err
+	}
+
+	obj.GetObjectKind().SetGroupVersionKind(gvk)
+	return nil
 }
 
 func (c *FakeClient) List(_ context.Context, list client.ObjectList, opts ...client.ListOption) error {
@@ -216,13 +224,18 @@ type fakeStatusWriter struct {
 	client *FakeClient
 }
 
-func (sw *fakeStatusWriter) Update(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error {
-	return sw.client.Update(ctx, obj, opts...)
+func (sw *fakeStatusWriter) Update(ctx context.Context, obj client.Object, opts ...client.SubResourceUpdateOption) error {
+	return sw.client.Status().Update(ctx, obj, opts...)
 }
 
-func (sw *fakeStatusWriter) Patch(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.PatchOption) error {
-	return sw.client.Patch(ctx, obj, patch, opts...)
+func (sw *fakeStatusWriter) Patch(ctx context.Context, obj client.Object, patch client.Patch, opts ...client.SubResourcePatchOption) error {
+	return sw.client.Status().Patch(ctx, obj, patch, opts...)
 }
+
+func (sw *fakeStatusWriter) Create(ctx context.Context, obj client.Object, subResource client.Object, opts ...client.SubResourceCreateOption) error {
+	panic("implement me")
+}
+
 func (c *FakeClient) invoke(action Action) (handled bool, err error) {
 	for _, reactor := range c.ReactionChain {
 		if !reactor.Handles(action) {
@@ -247,4 +260,20 @@ func getGVRFromObject(scheme *runtime.Scheme, obj runtime.Object) (schema.GroupV
 	}
 	gvr, _ := meta.UnsafeGuessKindToResource(gvk)
 	return gvr, nil
+}
+
+func (c *FakeClient) SubResource(subResource string) client.SubResourceClient {
+	panic("implement me")
+}
+
+func (c *FakeClient) GroupVersionKindFor(obj runtime.Object) (schema.GroupVersionKind, error) {
+	return apiutil.GVKForObject(obj, c.scheme)
+}
+
+func (c *FakeClient) IsObjectNamespaced(obj runtime.Object) (bool, error) {
+	restMapper := c.RESTMapper()
+	if restMapper == nil {
+		return false, errors.New("RESTMapper is not implemented")
+	}
+	return apiutil.IsObjectNamespaced(obj, c.scheme, restMapper)
 }
