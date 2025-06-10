@@ -112,8 +112,7 @@ gen-deepcopy() {
   joined=$( IFS=$','; echo "${prefixed_inputs[*]}" )
   "$deepcopygen" \
     --go-header-file hack/boilerplate/boilerplate.go.txt \
-    --input-dirs "$joined" \
-    --output-file-base zz_generated.deepcopy \
+    --output-file zz_generated.deepcopy.go \
     --bounding-dirs "${module_name}"
   for dir in "${deepcopy_inputs[@]}"; do
     copyfiles "$dir" "zz_generated.deepcopy.go"
@@ -137,7 +136,8 @@ gen-clientsets() {
     --clientset-name versioned \
     --input-base "" \
     --input "$joined" \
-    --output-package "${client_package}"/clientset
+    --output-pkg "${client_package}"/clientset \
+    --output-dir "${client_subpackage}"/clientset
   copyfiles "${client_subpackage}/clientset" "*.go"
 }
 
@@ -148,8 +148,8 @@ gen-listers() {
   joined=$( IFS=$','; echo "${prefixed_inputs[*]}" )
   "$listergen" \
     --go-header-file hack/boilerplate/boilerplate.go.txt \
-    --input-dirs "$joined" \
-    --output-package "${client_package}"/listers
+    --output-pkg "${client_package}"/listers \
+    --output-dir "${client_subpackage}"/listers
   copyfiles "${client_subpackage}/listers" "*.go"
 }
 
@@ -160,10 +160,10 @@ gen-informers() {
   joined=$( IFS=$','; echo "${prefixed_inputs[*]}" )
   "$informergen" \
     --go-header-file hack/boilerplate/boilerplate.go.txt \
-    --input-dirs "$joined" \
     --versioned-clientset-package "${client_package}"/clientset/versioned \
     --listers-package "${client_package}"/listers \
-    --output-package "${client_package}"/informers
+    --output-pkg "${client_package}"/informers \
+    --output-dir "${client_subpackage}"/informers
   copyfiles "${client_subpackage}/informers" "*.go"
 }
 

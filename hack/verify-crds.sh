@@ -44,7 +44,7 @@ create_working_dir() {
 
 # TODO: Ideally we'd back able to share this with the makefile
 generate_crds() {
-  HOME="${TEST_TMPDIR}/home" "${1}" crd:trivialVersions=true \
+  HOME="${TEST_TMPDIR}/home" "${1}" crd \
     rbac:roleName=role \
     webhook \
     paths=./... \
