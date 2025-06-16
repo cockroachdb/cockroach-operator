@@ -135,14 +135,29 @@ func (in *CrdbClusterSpec) DeepCopyInto(out *CrdbClusterSpec) {
 		*out = new(int32)
 		**out = **in
 	}
+	if in.ListenAddr != nil {
+		in, out := &in.ListenAddr, &out.ListenAddr
+		*out = new(string)
+		**out = **in
+	}
 	if in.HTTPPort != nil {
 		in, out := &in.HTTPPort, &out.HTTPPort
 		*out = new(int32)
 		**out = **in
 	}
+	if in.HTTPAddr != nil {
+		in, out := &in.HTTPAddr, &out.HTTPAddr
+		*out = new(string)
+		**out = **in
+	}
 	if in.SQLPort != nil {
 		in, out := &in.SQLPort, &out.SQLPort
 		*out = new(int32)
+		**out = **in
+	}
+	if in.SQLAddr != nil {
+		in, out := &in.SQLAddr, &out.SQLAddr
+		*out = new(string)
 		**out = **in
 	}
 	if in.MaxUnavailable != nil {

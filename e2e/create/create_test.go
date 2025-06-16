@@ -65,6 +65,9 @@ func TestCreateInsecureCluster(t *testing.T) {
 		WithImage(e2e.MajorVersion).WithClusterLogging("logging-configmap").
 		WithPVDataStore("1Gi")
 
+	// This defaulting is done by webhook mutation config, but in tests we are doing it manually.
+	builder.Cr().Default()
+
 	steps := testutil.Steps{
 		{
 			Name: "creates 3-node insecure cluster",
@@ -104,6 +107,9 @@ func TestCreatesSecureCluster(t *testing.T) {
 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
 		WithImage(e2e.MajorVersion).
 		WithPVDataStore("1Gi")
+
+	// This defaulting is done by webhook mutation config, but in tests we are doing it manually.
+	builder.Cr().Default()
 
 	steps := testutil.Steps{
 		{
@@ -160,6 +166,10 @@ func TestCreateSecureClusterWithInvalidVersion(t *testing.T) {
 					builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
 						WithImage(testcase.imageVersion).
 						WithPVDataStore("1Gi")
+
+					// This defaulting is done by webhook mutation config, but in tests we are doing it manually.
+					builder.Cr().Default()
+
 					if testcase.cockroachVersion != "" {
 						os.Setenv(relatedImageEnvName, e2e.NonExistentVersion)
 						builder = builder.WithCockroachDBVersion(testcase.cockroachVersion)
@@ -221,6 +231,9 @@ func TestCreateSecureClusterWithNonCRDBImage(t *testing.T) {
 						WithImage(testcase.imageVersion).
 						WithPVDataStore("1Gi")
 
+					// This defaulting is done by webhook mutation config, but in tests we are doing it manually.
+					builder.Cr().Default()
+
 					if testcase.cockroachVersion != "" {
 						os.Setenv(relatedImageEnvName, e2e.InvalidImage)
 						builder = builder.WithCockroachDBVersion(testcase.cockroachVersion)
@@ -268,6 +281,9 @@ func TestCreateSecureClusterWithCRDBVersionSet(t *testing.T) {
 					WithPVDataStore("1Gi").
 					WithCockroachDBVersion(crdbVersion).WithImageObject(nil)
 
+				// This defaulting is done by webhook mutation config, but in tests we are doing it manually.
+				builder.Cr().Default()
+				
 				require.NoError(subT, sb.Create(builder.Cr()))
 				testutil.RequireClusterToBeReadyEventuallyTimeout(subT, sb, builder,
 					e2e.CreateClusterTimeout)

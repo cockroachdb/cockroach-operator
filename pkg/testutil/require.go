@@ -218,10 +218,11 @@ func statefulSetIsReady(ss *appsv1.StatefulSet) bool {
 func RequireDownGradeOptionSet(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder, version string) {
 	sb.Mgr.GetConfig()
 	podName := fmt.Sprintf("%s-0.%s", b.Cluster().Name(), b.Cluster().Name())
+	sqlPort := b.Cluster().GetSQLPort()
 	conn := &database.DBConnection{
 		Ctx:    context.TODO(),
 		Client: sb.Mgr.GetClient(),
-		Port:   b.Cluster().Spec().SQLPort,
+		Port:   &sqlPort,
 		UseSSL: true,
 
 		RestConfig:   sb.Mgr.GetConfig(),
@@ -374,11 +375,11 @@ func requireDatabaseToFunction(t *testing.T, sb testenv.DiffingSandbox, b Cluste
 	t.Log("Testing database function")
 	sb.Mgr.GetConfig()
 	podName := fmt.Sprintf("%s-0.%s", b.Cluster().Name(), b.Cluster().Name())
-
+	sqlPort := b.Cluster().GetSQLPort()
 	conn := &database.DBConnection{
 		Ctx:    context.TODO(),
 		Client: sb.Mgr.GetClient(),
-		Port:   b.Cluster().Spec().SQLPort,
+		Port:   &sqlPort,
 		UseSSL: useSSL,
 
 		RestConfig:   sb.Mgr.GetConfig(),

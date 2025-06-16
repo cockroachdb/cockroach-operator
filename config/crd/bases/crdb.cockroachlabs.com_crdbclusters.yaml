@@ -1086,13 +1086,20 @@ spec:
                     type: boolean
                 type: object
               grpcPort:
-                description: '(Optional) The database port (`--port` CLI parameter
-                  when starting the service) Default: 26258'
+                description: '(Optional) The database port (`--listen-addr` CLI parameter
+                  when starting the service) Default: 26258 Deprecated: Use ListenAddr
+                  instead of GRPCPort'
                 format: int32
                 type: integer
+              httpAddr:
+                description: '(Optional) The IP address/hostname and port on which
+                  to listen for DB Console HTTP requests. (`--http-addr` CLI parameter
+                  when starting the service) Default: ":8080"'
+                type: string
               httpPort:
-                description: '(Optional) The web UI port (`--http-port` CLI parameter
-                  when starting the service) Default: 8080'
+                description: '(Optional) The web UI port (`--http-addr` CLI parameter
+                  when starting the service) Default: 8080 Deprecated: Use HTTPAddr
+                  instead of HTTPPort'
                 format: int32
                 type: integer
               image:
@@ -1214,6 +1221,10 @@ spec:
                     - host
                     type: object
                 type: object
+              listenAddr:
+                description: '(Optional) The database port (`--listen-addr` CLI parameter
+                  when starting the service) Default: ":26258"'
+                type: string
               logConfigMap:
                 description: '(Optional) LogConfigMap define the config map which
                   contains log configuration used to send the logs through the proper
@@ -1393,8 +1404,13 @@ spec:
                       to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/'
                     type: object
                 type: object
+              sqlAddr:
+                description: '(Optional) The IP address/hostname and port on which
+                  to listen for SQL connections from clients. Default: ":26257"'
+                type: string
               sqlPort:
-                description: '(Optional) The SQL Port number Default: 26257'
+                description: '(Optional) The SQL Port number Default: 26257 Deprecated:
+                  Use SQLAddr instead of SQLPort'
                 format: int32
                 type: integer
               terminationGracePeriodSecs:

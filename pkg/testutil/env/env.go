@@ -112,6 +112,7 @@ func (env *Env) Start() *ActiveEnv {
 		k8s:       k8s,
 		scheme:    env.Scheme,
 		resources: resources,
+		env:       &env.Environment,
 	}
 }
 
@@ -131,6 +132,7 @@ type ActiveEnv struct {
 	*k8s
 	scheme    *apiruntime.Scheme
 	resources []schema.GroupVersionResource
+	env       *envtest.Environment
 }
 
 func CreateActiveEnvForTest() *Env {

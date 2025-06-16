@@ -19,6 +19,7 @@ package resource
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -48,7 +49,6 @@ const (
 
 func NewCluster(original *api.CrdbCluster) Cluster {
 	cr := original.DeepCopy()
-	cr.Default()
 
 	timeNow := metav1.Now()
 	condition.InitConditionsIfNeeded(&cr.Status, timeNow)
@@ -421,4 +421,45 @@ func (cluster Cluster) IsUIIngressEnabled() bool {
 // IsSQLIngressEnabled returns true if ingress config is given for SQL
 func (cluster Cluster) IsSQLIngressEnabled() bool {
 	return cluster.Spec().Ingress != nil && cluster.Spec().Ingress.SQL != nil
+}
+
+func (cluster Cluster) GetListenAddr() string {
+	if cluster.Spec().ListenAddr != nil {
+		return *cluster.Spec().ListenAddr
+	}
+	return fmt.Sprintf(":%d", cluster.GetGRPCPort())
+}
+
+func (cluster Cluster) GetSQLAddr() string {
+	if cluster.Spec().SQLAddr != nil {
+		return *cluster.Spec().SQLAddr
+	}
+	return fmt.Sprintf(":%d", cluster.GetSQLPort())
+}
+
+func (cluster Cluster) GetGRPCPort() int32 {
+	if cluster.Spec().GRPCPort != nil {
+		return *cluster.Spec().GRPCPort
+	}
+	addr := strings.Split(*cluster.Spec().ListenAddr, ":")
+	i, _ := strconv.ParseInt(addr[1], 10, 32)
+	return int32(i)
+}
+
+func (cluster Cluster) GetSQLPort() int32 {
+	if cluster.Spec().SQLPort != nil {
+		return *cluster.Spec().SQLPort
+	}
+	addr := strings.Split(*cluster.Spec().SQLAddr, ":")
+	i, _ := strconv.ParseInt(addr[1], 10, 32)
+	return int32(i)
+}
+
+func (cluster Cluster) GetHTTPPort() int32 {
+	if cluster.Spec().HTTPPort != nil {
+		return *cluster.Spec().HTTPPort
+	}
+	addr := strings.Split(*cluster.Spec().HTTPAddr, ":")
+	i, _ := strconv.ParseInt(addr[1], 10, 32)
+	return int32(i)
 }

@@ -34,6 +34,7 @@ func TestDiscoveryServiceBuilder(t *testing.T) {
 	cluster := testutil.NewBuilder("test-cluster").Namespaced("test-ns").
 		WithAnnotations(map[string]string{"key": "test-discovery-svc"})
 	commonLabels := labels.Common(cluster.Cr())
+	cluster.Cr().Default()
 
 	tests := []struct {
 		name     string
