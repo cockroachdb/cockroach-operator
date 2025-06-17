@@ -89,6 +89,10 @@ func (b PdbBuilder) Build(obj client.Object) error {
 
 func (b PdbBuilder) Placeholder() client.Object {
 	return &policy.PodDisruptionBudget{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "policy/v1",
+			Kind:       "PodDisruptionBudget",
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: b.ResourceName(),
 		},

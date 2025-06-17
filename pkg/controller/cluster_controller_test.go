@@ -79,10 +79,10 @@ func TestReconcile(t *testing.T) {
 		cluster,
 	}
 
-	cl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(objs...).Build()
+	cl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(objs...).WithStatusSubresource(cluster).Build()
 	log := zapr.NewLogger(zaptest.NewLogger(t)).WithName("cluster-controller-test")
 	req := ctrl.Request{NamespacedName: types.NamespacedName{Namespace: cluster.Namespace, Name: cluster.Name}}
-
+	
 	tests := []struct {
 		name    string
 		action  fakeActor

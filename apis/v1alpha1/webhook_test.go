@@ -17,13 +17,13 @@ limitations under the License.
 package v1alpha1_test
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
 	. "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/stretchr/testify/require"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 )
 
 func TestCrdbClusterDefault(t *testing.T) {
@@ -43,7 +43,8 @@ func TestCrdbClusterDefault(t *testing.T) {
 		Image:          &PodImage{PullPolicyName: &policy},
 	}
 
-	cluster.Default()
+	ctx := context.Background()
+	_ = cluster.Default(ctx, cluster)
 	require.Equal(t, expected, cluster.Spec)
 }
 
@@ -137,8 +138,9 @@ func TestCreateCrdbCluster(t *testing.T) {
 		},
 	}
 
+	ctx := context.Background()
 	for _, testcase := range testcases {
-		err := testcase.Cluster.ValidateCreate()
+		_, err := testcase.Cluster.ValidateCreate(ctx, testcase.Cluster)
 		if testcase.ErrMsg == "" {
 			require.NoError(t, err)
 			continue
@@ -176,8 +178,9 @@ func TestUpdateCrdbCluster(t *testing.T) {
 		},
 	}
 
+	ctx := context.Background()
 	for _, testcase := range testcases {
-		err := testcase.Cluster.ValidateUpdate(&oldCluster)
+		_, err := testcase.Cluster.ValidateUpdate(ctx, &oldCluster, testcase.Cluster)
 		require.Error(t, err)
 		require.Equal(t, err.Error(), testcase.ErrMsg)
 	}
@@ -258,8 +261,9 @@ func TestUpdateCrdbClusterLabels(t *testing.T) {
 		},
 	}
 
+	ctx := context.Background()
 	for _, tc := range testcases {
-		err := tc.Cluster.ValidateUpdate(runtime.Object(&oldCluster))
+		_, err := tc.Cluster.ValidateUpdate(ctx, &oldCluster, tc.Cluster)
 		if tc.ShouldError {
 			require.Error(t, err)
 			require.Equal(t, err.Error(), "mutating additionalLabels field is not supported")

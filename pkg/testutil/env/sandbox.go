@@ -20,6 +20,8 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"sigs.k8s.io/controller-runtime/pkg/cache"
+	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sort"
 	"strings"
 	"testing"
@@ -50,9 +52,13 @@ func NewSandbox(t *testing.T, env *ActiveEnv) Sandbox {
 	td := time.Duration(0)
 
 	mgr, err := ctrl.NewManager(env.k8s.Cfg, ctrl.Options{
-		Scheme:                  env.scheme,
-		Namespace:               ns,
-		MetricsBindAddress:      "0", // disable metrics serving
+		Scheme: env.scheme,
+		Cache: cache.Options{
+			DefaultNamespaces: map[string]cache.Config{
+				ns: cache.Config{},
+			},
+		},
+		Metrics:                 server.Options{BindAddress: "0"}, // disable metrics serving
 		GracefulShutdownTimeout: &td,
 	})
 	require.NoError(t, err)

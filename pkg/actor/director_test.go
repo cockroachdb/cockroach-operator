@@ -102,10 +102,11 @@ func createTestDirectorAndStableCluster(t *testing.T) (*resource.Cluster, actor.
 			CurrentReplicas: numNodes,
 		},
 		Spec: appsv1.StatefulSetSpec{
+			Replicas: &numNodes,
 			VolumeClaimTemplates: []v1.PersistentVolumeClaim{
 				{
 					Spec: v1.PersistentVolumeClaimSpec{
-						Resources: v1.ResourceRequirements{
+						Resources: v1.VolumeResourceRequirements{
 							Requests: v1.ResourceList{
 								v1.ResourceStorage: quantity,
 							},
