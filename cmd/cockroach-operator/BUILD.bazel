@@ -1,5 +1,5 @@
 load("@aspect_bazel_lib//lib:expand_template.bzl", "expand_template")
-load("@io_bazel_rules_go//go:def.bzl","go_library")
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
 load("@rules_oci//oci:defs.bzl", "oci_image", "oci_image_index")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
 
@@ -44,6 +44,8 @@ go_library(
         "@io_k8s_sigs_controller_runtime//:go_default_library",
         "@io_k8s_sigs_controller_runtime//pkg/cache:go_default_library",
         "@io_k8s_sigs_controller_runtime//pkg/log/zap:go_default_library",
+        "@io_k8s_sigs_controller_runtime//pkg/metrics/server:go_default_library",
+        "@io_k8s_sigs_controller_runtime//pkg/webhook:go_default_library",
     ],
 )
 
@@ -67,26 +69,26 @@ oci_image(
     name = "cockroach_image_linux_amd64",
     # References container_pull from WORKSPACE
     base = "@redhat_ubi_minimal_linux_amd64",
+    entrypoint = ["./cockroach-operator"],
     labels = ":labels",
     tars = [
         ":licenses",
         "//cmd/cockroach-operator/linux-amd64:cockroach-linux-amd64-tar",
         ":operator_image_linux_amd64",
     ],
-    entrypoint = ["./cockroach-operator"],
 )
 
 oci_image(
     name = "cockroach_image_linux_arm64",
     # References container_pull from WORKSPACE
     base = "@redhat_ubi_minimal_linux_arm64",
+    entrypoint = ["./cockroach-operator"],
     labels = ":labels",
     tars = [
         ":licenses",
         "//cmd/cockroach-operator/linux-arm64:cockroach-linux-arm64-tar",
         ":operator_image_linux_arm64",
     ],
-    entrypoint = ["./cockroach-operator"],
 )
 
 pkg_tar(

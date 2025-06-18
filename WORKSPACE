@@ -1,10 +1,11 @@
 workspace(name = "com_github_coachroachdb_cockroach_operator")
 
+load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
+
 #####################################
 # Bazel macros for downloading deps #
 #####################################
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 
 http_archive(
     name = "com_google_protobuf",
@@ -45,10 +46,10 @@ bazel_skylib_workspace()
 
 http_archive(
     name = "io_bazel_rules_go",
-    sha256 = "33acc4ae0f70502db4b893c9fc1dd7a9bf998c23e7ff2c4517741d4049a976f8",
+    sha256 = "f2d15bea3e241aa0e3a90fb17a82e6a8ab12214789f6aeddd53b8d04316d2b7c",
     urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.48.0/rules_go-v0.48.0.zip",
-        "https://github.com/bazelbuild/rules_go/releases/download/v0.48.0/rules_go-v0.48.0.zip",
+        "https://mirror.bazel.build/github.com/bazel-contrib/rules_go/releases/download/v0.54.0/rules_go-v0.54.0.zip",
+        "https://github.com/bazel-contrib/rules_go/releases/download/v0.54.0/rules_go-v0.54.0.zip",
     ],
 )
 
@@ -73,10 +74,9 @@ go_rules_dependencies()
 # gazelle:repository_macro hack/build/repos.bzl%_go_dependencies
 go_dependencies()
 
-go_register_toolchains(version = "1.22.3")
+go_register_toolchains(version = "1.24.2")
 
 gazelle_dependencies()
-
 
 ################################
 # begin rules_oci dependencies #

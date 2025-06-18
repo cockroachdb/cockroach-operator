@@ -31,6 +31,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
 const (
@@ -52,6 +54,7 @@ func init() {
 func main() {
 	var metricsAddr, featureGatesString, leaderElectionID string
 	var enableLeaderElection, skipWebhookConfig bool
+	var err error
 
 	// use zap logging cli options
 	opts := zap.Options{}
@@ -88,19 +91,31 @@ func main() {
 	watchNamespace := os.Getenv(watchNamespaceEnvVar)
 
 	mgrOpts := ctrl.Options{
-		Scheme:             scheme,
-		Namespace:          watchNamespace,
-		MetricsBindAddress: metricsAddr,
-		LeaderElection:     enableLeaderElection,
-		LeaderElectionID:   leaderElectionID,
-		Port:               9443,
-		CertDir:            certDir,
+		Scheme: scheme,
+		Cache: cache.Options{
+			DefaultNamespaces: map[string]cache.Config{
+				watchNamespace: cache.Config{},
+			},
+		},
+		Metrics: server.Options{
+			BindAddress: metricsAddr,
+		},
+		LeaderElection:   enableLeaderElection,
+		LeaderElectionID: leaderElectionID,
+		WebhookServer: webhook.NewServer(webhook.Options{
+			Port:    9443,
+			CertDir: certDir,
+		}),
 	}
 
 	if strings.Contains(watchNamespace, ",") {
 		setupLog.Info("manager set up with multiple namespaces", "namespaces", watchNamespace)
-		mgrOpts.Namespace = ""
-		mgrOpts.NewCache = cache.MultiNamespacedCacheBuilder(strings.Split(watchNamespace, ","))
+		namespaces := strings.Split(watchNamespace, ",")
+		for _, ns := range namespaces {
+			setupLog.Info("watching namespace", "namespace", ns)
+			mgrOpts.Cache.DefaultNamespaces[ns] = cache.Config{}
+		}
+		mgrOpts.NewCache = cache.New
 	}
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), mgrOpts)

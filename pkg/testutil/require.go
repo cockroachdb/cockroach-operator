@@ -50,9 +50,11 @@ import (
 // RequireClusterToBeReadyEventuallyTimeout tests to see if a statefulset has started correctly and
 // all of the pods are ready.
 func RequireClusterToBeReadyEventuallyTimeout(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder, timeout time.Duration) {
+	ctxWithTimeout, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
 	cluster := b.Cluster()
 
-	require.NoError(t, wait.Poll(10*time.Second, timeout, func() (bool, error) {
+	require.NoError(t, wait.PollUntilContextCancel(ctxWithTimeout, 10*time.Second, true, func(ctxWithTimeout context.Context) (bool, error) {
 		ss, err := fetchStatefulSet(sb, cluster.StatefulSetName())
 		if err != nil {
 			t.Logf("error fetching stateful set")
@@ -80,7 +82,8 @@ func RequireClusterToBeReadyEventuallyTimeout(t *testing.T, sb testenv.DiffingSa
 
 func RequireAtMostOneVersionCheckerJob(t *testing.T, sb testenv.DiffingSandbox, timeout time.Duration) {
 	numTimesVersionCheckerSeen := 0
-	err := wait.Poll(10*time.Second, timeout, func() (bool, error) {
+	ctx := context.Background()
+	err := wait.PollUntilContextTimeout(ctx, 10*time.Second, timeout, true, func(ctx context.Context) (bool, error) {
 		jobs, err := fetchJobs(sb)
 		if err != nil {
 			return false, errors.Newf("error fetching jobs: %v", err)
@@ -103,7 +106,7 @@ func RequireAtMostOneVersionCheckerJob(t *testing.T, sb testenv.DiffingSandbox, 
 
 	// Require that there was never more than one version checker job, and that the version checker job was in fact observed.
 	require.Greater(t, numTimesVersionCheckerSeen, 0)
-	require.ErrorIs(t, err, wait.ErrWaitTimeout)
+	require.Equal(t, true, wait.Interrupted(err))
 }
 
 func fetchJobs(sb testenv.DiffingSandbox) ([]batchv1.Job, error) {
@@ -117,9 +120,10 @@ func fetchJobs(sb testenv.DiffingSandbox) ([]batchv1.Job, error) {
 // TODO are we using this??
 
 func RequireClusterToBeReadyEventually(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder) {
+	ctx := context.Background()
 	cluster := b.Cluster()
 
-	err := wait.Poll(10*time.Second, 60*time.Second, func() (bool, error) {
+	err := wait.PollUntilContextTimeout(ctx, 10*time.Second, 60*time.Second, true, func(ctx context.Context) (bool, error) {
 
 		ss, err := fetchStatefulSet(sb, cluster.StatefulSetName())
 		if err != nil {
@@ -142,7 +146,8 @@ func RequireClusterToBeReadyEventually(t *testing.T, sb testenv.DiffingSandbox, 
 
 // RequireDbContainersToUseImage checks that the database is using the correct image
 func RequireDbContainersToUseImage(t *testing.T, sb testenv.DiffingSandbox, cr *api.CrdbCluster) {
-	err := wait.Poll(10*time.Second, 600*time.Second, func() (bool, error) {
+	ctx := context.Background()
+	err := wait.PollUntilContextTimeout(ctx, 10*time.Second, 600*time.Second, true, func(ctx context.Context) (bool, error) {
 		pods, err := fetchPodsInStatefulSet(sb, labels.Common(cr).Selector(cr.Spec.AdditionalLabels))
 		if err != nil {
 			return false, err
@@ -254,9 +259,10 @@ func RequireDownGradeOptionSet(t *testing.T, sb testenv.DiffingSandbox, b Cluste
 
 // RequireDecommissionNode requires that proper nodes are decommissioned
 func RequireDecommissionNode(t *testing.T, sb testenv.DiffingSandbox, b ClusterBuilder, numNodes int32) {
+	ctx := context.Background()
 	cluster := b.Cluster()
 
-	err := wait.Poll(10*time.Second, 700*time.Second, func() (bool, error) {
+	err := wait.PollUntilContextTimeout(ctx, 10*time.Second, 700*time.Second, true, func(ctx context.Context) (bool, error) {
 		sts, err := fetchStatefulSet(sb, cluster.StatefulSetName())
 		if err != nil {
 			t.Logf("statefulset is not found %v", err)
@@ -294,7 +300,7 @@ func makeDrainStatusChecker(t *testing.T, sb testenv.DiffingSandbox, b ClusterBu
 	cluster := b.Cluster()
 	cmd := []string{"/cockroach/cockroach", "node", "status", "--decommission", "--format=csv", cluster.SecureMode()}
 	podname := fmt.Sprintf("%s-0", cluster.StatefulSetName())
-	stdout, stderror, err := kube.ExecInPod(sb.Mgr.GetScheme(), sb.Mgr.GetConfig(), sb.Namespace,
+	stdout, stderror, err := kube.ExecInPod(context.TODO(), sb.Mgr.GetScheme(), sb.Mgr.GetConfig(), sb.Namespace,
 		podname, resource.DbContainerName, cmd)
 	if err != nil || stderror != "" {
 		t.Logf("exec cmd = %s on pod=%s exit with error %v and stdError %s and ns %s", cmd, podname, err, stderror, sb.Namespace)
@@ -481,7 +487,7 @@ func fetchPVCsToKeep(ctx context.Context, sb testenv.DiffingSandbox, b ClusterBu
 	var prefixes []string
 	var pvcsToKeep map[string]bool
 
-	err := wait.Poll(10*time.Second, 500*time.Second, func() (bool, error) {
+	err := wait.PollUntilContextTimeout(ctx, 10*time.Second, 500*time.Second, true, func(ctx context.Context) (bool, error) {
 		ss, err := fetchStatefulSet(sb, cluster.StatefulSetName())
 		if err != nil {
 			return false, err
@@ -585,7 +591,7 @@ func fetchPVCs(ctx context.Context, sb testenv.DiffingSandbox, b ClusterBuilder)
 	cluster := b.Cluster()
 	var pvcList *corev1.PersistentVolumeClaimList
 
-	err := wait.Poll(10*time.Second, 500*time.Second, func() (bool, error) {
+	err := wait.PollUntilContextTimeout(ctx, 10*time.Second, 500*time.Second, true, func(ctx context.Context) (bool, error) {
 		clientset, err := kubernetes.NewForConfig(sb.Mgr.GetConfig())
 		if err != nil {
 			return false, err
@@ -623,7 +629,8 @@ func RequireClusterInImagePullBackoff(t *testing.T, sb testenv.DiffingSandbox, b
 
 	// Timeout must be greater than 2 minutes, the max backoff time for the
 	// version checker job.
-	wErr := wait.Poll(10*time.Second, 3*time.Minute, func() (bool, error) {
+	ctx := context.Background()
+	wErr := wait.PollUntilContextTimeout(ctx, 10*time.Second, 3*time.Minute, true, func(ctx context.Context) (bool, error) {
 		if err := sb.List(jobList, jobLabel); err != nil {
 			return false, err
 		}
@@ -660,7 +667,8 @@ func RequireClusterInFailedState(t *testing.T, sb testenv.DiffingSandbox, b Clus
 		},
 	}
 
-	wErr := wait.Poll(10*time.Second, 5*time.Minute, func() (bool, error) {
+	ctx := context.Background()
+	wErr := wait.PollUntilContextTimeout(ctx, 10*time.Second, 5*time.Minute, true, func(ctx context.Context) (bool, error) {
 		if err := sb.Get(&crdbCluster); err != nil {
 			return false, err
 		}

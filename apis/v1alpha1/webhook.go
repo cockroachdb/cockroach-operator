@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 
@@ -26,6 +27,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 var (
@@ -44,19 +46,24 @@ var (
 	webhookLog = logf.Log.WithName("webhooks")
 
 	// this just ensures that we've implemented the interface
-	_ webhook.Defaulter = &CrdbCluster{}
-	_ webhook.Validator = &CrdbCluster{}
+	_ webhook.CustomDefaulter = &CrdbCluster{}
+	_ webhook.CustomValidator = &CrdbCluster{}
 )
 
 // SetupWebhookWithManager ensures webhooks are enabled for the CrdbCluster resource.
 func (r *CrdbCluster) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	return ctrl.NewWebhookManagedBy(mgr).For(r).Complete()
+	return ctrl.NewWebhookManagedBy(mgr).
+		For(r).
+		WithDefaulter(r).
+		WithValidator(r).
+		Complete()
 }
 
 // +kubebuilder:webhook:path=/mutate-crdb-cockroachlabs-com-v1alpha1-crdbcluster,mutating=true,failurePolicy=fail,groups=crdb.cockroachlabs.com,resources=crdbclusters,verbs=create;update,versions=v1alpha1,name=mcrdbcluster.kb.io,sideEffects=None,admissionReviewVersions=v1
 
 // Default implements webhook.Defaulter so a webhook will be registered for the type.
-func (r *CrdbCluster) Default() {
+func (r *CrdbCluster) Default(ctx context.Context, obj runtime.Object) error {
+	r = obj.(*CrdbCluster)
 	webhookLog.Info("default", "name", r.Name)
 
 	if r.Spec.GRPCPort == nil {
@@ -79,12 +86,15 @@ func (r *CrdbCluster) Default() {
 		policy := v1.PullIfNotPresent
 		r.Spec.Image.PullPolicyName = &policy
 	}
+
+	return nil
 }
 
 // +kubebuilder:webhook:path=/validate-crdb-cockroachlabs-com-v1alpha1-crdbcluster,mutating=false,failurePolicy=fail,groups=crdb.cockroachlabs.com,resources=crdbclusters,verbs=create;update,versions=v1alpha1,name=vcrdbcluster.kb.io,sideEffects=None,admissionReviewVersions=v1
 
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type.
-func (r *CrdbCluster) ValidateCreate() error {
+func (r *CrdbCluster) ValidateCreate(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	r = obj.(*CrdbCluster)
 	webhookLog.Info("validate create", "name", r.Name)
 	var errors []error
 	if r.Spec.Ingress != nil {
@@ -102,20 +112,21 @@ func (r *CrdbCluster) ValidateCreate() error {
 	}
 
 	if len(errors) != 0 {
-		return kerrors.NewAggregate(errors)
+		return nil, kerrors.NewAggregate(errors)
 	}
 
-	return nil
+	return nil, nil
 }
 
 // ValidateUpdate implements webhook.Validator so a webhook will be registered for the type.
-func (r *CrdbCluster) ValidateUpdate(old runtime.Object) error {
+func (r *CrdbCluster) ValidateUpdate(ctx context.Context, oldObj runtime.Object, newObj runtime.Object) (admission.Warnings, error) {
+	r = newObj.(*CrdbCluster)
 	webhookLog.Info("validate update", "name", r.Name)
 	var errors []error
 
-	oldCluster, ok := old.(*CrdbCluster)
+	oldCluster, ok := oldObj.(*CrdbCluster)
 	if !ok {
-		webhookLog.Info(fmt.Sprintf("unexpected old cluster type %T", old))
+		webhookLog.Info(fmt.Sprintf("unexpected old cluster type %T", oldObj))
 	} else {
 		// Validate if labels changed.
 		// k8s does not support changing selector/labels on sts:
@@ -136,18 +147,19 @@ func (r *CrdbCluster) ValidateUpdate(old runtime.Object) error {
 	}
 
 	if len(errors) != 0 {
-		return kerrors.NewAggregate(errors)
+		return nil, kerrors.NewAggregate(errors)
 	}
 
-	return nil
+	return nil, nil
 }
 
 // ValidateDelete implements webhook.Validator so a webhook will be registered for the type.
-func (r *CrdbCluster) ValidateDelete() error {
+func (r *CrdbCluster) ValidateDelete(ctx context.Context, obj runtime.Object) (admission.Warnings, error) {
+	r = obj.(*CrdbCluster)
 	webhookLog.Info("validate delete", "name", r.Name)
 
 	// we're not validating anything on delete. This is just a placeholder for now to satisfy the Validator interface
-	return nil
+	return nil, nil
 }
 
 // ValidateIngress validates the ingress configuration used to create ingress resource

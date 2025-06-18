@@ -20,6 +20,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"time"
 
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	customClient "github.com/cockroachdb/cockroach-operator/pkg/client/clientset/versioned"
@@ -189,6 +190,9 @@ func (env *Env) Stop() {
 	if err := envtest.UninstallCRDs(env.Environment.Config, env.Environment.CRDInstallOptions); err != nil {
 		panic(err)
 	}
+
+	// Wait for CRDs to be uninstalled
+	time.Sleep(10 * time.Second)
 }
 
 func (env *Env) StopAndExit(code int) {
