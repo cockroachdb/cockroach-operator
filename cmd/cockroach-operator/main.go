@@ -33,6 +33,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"go.uber.org/zap/zapcore"
 )
 
 const (
@@ -57,7 +58,9 @@ func main() {
 	var err error
 
 	// use zap logging cli options
-	opts := zap.Options{}
+	opts := zap.Options{
+		TimeEncoder: zapcore.RFC3339TimeEncoder,
+	}
 	opts.BindFlags(flag.CommandLine)
 
 	flag.StringVar(&metricsAddr, "metrics-addr", ":8080", "The address the metric endpoint binds to.")

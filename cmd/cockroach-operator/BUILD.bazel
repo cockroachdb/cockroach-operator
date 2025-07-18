@@ -46,6 +46,7 @@ go_library(
         "@io_k8s_sigs_controller_runtime//pkg/log/zap:go_default_library",
         "@io_k8s_sigs_controller_runtime//pkg/metrics/server:go_default_library",
         "@io_k8s_sigs_controller_runtime//pkg/webhook:go_default_library",
+        "@org_uber_go_zap//zapcore:go_default_library",
     ],
 )
 
@@ -118,5 +119,11 @@ filegroup(
         "//cmd/cockroach-operator/linux-arm64:all-srcs",
     ],
     tags = ["automanaged"],
+    visibility = ["//visibility:public"],
+)
+
+go_binary(
+    name = "cockroach-operator",
+    embed = [":go_default_library"],
     visibility = ["//visibility:public"],
 )
