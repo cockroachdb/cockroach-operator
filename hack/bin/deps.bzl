@@ -24,8 +24,8 @@ OPENSHIFT_BINS = {
     "preflight": {
         # currently, preflight is only available on linux
         "preflight_linux": {
-            "url": "https://github.com/redhat-openshift-ecosystem/openshift-preflight/releases/download/1.12.1/preflight-linux-amd64",
-            "sha": "ee92573f38929be67c7bda91dad614ac1b7d1dd81fa8bd15dfe01e385a540856",
+            "url": "https://github.com/redhat-openshift-ecosystem/openshift-preflight/releases/download/1.14.0/preflight-linux-amd64",
+            "sha": "69f8b249538adf0edcfcfcc82eea5d5aae44e4d2171ced581cd75a220624d25e",
         },
     },
     "oc": {
