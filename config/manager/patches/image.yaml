@@ -344,7 +344,5 @@ spec:
               value: cockroachdb/cockroach:v25.1.8
             - name: RELATED_IMAGE_COCKROACH_v25_2_0
               value: cockroachdb/cockroach:v25.2.0
-            - name: RELATED_IMAGE_COCKROACH_v25_2_1
-              value: cockroachdb/cockroach:v25.2.1
             - name: RELATED_IMAGE_COCKROACH_v25_2_2
               value: cockroachdb/cockroach:v25.2.2
