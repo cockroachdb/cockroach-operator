@@ -82,7 +82,7 @@ oci_image(
 oci_image(
     name = "cockroach_image_linux_arm64",
     # References container_pull from WORKSPACE
-    base = "@redhat_ubi_minimal_linux_arm64",
+    base = "@redhat_ubi_minimal_linux_arm64_v8",
     entrypoint = ["./cockroach-operator"],
     labels = ":labels",
     tars = [
