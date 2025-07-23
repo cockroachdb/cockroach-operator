@@ -517,8 +517,6 @@ spec:
     name: RELATED_IMAGE_COCKROACH_v25_1_8
   - image: registry.connect.redhat.com/cockroachdb/cockroach@sha256:c74cf927a2b2c5098ad74ad0880996f8b042186a9911d888a231ef5b9e2a0715
     name: RELATED_IMAGE_COCKROACH_v25_2_0
-  - image: registry.connect.redhat.com/cockroachdb/cockroach@sha256:3b78a4d3864e16d270979d9d7756012abf09e6cdb7f1eb4832f6497c26281099
-    name: RELATED_IMAGE_COCKROACH_v25_2_1
   - image: registry.connect.redhat.com/cockroachdb/cockroach@sha256:f42fa22aac3cc41ce72e144a72530ffbee765a392b24593dafd06cc098f8410b
     name: RELATED_IMAGE_COCKROACH_v25_2_2
   - image: RH_COCKROACH_OP_IMAGE_PLACEHOLDER
