@@ -47,7 +47,8 @@ const (
 	emptyDirName = "emptydir"
 
 	// DbContainerName is the name of the container definition in the pod spec
-	DbContainerName = "db"
+	DbContainerName     = "db"
+	DbInitContainerName = "db-init"
 
 	terminationGracePeriodSecs = 300
 )
@@ -256,10 +257,9 @@ func (b StatefulSetBuilder) makePodTemplate() corev1.PodTemplateSpec {
 // corev1.Container that is based on the CR.
 func (b StatefulSetBuilder) MakeInitContainers() []corev1.Container {
 	image := b.GetCockroachDBImageName()
-	initContainer := fmt.Sprintf("%s-init", DbContainerName)
 	return []corev1.Container{
 		{
-			Name:            initContainer,
+			Name:            DbInitContainerName,
 			Image:           image,
 			Command:         []string{"/bin/sh", "-c", certCpCmd},
 			ImagePullPolicy: b.GetImagePullPolicy(),
@@ -428,10 +428,9 @@ func (b StatefulSetBuilder) joinStr() string {
 }
 func addCertsVolumeMountOnInitContiners(container string, spec *corev1.PodSpec) error {
 	found := false
-	initContainer := fmt.Sprintf("%s-init", container)
 	for i := range spec.InitContainers {
 		c := &spec.InitContainers[i]
-		if c.Name == initContainer {
+		if c.Name == DbInitContainerName {
 			found = true
 
 			c.VolumeMounts = append(c.VolumeMounts, corev1.VolumeMount{
