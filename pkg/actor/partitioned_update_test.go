@@ -19,8 +19,6 @@ package actor
 import (
 	"os"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func TestDeployedInCluster(t *testing.T) {
@@ -39,32 +37,5 @@ func TestDeployedInCluster(t *testing.T) {
 
 	if !inK8s {
 		t.Fatal("we should find the file")
-	}
-}
-
-func TestGetImageNameNoVersion(t *testing.T) {
-	type testCase struct {
-		Name              string
-		ImageName         string
-		ExpectedImageName string
-	}
-	tests := []testCase{
-		{
-			Name:              "should_keep_the_sha256_format_complete",
-			ImageName:         "cockroachdb/cockroach@sha256:a1ef571ff3b47b395084d2f29abbc7706be36a826a618a794697d90a03615ada",
-			ExpectedImageName: "cockroachdb/cockroach@sha256:a1ef571ff3b47b395084d2f29abbc7706be36a826a618a794697d90a03615ada",
-		},
-		{
-			Name:              "should_remove_the_version_for_non_sha256_format_of_the_image",
-			ImageName:         "cockroachdb/cockroach:v20.2.0",
-			ExpectedImageName: "cockroachdb/cockroach",
-		},
-	}
-	for _, tc := range tests {
-		t.Run(tc.Name, func(t *testing.T) {
-			actual := getImageNameNoVersion(tc.ImageName)
-			assert.NotEmpty(t, actual, "container image cannot be empty")
-			assert.Equal(t, actual, tc.ExpectedImageName, "container image not set correctly")
-		})
 	}
 }

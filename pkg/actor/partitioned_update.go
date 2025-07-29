@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/Masterminds/semver/v3"
@@ -110,7 +109,6 @@ func (up *partitionedUpdate) Act(ctx context.Context, cluster *resource.Cluster,
 		log.Info("no version changes needed")
 		return nil
 	}
-	containerWanted = getImageNameNoVersion(containerWanted)
 
 	currentVersion, err := semver.NewVersion(currentVersionCalFmtStr)
 	if err != nil {
@@ -220,19 +218,6 @@ func (up *partitionedUpdate) Act(ctx context.Context, cluster *resource.Cluster,
 func inK8s(file string) bool {
 	_, err := os.Stat(file)
 	return !os.IsNotExist(err)
-}
-
-func getImageNameNoVersion(image string) string {
-	// if somehow this arrives as sha256 we do not extract version
-	if strings.Contains(image, "@sha256") {
-		return image
-	}
-	i := strings.LastIndex(image, ":")
-	if i == -1 {
-		return image
-	}
-
-	return image[:i]
 }
 
 func statefulSetIsUpdating(ss *appsv1.StatefulSet) bool {

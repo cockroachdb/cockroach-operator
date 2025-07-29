@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"regexp"
-	"strings"
 	"time"
 
 	"database/sql"
@@ -99,17 +98,10 @@ func UpdateClusterCockroachVersion(
 			return errors.Wrapf(err, "setting downgrade option for major roll forward failed")
 		}
 	}
-	var wantImage string = update.WantImageName
-	//if the image is already in the sha256 format  we keep it as it is
-	//otherwise we build the concatenate the image with the version to
-	//obtain the correct format
-	if !strings.Contains(update.WantImageName, "@sha256") {
-		wantImage = fmt.Sprintf("%s:%s", update.WantImageName, update.WantVersion.Original())
-	}
 
-	updateFunction := makeUpdateCockroachVersionFunction(wantImage, update.WantVersion.Original(), update.CurrentVersion.Original())
-	perPodVerificationFunction := makeIsCRBPodIsRunningNewVersionFunction(
-		wantImage,
+	updateFunction := makeUpdateCockroachVersionFunction(update.WantImageName, update.WantVersion.Original(), update.CurrentVersion.Original())
+	perPodVerificationFunction := makeIsCRDBPodIsRunningNewVersionFunction(
+		update.WantImageName,
 	)
 	updateStrategyFunction := PartitionedRollingUpdateStrategy(
 		perPodVerificationFunction,
