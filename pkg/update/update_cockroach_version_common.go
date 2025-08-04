@@ -48,11 +48,20 @@ func makeUpdateCockroachVersionFunction(
 		}
 		sts.Annotations[resource.CrdbVersionAnnotation] = version
 		sts.Annotations[resource.CrdbContainerImageAnnotation] = cockroachImage
+
+		// Update init container image if exists. It will exist if TLS is enabled.
+		for i := range sts.Spec.Template.Spec.InitContainers {
+			initContainer := &sts.Spec.Template.Spec.InitContainers[i]
+			if initContainer.Name == resource.DbInitContainerName {
+				initContainer.Image = cockroachImage
+				break
+			}
+		}
+
+		// Update main container image
 		for i := range sts.Spec.Template.Spec.Containers {
 			container := &sts.Spec.Template.Spec.Containers[i]
-			// TODO "db" is hardcoded.  Make this a value in statefulset resource
-			// so that we are sharing values here
-			if container.Name == "db" {
+			if container.Name == resource.DbContainerName {
 				container.Image = cockroachImage
 				return sts, nil
 			}
@@ -65,11 +74,11 @@ func makeUpdateCockroachVersionFunction(
 // If we cannot find the Pod, or if we cannot find the container.
 // We need to return a status and an error instead of just an error.
 
-// makeWaitUntilCRDBPodIsRunningNewVersionFunction takes a cockroachImage and
+// makeIsCRDBPodIsRunningNewVersionFunction takes a cockroachImage and
 // returns a function which takes a Kubernetes clientset, a statefulset, and a
 // pod number within the statefulset. This function checks if the specified
 // pod is running the new cockroachImage version and is in a `ready` state.
-func makeIsCRBPodIsRunningNewVersionFunction(
+func makeIsCRDBPodIsRunningNewVersionFunction(
 	cockroachImage string,
 ) func(update *UpdateSts, podNumber int, l logr.Logger) error {
 	return func(update *UpdateSts, podNumber int, l logr.Logger) error {
@@ -95,10 +104,30 @@ func makeIsCRBPodIsRunningNewVersionFunction(
 			return err
 		}
 
+		// Now also check initContainers for same image update
+		for i := range crdbPod.Spec.InitContainers {
+			initContainer := &crdbPod.Spec.InitContainers[i]
+			if initContainer.Name == resource.DbInitContainerName {
+
+				// TODO this is not an error but should return a wait status
+				if initContainer.Image != cockroachImage {
+					l.V(int(zapcore.DebugLevel)).Info("Init container is not updated to current image.")
+					return fmt.Errorf("%s init container is on image %s, expected %s", podName, initContainer.Image, cockroachImage)
+				}
+
+				// TODO this is not an error but should return a wait status
+				if !kube.IsPodReady(crdbPod) {
+					l.V(int(zapcore.DebugLevel)).Info("Pod is not ready yet.", "podName", podName, "stsName", stsName)
+					return fmt.Errorf("%s pod not ready yet", crdbPod)
+				}
+
+				l.V(int(zapcore.DebugLevel)).Info("init container is running new version on", "podName", podName, "stsName", stsNamespace)
+			}
+		}
+
 		for i := range crdbPod.Spec.Containers {
 			container := &crdbPod.Spec.Containers[i]
-			// TODO this is hard coded and resource statefulset needs to use this
-			if container.Name == "db" {
+			if container.Name == resource.DbContainerName {
 
 				// TODO this is not an error but should return a wait status
 				if container.Image != cockroachImage {

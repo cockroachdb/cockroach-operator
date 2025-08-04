@@ -123,10 +123,10 @@ oci_pull(
     name = "redhat_ubi_minimal",
     platforms = [
         "linux/amd64",
-        "linux/arm64",
+        "linux/arm64/v8"
     ],
     registry = "registry.access.redhat.com",
-    repository = "ubi8/ubi-minimal",
+    repository = "ubi9/ubi-minimal",
     tag = "latest",
 )
 
