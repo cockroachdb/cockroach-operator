@@ -86,7 +86,7 @@ func (v *versionChecker) Act(ctx context.Context, cluster *resource.Cluster, log
 
 	log.V(DEBUGLEVEL).Info("starting to check the crdb version of the container provided")
 
-	r := resource.NewManagedKubeResource(ctx, v.client, cluster, kube.AnnotatingPersister)
+	r := resource.NewManagedKubeResource(ctx, v.client, cluster, kube.RecreatingPersister)
 	owner := cluster.Unwrap()
 
 	// If the image.name is set use that value and do not check that the
