@@ -22,9 +22,11 @@ import (
 	"strings"
 
 	crdbv1alpha1 "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
+	crdbv1beta1 "github.com/cockroachdb/cockroach-operator/apis/v1beta1"
 	"github.com/cockroachdb/cockroach-operator/pkg/controller"
 	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
 	"github.com/go-logr/logr"
+	"go.uber.org/zap/zapcore"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
@@ -33,7 +35,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
-	"go.uber.org/zap/zapcore"
 )
 
 const (
@@ -50,6 +51,7 @@ var (
 func init() {
 	_ = clientgoscheme.AddToScheme(scheme)
 	_ = crdbv1alpha1.AddToScheme(scheme)
+	_ = crdbv1beta1.AddToScheme(scheme)
 }
 
 func main() {
@@ -131,6 +133,9 @@ func main() {
 		setupLog.Error(err, "unable to setup webhook")
 		os.Exit(1)
 	}
+
+	// Set up conversion webhook
+	//mgr.GetWebhookServer().Register("/convert", conversion.NewWebhookHandler(scheme))
 
 	reconciler := controller.InitClusterReconciler()
 	if err = reconciler(mgr); err != nil {

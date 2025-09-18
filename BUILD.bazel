@@ -59,6 +59,7 @@ filegroup(
     srcs = [
         ":package-srcs",
         "//apis/v1alpha1:all-srcs",
+        "//apis/v1beta1:all-srcs",
         "//cmd/cockroach-operator:all-srcs",
         "//config:all-srcs",
         "//e2e:all-srcs",

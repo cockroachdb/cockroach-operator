@@ -57,7 +57,7 @@ def kustomization(
   # bazel build <name> to generate manifest.yaml
   native.genrule(
       name = name,
-      exec_tools = tools,
+      tools = tools,
       srcs = [":{}".format(rule_srcs), ":{}".format(rule_main)],
       outs = [out],
       visibility = visibility,

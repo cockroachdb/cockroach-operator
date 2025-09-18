@@ -27,16 +27,16 @@ spec:
           - ReadWriteOnce
         resources:
           requests:
-            storage: "20Gi"
+            storage: "3Gi"
         volumeMode: Filesystem
   resources:
     requests:
       # This is intentionally low to make it work on local k3d clusters.
       cpu: 300m
       memory: 300Mi
-    limits:
-      cpu: 300m
-      memory: 300Mi
+#    limits:
+#      cpu: 300m
+#      memory: 300Mi
   tlsEnabled: true
   image:
     name: cockroachdb/cockroach:v25.2.4
