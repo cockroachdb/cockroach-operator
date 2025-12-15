@@ -22,9 +22,11 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"testing"
 
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/labels"
+	"github.com/cockroachdb/cockroach-operator/pkg/ptr"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
 	"github.com/cockroachdb/cockroach-operator/pkg/testutil"
 	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
@@ -32,11 +34,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	appsv1 "k8s.io/api/apps/v1"
-
-	"testing"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var update = flag.Bool("update", false, "update the golden files of this test")
+
+const migrationLabel = "crdb.io/migrating"
 
 func TestStatefulSetBuilder(t *testing.T) {
 	// turn on featuregate to test rules
@@ -117,4 +121,98 @@ func load(t *testing.T, file string) []byte {
 	}
 
 	return content
+}
+
+func TestStatefulSetStopScaleUpWithMigrationLabel(t *testing.T) {
+	tests := []struct {
+		name             string
+		crNodes          int32
+		currentReplicas  int32
+		labels           map[string]string
+		expectedReplicas int32
+	}{
+		{
+			name:             "Normal Scale Up - No Label",
+			crNodes:          3,
+			currentReplicas:  2,
+			labels:           nil,
+			expectedReplicas: 3,
+		},
+		{
+			name:            "Stop Scale Up - Label Present",
+			crNodes:         3,
+			currentReplicas: 2,
+			labels: map[string]string{
+				migrationLabel: "true",
+			},
+			expectedReplicas: 2,
+		},
+		{
+			name:            "Allow Scale Down - Label Present",
+			crNodes:         3,
+			currentReplicas: 4,
+			labels: map[string]string{
+				migrationLabel: "true",
+			},
+			expectedReplicas: 3,
+		},
+		{
+			name:            "Stop Scale Up - False Label Value",
+			crNodes:         3,
+			currentReplicas: 2,
+			labels: map[string]string{
+				migrationLabel: "false",
+			},
+			expectedReplicas: 3,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cr := &api.CrdbCluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-cluster",
+					Namespace: "default",
+					Labels:    tt.labels,
+				},
+				Spec: api.CrdbClusterSpec{
+					Nodes:              tt.crNodes,
+					CockroachDBVersion: "v20.2.5",
+					Image: &api.PodImage{
+						Name: "cockroachdb/cockroach:v20.2.5",
+					},
+					DataStore: api.Volume{
+						VolumeClaim: &api.VolumeClaim{
+							PersistentVolumeClaimSpec: corev1.PersistentVolumeClaimSpec{},
+						},
+					},
+				},
+			}
+
+			cluster := resource.NewCluster(cr)
+			commonLabels := labels.Common(cr)
+
+			// Pre-populate the existing StatefulSet with current replicas
+			actual := &appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-cluster",
+					Namespace: "default",
+				},
+				Spec: appsv1.StatefulSetSpec{
+					Replicas: ptr.Int32(tt.currentReplicas),
+				},
+			}
+
+			builder := resource.StatefulSetBuilder{
+				Cluster:   &cluster,
+				Selector:  commonLabels.Selector(cluster.Spec().AdditionalLabels),
+				Telemetry: "kubernetes-operator-test",
+			}
+
+			err := builder.Build(actual)
+			require.NoError(t, err)
+
+			assert.Equal(t, tt.expectedReplicas, *actual.Spec.Replicas)
+		})
+	}
 }
