@@ -147,5 +147,44 @@ func TestReconcile(t *testing.T) {
 			assert.Equal(t, tt.want, actual)
 		})
 	}
+}
 
+func TestReconcileMigrationLabel(t *testing.T) {
+	scheme := testutil.InitScheme(t)
+
+	ns := &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "test-namespace",
+		},
+	}
+
+	cluster := testutil.NewBuilder("cluster").Namespaced(ns.Name).WithNodeCount(1).Cr()
+	// Set status so we skip the "first reconcile" block
+	cluster.Status.ClusterStatus = "Running"
+	// Set the migration label
+	cluster.Labels = map[string]string{
+		api.CrdbOperatorMigrationLabel: "true",
+	}
+
+	objs := []runtime.Object{
+		ns,
+		cluster,
+	}
+
+	cl := fake.NewClientBuilder().WithScheme(scheme).WithRuntimeObjects(objs...).WithStatusSubresource(cluster).Build()
+	log := zapr.NewLogger(zaptest.NewLogger(t)).WithName("cluster-controller-test")
+	req := ctrl.Request{NamespacedName: types.NamespacedName{Namespace: cluster.Namespace, Name: cluster.Name}}
+
+	r := &controller.ClusterReconciler{
+		Client: cl,
+		Log:    log,
+		Scheme: scheme,
+		Director: &fakeDirector{
+			actorToExecute: &fakeActor{},
+		},
+	}
+
+	actual, err := r.Reconcile(context.TODO(), req)
+	require.NoError(t, err)
+	assert.Equal(t, ctrl.Result{}, actual)
 }
