@@ -51,6 +51,8 @@ const (
 	DbInitContainerName = "db-init"
 
 	terminationGracePeriodSecs = 300
+
+	migrationLabel = "crdb.io/migrating"
 )
 
 type StatefulSetBuilder struct {
@@ -69,6 +71,16 @@ func (b StatefulSetBuilder) Build(obj client.Object) error {
 		ss.ObjectMeta.Name = b.StatefulSetName()
 	}
 
+	// This is used to prevent scaling up if the custom migration label is set
+	currentReplicas := ss.Spec.Replicas
+	desiredReplicas := b.Spec().Nodes
+
+	if val, ok := b.Cluster.Unwrap().Labels[migrationLabel]; ok && val == "true" {
+		if currentReplicas != nil && *currentReplicas < desiredReplicas {
+			desiredReplicas = *currentReplicas
+		}
+	}
+
 	ss.Annotations = b.Spec().AdditionalAnnotations
 
 	if ss.Annotations == nil {
@@ -78,7 +90,7 @@ func (b StatefulSetBuilder) Build(obj client.Object) error {
 	ss.Annotations[CrdbContainerImageAnnotation] = b.Cluster.GetAnnotationContainerImage()
 	ss.Spec = appsv1.StatefulSetSpec{
 		ServiceName: b.Cluster.DiscoveryServiceName(),
-		Replicas:    ptr.Int32(b.Spec().Nodes),
+		Replicas:    ptr.Int32(desiredReplicas),
 		UpdateStrategy: appsv1.StatefulSetUpdateStrategy{
 			RollingUpdate: &appsv1.RollingUpdateStatefulSetStrategy{},
 		},
