@@ -2573,7 +2573,7 @@ def _go_dependencies():
         build_file_proto_mode = "disable",
         importpath = "github.com/gopherjs/gopherjs",
         sum = "h1:EGx4pi6eqNxGaHF6qqu48+N2wcFQ5qg5FXgOdqsJ5d8=",
-        version = "v0.0.0-20181017120253-0766667cb4d1",
+        version = "v0.0.0-20181017120263-0766667cb4d1",
     )
     go_repository(
         name = "com_github_gorilla_context",

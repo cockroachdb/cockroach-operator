@@ -1,5 +1,5 @@
 /*
-Copyright 2025 The Cockroach Authors
+Copyright 2026 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -246,7 +246,7 @@ func TestGenerateReleases(t *testing.T) {
 		result      []string
 	}{
 		{
-			"returns possible releases till 2025",
+			"returns possible releases till 2026",
 			25,
 			[]string{"24.1", "24.2", "24.3", "25.1", "25.2", "25.3", "25.4"},
 		},
