@@ -1,5 +1,5 @@
 /*
-Copyright 2025 The Cockroach Authors
+Copyright 2026 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -63,6 +63,7 @@ var SkippedPaths = map[string]bool{
 	"3rdparty":          true,
 	"bundle":            true,
 	"bundle.Dockerfile": true,
+	".idea":             true,
 }
 
 // NewValidateHeaders creates a new struct used to validate a project.
@@ -182,8 +183,15 @@ func (v ValidateHeaders) hasValidHeader(filename string) (bool, error) {
 	m := *v.preambles
 	preambleSlice := m[extension]
 	if len(preambleSlice) != 0 {
-		preamble := regexp.QuoteMeta(strings.Join(preambleSlice, "\n"))
-		regex, err := regexp.Compile(fmt.Sprintf("^(%s.*\n)\n*", preamble))
+		// Build a regex that matches each preamble line with optional content after it
+		// This handles cases like "//go:build tools" matching "//go:build"
+		var regexLines []string
+		for _, line := range preambleSlice {
+			escapedLine := regexp.QuoteMeta(line)
+			regexLines = append(regexLines, escapedLine+".*")
+		}
+		pattern := strings.Join(regexLines, "\n")
+		regex, err := regexp.Compile(fmt.Sprintf("^(%s\n)\n*", pattern))
 		if err != nil {
 			return false, err
 		}

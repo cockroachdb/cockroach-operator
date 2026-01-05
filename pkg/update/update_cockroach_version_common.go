@@ -1,5 +1,5 @@
 /*
-Copyright 2025 The Cockroach Authors
+Copyright 2026 The Cockroach Authors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -279,7 +279,7 @@ func getPreviousReleases(currentVersion string) []string {
 // 2. For version of 2024:
 //   - There are 3 releases (24.1, 24.2, 24.3) where 24.2 being innovative release
 //
-// 3. For versions from 2025 onwards:
+// 3. For versions from 2026 onwards:
 //   - Releases follow a quarterly cycle, with some releases designated as innovative.
 //   - Users are allowed to skip upgrading to an innovative release.
 //   - The upgrade is permitted if the desired version matches one of the next valid releases.
@@ -295,7 +295,7 @@ func isMajorUpgradeAllowed(wantVersion *semver.Version, currentVersion *semver.V
 	// 19.1 to 19.2 -> same year
 	// 19.2 to 20.1 -> next year
 
-	// Since 2025, we have adopted a quarterly release cycle, with two of the four annual releases designated
+	// Since 2026, we have adopted a quarterly release cycle, with two of the four annual releases designated
 	// as innovative releases. Users have the option to skip upgrading to an innovative release.
 	// For 2024, we just had 3 releases overall, with 24.2 as the innovation release.
 	if currentVersion.Major() >= 24 {
