@@ -373,4 +373,3 @@ publish-operator-openshift:
 .PHONY: release/publish-openshift-bundle
 release/publish-openshift-bundle:
 	./build/release/teamcity-publish-openshift-bundle.sh
-

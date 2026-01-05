@@ -22,6 +22,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	// CrdbOperatorMigrationLabel is the label used to indicate that the cluster is migrating.
+	// If this label is set to "true", the operator will stop reconciling the
+	// entire cluster.
+	CrdbOperatorMigrationLabel = "crdb.io/skip-reconcile"
+)
+
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 // Important: Run "make dev/generate" to regenerate code after modifying this file
 

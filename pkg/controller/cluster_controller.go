@@ -142,6 +142,12 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req reconcile.Request
 		}
 	}
 
+	// If the cluster is migrating, we stop reconciliation
+	if val, ok := cluster.Unwrap().Labels[api.CrdbOperatorMigrationLabel]; ok && val == "true" {
+		log.Info("cluster is migrating, stopping reconciliation")
+		return noRequeue()
+	}
+
 	actorToExecute, err := r.Director.GetActorToExecute(ctx, &cluster, log)
 	if err != nil {
 		return requeueAfter(30*time.Second, nil)
