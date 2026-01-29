@@ -45,7 +45,7 @@ run_preflight() {
   bazel build //hack/bin:preflight
   PFLT_PYXIS_API_TOKEN="${REDHAT_API_TOKEN}" bazel-bin/hack/bin/preflight \
     check container "${RH_OPERATOR_IMG}" \
-    --certification-project-id="${RH_PROJECT_ID}" \
+    --certification-component-id="${RH_PROJECT_ID}" \
     --docker-config=/home/agent/.docker/config.json \
     --submit
 }
