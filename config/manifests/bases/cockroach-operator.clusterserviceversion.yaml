@@ -517,6 +517,12 @@ spec:
     name: RELATED_IMAGE_COCKROACH_v25_2_0
   - image: registry.connect.redhat.com/cockroachdb/cockroach@sha256:3b78a4d3864e16d270979d9d7756012abf09e6cdb7f1eb4832f6497c26281099
     name: RELATED_IMAGE_COCKROACH_v25_2_1
+  - image: registry.connect.redhat.com/cockroachdb/cockroach@sha256:77b933878faae575e2b8df45a2a7580da204f6de6ed40c6c0b7d4ae753287e60
+    name: RELATED_IMAGE_COCKROACH_v25_2_4
+  - image: registry.connect.redhat.com/cockroachdb/cockroach@sha256:51a717edb6cb122b933d30bbddda8e65dd6312f521ccacacf4b014437d3128b9
+    name: RELATED_IMAGE_COCKROACH_v25_2_10
+  - image: registry.connect.redhat.com/cockroachdb/cockroach@sha256:b80d4524cdd3e2d1a0cfb76cb7d7f89d84683e06d2b8ce26b8d36429f2866f5c
+    name: RELATED_IMAGE_COCKROACH_v25_2_11
   - image: registry.connect.redhat.com/cockroachdb/cockroach@sha256:dafe887cbc2da563bfc525bd732bee80e9eb14d5a0cf1d4391dfee75ddbee44c
     name: RELATED_IMAGE_COCKROACH_v25_4_3
   - image: RH_COCKROACH_OP_IMAGE_PLACEHOLDER
