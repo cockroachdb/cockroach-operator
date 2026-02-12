@@ -23,7 +23,9 @@ import (
 
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/actor"
+	"github.com/cockroachdb/cockroach-operator/pkg/condition"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
+	"github.com/cockroachdb/cockroach-operator/pkg/tracelog"
 	"github.com/cockroachdb/cockroach-operator/pkg/util"
 	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
@@ -105,7 +107,8 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req reconcile.Request
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Hour)
 	defer cancel()
 
-	log := r.Log.WithValues("CrdbCluster", req.NamespacedName, "ReconcileId", shortuuid.New())
+	reconcileID := shortuuid.New()
+	log := r.Log.WithValues("CrdbCluster", req.NamespacedName, "ReconcileId", reconcileID)
 	log.V(int(zapcore.InfoLevel)).Info("reconciling CockroachDB cluster")
 
 	fetcher := resource.NewKubeFetcher(ctx, req.Namespace, r.Client)
@@ -118,6 +121,18 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req reconcile.Request
 
 	cluster := resource.NewCluster(cr)
 	cluster.Fetcher = fetcher
+	ctx = tracelog.WithTraceState(ctx, cluster.Namespace(), cluster.Name(), cluster.Unwrap().GetGeneration(), reconcileID)
+	tracelog.Emit(ctx, log, "CockroachOperatorSpecObserved", map[string]any{
+		"specNodes": cluster.Spec().Nodes,
+		"tlsEnabled": cluster.Spec().TLSEnabled,
+	})
+	tracelog.Emit(ctx, log, "CockroachOperatorStatusObserved", map[string]any{
+		"initialized": condition.True(api.CrdbInitializedCondition, cluster.Status().Conditions),
+	})
+	tracelog.Emit(ctx, log, "ReconcileStart", map[string]any{
+		"requestNamespace": req.Namespace,
+		"requestName":      req.Name,
+	})
 	cleanClusterObj := cluster.Unwrap()
 	// on first run we need to save the status and exit to pass Openshift CI
 	// we added a state called Starting for field ClusterStatus to accomplish this
@@ -144,16 +159,32 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req reconcile.Request
 
 	actorToExecute, err := r.Director.GetActorToExecute(ctx, &cluster, log)
 	if err != nil {
+		tracelog.Emit(ctx, log, "ReconcileFailed", map[string]any{
+			"phase": "GetActorToExecute",
+			"error": err.Error(),
+		})
 		return requeueAfter(30*time.Second, nil)
 	} else if actorToExecute == nil {
 		log.Info("No actor to run; not requeueing")
+		tracelog.Emit(ctx, log, "ReconcileSuccess", map[string]any{
+			"phase":  "NoActor",
+			"action": "none",
+		})
 		return noRequeue()
 	}
+	tracelog.Emit(ctx, log, "ActorSelected", map[string]any{
+		"action": string(actorToExecute.GetActionType()),
+	})
 
 	log.Info(fmt.Sprintf("Running action with name: %s", actorToExecute.GetActionType()))
 	if err := actorToExecute.Act(ctx, &cluster, log); err != nil {
 		// Save the error on the Status for each action
 		log.Info("Error on action", "Action", actorToExecute.GetActionType(), "err", err.Error())
+		tracelog.Emit(ctx, log, "ReconcileFailed", map[string]any{
+			"phase":  "ActorExecution",
+			"action": string(actorToExecute.GetActionType()),
+			"error":  err.Error(),
+		})
 		cluster.SetActionFailed(actorToExecute.GetActionType(), err.Error())
 
 		defer func(ctx context.Context, cluster *resource.Cluster) {
@@ -199,6 +230,10 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req reconcile.Request
 	}
 
 	log.V(int(zapcore.InfoLevel)).Info("reconciliation completed")
+	tracelog.Emit(ctx, log, "ReconcileSuccess", map[string]any{
+		"phase":  "Completed",
+		"action": string(actorToExecute.GetActionType()),
+	})
 	return noRequeue()
 }
 
@@ -206,10 +241,27 @@ func (r *ClusterReconciler) Reconcile(ctx context.Context, req reconcile.Request
 // the Kubernetes API. updateClusterStatus will retry on conflict errors.
 func (r *ClusterReconciler) updateClusterStatus(ctx context.Context, log logr.Logger, cluster *resource.Cluster,
 	cleanObj *api.CrdbCluster) error {
+	tracelog.Emit(ctx, log, "CockroachOperatorStatusBeforeUpdate", map[string]any{
+		"initialized": condition.True(api.CrdbInitializedCondition, cluster.Status().Conditions),
+	})
 	cluster.SetClusterStatus()
-	return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		return r.Client.Status().Patch(ctx, cluster.Unwrap(), client.MergeFrom(cleanObj))
 	})
+	if err != nil {
+		tracelog.Emit(ctx, log, "CockroachOperatorStatusUpdateResult", map[string]any{
+			"success": false,
+			"error":   err.Error(),
+		})
+		return err
+	}
+	tracelog.Emit(ctx, log, "CockroachOperatorStatusAfterUpdate", map[string]any{
+		"initialized": condition.True(api.CrdbInitializedCondition, cluster.Status().Conditions),
+	})
+	tracelog.Emit(ctx, log, "CockroachOperatorStatusUpdateResult", map[string]any{
+		"success": true,
+	})
+	return nil
 }
 
 // SetupWithManager registers the controller with the controller.Manager from controller-runtime

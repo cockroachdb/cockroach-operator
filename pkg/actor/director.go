@@ -24,6 +24,7 @@ import (
 	"github.com/cockroachdb/cockroach-operator/pkg/features"
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
+	"github.com/cockroachdb/cockroach-operator/pkg/tracelog"
 	"github.com/cockroachdb/cockroach-operator/pkg/utilfeature"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
@@ -94,12 +95,35 @@ func (cd *clusterDirector) GetActorToExecute(ctx context.Context, cluster *resou
 		Name:      cluster.StatefulSetName(),
 	}
 	ss := &appsv1.StatefulSet{}
-	err = kube.IgnoreNotFound(cd.client.Get(ctx, stsKey, ss))
+	getErr := cd.client.Get(ctx, stsKey, ss)
+	statefulSetFound := getErr == nil
+	err = kube.IgnoreNotFound(getErr)
 	if err != nil {
 		return nil, err
 	}
+	var specReplicas int32
+	if ss.Spec.Replicas != nil {
+		specReplicas = *ss.Spec.Replicas
+	}
+	tracelog.Emit(ctx, log, "StatefulSetStatusObserved", map[string]any{
+		"statefulSetFound":  statefulSetFound,
+		"currentReplicas":   ss.Status.CurrentReplicas,
+		"statusReplicas":    ss.Status.Replicas,
+		"readyReplicas":     ss.Status.ReadyReplicas,
+		"updatedReplicas":   ss.Status.UpdatedReplicas,
+		"availableReplicas": ss.Status.AvailableReplicas,
+		"specReplicas":      specReplicas,
+	})
 
-	if cd.needsDecommission(cluster, ss) {
+	needsDecommission := cd.needsDecommission(cluster, ss)
+	tracelog.Emit(ctx, log, "NeedsDecommissionEvaluated", map[string]any{
+		"initialized":     condition.True(api.CrdbInitializedCondition, cluster.Status().Conditions),
+		"currentReplicas": ss.Status.CurrentReplicas,
+		"statusReplicas":  ss.Status.Replicas,
+		"targetReplicas":  cluster.Spec().Nodes,
+		"result":          needsDecommission,
+	})
+	if needsDecommission {
 		return cd.actors[api.DecommissionAction], nil
 	}
 
@@ -122,11 +146,23 @@ func (cd *clusterDirector) GetActorToExecute(ctx context.Context, cluster *resou
 	needsDeploy, err := cd.needsDeploy(ctx, cluster, log)
 	if err != nil {
 		return nil, err
-	} else if needsDeploy {
+	}
+	tracelog.Emit(ctx, log, "NeedsDeployEvaluated", map[string]any{
+		"specNodes":   cluster.Spec().Nodes,
+		"tlsEnabled":  cluster.Spec().TLSEnabled,
+		"initialized": condition.True(api.CrdbInitializedCondition, cluster.Status().Conditions),
+		"result":      needsDeploy,
+	})
+	if needsDeploy {
 		return cd.actors[api.DeployAction], nil
 	}
 
-	if cd.needsInitialization(cluster) {
+	needsInitialization := cd.needsInitialization(cluster)
+	tracelog.Emit(ctx, log, "NeedsInitializationEvaluated", map[string]any{
+		"initialized": condition.True(api.CrdbInitializedCondition, cluster.Status().Conditions),
+		"result":      needsInitialization,
+	})
+	if needsInitialization {
 		return cd.actors[api.InitializeAction], nil
 	}
 

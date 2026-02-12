@@ -18,10 +18,12 @@ package actor
 
 import (
 	"context"
+	"strings"
 
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
 	"github.com/cockroachdb/cockroach-operator/pkg/resource"
+	"github.com/cockroachdb/cockroach-operator/pkg/tracelog"
 	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -68,6 +70,13 @@ func (d deploy) Act(ctx context.Context, cluster *resource.Cluster, log logr.Log
 	}
 
 	for _, b := range builders {
+		isStatefulSetBuilder := strings.Contains(strings.ToLower(b.ResourceName()), "cockroachdb")
+		if isStatefulSetBuilder {
+			tracelog.Emit(ctx, log, "StatefulSetUpdateRequested", map[string]any{
+				"targetReplicas": cluster.Spec().Nodes,
+				"tlsEnabled":     cluster.Spec().TLSEnabled,
+			})
+		}
 		changed, err := resource.Reconciler{
 			ManagedResource: r,
 			Builder:         b,
@@ -76,10 +85,25 @@ func (d deploy) Act(ctx context.Context, cluster *resource.Cluster, log logr.Log
 		}.Reconcile()
 
 		if err != nil {
+			if isStatefulSetBuilder {
+				tracelog.Emit(ctx, log, "StatefulSetUpdateResult", map[string]any{
+					"success": false,
+					"error":   err.Error(),
+				})
+			}
 			return errors.Wrapf(err, "failed to reconcile %s", b.ResourceName())
 		}
 
 		if changed {
+			if isStatefulSetBuilder {
+				tracelog.Emit(ctx, log, "StatefulSetUpdated", map[string]any{
+					"replicas": cluster.Spec().Nodes,
+					"tlsEnabled": cluster.Spec().TLSEnabled,
+				})
+				tracelog.Emit(ctx, log, "StatefulSetUpdateResult", map[string]any{
+					"success": true,
+				})
+			}
 			log.Info("created/updated a resource, stopping request processing", "resource", b.ResourceName())
 			return nil
 		}

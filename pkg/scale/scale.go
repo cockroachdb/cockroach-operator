@@ -19,6 +19,7 @@ package scale
 import (
 	"context"
 
+	"github.com/cockroachdb/cockroach-operator/pkg/tracelog"
 	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
 	"go.uber.org/zap/zapcore"
@@ -72,6 +73,11 @@ func (s *Scaler) EnsureScale(ctx context.Context, scale uint, gRPCPort int32, pr
 	if err != nil {
 		return err
 	}
+	tracelog.Emit(ctx, s.Logger, "StatefulSetStatusObserved", map[string]any{
+		"phase":           "ensure_scale_start",
+		"currentReplicas": crdbScale,
+		"targetReplicas":  scale,
+	})
 
 	// TODO (chrisseto): To mitigate some of the issues with adding multiple clusters at a time we should
 	// set kv.snapshot_rebalance.max_rate and kv.snapshot_rebalance.max_rate to ~2MB.
@@ -92,9 +98,27 @@ func (s *Scaler) EnsureScale(ctx context.Context, scale uint, gRPCPort int32, pr
 			return err
 		}
 
+		tracelog.Emit(ctx, s.Logger, "StatefulSetUpdateRequested", map[string]any{
+			"phase":          "scale_down",
+			"fromReplicas":   crdbScale,
+			"targetReplicas": oneOff,
+		})
 		if err := s.CRDB.SetReplicas(ctx, oneOff); err != nil {
+			tracelog.Emit(ctx, s.Logger, "StatefulSetUpdateResult", map[string]any{
+				"phase":   "scale_down",
+				"success": false,
+				"error":   err.Error(),
+			})
 			return err
 		}
+		tracelog.Emit(ctx, s.Logger, "StatefulSetUpdated", map[string]any{
+			"phase":    "scale_down",
+			"replicas": oneOff,
+		})
+		tracelog.Emit(ctx, s.Logger, "StatefulSetUpdateResult", map[string]any{
+			"phase":   "scale_down",
+			"success": true,
+		})
 
 		if err := s.CRDB.WaitUntilHealthy(ctx, oneOff); err != nil {
 			return err
@@ -103,6 +127,11 @@ func (s *Scaler) EnsureScale(ctx context.Context, scale uint, gRPCPort int32, pr
 		if crdbScale, err = s.CRDB.Replicas(ctx); err != nil {
 			return err
 		}
+		tracelog.Emit(ctx, s.Logger, "StatefulSetStatusObserved", map[string]any{
+			"phase":           "scale_down_observed",
+			"currentReplicas": crdbScale,
+			"targetReplicas":  scale,
+		})
 	}
 
 	// Scale up one node at a time to:
@@ -134,9 +163,28 @@ func (s *Scaler) EnsureScale(ctx context.Context, scale uint, gRPCPort int32, pr
 	// have an affect on the cluster as a whole.
 	for crdbScale < scale {
 		s.Logger.V(int(zapcore.DebugLevel)).Info("scaling up stateful set", "have", crdbScale, "want", (crdbScale + 1))
-		if err := s.CRDB.SetReplicas(ctx, crdbScale+1); err != nil {
+		oneOff := crdbScale + 1
+		tracelog.Emit(ctx, s.Logger, "StatefulSetUpdateRequested", map[string]any{
+			"phase":          "scale_up",
+			"fromReplicas":   crdbScale,
+			"targetReplicas": oneOff,
+		})
+		if err := s.CRDB.SetReplicas(ctx, oneOff); err != nil {
+			tracelog.Emit(ctx, s.Logger, "StatefulSetUpdateResult", map[string]any{
+				"phase":   "scale_up",
+				"success": false,
+				"error":   err.Error(),
+			})
 			return err
 		}
+		tracelog.Emit(ctx, s.Logger, "StatefulSetUpdated", map[string]any{
+			"phase":    "scale_up",
+			"replicas": oneOff,
+		})
+		tracelog.Emit(ctx, s.Logger, "StatefulSetUpdateResult", map[string]any{
+			"phase":   "scale_up",
+			"success": true,
+		})
 
 		// Wait for the newly requested pod to be scheduled and running
 		if err := s.CRDB.WaitUntilRunning(ctx); err != nil {
@@ -144,7 +192,7 @@ func (s *Scaler) EnsureScale(ctx context.Context, scale uint, gRPCPort int32, pr
 		}
 
 		// Wait for the newly running pods to become healthy
-		if err := s.CRDB.WaitUntilHealthy(ctx, crdbScale+1); err != nil {
+		if err := s.CRDB.WaitUntilHealthy(ctx, oneOff); err != nil {
 			return err
 		}
 
@@ -157,6 +205,11 @@ func (s *Scaler) EnsureScale(ctx context.Context, scale uint, gRPCPort int32, pr
 		if crdbScale, err = s.CRDB.Replicas(ctx); err != nil {
 			return err
 		}
+		tracelog.Emit(ctx, s.Logger, "StatefulSetStatusObserved", map[string]any{
+			"phase":           "scale_up_observed",
+			"currentReplicas": crdbScale,
+			"targetReplicas":  scale,
+		})
 	}
 
 	// NB: We may be able to remove the scheduler entirely once this change is

@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff"
+	"github.com/cockroachdb/cockroach-operator/pkg/tracelog"
 	"github.com/cockroachdb/errors"
 	"github.com/go-logr/logr"
 	"go.uber.org/zap/zapcore"
@@ -179,6 +180,12 @@ func (d *CockroachNodeDrainer) makeDrainStatusChecker(id uint) func(ctx context.
 			"replicas", replicasStr,
 			"isDecommissioning", isDecommissioning,
 		)
+		tracelog.Emit(ctx, d.Logger, "DecommissionStatusObserved", map[string]any{
+			"nodeId":            id,
+			"isLive":            isLive,
+			"replicas":          replicasStr,
+			"isDecommissioning": isDecommissioning,
+		})
 
 		if isLive != "true" || isDecommissioning != "true" {
 			return 0, errors.New("unexpected node status")
@@ -203,10 +210,27 @@ func (d *CockroachNodeDrainer) executeDrainCmd(ctx context.Context, id uint, gRP
 	} else {
 		cmd = append(cmd, "--insecure")
 	}
+	tracelog.Emit(ctx, d.Logger, "DecommissionCommand", map[string]any{
+		"phase":   "start_drain",
+		"nodeId":  id,
+		"command": strings.Join(cmd, " "),
+		"secure":  d.Secure,
+	})
 
 	if _, _, err := d.Executor.Exec(ctx, 0, cmd); err != nil {
+		tracelog.Emit(ctx, d.Logger, "DecommissionCommandReturn", map[string]any{
+			"phase":   "start_drain",
+			"nodeId":  id,
+			"success": false,
+			"error":   err.Error(),
+		})
 		return errors.Wrapf(err, "failed to start draining node %d", id)
 	}
+	tracelog.Emit(ctx, d.Logger, "DecommissionCommandReturn", map[string]any{
+		"phase":   "start_drain",
+		"nodeId":  id,
+		"success": true,
+	})
 
 	return nil
 }
@@ -222,10 +246,27 @@ func (d *CockroachNodeDrainer) markNodeAsDecommissioned(ctx context.Context, id 
 	} else {
 		cmd = append(cmd, "--insecure")
 	}
+	tracelog.Emit(ctx, d.Logger, "DecommissionCommand", map[string]any{
+		"phase":   "mark_decommissioned",
+		"nodeId":  id,
+		"command": strings.Join(cmd, " "),
+		"secure":  d.Secure,
+	})
 
 	if _, _, err := d.Executor.Exec(ctx, 0, cmd); err != nil {
+		tracelog.Emit(ctx, d.Logger, "DecommissionCommandReturn", map[string]any{
+			"phase":   "mark_decommissioned",
+			"nodeId":  id,
+			"success": false,
+			"error":   err.Error(),
+		})
 		return errors.Wrapf(err, "failed to mark node as decommissioned: node: %d", id)
 	}
+	tracelog.Emit(ctx, d.Logger, "DecommissionCommandReturn", map[string]any{
+		"phase":   "mark_decommissioned",
+		"nodeId":  id,
+		"success": true,
+	})
 
 	return nil
 }

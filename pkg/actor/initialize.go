@@ -19,10 +19,13 @@ package actor
 import (
 	"context"
 	"fmt"
-	"github.com/go-logr/logr"
-	"k8s.io/client-go/util/retry"
 	"strconv"
 	"strings"
+
+	"github.com/cockroachdb/cockroach-operator/pkg/condition"
+	"github.com/cockroachdb/cockroach-operator/pkg/tracelog"
+	"github.com/go-logr/logr"
+	"k8s.io/client-go/util/retry"
 
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
 	"github.com/cockroachdb/cockroach-operator/pkg/kube"
@@ -79,6 +82,9 @@ func (init initialize) Act(ctx context.Context, cluster *resource.Cluster, log l
 		log.Error(err, msg)
 		return errors.Wrap(err, msg)
 	}
+	tracelog.Emit(ctx, log, "StatefulSetContainersObserved", map[string]any{
+		"count": len(pods.Items),
+	})
 
 	if len(pods.Items) == 0 {
 		return NotReadyErr{Err: errors.New("pod not created")}
@@ -86,6 +92,11 @@ func (init initialize) Act(ctx context.Context, cluster *resource.Cluster, log l
 
 	phase := pods.Items[0].Status.Phase
 	podName := pods.Items[0].Name
+	tracelog.Emit(ctx, log, "StatefulSetContainersObserved", map[string]any{
+		"count":         len(pods.Items),
+		"firstPodName":  podName,
+		"firstPodPhase": string(phase),
+	})
 	if phase != corev1.PodRunning {
 		return NotReadyErr{Err: errors.New("pod is not running")}
 	}
@@ -101,6 +112,14 @@ func (init initialize) Act(ctx context.Context, cluster *resource.Cluster, log l
 	}
 
 	log.V(DEBUGLEVEL).Info(fmt.Sprintf("Executing init in pod %s with phase %s", podName, phase))
+	tracelog.Emit(ctx, log, "CockroachOperatorStatusBeforeUpdate", map[string]any{
+		"initialized": condition.True(api.CrdbInitializedCondition, cluster.Status().Conditions),
+	})
+	tracelog.Emit(ctx, log, "NodeInitCommand", map[string]any{
+		"podName": podName,
+		"secure":  cluster.Spec().TLSEnabled,
+		"command": "cockroach init",
+	})
 	_, stderr, err := kube.ExecInPod(ctx, init.scheme, init.config, cluster.Namespace(),
 		fmt.Sprintf("%s-0", stsName), resource.DbContainerName, cmd)
 	log.V(DEBUGLEVEL).Info("Executed init in pod")
@@ -110,12 +129,34 @@ func (init initialize) Act(ctx context.Context, cluster *resource.Cluster, log l
 		if strings.Contains(err.Error(), "unable to upgrade connection: container not found") ||
 			strings.Contains(err.Error(), "does not have a host assigned") {
 			log.V(DEBUGLEVEL).Info("pod has not completely started")
+			tracelog.Emit(ctx, log, "NodeInitCommandReturn", map[string]any{
+				"success": false,
+				"status":  "not_ready",
+				"error":   err.Error(),
+			})
 			return NotReadyErr{Err: errors.New("pod has not completely started")}
 		}
 
 		msg := "failed to initialize the cluster"
 		log.Error(err, msg)
+		tracelog.Emit(ctx, log, "NodeInitCommandReturn", map[string]any{
+			"success": false,
+			"status":  "error",
+			"error":   err.Error(),
+		})
 		return errors.Wrap(err, msg)
+	}
+
+	if err != nil && alreadyInitialized(stderr) {
+		tracelog.Emit(ctx, log, "NodeInitCommandReturn", map[string]any{
+			"success": true,
+			"status":  "already_initialized",
+		})
+	} else {
+		tracelog.Emit(ctx, log, "NodeInitCommandReturn", map[string]any{
+			"success": true,
+			"status":  "ok",
+		})
 	}
 
 	// If we got here, we need to update the CrdbClusterStatus object with an updated CrdbInitialized condition.
@@ -142,6 +183,9 @@ func (init initialize) Act(ctx context.Context, cluster *resource.Cluster, log l
 			log.Error(err, msg)
 			return errors.Wrap(err, msg)
 		}
+		tracelog.Emit(ctx, log, "CockroachOperatorStatusAfterUpdate", map[string]any{
+			"initialized": condition.True(api.CrdbInitializedCondition, refreshedCluster.Status().Conditions),
+		})
 		return err
 	})
 	if err != nil {
