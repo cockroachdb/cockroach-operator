@@ -25,6 +25,9 @@ on:
   # allows running from the actions tab in GitHub
   workflow_dispatch: ~
 
+permissions:
+  contents: read
+
 jobs:
   smoketest:
     runs-on: ubuntu-latest
