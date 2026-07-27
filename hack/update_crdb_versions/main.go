@@ -18,13 +18,17 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
-	"io"
+	"math/rand"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strconv"
+	"strings"
 	"time"
 
 	semver "github.com/Masterminds/semver/v3"
@@ -36,6 +40,9 @@ const (
 	cockroachDBRegistry = "cockroachdb"
 	cockroachDBImage    = "cockroach"
 	httpTimeoutSecs     = 30
+	dockerHubPageSize   = 100
+	maxRequestAttempts  = 6
+	maxRetryWait        = 60 * time.Second
 	repo                = "registry.connect.redhat.com/cockroachdb/cockroach"
 	versionsFile        = "crdb-versions.yaml"
 
@@ -71,46 +78,91 @@ var (
 )
 
 func main() {
+	allowRemovals := flag.Bool("allow-removals", false,
+		"allow versions in the existing crdb-versions.yaml to be removed")
+	flag.Parse()
+
 	path := filepath.Join(os.Getenv("BUILD_WORKSPACE_DIRECTORY"), versionsFile)
-	if err := os.WriteFile(path, []byte(fileHeader), 0644); err != nil {
-		panic(err)
-	}
-
-	f, err := os.OpenFile(path, os.O_APPEND|os.O_WRONLY, 0644)
-	if err != nil {
-		panic(err)
-	}
-
-	defer f.Close()
-	if err := UpdateCrdbVersions("https://catalog.redhat.com/", f); err != nil {
+	if err := UpdateVersionsFile(path, "https://catalog.redhat.com/", *allowRemovals); err != nil {
 		panic(err)
 	}
 }
 
-// UpdateCrdbVersions fetches all published versions of CRDB from the redhat
-// connect registry. It then writes the results to the given io.Writer.
-func UpdateCrdbVersions(baseURL string, w io.Writer) error {
-	resp, err := fetchAPIResponse(fmt.Sprintf("%s%s", baseURL, reqPath))
+// UpdateVersionsFile reads the existing versions file, generates the updated set
+// of supported versions, enforces the removal guard (unless allowRemovals is
+// set), and writes the result back to path. It is the single entry point that
+// wires reading, generation, validation, and writing together so that flow can
+// be exercised end to end in tests.
+func UpdateVersionsFile(path, baseURL string, allowRemovals bool) error {
+	existing, err := readExistingVersions(path)
 	if err != nil {
 		return err
 	}
 
-	data, err := yaml.Marshal(generateOutput(resp))
+	updated, err := GenerateCrdbVersions(baseURL)
+	if err != nil {
+		return err
+	}
+
+	if !allowRemovals {
+		if err := ValidateNoVersionRemovals(tagsOf(existing), tagsOf(updated)); err != nil {
+			return err
+		}
+	}
+
+	data, err := yaml.Marshal(updated)
 	if err != nil {
 		return errors.Wrap(err, "marshaling YAML")
 	}
 
-	if _, err := w.Write(data); err != nil {
-		return errors.Wrap(err, "writing YAML")
+	out := append([]byte(fileHeader), data...)
+	if err := os.WriteFile(path, out, 0644); err != nil {
+		return errors.Wrap(err, "writing versions file")
 	}
 
 	return nil
 }
 
-func fetchAPIResponse(url string) (*apiResponse, error) {
-	client := http.Client{Timeout: httpTimeoutSecs * time.Second}
+// readExistingVersions loads the current versions file. A missing file is
+// treated as an empty baseline so the tool can bootstrap the file on first run.
+func readExistingVersions(path string) (*yamlOutput, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return &yamlOutput{}, nil
+		}
+		return nil, errors.Wrap(err, "reading existing versions file")
+	}
 
-	r, err := client.Get(url)
+	var existing yamlOutput
+	if err := yaml.Unmarshal(data, &existing); err != nil {
+		return nil, errors.Wrap(err, "parsing existing versions file")
+	}
+
+	return &existing, nil
+}
+
+// GenerateCrdbVersions fetches all published versions of CRDB from the RedHat
+// connect registry, keeping only tags that are also published to the
+// cockroachdb/cockroach Docker Hub repository, and returns them sorted by
+// version.
+func GenerateCrdbVersions(baseURL string) (*yamlOutput, error) {
+	client := &http.Client{Timeout: httpTimeoutSecs * time.Second}
+	resp, err := fetchAPIResponse(client, fmt.Sprintf("%s%s", baseURL, reqPath))
+	if err != nil {
+		return nil, err
+	}
+
+	dockerHubTags, err := fetchDockerHubTags(client, BaseDockerHubURL)
+	if err != nil {
+		return nil, err
+	}
+
+	return generateOutput(resp, dockerHubTags), nil
+}
+
+func fetchAPIResponse(client *http.Client, url string) (*apiResponse, error) {
+	r, err := getWithRetry(client, url)
 	if err != nil {
 		return nil, errors.Wrap(err, "fetching CRDB versions")
 	}
@@ -124,15 +176,154 @@ func fetchAPIResponse(url string) (*apiResponse, error) {
 	return &resp, nil
 }
 
-func generateOutput(resp *apiResponse) *yamlOutput {
+func fetchDockerHubTags(client *http.Client, baseURL string) (map[string]bool, error) {
+	nextURL, err := url.Parse(baseURL)
+	if err != nil {
+		return nil, errors.Wrap(err, "parsing Docker Hub URL")
+	}
+	query := nextURL.Query()
+	query.Set("page_size", strconv.Itoa(dockerHubPageSize))
+	nextURL.RawQuery = query.Encode()
+
+	tags := make(map[string]bool)
+	seenPages := make(map[string]bool)
+	expectedCount := 0
+	for nextURL != nil {
+		if seenPages[nextURL.String()] {
+			return nil, errors.Errorf("Docker Hub pagination loop at %s", nextURL)
+		}
+		seenPages[nextURL.String()] = true
+
+		r, err := getWithRetry(client, nextURL.String())
+		if err != nil {
+			return nil, errors.Wrap(err, "fetching Docker Hub tags")
+		}
+
+		var page dockerHubTagsResponse
+		decodeErr := json.NewDecoder(r.Body).Decode(&page)
+		closeErr := r.Body.Close()
+		if decodeErr != nil {
+			return nil, errors.Wrap(decodeErr, "decoding Docker Hub tags")
+		}
+		if closeErr != nil {
+			return nil, errors.Wrap(closeErr, "closing Docker Hub response")
+		}
+
+		if page.Count > expectedCount {
+			expectedCount = page.Count
+		}
+		for _, result := range page.Results {
+			tags[result.Name] = true
+		}
+
+		if page.Next == "" {
+			nextURL = nil
+			continue
+		}
+		nextURL, err = url.Parse(page.Next)
+		if err != nil {
+			return nil, errors.Wrap(err, "parsing next Docker Hub page URL")
+		}
+	}
+
+	// Guard against a silently truncated listing: dropping a page would omit
+	// valid versions and, via the removal guard, abort the run with a
+	// misleading message. Comparing against the total the API reports catches
+	// that before it can happen.
+	if expectedCount > 0 && len(tags) < expectedCount {
+		return nil, errors.Errorf("incomplete Docker Hub tag listing: fetched %d of %d tags",
+			len(tags), expectedCount)
+	}
+
+	return tags, nil
+}
+
+func getWithRetry(client *http.Client, url string) (*http.Response, error) {
+	var lastErr error
+	for attempt := 1; attempt <= maxRequestAttempts; attempt++ {
+		r, err := client.Get(url)
+		if err == nil && r.StatusCode >= http.StatusOK && r.StatusCode < http.StatusMultipleChoices {
+			return r, nil
+		}
+
+		var delay time.Duration
+		if err != nil {
+			lastErr = err
+			delay = retryBackoff(attempt)
+		} else {
+			lastErr = errors.Errorf("GET %s returned %s", url, r.Status)
+			shouldRetry := r.StatusCode == http.StatusTooManyRequests || r.StatusCode >= http.StatusInternalServerError
+			delay = retryDelay(r, attempt)
+			r.Body.Close()
+			if !shouldRetry {
+				return nil, lastErr
+			}
+		}
+
+		if attempt < maxRequestAttempts {
+			fmt.Printf("request failed (attempt %d/%d): %v; retrying in %s\n",
+				attempt, maxRequestAttempts, lastErr, delay)
+			time.Sleep(delay)
+		}
+	}
+
+	return nil, errors.Wrapf(lastErr, "request failed after %d attempts", maxRequestAttempts)
+}
+
+// retryDelay decides how long to wait before the next attempt, preferring the
+// server's own guidance (Retry-After, then Docker Hub's X-RateLimit-Reset) and
+// falling back to jittered exponential backoff. All waits are capped so a
+// long-lived rate limit fails the run rather than hanging CI.
+func retryDelay(r *http.Response, attempt int) time.Duration {
+	if retryAfter := r.Header.Get("Retry-After"); retryAfter != "" {
+		if seconds, err := strconv.Atoi(retryAfter); err == nil && seconds >= 0 {
+			return capBackoff(time.Duration(seconds) * time.Second)
+		}
+		if when, err := http.ParseTime(retryAfter); err == nil {
+			if delay := time.Until(when); delay > 0 {
+				return capBackoff(delay)
+			}
+		}
+	}
+
+	// Docker Hub advertises when the limit resets via X-RateLimit-Reset, a Unix
+	// timestamp, rather than Retry-After.
+	if reset := r.Header.Get("X-RateLimit-Reset"); reset != "" {
+		if ts, err := strconv.ParseInt(reset, 10, 64); err == nil {
+			if delay := time.Until(time.Unix(ts, 0)); delay > 0 {
+				return capBackoff(delay)
+			}
+		}
+	}
+
+	return retryBackoff(attempt)
+}
+
+// retryBackoff returns exponential backoff for the given attempt with up to 50%
+// added jitter, capped at maxRetryWait. Jitter keeps concurrent jobs sharing an
+// egress IP from retrying against a rate-limited endpoint in lockstep.
+func retryBackoff(attempt int) time.Duration {
+	backoff := capBackoff(time.Duration(1<<(attempt-1)) * time.Second)
+	return backoff + time.Duration(rand.Int63n(int64(backoff/2)+1))
+}
+
+func capBackoff(d time.Duration) time.Duration {
+	if d > maxRetryWait {
+		return maxRetryWait
+	}
+	return d
+}
+
+func generateOutput(resp *apiResponse, dockerHubTags map[string]bool) *yamlOutput {
 	output := new(yamlOutput)
 	usedTags := make(map[string]bool)
 	for _, data := range resp.Data {
 		for _, r := range data.Repos {
 			for _, tag := range r.Tags {
-				if !isValid(tag.Name) || isUsed(usedTags, tag.Name) || !isTagPresentOnCockroachImage(tag.Name) {
+				if !isValid(tag.Name) || usedTags[tag.Name] || !dockerHubTags[tag.Name] {
 					continue
 				}
+				usedTags[tag.Name] = true
 				output.CrdbVersions = append(output.CrdbVersions, version{
 					Image:       fmt.Sprintf("%s/%s:%s", cockroachDBRegistry, cockroachDBImage, tag.Name),
 					RedhatImage: fmt.Sprintf("%s@%s", repo, data.Digest),
@@ -161,28 +352,44 @@ func isValid(tag string) bool {
 	return semVerRegex.MatchString(tag)
 }
 
-// isUsed returns true if a tag has already been used to generate cockroach image.
-func isUsed(usedTags map[string]bool, tag string) bool {
-	if _, ok := usedTags[tag]; ok {
-		return true
+// tagsOf extracts the version tags from a set of generated versions.
+func tagsOf(o *yamlOutput) []string {
+	tags := make([]string, 0, len(o.CrdbVersions))
+	for _, v := range o.CrdbVersions {
+		tags = append(tags, v.Tag)
 	}
-	usedTags[tag] = true
-	return false
+	return tags
 }
 
-// isTagPresentOnCockroachImage returns true if the given tag is present on the cockroachdb/cockroach image.
-func isTagPresentOnCockroachImage(tag string) bool {
-	dockerHubURL := fmt.Sprintf("%s/%s", BaseDockerHubURL, tag)
-	client := http.Client{Timeout: httpTimeoutSecs * time.Second}
-
-	r, err := client.Get(dockerHubURL)
-	if err != nil {
-		fmt.Println("error fetching image from Docker Hub:", err)
-		return false
+// ValidateNoVersionRemovals returns an error if a previously supported version
+// is absent from the updated version list.
+func ValidateNoVersionRemovals(existing, updated []string) error {
+	updatedTags := make(map[string]bool, len(updated))
+	for _, tag := range updated {
+		updatedTags[tag] = true
 	}
-	defer r.Body.Close()
 
-	return r.StatusCode == http.StatusOK
+	var removed []string
+	for _, tag := range existing {
+		if !updatedTags[tag] {
+			removed = append(removed, tag)
+		}
+	}
+	if len(removed) == 0 {
+		return nil
+	}
+
+	sort.Strings(removed)
+	return errors.Errorf("refusing to remove existing CRDB versions: %s; rerun with CRDB_VERSION_UPDATE_ARGS=-allow-removals for an intentional removal",
+		strings.Join(removed, ", "))
+}
+
+type dockerHubTagsResponse struct {
+	Count   int    `json:"count"`
+	Next    string `json:"next"`
+	Results []struct {
+		Name string `json:"name"`
+	} `json:"results"`
 }
 
 // apiResponse encapsulates the response from the RH Catalog API.

@@ -149,8 +149,8 @@ func TestUpgradesMajorVersion24_1to24_2(t *testing.T) {
 	steps.Run(t)
 }
 
-// TestUpgradesMajorVersion21_2To22_1 is another major version upgrade
-func TestUpgradesMajorVersion21_2To22_1(t *testing.T) {
+// TestUpgradesMajorVersion22_1To22_2 is another major version upgrade
+func TestUpgradesMajorVersion22_1To22_2(t *testing.T) {
 
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
@@ -166,7 +166,7 @@ func TestUpgradesMajorVersion21_2To22_1(t *testing.T) {
 	sb.StartManager(t, controller.InitClusterReconcilerWithLogger(testLog))
 
 	builder := testutil.NewBuilder("crdb").WithNodeCount(3).WithTLS().
-		WithImage("cockroachdb/cockroach:v21.2.16").
+		WithImage("cockroachdb/cockroach:v22.1.16").
 		WithPVDataStore("1Gi").WithResources(resRequirements)
 
 	steps := testutil.Steps{
@@ -184,10 +184,9 @@ func TestUpgradesMajorVersion21_2To22_1(t *testing.T) {
 				require.NoError(t, sb.Get(current))
 
 				updated := current.DeepCopy()
-				updated.Spec.Image.Name = "cockroachdb/cockroach:v22.1.10"
+				updated.Spec.Image.Name = "cockroachdb/cockroach:v22.2.19"
 				require.NoError(t, sb.Patch(updated, client.MergeFrom(current)))
-				// we wait 10 min because we will be waiting 3 min for each pod because
-				// v20.1.16 does not have curl installed
+				// Allow the full cluster-ready timeout for the rolling major-version upgrade.
 				testutil.RequireClusterToBeReadyEventuallyTimeout(t, sb, builder, e2e.CreateClusterTimeout)
 				testutil.RequireDbContainersToUseImage(t, sb, updated)
 				t.Log("Done with major upgrade")
