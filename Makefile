@@ -308,9 +308,11 @@ release/new:
 #
 # This also generates install/crds.yaml and install/operator.yaml which are
 # pre-built kustomize bases used in our docs.
+# Set CRDB_VERSION_UPDATE_ARGS=-allow-removals when intentionally removing a
+# previously supported CockroachDB version.
 .PHONY: release/gen-templates
 release/gen-templates:
-	bazel run //hack/update_crdb_versions
+	bazel run //hack/update_crdb_versions -- $(CRDB_VERSION_UPDATE_ARGS)
 	@hack/boilerplaterize hack/boilerplate/boilerplate.yaml.txt $(PWD)/crdb-versions.yaml
 	bazel run //hack/crdbversions:crdbversions -- -operator-version $(APP_VERSION) -crdb-versions $(PWD)/crdb-versions.yaml -repo-root $(PWD)
 	bazel run //config/crd:manifest.preview > install/crds.yaml

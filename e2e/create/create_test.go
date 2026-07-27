@@ -31,9 +31,9 @@ import (
 )
 
 var (
-	crdbVersion         = "v21.2.7"
-	relatedImageEnvName = "RELATED_IMAGE_COCKROACH_v21_2_7"
-	validImage          = "cockroachdb/cockroach:v21.2.7"
+	crdbVersion         = "v24.3.4"
+	relatedImageEnvName = "RELATED_IMAGE_COCKROACH_v24_3_4"
+	validImage          = "cockroachdb/cockroach:v24.3.4"
 )
 
 // TestCreateInsecureCluster tests the creation of insecure cluster, and it should be successful.
