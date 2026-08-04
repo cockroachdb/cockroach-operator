@@ -1,6 +1,6 @@
 module github.com/cockroachdb/cockroach-operator
 
-go 1.23.8
+go 1.25.12
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.0

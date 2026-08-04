@@ -46,10 +46,10 @@ bazel_skylib_workspace()
 
 http_archive(
     name = "io_bazel_rules_go",
-    sha256 = "f2d15bea3e241aa0e3a90fb17a82e6a8ab12214789f6aeddd53b8d04316d2b7c",
+    sha256 = "82f0af253fc61c7f06b005c67c079573776111185b7c3742563f751178aaa4c0",
     urls = [
-        "https://mirror.bazel.build/github.com/bazel-contrib/rules_go/releases/download/v0.54.0/rules_go-v0.54.0.zip",
-        "https://github.com/bazel-contrib/rules_go/releases/download/v0.54.0/rules_go-v0.54.0.zip",
+        "https://mirror.bazel.build/github.com/bazel-contrib/rules_go/releases/download/v0.58.3/rules_go-v0.58.3.zip",
+        "https://github.com/bazel-contrib/rules_go/releases/download/v0.58.3/rules_go-v0.58.3.zip",
     ],
 )
 
@@ -71,10 +71,19 @@ load("//hack/build:repos.bzl", "go_dependencies")
 
 go_rules_dependencies()
 
+go_register_toolchains(version = "1.25.12")
+
+# Create the host platform repository transitively required by rules_go.
+load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
+load("@platforms//host:extension.bzl", "host_platform_repo")
+
+maybe(
+    host_platform_repo,
+    name = "host_platform",
+)
+
 # gazelle:repository_macro hack/build/repos.bzl%_go_dependencies
 go_dependencies()
-
-go_register_toolchains(version = "1.24.2")
 
 gazelle_dependencies()
 
