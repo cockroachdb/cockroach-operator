@@ -1,0 +1,61 @@
+{{- if .Values.webhook.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "cockroach-operator.fullname" . }}-webhook-service
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "cockroach-operator.labels" . | nindent 4 }}
+spec:
+  ports:
+    - port: {{ .Values.webhook.service.port }}
+      targetPort: {{ .Values.webhook.service.targetPort }}
+      protocol: TCP
+  selector:
+    app: cockroach-operator
+    app.kubernetes.io/instance: {{ .Release.Name }}
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: {{ include "cockroach-operator.fullname" . }}-mutating-webhook-configuration
+  labels:
+    {{- include "cockroach-operator.labels" . | nindent 4 }}
+webhooks:
+  - name: mcrdbcluster.kb.io
+    admissionReviewVersions: [v1]
+    clientConfig:
+      service:
+        name: {{ include "cockroach-operator.fullname" . }}-webhook-service
+        namespace: {{ .Release.Namespace }}
+        path: /mutate-crdb-cockroachlabs-com-v1alpha1-crdbcluster
+    failurePolicy: {{ .Values.webhook.failurePolicy }}
+    rules:
+      - apiGroups: [crdb.cockroachlabs.com]
+        apiVersions: [v1alpha1]
+        operations: [CREATE, UPDATE]
+        resources: [crdbclusters]
+    sideEffects: None
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: {{ include "cockroach-operator.fullname" . }}-validating-webhook-configuration
+  labels:
+    {{- include "cockroach-operator.labels" . | nindent 4 }}
+webhooks:
+  - name: vcrdbcluster.kb.io
+    admissionReviewVersions: [v1]
+    clientConfig:
+      service:
+        name: {{ include "cockroach-operator.fullname" . }}-webhook-service
+        namespace: {{ .Release.Namespace }}
+        path: /validate-crdb-cockroachlabs-com-v1alpha1-crdbcluster
+    failurePolicy: {{ .Values.webhook.failurePolicy }}
+    rules:
+      - apiGroups: [crdb.cockroachlabs.com]
+        apiVersions: [v1alpha1]
+        operations: [CREATE, UPDATE]
+        resources: [crdbclusters]
+    sideEffects: None
+{{- end }}
