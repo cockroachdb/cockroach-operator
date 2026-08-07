@@ -1,0 +1,7 @@
+apiVersion: v2
+name: cockroach-operator
+description: CockroachDB Kubernetes operator
+type: application
+version: 2.18.3
+appVersion: v2.18.3
+kubeVersion: ">=1.22.0-0"

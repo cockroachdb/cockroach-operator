@@ -292,6 +292,20 @@ k8s/delete:
 		//config/default:install.delete \
 		--define APP_VERSION=$(APP_VERSION)
 
+# Build the Helm chart corresponding to the Kubernetes manifests in config/.
+# CRDs are copied to the chart's special crds/ directory so Helm installs them
+# before the operator resources. Use HELM=... to override the Helm binary.
+HELM?=helm
+HELM_CHART_DIR?=$(PWD)/charts/cockroach-operator
+
+.PHONY: helm/chart
+helm/chart:
+	@command -v $(HELM) >/dev/null || (echo "$(HELM) is required" >&2; exit 1)
+	@mkdir -p $(HELM_CHART_DIR)/crds
+	@cp config/crd/bases/*.yaml $(HELM_CHART_DIR)/crds/
+	@$(HELM) lint $(HELM_CHART_DIR)
+	@echo "Helm chart is ready at $(HELM_CHART_DIR)"
+
 #
 # Release targets
 #
