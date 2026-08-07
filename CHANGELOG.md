@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 # [Unreleased](https://github.com/cockroachdb/cockroach-operator/compare/v2.18.3...master)
+* Added a Helm chart for installing the CockroachDB operator.
 
 # [v2.18.3](https://github.com/cockroachdb/cockroach-operator/compare/v2.18.2...v2.18.3)
 * Added a migration label to allow pausing reconciliation during cluster migrations.
