@@ -1,5 +1,7 @@
 # CockroachDB Kubernetes Operator
 
+> **Deprecation notice:** The CockroachDB public Kubernetes Operator and `crdb.cockroachlabs.com/v1alpha1` APIs are deprecated. See the [Kubernetes deprecation notice](https://www.cockroachlabs.com/docs/v26.2/kubernetes-deprecation-notice) for details and migration guidance.
+
 The CockroachDB Kubernetes Operator deploys CockroachDB on a Kubernetes cluster. You can use the Operator to manage the configuration of a running CockroachDB cluster, including:
 
 - Authenticating certificates

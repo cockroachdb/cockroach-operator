@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 # [Unreleased](https://github.com/cockroachdb/cockroach-operator/compare/v2.18.3...master)
+* Mark the `crdb.cockroachlabs.com/v1alpha1` `CrdbCluster` API as deprecated so Kubernetes warns clients when they use the alpha API version.
 
 # [v2.18.3](https://github.com/cockroachdb/cockroach-operator/compare/v2.18.2...v2.18.3)
 * Added a migration label to allow pausing reconciliation during cluster migrations.

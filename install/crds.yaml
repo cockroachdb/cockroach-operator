@@ -32,7 +32,10 @@ spec:
     singular: crdbcluster
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - deprecated: true
+    deprecationWarning: crdb.cockroachlabs.com/v1alpha1 CrdbCluster is deprecated;
+      see https://www.cockroachlabs.com/docs/v26.2/kubernetes-deprecation-notice
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: CrdbCluster is the CRD for the cockroachDB clusters API

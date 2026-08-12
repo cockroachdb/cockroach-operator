@@ -225,6 +225,7 @@ type ClusterAction struct {
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +k8s:deepcopy-gen=true
+// +kubebuilder:deprecatedversion:warning="crdb.cockroachlabs.com/v1alpha1 CrdbCluster is deprecated; see https://www.cockroachlabs.com/docs/v26.2/kubernetes-deprecation-notice"
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:categories=all;cockroachdb,shortName=crdb
 // +kubebuilder:subresource:status

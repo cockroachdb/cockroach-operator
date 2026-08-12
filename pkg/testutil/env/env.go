@@ -20,6 +20,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 
 	api "github.com/cockroachdb/cockroach-operator/apis/v1alpha1"
@@ -45,7 +46,7 @@ func NewEnv(builder apiruntime.SchemeBuilder) *Env {
 	flag.Parse()
 
 	// ensure hack/bin is added to the path and KUBEBUILDER_ASSETS
-	p := ExpandPath(*testBinaries)
+	p := testBinaryPath(*testBinaries)
 	os.Setenv("KUBEBUILDER_ASSETS", p)
 	PrependToPath(p)
 
@@ -61,6 +62,7 @@ func NewEnv(builder apiruntime.SchemeBuilder) *Env {
 
 	t := envtest.Environment{
 		CRDDirectoryPaths: []string{
+			ExpandPath("config", "crd", "bases"),
 			ExpandPath("config", "crd"),
 			ExpandPath("config", "webhook"),
 		},
@@ -73,6 +75,24 @@ func NewEnv(builder apiruntime.SchemeBuilder) *Env {
 		Environment: t,
 		Scheme:      scheme,
 	}
+}
+
+func testBinaryPath(path string) string {
+	p := ExpandPath(path)
+	if path != "hack/bin" {
+		return p
+	}
+
+	if _, err := os.Stat(filepath.Join(p, "etcd")); err == nil {
+		return p
+	}
+
+	bazelBin := ExpandPath("bazel-bin", "hack", "bin")
+	if _, err := os.Stat(filepath.Join(bazelBin, "etcd")); err == nil {
+		return bazelBin
+	}
+
+	return p
 }
 
 type Env struct {
