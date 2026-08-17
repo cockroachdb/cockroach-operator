@@ -40,7 +40,9 @@ tmpfiles=$TEST_TMPDIR/files
   # clean up 'external' directory copied from test runfiles
   rm -rf "$tmpfiles"/external
   export BUILD_WORKSPACE_DIRECTORY=$tmpfiles
+  mkdir -p "$TEST_TMPDIR/home" "$TEST_TMPDIR/gocache"
   export HOME=$(realpath "$TEST_TMPDIR/home")
+  export GOCACHE=$(realpath "$TEST_TMPDIR/gocache")
   unset GOPATH
   go=$(realpath "$2")
   export PATH=$(dirname "$go"):$PATH

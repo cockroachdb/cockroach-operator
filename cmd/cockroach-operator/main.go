@@ -97,7 +97,7 @@ func main() {
 		Scheme: scheme,
 		Cache: cache.Options{
 			DefaultNamespaces: map[string]cache.Config{
-				watchNamespace: cache.Config{},
+				watchNamespace: {},
 			},
 		},
 		Metrics: server.Options{

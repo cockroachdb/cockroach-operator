@@ -71,7 +71,7 @@ load("//hack/build:repos.bzl", "go_dependencies")
 
 go_rules_dependencies()
 
-go_register_toolchains(version = "1.25.12")
+go_register_toolchains(version = "1.25.13")
 
 # Create the host platform repository transitively required by rules_go.
 load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")

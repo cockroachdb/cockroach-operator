@@ -55,7 +55,7 @@ func NewSandbox(t *testing.T, env *ActiveEnv) Sandbox {
 		Scheme: env.scheme,
 		Cache: cache.Options{
 			DefaultNamespaces: map[string]cache.Config{
-				ns: cache.Config{},
+				ns: {},
 			},
 		},
 		Metrics:                 server.Options{BindAddress: "0"}, // disable metrics serving

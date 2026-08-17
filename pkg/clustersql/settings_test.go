@@ -123,9 +123,7 @@ func TestRangeMoveDuration(t *testing.T) {
 					{Target: "zone-1", Config: ZoneConfig{RangeMaxBytes: 10}},
 					{Target: "zone-2", Config: ZoneConfig{RangeMaxBytes: 20}},
 				},
-				// TODO: Is it required. Output will always be 0s because of integer division
-				// nolint
-				exp: time.Duration(10/1000000) * time.Second,
+				exp: 0,
 			},
 			{
 				name:             "recovery rate faster than rebalance",
@@ -135,9 +133,7 @@ func TestRangeMoveDuration(t *testing.T) {
 					{Target: "zone-1", Config: ZoneConfig{RangeMaxBytes: 10}},
 					{Target: "zone-2", Config: ZoneConfig{RangeMaxBytes: 20}},
 				},
-				// TODO: Is it required. Output will always be 0s because of integer division
-				// nolint
-				exp: time.Duration(20/1000000) * time.Second,
+				exp: 0,
 			},
 			{
 				name:             "min range size is used",
@@ -147,9 +143,7 @@ func TestRangeMoveDuration(t *testing.T) {
 					{Target: "zone-1", Config: ZoneConfig{RangeMaxBytes: 20}},
 					{Target: "zone-2", Config: ZoneConfig{RangeMaxBytes: 30}},
 				},
-				// TODO: Is it required. Output will always be 0s because of integer division
-				// nolint
-				exp: time.Duration(20/2000000) * time.Second,
+				exp: 0,
 			},
 		}
 
