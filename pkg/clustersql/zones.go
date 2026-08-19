@@ -69,5 +69,8 @@ func ZoneConfigs(ctx context.Context, db *sql.DB) ([]Zone, error) {
 		}
 		zones = append(zones, zone)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, errors.Wrap(err, "failed to iterate crdb_internal.zones")
+	}
 	return zones, nil
 }
