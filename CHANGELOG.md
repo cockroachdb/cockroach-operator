@@ -5,7 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-# [Unreleased](https://github.com/cockroachdb/cockroach-operator/compare/v2.18.4...master)
+# [Unreleased](https://github.com/cockroachdb/cockroach-operator/compare/v2.18.5...master)
+
+# [v2.18.5](https://github.com/cockroachdb/cockroach-operator/compare/v2.18.4...v2.18.5)
+* Added support for CockroachDB v24.1.33, v24.3.36, v25.2.23, v25.2.24, v25.4.15, v25.4.16, v25.4.17, v26.2.6, v26.2.7, v26.3.0, v26.3.1, and v26.3.2.
 
 # [v2.18.4](https://github.com/cockroachdb/cockroach-operator/compare/v2.18.3...v2.18.4)
 * Mark the `crdb.cockroachlabs.com/v1alpha1` `CrdbCluster` API as deprecated so Kubernetes warns clients when they use the alpha API version. See the [deprecation notice](https://www.cockroachlabs.com/docs/v26.2/kubernetes-deprecation-notice) and [migration doc](https://www.cockroachlabs.com/docs/v26.2/migrate-cockroachdb-kubernetes-operator) to move to the new CockroachDB Operator.
