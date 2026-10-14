@@ -123,6 +123,7 @@ func (r *clusterRestart) Act(ctx context.Context, cluster *resource.Cluster, log
 	//TODO  use patch for annotations
 	if err := r.client.Update(ctx, refreshedCluster.Unwrap()); err != nil {
 		log.Error(err, "failed reseting the restart cluster field")
+		return err
 	}
 	log.V(DEBUGLEVEL).Info("completed cluster restart")
 	return nil
