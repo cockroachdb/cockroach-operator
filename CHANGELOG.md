@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 # [Unreleased](https://github.com/cockroachdb/cockroach-operator/compare/v2.18.5...master)
+* Fixed the node certificate being regenerated without a rolling restart when `ingress.sql.host` is first added to a running cluster, which left the pods serving the old certificate.
 
 # [v2.18.5](https://github.com/cockroachdb/cockroach-operator/compare/v2.18.4...v2.18.5)
 * Added support for CockroachDB v24.1.33, v24.3.36, v25.2.23, v25.2.24, v25.4.15, v25.4.16, v25.4.17, v26.2.6, v26.2.7, v26.3.0, v26.3.1, and v26.3.2.
