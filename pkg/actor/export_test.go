@@ -17,3 +17,4 @@ limitations under the License.
 package actor
 
 var NewDeploy = newDeploy
+var NewGenerateCert = newGenerateCert
